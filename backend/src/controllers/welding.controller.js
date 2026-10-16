@@ -8,6 +8,7 @@
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
 const { describeIngestFileError, redactFileNameForLog } = require('../utils/ingestErrorMessage');
+const wpqrTestRuns = require('../services/wpqrTestRuns.service');
 
 /**
  * Campi WPQR modificabili da form/API manuale (updateWPQR) — fonte unica,
@@ -367,6 +368,17 @@ async function deleteWPS(req, res) {
             return res.status(404).json({ error: 'WPS non trovata', code: 'WPS_NOT_FOUND' });
         }
 
+        // FK 173/174 senza ON DELETE: passate e link prima delle WPQR e della WPS (tabelle assenti = saltate).
+        const childWpqr = await query(`
+            SELECT id FROM wpqr_records
+            WHERE wps_id = @id AND organization_id = @organization_id
+        `, { id: parseInt(id), organization_id });
+        await wpqrTestRuns.deleteWpqrDependents({
+            organizationId: organization_id,
+            wpqrIds: childWpqr.recordset.map((r) => r.id),
+        });
+        await wpqrTestRuns.deleteWpsLinks({ organizationId: organization_id, wpsId: parseInt(id) });
+
         await query(`
             DELETE FROM wpqr_records
             WHERE wps_id = @id AND organization_id = @organization_id
@@ -687,16 +699,36 @@ async function updateWPQR(req, res) {
             params.examiner_body = req.body.testing_body || null;
         }
 
+        // Condizioni di prova di testata (migrazione 173): validate prima di qualunque scrittura.
+        const header = wpqrTestRuns.normalizeTestHeader(req.body);
+        if (header.errors.length > 0) {
+            return res.status(400).json({ error: 'Condizioni di prova non valide', code: 'VALIDATION_ERROR', details: header.errors });
+        }
+        const headerFields = Object.keys(header.fields);
+        if (headerFields.length > 0) {
+            if (!(await wpqrTestRuns.testHeaderColumnsAvailable())) {
+                return res.status(503).json({
+                    error: 'Condizioni di prova non ancora disponibili: migrazione database non applicata.',
+                    code: 'WPQR_TEST_DATA_UNAVAILABLE',
+                });
+            }
+            for (const field of headerFields) {
+                updates.push(`${field} = @${field}`);
+                params[field] = header.fields[field];
+            }
+        }
+
         if (updates.length === 0) {
             return res.status(400).json({ error: 'Nessun campo da aggiornare', code: 'VALIDATION_ERROR' });
         }
 
         updates.push('updated_at = GETDATE()');
+        params.organization_id = organization_id;
 
         await query(`
             UPDATE wpqr_records
             SET ${updates.join(', ')}
-            WHERE id = @id
+            WHERE id = @id AND organization_id = @organization_id
         `, params);
 
         logger.info('WPQR updated', { id, organization_id });
@@ -722,6 +754,8 @@ async function deleteWPQR(req, res) {
             return res.status(404).json({ error: 'WPQR non trovato', code: 'WPQR_NOT_FOUND' });
         }
 
+        await wpqrTestRuns.deleteWpqrDependents({ organizationId: organization_id, wpqrIds: [parseInt(id)] });
+
         await query(`
             DELETE FROM wpqr_records
             WHERE id = @id AND organization_id = @organization_id
@@ -732,6 +766,49 @@ async function deleteWPQR(req, res) {
     } catch (error) {
         logger.error('Error deleting WPQR', { error: error.message });
         res.status(500).json({ error: 'Errore durante l\'eliminazione del WPQR', code: 'WPQR_DELETE_ERROR' });
+    }
+}
+
+function sendTestRunsError(res, error, logMessage, fallbackCode, fallbackText) {
+    if (error instanceof wpqrTestRuns.TestRunsError) {
+        const body = { error: error.message, code: error.code };
+        if (error.details) body.details = error.details;
+        return res.status(error.status).json(body);
+    }
+    logger.error(logMessage, { error: error.message });
+    return res.status(500).json({ error: fallbackText, code: fallbackCode });
+}
+
+async function listWpqrTestRuns(req, res) {
+    try {
+        const wpqrId = wpqrTestRuns.parseId(req.params.id);
+        if (!wpqrId) return res.status(400).json({ error: 'ID WPQR non valido', code: 'VALIDATION_ERROR' });
+        const { runs, available } = await wpqrTestRuns.listTestRuns({
+            wpqrId,
+            organizationId: req.user.organization_id,
+        });
+        res.json({ success: true, runs, available });
+    } catch (error) {
+        sendTestRunsError(res, error, 'Error listing WPQR test runs', 'WPQR_TEST_RUNS_LIST_ERROR',
+            'Errore durante il recupero delle passate');
+    }
+}
+
+// PUT /api/v1/welding/wpqr/:id/test-runs  (replace-set)
+async function saveWpqrTestRuns(req, res) {
+    try {
+        const wpqrId = wpqrTestRuns.parseId(req.params.id);
+        if (!wpqrId) return res.status(400).json({ error: 'ID WPQR non valido', code: 'VALIDATION_ERROR' });
+        const body = req.body && typeof req.body === 'object' ? req.body : {};
+        const { runs, available } = await wpqrTestRuns.replaceTestRuns({
+            wpqrId,
+            organizationId: req.user.organization_id,
+            runs: body.runs,
+        });
+        res.json({ success: true, runs, available });
+    } catch (error) {
+        sendTestRunsError(res, error, 'Error saving WPQR test runs', 'WPQR_TEST_RUNS_SAVE_ERROR',
+            'Errore durante il salvataggio delle passate');
     }
 }
 
@@ -1313,6 +1390,8 @@ module.exports = {
     createWPQR,
     updateWPQR,
     deleteWPQR,
+    listWpqrTestRuns,
+    saveWpqrTestRuns,
     listWpsWelders,
     assignWpsWelder,
     removeWpsWelder,
