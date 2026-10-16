@@ -31,6 +31,7 @@ const path = require('path');
 const fs   = require('fs');
 const { getPool } = require('../config/database');
 const logger = require('../utils/logger');
+const { normalizeApplicableWpsIds } = require('../utils/applicableWpsIds');
 const {
     ensureCompanyAccessLoaded,
     companyAccessSqlFilter,
@@ -478,15 +479,14 @@ async function getCoverage(req, res) {
 
         const project = projResult.recordset[0];
         const projectCompanyId = project.company_id || null;
-        let wpsIds = [];
-        try { wpsIds = JSON.parse(project.applicable_wps_ids || '[]'); } catch (_) {}
+        const wpsIds = normalizeApplicableWpsIds(project.applicable_wps_ids);
 
         // Carica WPS della commessa — include campi numerici per il match range-aware
         let wpsRows = [];
         if (wpsIds.length) {
             const ph = wpsIds.map((_, i) => `@wid${i}`).join(',');
             const wReq = pool.request().input('orgId', orgId);
-            wpsIds.forEach((id, i) => wReq.input(`wid${i}`, parseInt(id)));
+            wpsIds.forEach((id, i) => wReq.input(`wid${i}`, id));
             const wRes = await wReq.query(`
                 SELECT id, wps_code, welding_process,
                        base_material_group, material_group,

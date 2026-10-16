@@ -24,6 +24,7 @@ import {
   parseTechnicalReviewChecklist,
 } from "../utils/technicalReviewChecklist";
 import { exportTechnicalReviewDocx } from "../utils/wordExportTechnicalReview";
+import { normalizeApplicableWpsIds } from "../utils/applicableWpsIds";
 import "./ProjectsPage.css";
 
 const AI_COVERAGE_LABELS = {
@@ -43,12 +44,6 @@ const PROJECT_STATUSES = [
 const STATUSES_REQUIRING_TECHNICAL_REVIEW = ["aperta"];
 
 //  Form modale commessa 
-
-/** Parsing nello stato iniziale: farlo in un effect cambiava `form` all'apertura e faceva partire l'auto-save senza modifiche dell'utente. */
-function parseApplicableWpsIds(raw) {
-  if (typeof raw !== "string" || !raw) return Array.isArray(raw) ? raw : [];
-  try { return JSON.parse(raw); } catch { return raw; }
-}
 
 function ProjectFormModal({ project, companies, defaultCompanyId, wpsList, qualifications, onSave, onClose, onSaved }) {
   // Prepopola welder_ids dai welders già assegnati al progetto
@@ -73,10 +68,10 @@ function ProjectFormModal({ project, companies, defaultCompanyId, wpsList, quali
     requirements_review_date: "",
     technical_review_date: "",
     notes: "",
-    applicable_wps_ids: [],
     welder_ids: existingWelderIds,
     ...(project || {}),
-    applicable_wps_ids: parseApplicableWpsIds(project?.applicable_wps_ids),
+    // Normalizzato nello stato iniziale (non in un effect: cambiare `form` all'apertura farebbe partire l'auto-save).
+    applicable_wps_ids: normalizeApplicableWpsIds(project?.applicable_wps_ids),
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -156,7 +151,7 @@ function ProjectFormModal({ project, companies, defaultCompanyId, wpsList, quali
       try {
         const payload = {
           ...form,
-          applicable_wps_ids: JSON.stringify(form.applicable_wps_ids || []),
+          applicable_wps_ids: normalizeApplicableWpsIds(form.applicable_wps_ids),
           technical_review_checklist: JSON.stringify(
             applyTechnicalReviewCompletionStamp(technicalReviewChecklist || {}, user)
           ),
@@ -211,7 +206,7 @@ function ProjectFormModal({ project, companies, defaultCompanyId, wpsList, quali
     try {
       const payload = {
         ...form,
-        applicable_wps_ids: JSON.stringify(form.applicable_wps_ids || []),
+        applicable_wps_ids: normalizeApplicableWpsIds(form.applicable_wps_ids),
         technical_review_checklist: JSON.stringify(
           applyTechnicalReviewCompletionStamp(technicalReviewChecklist || {}, user)
         ),
@@ -736,12 +731,7 @@ function ProjectsPage() {
   const totalPages = Math.max(1, Math.ceil(total / LIMIT));
 
   function getWpsCount(project) {
-    try {
-      const ids = typeof project.applicable_wps_ids === "string"
-        ? JSON.parse(project.applicable_wps_ids)
-        : project.applicable_wps_ids;
-      return Array.isArray(ids) ? ids.length : 0;
-    } catch { return 0; }
+    return normalizeApplicableWpsIds(project.applicable_wps_ids).length;
   }
 
   return (

@@ -137,6 +137,7 @@
         "src/utils/riskScore.js",
         "src/utils/riskReviews.js",
         "src/utils/technicalReviewChecklist.js",
+        "src/utils/applicableWpsIds.js",
         "src/utils/resolveOptionalProjectId.js",
         "src/utils/reportTemplatePath.js",
         "src/utils/uploadsPath.js"
