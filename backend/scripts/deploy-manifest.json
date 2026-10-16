@@ -139,7 +139,8 @@
         "src/utils/technicalReviewChecklist.js",
         "src/utils/resolveOptionalProjectId.js",
         "src/utils/reportTemplatePath.js",
-        "src/utils/uploadsPath.js"
+        "src/utils/uploadsPath.js",
+        "src/utils/aiPromptPrivacy.js"
       ]
     },
     {
@@ -198,6 +199,7 @@
         "src/services/wpqrTestRuns.service.js",
         "src/services/qualificationDocTypeClassifier.service.js",
         "src/services/qualificationIngest.service.js",
+        "src/services/certificateFileUrl.service.js",
         "src/services/normIngest.service.js",
         "src/services/documentIngestPipeline.service.js",
         "src/services/ingestStaging.service.js",
