@@ -162,6 +162,7 @@
         "src/services/documentHistoryTracker.service.js",
         "src/services/moduleLicense.service.js",
         "src/services/openapiCompanyLookup.service.js",
+        "src/services/qualificationExpirySql.js",
         "src/services/qualificationCompany.service.js",
         "src/services/personnelQualificationLink.service.js",
         "src/services/qualificationDuplicate.service.js",

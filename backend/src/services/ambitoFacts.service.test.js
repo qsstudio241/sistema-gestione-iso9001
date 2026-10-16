@@ -85,6 +85,19 @@ describe('ambitoFacts.service', () => {
     expect(ncSql).not.toMatch(/@companyId/);
   });
 
+  it('Qualifiche 30gg: stessa scadenza effettiva delle card (include CPD 14731) e finestra 0..30 di "Urgenti 30gg"', async () => {
+    const { EFFECTIVE_EXPIRY_SQL } = require('./qualificationExpirySql');
+    mockStudioFacts();
+    await loadAmbitoFacts(user, null);
+    const qualSqls = query.mock.calls.map((c) => String(c[0])).filter((q) => q.includes('quals_expiring_30'));
+    expect(qualSqls.length).toBeGreaterThanOrEqual(2);
+    for (const sql of qualSqls) {
+      expect(sql).toContain(EFFECTIVE_EXPIRY_SQL);
+      expect(sql).toContain('cpd_valid_until');
+      expect(sql).toMatch(/BETWEEN CAST\(GETDATE\(\) AS DATE\)\s+AND DATEADD\(day, 30/);
+    }
+  });
+
   it('isola i conteggi per company_id (A vs B)', async () => {
     mockCompanyFacts({ name: 'Mason', nc: 4, quals: 2, docs: 1 });
     const a = await loadAmbitoFacts(user, 11);
