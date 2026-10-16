@@ -41,20 +41,29 @@ function requiresSemiannualConfirmation(qualificationType) {
   return isWelder9606Type(qualificationType) || isOperator14732Type(qualificationType);
 }
 
+/** Coordinatori di saldatura ISO 14731 (IWE/IWT/IWS...): il titolo si mantiene con il CPD. */
+function isCoordinator14731Type(qualificationType) {
+  return String(qualificationType || '').toLowerCase().includes('14731');
+}
+
 /**
  * Data di scadenza "effettiva" di una qualifica (fonte unica: semaforo, GET /qualifications/:id,
  * stato salvato in ingest). Per i tipi a conferma semestrale (ISO 9606-1, ISO 14732) vale la data
  * PIU' IMMINENTE tra expiry_date e next_confirmation_due (ISO 9606-1 §9.2, ISO 14732 §6.2: senza
- * conferma entro 6 mesi la qualifica diventa non valida). Difensivo: se una manca usa l'altra;
+ * conferma entro 6 mesi la qualifica diventa non valida). Per i coordinatori ISO 14731 vale la data
+ * piu' imminente tra expiry_date e cpd_valid_until. Difensivo: se una manca usa l'altra;
  * per gli altri tipi resta solo expiry_date.
  */
 function effectiveExpiryDate(q) {
   const expiry = q.expiry_date || null;
-  if (!requiresSemiannualConfirmation(q.qualification_type)) return expiry;
-  const nextConf = q.next_confirmation_due || null;
-  if (!expiry) return nextConf;
-  if (!nextConf) return expiry;
-  return new Date(nextConf) < new Date(expiry) ? nextConf : expiry;
+  const earlier = (a, b) => (!a ? b : !b ? a : (new Date(b) < new Date(a) ? b : a));
+  if (requiresSemiannualConfirmation(q.qualification_type)) {
+    return earlier(expiry, q.next_confirmation_due || null);
+  }
+  if (isCoordinator14731Type(q.qualification_type)) {
+    return earlier(expiry, q.cpd_valid_until || null);
+  }
+  return expiry;
 }
 
 /**
@@ -168,6 +177,7 @@ module.exports = {
   isWelder9606Type,
   isOperator14732Type,
   requiresSemiannualConfirmation,
+  isCoordinator14731Type,
   effectiveExpiryDate,
   deriveQualificationStatus,
   addMonthsIso,

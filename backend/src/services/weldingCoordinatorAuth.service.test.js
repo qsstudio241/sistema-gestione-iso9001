@@ -148,3 +148,48 @@ describe('weldingCoordinatorAuth.service — isQualificationOperationallyActive'
     expect(svc.isQualificationOperationallyActive(null, TODAY)).toBe(false);
   });
 });
+
+describe('weldingCoordinatorAuth.service — effectiveExpiryDate (CPD coordinatori 14731)', () => {
+  it('coordinatore 14731: vale la data piu\' imminente tra expiry_date e cpd_valid_until', () => {
+    expect(svc.effectiveExpiryDate({
+      qualification_type: 'Coordinatore ISO 14731', expiry_date: '2030-01-01', cpd_valid_until: '2026-12-31',
+    })).toBe('2026-12-31');
+    expect(svc.effectiveExpiryDate({
+      qualification_type: 'Coordinatore ISO 14731', expiry_date: '2026-06-01', cpd_valid_until: '2028-01-01',
+    })).toBe('2026-06-01');
+  });
+
+  it('coordinatore 14731: se manca una delle due usa l\'altra, se mancano entrambe null', () => {
+    expect(svc.effectiveExpiryDate({ qualification_type: 'Coordinatore ISO 14731', expiry_date: null, cpd_valid_until: '2027-01-01' })).toBe('2027-01-01');
+    expect(svc.effectiveExpiryDate({ qualification_type: 'Coordinatore ISO 14731', expiry_date: '2027-02-02', cpd_valid_until: null })).toBe('2027-02-02');
+    expect(svc.effectiveExpiryDate({ qualification_type: 'Coordinatore ISO 14731' })).toBeNull();
+  });
+
+  it('accetta oggetti Date (colonne DATE di mssql)', () => {
+    const out = svc.effectiveExpiryDate({
+      qualification_type: 'Coordinatore ISO 14731',
+      expiry_date: new Date('2030-01-01'),
+      cpd_valid_until: new Date('2026-12-31'),
+    });
+    expect(new Date(out).toISOString().slice(0, 10)).toBe('2026-12-31');
+  });
+
+  it('altri tipi ignorano cpd_valid_until; i 9606/14732 restano sulla conferma semestrale', () => {
+    expect(svc.effectiveExpiryDate({ qualification_type: 'Operatore NDT UT Livello 2', expiry_date: '2030-01-01', cpd_valid_until: '2026-01-01' })).toBe('2030-01-01');
+    expect(svc.effectiveExpiryDate({
+      qualification_type: 'Saldatore ISO 9606-1', expiry_date: '2030-01-01', next_confirmation_due: '2026-12-01', cpd_valid_until: '2026-01-01',
+    })).toBe('2026-12-01');
+  });
+
+  it('isCoordinator14731Type', () => {
+    expect(svc.isCoordinator14731Type('Coordinatore ISO 14731')).toBe(true);
+    expect(svc.isCoordinator14731Type('Saldatore ISO 9606-1')).toBe(false);
+    expect(svc.isCoordinator14731Type(null)).toBe(false);
+  });
+
+  it('deriveQualificationStatus: CPD scaduto rende scaduta una qualifica valida', () => {
+    expect(svc.deriveQualificationStatus({
+      status: 'valida', qualification_type: 'Coordinatore ISO 14731', expiry_date: '2030-01-01', cpd_valid_until: '2026-01-01',
+    }, '2026-10-14')).toBe('scaduta');
+  });
+});
