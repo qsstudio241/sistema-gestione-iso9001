@@ -3,12 +3,13 @@
  * Tab: Tutti | Saldatori | NDT | Coordinatori | Operatori | Abilitazioni | Generiche
  */
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import apiService from "../services/apiService";
 import { useCompanyScope } from "../contexts/CompanyScopeContext";
 import QualificationForm from "./QualificationForm";
 import QualificationUploadButton from "../components/QualificationUploadButton";
 import ReprocessQueueBanner from "../components/ReprocessQueueBanner";
+import PendingIngestQueue from "../components/PendingIngestQueue";
 import CoverageVerifyPanel from "../components/CoverageVerifyPanel";
 import { formatDate } from "../utils/dateHelpers";
 import { ProtectedFileLink } from "../components/ProtectedFile";
@@ -38,14 +39,14 @@ const TABS = [
 ];
 
 // Colonne dinamiche per tab
-const TAB_COLUMNS = {
+export const TAB_COLUMNS = {
     iso9606_1: ["Persona", "Certificato", "Processo", "Spessore", "Posizioni", "Scadenza", "Azioni"],
-    iso9606_2: ["Persona", "Certificato", "Processo", "Materiale", "Scadenza", "Azioni"],
+    iso9606_2: ["Persona", "Certificato", "Processo", "Materiale", "Posizioni", "Scadenza", "Azioni"],
     iso14732:  ["Persona", "Certificato", "Processo", "Attrezzatura", "Scadenza", "Azioni"],
     ndt:       ["Persona", "Certificato", "Metodo", "Livello", "Schema", "Scadenza", "Azioni"],
     iso14731:  ["Persona", "Certificato", "Titolo (IWE/IWT/IWS)", "CPD fino a", "Azioni"],
     pes_pav:   ["Persona", "Certificato", "Tipo", "Ente", "Scadenza", "Azioni"],
-    salute_mansione: ["Persona", "Documento", "Tipo", "Ente", "Scadenza", "Azioni"],
+    salute_mansione: ["Persona", "Documento", "Tipo", "Ente", "Riferimento", "Scadenza", "Azioni"],
     generico:  ["Persona", "Certificato", "Tipo qualifica", "Ore", "Ente esame", "Scadenza", "Azioni"],
     tutti:     ["Stato", "Persona", "Tipo qualifica", "Certificato", "Scadenza", "Azioni"],
 };
@@ -340,10 +341,30 @@ export function QualRow({ q, tabKey, onEdit, onHardDelete, onRenew, onHistory, h
 
 // ── Componente principale ─────────────────────────────────────────────────────
 
-function QualificationsPage() {
-    const { companyId: companyScope, companies, scopeCompanyName } = useCompanyScope();
+/** Parametri di deep link (`?qualification_type=`, `?company_id=`, `?highlight=&section=`) letti una volta all'apertura. */
+export function parseDeepLink(search) {
+    const params = new URLSearchParams(search || "");
+    const typeRaw = String(params.get("qualification_type") || "").trim();
+    const tab = TABS.some((t) => t.key === typeRaw) ? typeRaw : "tutti";
+    const companyRaw = String(params.get("company_id") || "").trim();
+    const highlightRaw = String(params.get("highlight") || "").trim();
+    const section = String(params.get("section") || "").trim();
+    return {
+        tab,
+        companyId: /^\d{1,9}$/.test(companyRaw) ? companyRaw : "",
+        highlightId: /^\d{1,9}$/.test(highlightRaw) ? highlightRaw : "",
+        section: /^[a-z_-]{1,40}$/.test(section) ? section : "",
+    };
+}
 
-    const [activeTab,  setActiveTab]  = useState("tutti");
+function readDeepLink() {
+    return parseDeepLink(typeof window !== "undefined" ? window.location.search : "");
+}
+
+function QualificationsPage() {
+    const { companyId: companyScope, setCompanyId, locked, scopeReady, companies, scopeCompanyName } = useCompanyScope();
+
+    const [activeTab,  setActiveTab]  = useState(() => readDeepLink().tab);
     const [quals,      setQuals]      = useState([]);
     const [stats,      setStats]      = useState(null);
     const [loading,    setLoading]    = useState(true);
@@ -363,6 +384,9 @@ function QualificationsPage() {
 
     const [formOpen,    setFormOpen]    = useState(false);
     const [editingQual, setEditingQual] = useState(null);
+    const [formSection, setFormSection] = useState(undefined);
+    const [pendingQueueKey, setPendingQueueKey] = useState(0);
+    const [resolvedStaging, setResolvedStaging] = useState(null);
     const [hardDeleteId, setHardDeleteId] = useState(null);
 
     const setFilter = useCallback((key, val) => {
@@ -422,7 +446,46 @@ function QualificationsPage() {
         setEditingQual(null);
         setFormOpen(true);
     }
-    function handleEdit(q) { setEditingQual(q);    setFormOpen(true); }
+    function handleEdit(q) { setFormSection(undefined); setEditingQual(q);    setFormOpen(true); }
+    const refreshPendingQueue = useCallback(() => {
+        setPendingQueueKey((k) => k + 1);
+    }, []);
+    const handleIngestStagingChanged = useCallback((change) => {
+        if (change && change.stagingId != null) setResolvedStaging({ stagingId: change.stagingId, status: change.status });
+        loadData();
+        refreshPendingQueue();
+    }, [loadData, refreshPendingQueue]);
+
+    // Deep link da Scadenzario/Dashboard: azienda e scheda da aprire (una sola volta).
+    const deepLinkRef = useRef(readDeepLink());
+    const deepLinkDone = useRef({ company: false, highlight: false });
+    useEffect(() => {
+        const dl = deepLinkRef.current;
+        if (!scopeReady || deepLinkDone.current.company) return;
+        if (!dl.companyId || locked) {
+            deepLinkDone.current.company = true;
+            return;
+        }
+        // Utenti con ambito aziendale: scopeReady e' gia' true mentre l'elenco aziende si sta ancora caricando.
+        if (!companies || companies.length === 0) return;
+        deepLinkDone.current.company = true;
+        const known = (companies || []).some((c) => String(c.id || c.company_id) === dl.companyId);
+        if (known) setCompanyId(dl.companyId);
+    }, [scopeReady, locked, companies, setCompanyId]);
+
+    useEffect(() => {
+        const dl = deepLinkRef.current;
+        if (!scopeReady || !dl.highlightId || deepLinkDone.current.highlight) return;
+        deepLinkDone.current.highlight = true;
+        apiService.getQualification(dl.highlightId)
+            .then((q) => {
+                if (!q || !q.id) return;
+                setFormSection(dl.section || undefined);
+                setEditingQual(q);
+                setFormOpen(true);
+            })
+            .catch(() => setError("Qualifica indicata nel link non trovata o non accessibile."));
+    }, [scopeReady]);
     // onSaved = solo ricarica lista. Chiudere qui richiudeva la finestra
     // pochi secondi dopo l'apertura (auto-save). Stesso contratto di
     // ProjectsPage / EquipmentPage: chiude solo X / Chiudi.
@@ -439,6 +502,7 @@ function QualificationsPage() {
     }
 
     function handleRenew(q) {
+        setFormSection(undefined);
         setEditingQual({ ...q, _renew: true });
         setFormOpen(true);
     }
@@ -493,7 +557,8 @@ function QualificationsPage() {
                         companyId={companyScope}
                         companyName={scopeCompanyName}
                         activeTab={activeTab}
-                        onUploadComplete={loadData}
+                        onUploadComplete={handleIngestStagingChanged}
+                        resolvedStaging={resolvedStaging}
                     />
                     <button
                         type="button"
@@ -511,6 +576,7 @@ function QualificationsPage() {
             )}
 
             <ReprocessQueueBanner />
+            <PendingIngestQueue refreshKey={pendingQueueKey} onChanged={handleIngestStagingChanged} />
 
             <CoverageVerifyPanel
                 companyId={companyScope}
@@ -641,8 +707,9 @@ function QualificationsPage() {
                         editingQual?.company_name
                         || (!editingQual && companyScope ? scopeCompanyName : undefined)
                     }
+                    openSection={formSection}
                     onSaved={loadData}
-                    onClose={() => { setFormOpen(false); setEditingQual(null); }}
+                    onClose={() => { setFormOpen(false); setEditingQual(null); setFormSection(undefined); }}
                 />
             )}
 
