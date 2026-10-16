@@ -246,6 +246,37 @@ describe('aiPromptPrivacy', () => {
         expect(out.notes).toBe('Saldatore [NOME]');
     });
 
+    it('valori personali brevi di una parola non riscrivono i campi tecnici; nomi completi e identificativi si (Bugbot 50f1d7ee)', () => {
+        const out = redactPayloadForAi(
+            {
+                employer: 'TUV',
+                welder_name: 'Tig',
+                welder_id: '135',
+                welding_process: '135',
+                issuing_body: 'TUV',
+                standard_reference: 'ISO Tig 9606-1',
+                notes: 'TUV, Tig, 135',
+            },
+            { docType: 'patentino_saldatore' }
+        );
+        expect(out.welding_process).toBe('135');
+        expect(out.issuing_body).toBe('TUV');
+        expect(out.standard_reference).toBe('ISO Tig 9606-1');
+        expect(out.notes).toBe('[DATORE], [NOME], [ID_PERSONALE]');
+
+        const strong = redactPayloadForAi(
+            { certificate_number: 'ZZ-777/2024', welder_name: 'Neri Carlo', issuing_body: 'Rif ZZ-777/2024 Neri Carlo' },
+            { docType: 'patentino_saldatore' }
+        );
+        expect(strong.issuing_body).toBe('Rif [NUMERO_CERTIFICATO] [NOME]');
+
+        const diffs = redactFieldDiffsForAi(
+            { welding_process: { ai: '135', human: '141' } },
+            { docType: 'patentino_saldatore', known: [{ value: '135', placeholder: '[ID_PERSONALE]' }] }
+        );
+        expect(diffs.welding_process).toEqual({ ai: '135', human: '141' });
+    });
+
     it('frammenti di nome non sovrascrivono i campi tecnici; il nome completo si (Bugbot bcc270fd)', () => {
         const payload = {
             welder_name: 'Tig Marco',

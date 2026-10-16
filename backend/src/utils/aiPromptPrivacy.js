@@ -72,8 +72,8 @@ function normalizeKey(key) {
 }
 
 /**
- * Campi tecnici (processo, norma, ente, materiale, date...): qui si redige solo il valore personale COMPLETO,
- * mai i singoli frammenti di nome (3+ lettere), che potrebbero coincidere con una sigla di processo/norma/ente.
+ * Campi tecnici (processo, norma, ente, materiale, date...): qui non si sostituiscono frammenti di nome ne' valori
+ * personali brevi di una sola parola (es. `Tig`, `TUV`, `135`), che potrebbero coincidere con una sigla di processo/norma/ente.
  */
 const TECHNICAL_KEY_RE = new RegExp(
     '(^|_)(process|processo|standard|norma|norm|material|materiale|group|gruppo|body|ente|issuing|authority|'
@@ -85,8 +85,13 @@ function isTechnicalKey(key) {
     return TECHNICAL_KEY_RE.test(normalizeKey(key));
 }
 
+/** Nei campi tecnici restano valide solo le identita' inequivocabili: nome completo (piu' parole) o identificativo con cifre. */
+function isStrongKnown(k) {
+    return !k.token && (/\s/.test(k.value) || (/\d/.test(k.value) && k.value.length >= 5));
+}
+
 function knownForKey(key, known) {
-    return key != null && isTechnicalKey(key) ? known.filter((k) => !k.token) : known;
+    return key != null && isTechnicalKey(key) ? known.filter(isStrongKnown) : known;
 }
 
 /**
