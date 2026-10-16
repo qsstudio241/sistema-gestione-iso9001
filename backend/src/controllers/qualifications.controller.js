@@ -191,10 +191,12 @@ function parseCompanyIdParam(raw) {
  * Famiglia (tab) di ogni qualifica: una e una sola per riga, in ordine di priorita'. Lista e statistiche
  * filtrano sulla stessa espressione e "generico" e' il complemento, quindi ogni qualifica compare in
  * esattamente un tab specifico (oltre a "Tutti") e la somma dei tab = Totale. Le sigle di 2 lettere
- * (NDT VT/PT/MT/UT/RT/ET, PES, PAV) valgono solo come parola intera e in maiuscolo: niente match per
- * sottostringa in parole comuni ("Addetto antincendio", "Certificato di formazione").
+ * (NDT VT/PT/MT/UT/RT/ET) valgono solo come parola intera e in maiuscolo; PES e PAV come parola intera
+ * senza distinzione di maiuscole (un tipo "Abilitazione Pav" o "qualifica_pav" resta in PES/PAV).
+ * Niente match per sottostringa in parole comuni ("Addetto antincendio", "Pavimentazione").
  */
 const PADDED_TYPE_BIN = "(N' ' + q.qualification_type + N' ') COLLATE Latin1_General_BIN";
+const PADDED_TYPE_CI = "(N' ' + q.qualification_type + N' ') COLLATE Latin1_General_CI_AS";
 const QUALIFICATION_TAB_FAMILY_SQL = `(CASE
     WHEN q.qualification_type IN (${occupationalQualificationSqlInList()}) THEN 'salute_mansione'
     WHEN q.qualification_type LIKE '%14732%' THEN 'iso14732'
@@ -205,8 +207,8 @@ const QUALIFICATION_TAB_FAMILY_SQL = `(CASE
     WHEN q.qualification_type LIKE '%NDT%' OR q.qualification_type LIKE '%9712%'
       OR ${PADDED_TYPE_BIN} LIKE '%[^A-Za-z][VMPUER]T[^A-Za-z]%' THEN 'ndt'
     WHEN q.qualification_type LIKE '%CEI 11-27%'
-      OR ${PADDED_TYPE_BIN} LIKE '%[^A-Za-z]PES[^A-Za-z]%'
-      OR ${PADDED_TYPE_BIN} LIKE '%[^A-Za-z]PAV[^A-Za-z]%' THEN 'pes_pav'
+      OR ${PADDED_TYPE_CI} LIKE '%[^A-Za-z]PES[^A-Za-z]%'
+      OR ${PADDED_TYPE_CI} LIKE '%[^A-Za-z]PAV[^A-Za-z]%' THEN 'pes_pav'
     ELSE 'generico'
 END)`;
 const QUALIFICATION_TAB_FAMILIES = Object.freeze([
