@@ -283,7 +283,7 @@ describe("QualificationUploadButton — riconoscimento automatico del tipo per f
     await waitFor(() => expect(onUploadComplete).toHaveBeenCalledTimes(1));
   });
 
-  it("riga risolta dalla coda (resolvedStaging): il pannello non resta con «Rivedi campi» su una riga gia' scartata (Bugbot a2be23cf)", async () => {
+  it("riga risolta dalla coda (resolvedStaging): il pannello non resta con «Rivedi campi» su una riga già scartata (Bugbot a2be23cf)", async () => {
     const user = userEvent.setup();
     apiService.uploadQualificationsBatch.mockResolvedValueOnce({
       results: [pendingRes("a.pdf", 1, "cert_ndt"), pendingRes("b.pdf", 2, "cert_ndt")], uploaded: 0, total: 2,
