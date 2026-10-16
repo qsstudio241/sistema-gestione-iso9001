@@ -27,6 +27,7 @@ const ctx = {
     wpsCompanyId: null,
     historyById: null,
     nextWpsCompany: null,
+    nextWpsMissing: false,
 };
 
 jest.mock('../config/database', () => ({
@@ -176,8 +177,17 @@ function route(sql, params = {}) {
     if (/^(UPDATE|DELETE)\b/i.test(compact)) return emptySet();
     if (/^SELECT/i.test(compact)) {
         if (hiddenOrg || companyHidden(params)) return emptySet();
-        if (ctx.nextWpsCompany != null && /FROM welding_procedures/i.test(compact) && /@wps_id/.test(compact)) {
-            return { recordset: [{ id: Number(params.wps_id), company_id: ctx.nextWpsCompany }] };
+        if (/FROM welding_procedures/i.test(compact) && (/@wps_id/.test(compact) || /@wps\d+\b/.test(compact))) {
+            if (ctx.nextWpsMissing) return emptySet();
+            if (ctx.nextWpsCompany != null) {
+                const ids = [];
+                if (params.wps_id != null && params.wps_id !== '') ids.push(Number(params.wps_id));
+                Object.keys(params)
+                    .filter((key) => /^wps\d+$/.test(key))
+                    .sort()
+                    .forEach((key) => ids.push(Number(params[key])));
+                return { recordset: ids.map((id) => ({ id, company_id: ctx.nextWpsCompany })) };
+            }
         }
         if (ctx.historyById && /FROM qualifications/i.test(compact)) {
             const row = ctx.historyById[params.id];
@@ -606,6 +616,7 @@ describe('A4 company scope', () => {
         ctx.wpsCompanyId = null;
         ctx.historyById = null;
         ctx.nextWpsCompany = null;
+        ctx.nextWpsMissing = false;
         query.mockImplementation((sql, params) => Promise.resolve(route(sql, params || {})));
         getPool.mockImplementation(async () => makePool());
         if (!fs.existsSync(TEMP)) fs.writeFileSync(TEMP, '%PDF');
@@ -799,6 +810,66 @@ describe('A4 company scope', () => {
         expect(wrote).toBe(false);
     });
 
+    test('PUT WPQR — "1e2" non aggira il controllo: 400 e nessun UPDATE sulla WPS 100', async () => {
+        ctx.forceWpqrCompany = true;
+        ctx.wpqrCompanyId = null;
+        ctx.wpsCompanyId = ALLOWED;
+        ctx.nextWpsCompany = ALLOWED;
+        const res = mockRes();
+        await welding.updateWPQR({
+            user: userFor('ok'),
+            params: { id: '7' },
+            query: {},
+            body: { wps_id: '1e2' },
+        }, res);
+        expect(http(res)).toBe(400);
+        expect(bodyOf(res).code).toBe('VALIDATION_ERROR');
+        const wrote = query.mock.calls.some((call) => /^UPDATE/i.test(String(call[0]).trim()));
+        expect(wrote).toBe(false);
+        const lookedUp = query.mock.calls
+            .filter((call) => /FROM welding_procedures/i.test(String(call[0])) && /@wps_id/.test(String(call[0])))
+            .map((call) => call[1].wps_id);
+        expect(lookedUp).toEqual([]);
+    });
+
+    test('PUT WPQR — "12.5" non è un id e non aggiorna', async () => {
+        ctx.forceWpqrCompany = true;
+        ctx.wpqrCompanyId = null;
+        ctx.wpsCompanyId = ALLOWED;
+        const res = mockRes();
+        await welding.updateWPQR({
+            user: userFor('ok'),
+            params: { id: '7' },
+            query: {},
+            body: { wps_id: '12.5' },
+        }, res);
+        expect(http(res)).toBe(400);
+        expect(bodyOf(res).code).toBe('VALIDATION_ERROR');
+        const wrote = query.mock.calls.some((call) => /^UPDATE/i.test(String(call[0]).trim()));
+        expect(wrote).toBe(false);
+    });
+
+    test('PUT WPQR — la stringa "12" controlla e scrive la stessa WPS', async () => {
+        ctx.forceWpqrCompany = true;
+        ctx.wpqrCompanyId = null;
+        ctx.wpsCompanyId = ALLOWED;
+        ctx.nextWpsCompany = ALLOWED;
+        const res = mockRes();
+        await welding.updateWPQR({
+            user: userFor('ok'),
+            params: { id: '7' },
+            query: {},
+            body: { wps_id: '12' },
+        }, res);
+        expect(http(res)).toBe(200);
+        const lookedUp = query.mock.calls
+            .filter((call) => /FROM welding_procedures/i.test(String(call[0])) && /@wps_id/.test(String(call[0])))
+            .map((call) => call[1].wps_id);
+        expect(lookedUp).toEqual([12]);
+        const update = query.mock.calls.find((call) => /^UPDATE/i.test(String(call[0]).trim()));
+        expect(update[1].wps_id).toBe(12);
+    });
+
     test('PUT WPQR — sposta la scheda su una WPS della stessa azienda consentita', async () => {
         ctx.forceWpqrCompany = true;
         ctx.wpqrCompanyId = null;
@@ -814,6 +885,154 @@ describe('A4 company scope', () => {
         expect(http(res)).toBe(200);
         const wrote = query.mock.calls.some((call) => /^UPDATE/i.test(String(call[0]).trim()));
         expect(wrote).toBe(true);
+    });
+
+    test('PUT commessa — non collega una WPS di un\'altra azienda', async () => {
+        ctx.nextWpsCompany = OTHER_CO;
+        const res = mockRes();
+        await projects.updateProject({
+            user: userFor('ok'),
+            params: { id: '7' },
+            query: {},
+            body: { applicable_wps_ids: [99] },
+        }, res);
+        expect(http(res)).toBe(403);
+        expect(bodyOf(res).code).toBe('FORBIDDEN');
+        const wrote = query.mock.calls.some((call) => /^UPDATE/i.test(String(call[0]).trim()));
+        expect(wrote).toBe(false);
+    });
+
+    test('PUT commessa — WPS assente nell\'org è 404 e non aggiorna', async () => {
+        ctx.nextWpsMissing = true;
+        const res = mockRes();
+        await projects.updateProject({
+            user: userFor('ok'),
+            params: { id: '7' },
+            query: {},
+            body: { applicable_wps_ids: [99] },
+        }, res);
+        expect(http(res)).toBe(404);
+        expect(bodyOf(res).code).toBe('WPS_NOT_FOUND');
+        const wrote = query.mock.calls.some((call) => /^UPDATE/i.test(String(call[0]).trim()));
+        expect(wrote).toBe(false);
+    });
+
+    test('PUT commessa — "1e2" nella lista WPS è 400 e non aggiorna', async () => {
+        const res = mockRes();
+        await projects.updateProject({
+            user: userFor('ok'),
+            params: { id: '7' },
+            query: {},
+            body: { applicable_wps_ids: ['1e2'] },
+        }, res);
+        expect(http(res)).toBe(400);
+        expect(bodyOf(res).code).toBe('VALIDATION_ERROR');
+        const wrote = query.mock.calls.some((call) => /^UPDATE/i.test(String(call[0]).trim()));
+        expect(wrote).toBe(false);
+        const lookedUp = query.mock.calls.filter((call) => /FROM welding_procedures/i.test(String(call[0])));
+        expect(lookedUp).toHaveLength(0);
+    });
+
+    test('PUT commessa — collega una WPS della stessa azienda consentita', async () => {
+        ctx.nextWpsCompany = ALLOWED;
+        const res = mockRes();
+        await projects.updateProject({
+            user: userFor('ok'),
+            params: { id: '7' },
+            query: {},
+            body: { applicable_wps_ids: [12] },
+        }, res);
+        expect(http(res)).toBe(200);
+        const update = query.mock.calls.find((call) => /^UPDATE/i.test(String(call[0]).trim()));
+        expect(update[1].applicable_wps_ids).toBe('[12]');
+    });
+
+    test('POST commessa — non nasce già collegata a una WPS di un\'altra azienda', async () => {
+        ctx.nextWpsCompany = OTHER_CO;
+        const res = mockRes();
+        await projects.createProject({
+            user: userFor('ok'),
+            params: {},
+            query: {},
+            body: { project_code: 'P-9', company_id: ALLOWED, applicable_wps_ids: [99] },
+        }, res);
+        expect(http(res)).toBe(403);
+        expect(bodyOf(res).code).toBe('FORBIDDEN');
+        const wrote = query.mock.calls.some((call) => /INSERT\s+INTO\s+projects/i.test(String(call[0])));
+        expect(wrote).toBe(false);
+    });
+
+    test('POST commessa — WPS assente nell\'org è 404 e non inserisce', async () => {
+        ctx.nextWpsMissing = true;
+        const res = mockRes();
+        await projects.createProject({
+            user: userFor('ok'),
+            params: {},
+            query: {},
+            body: { project_code: 'P-9', company_id: ALLOWED, applicable_wps_ids: [99] },
+        }, res);
+        expect(http(res)).toBe(404);
+        expect(bodyOf(res).code).toBe('WPS_NOT_FOUND');
+        const wrote = query.mock.calls.some((call) => /INSERT\s+INTO\s+projects/i.test(String(call[0])));
+        expect(wrote).toBe(false);
+    });
+
+    test('POST saldatore commessa — non assegna una WPS di un\'altra azienda', async () => {
+        ctx.nextWpsCompany = OTHER_CO;
+        const res = mockRes();
+        await projects.addProjectWelder({
+            user: userFor('ok'),
+            params: { id: '7' },
+            query: {},
+            body: { qualification_id: 8, wps_id: 99 },
+        }, res);
+        expect(http(res)).toBe(403);
+        expect(bodyOf(res).code).toBe('FORBIDDEN');
+        const wrote = query.mock.calls.some((call) => /INSERT\s+INTO\s+project_welders/i.test(String(call[0])));
+        expect(wrote).toBe(false);
+    });
+
+    test('POST saldatore commessa — WPS assente nell\'org è 404 e non inserisce', async () => {
+        ctx.nextWpsMissing = true;
+        const res = mockRes();
+        await projects.addProjectWelder({
+            user: userFor('ok'),
+            params: { id: '7' },
+            query: {},
+            body: { qualification_id: 8, wps_id: 99 },
+        }, res);
+        expect(http(res)).toBe(404);
+        expect(bodyOf(res).code).toBe('WPS_NOT_FOUND');
+        const wrote = query.mock.calls.some((call) => /INSERT\s+INTO\s+project_welders/i.test(String(call[0])));
+        expect(wrote).toBe(false);
+    });
+
+    test('POST saldatore commessa — "1e2" non è un id e non inserisce', async () => {
+        const res = mockRes();
+        await projects.addProjectWelder({
+            user: userFor('ok'),
+            params: { id: '7' },
+            query: {},
+            body: { qualification_id: 8, wps_id: '1e2' },
+        }, res);
+        expect(http(res)).toBe(400);
+        expect(bodyOf(res).code).toBe('VALIDATION_ERROR');
+        const wrote = query.mock.calls.some((call) => /INSERT\s+INTO\s+project_welders/i.test(String(call[0])));
+        expect(wrote).toBe(false);
+    });
+
+    test('POST saldatore commessa — assegna una WPS della stessa azienda consentita', async () => {
+        ctx.nextWpsCompany = ALLOWED;
+        const res = mockRes();
+        await projects.addProjectWelder({
+            user: userFor('ok'),
+            params: { id: '7' },
+            query: {},
+            body: { qualification_id: 8, wps_id: 12 },
+        }, res);
+        expect(http(res)).toBe(201);
+        const insert = query.mock.calls.find((call) => /INSERT\s+INTO\s+project_welders/i.test(String(call[0])));
+        expect(insert[1].wid).toBe(12);
     });
 
     test('GET lista WPQR — include le schede senza company_id se la WPS è consentita', async () => {

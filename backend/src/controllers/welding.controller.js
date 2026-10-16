@@ -44,6 +44,20 @@ async function pushCompanyScope(user, alias, conditions, params, prefix) {
     }
 }
 
+/**
+ * Id intero positivo. parseInt("1e2") è 1 e parseFloat("1e2") è 100:
+ * lo stesso campo non può essere letto con due parser diversi.
+ */
+function strictPositiveInt(raw) {
+    if (typeof raw === 'number') {
+        if (!Number.isInteger(raw) || raw <= 0) return null;
+        return raw;
+    }
+    const text = String(raw).trim();
+    if (!/^[1-9]\d{0,8}$/.test(text)) return null;
+    return parseInt(text, 10);
+}
+
 /** WPQR senza company_id proprio appartiene all'azienda della WPS (COALESCE già usato in lista). */
 function wpqrScopeCompany(row) {
     if (!row) return null;
@@ -741,9 +755,10 @@ async function updateWPQR(req, res) {
         }
         if (await denyOutsideCompany(res, req.user, wpqrScopeCompany(existing.recordset[0]), 'write')) return;
 
+        let nextWpsId = null;
         if (req.body.wps_id !== undefined && req.body.wps_id !== null && req.body.wps_id !== '') {
-            const nextWpsId = parseInt(req.body.wps_id, 10);
-            if (!Number.isFinite(nextWpsId)) {
+            nextWpsId = strictPositiveInt(req.body.wps_id);
+            if (nextWpsId == null) {
                 return res.status(400).json({ error: 'wps_id non valido', code: 'VALIDATION_ERROR' });
             }
             const nextWps = await query(`
@@ -762,7 +777,7 @@ async function updateWPQR(req, res) {
         const params  = { id: parseInt(id) };
 
         const numericFields = new Set([
-            'wps_id', 'thickness_tested', 'thickness_min', 'thickness_max', 'diameter_min', 'diameter_max',
+            'thickness_tested', 'thickness_min', 'thickness_max', 'diameter_min', 'diameter_max',
             'throat_test_mm',
             'thickness_t1_min', 'thickness_t1_max', 'thickness_t2_min', 'thickness_t2_max',
         ]);
@@ -774,7 +789,9 @@ async function updateWPQR(req, res) {
             if (req.body[field] !== undefined) {
                 updates.push(`${field} = @${field}`);
                 const v = req.body[field];
-                if (numericFields.has(field)) {
+                if (field === 'wps_id') {
+                    params[field] = (v !== null && v !== '') ? nextWpsId : null;
+                } else if (numericFields.has(field)) {
                     params[field] = (v !== null && v !== '') ? parseFloat(v) : null;
                 } else if (booleanFields.has(field)) {
                     params[field] = (v === true || v === 1 || v === '1') ? 1 : 0;
