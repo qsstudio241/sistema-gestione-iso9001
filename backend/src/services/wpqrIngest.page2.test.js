@@ -55,6 +55,9 @@ describe('normalizzazione token', () => {
         expect(mapWpqrTestResult('--')).toBe('NA');
         expect(mapWpqrTestResult('failed')).toBeNull();
         expect(mapWpqrTestResult('KO')).toBeNull();
+        expect(mapWpqrTestResult('not acceptable')).toBeNull();
+        expect(mapWpqrTestResult('Unacceptable')).toBeNull();
+        expect(mapWpqrTestResult('non accettabile')).toBeNull();
     });
 });
 
@@ -233,7 +236,9 @@ describe('applyFieldReprocessUpdate — insert-if-empty passate', () => {
 
     it('scrive le passate se lo scope è wpqr_test_runs e la tabella è vuota', async () => {
         query.mockImplementation(async (sql) => {
-            if (sql.includes('SELECT id FROM wpqr_records')) return { recordset: [{ id: 7 }] };
+            if (sql.includes('FROM wpqr_records') && sql.includes('SELECT')) {
+                return { recordset: [{ id: 7, company_id: 2001 }] };
+            }
             if (sql.includes('OBJECT_ID')) return { recordset: [{ object_id: 1 }] };
             if (sql.includes('SELECT TOP 1 id FROM wpqr_test_runs')) return { recordset: [] };
             return { recordset: [], rowsAffected: [1] };
@@ -243,6 +248,25 @@ describe('applyFieldReprocessUpdate — insert-if-empty passate', () => {
         });
         expect(out.updated_fields).toContain('wpqr_test_runs');
         expect(query.mock.calls.some(([sql]) => sql.includes('INSERT INTO wpqr_test_runs'))).toBe(true);
+    });
+
+    it('legge test_runs nidificati sotto wpqr_test_runs e company_id dalla WPQR, non da fields', async () => {
+        query.mockImplementation(async (sql) => {
+            if (sql.includes('FROM wpqr_records') && sql.includes('SELECT')) {
+                return { recordset: [{ id: 7, company_id: 2001 }] };
+            }
+            if (sql.includes('OBJECT_ID')) return { recordset: [{ object_id: 1 }] };
+            if (sql.includes('SELECT TOP 1 id FROM wpqr_test_runs')) return { recordset: [] };
+            return { recordset: [], rowsAffected: [1] };
+        });
+        const out = await applyFieldReprocessUpdate(7, 1001, 'wpqr_test_runs', {
+            wpqr_test_runs: { test_runs: [{ run_label: '2', current_a: 90 }] },
+            company_id: 9999,
+        });
+        expect(out.updated_fields).toContain('wpqr_test_runs');
+        const insert = query.mock.calls.find(([sql]) => sql.includes('INSERT INTO wpqr_test_runs'));
+        expect(insert[1].company_id).toBe(2001);
+        expect(insert[1].run_label).toBe('2');
     });
 });
 

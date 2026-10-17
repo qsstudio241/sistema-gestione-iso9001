@@ -325,4 +325,42 @@ describe('runReprocessForField — end-to-end su wpqr_records', () => {
         fs.existsSync.mockRestore();
         fs.readFileSync.mockRestore();
     });
+
+    it('wpqr_test_runs: targetWpqrId sul parent e test_runs in cima ai fields di staging', async () => {
+        const fs = require('fs');
+        jest.spyOn(fs, 'existsSync').mockReturnValue(true);
+        jest.spyOn(fs, 'readFileSync').mockReturnValue(Buffer.from('%PDF'));
+
+        query.mockResolvedValueOnce({
+            recordset: [{ id: 7, organization_id: 1001, company_id: 20, certificate_file_url: '/uploads/wpqr7.pdf' }],
+        });
+        query.mockResolvedValueOnce({ recordset: [] });
+        query.mockResolvedValueOnce({ recordset: [] });
+
+        runDocumentIngest.mockResolvedValue({
+            text: 'WPQR test',
+            fields: { test_runs: [{ run_label: '1', current_a: 110 }] },
+            fieldConfidence: {},
+            extractionConfidence: 80,
+            aiModel: 'test',
+            warnings: [],
+        });
+        createStagingRecord.mockResolvedValue(1000);
+
+        const summary = await runReprocessForField('wpqr_test_runs', {});
+
+        expect(summary.proposalsCreated).toBe(1);
+        expect(createStagingRecord).toHaveBeenCalledWith(expect.objectContaining({
+            docType: 'wpqr',
+            targetWpqrId: 7,
+            targetQualificationId: null,
+            fieldScope: 'wpqr_test_runs',
+            fields: expect.objectContaining({
+                test_runs: [expect.objectContaining({ run_label: '1', current_a: 110 })],
+            }),
+        }));
+
+        fs.existsSync.mockRestore();
+        fs.readFileSync.mockRestore();
+    });
 });

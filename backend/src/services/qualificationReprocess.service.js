@@ -332,6 +332,10 @@ async function runReprocessForField(fieldKey, { orgId = null, limit = DEFAULT_RU
             const bundleSummary = isBundle
                 ? Object.entries(extractedValue).map(([k, v]) => `${k}=${v}`).join('; ')
                 : null;
+            const nestedRuns = extractedValue && typeof extractedValue === 'object' && !Array.isArray(extractedValue)
+                && Array.isArray(extractedValue.test_runs)
+                ? extractedValue.test_runs
+                : null;
 
             await createStagingRecord({
                 organizationId: row.organization_id,
@@ -344,6 +348,7 @@ async function runReprocessForField(fieldKey, { orgId = null, limit = DEFAULT_RU
                 fields: {
                     [fieldKey]: isBundle ? bundleSummary : extractedValue,
                     ...(isBundle ? extractedValue : {}),
+                    ...(nestedRuns ? { test_runs: nestedRuns } : {}),
                     ...adapter.buildStagingDisplayFields(reviewFields),
                 },
                 fieldConfidence: { [fieldKey]: pipeline.fieldConfidence?.[fieldKey] || (pipeline.aiModel ? 'ai' : 'rule_based') },
@@ -351,9 +356,9 @@ async function runReprocessForField(fieldKey, { orgId = null, limit = DEFAULT_RU
                 qualificationType: row.qualification_type || null,
                 userId: null,
                 aiModel: pipeline.aiModel || null,
-                // Solo UNA delle due colonne target è valorizzata, secondo la tabella.
-                targetQualificationId: table === 'qualifications' ? row.id : null,
-                targetWpqrId: table === 'wpqr_records' ? row.id : null,
+                // Target dalla colonna dell'adapter (wpqr_test_runs punta a target_wpqr_id sul parent).
+                targetQualificationId: adapter.targetIdColumn === 'target_qualification_id' ? row.id : null,
+                targetWpqrId: adapter.targetIdColumn === 'target_wpqr_id' ? row.id : null,
                 fieldScope: fieldKey,
             });
 

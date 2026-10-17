@@ -368,9 +368,16 @@ function findWpqrPage2Header(text) {
 function mapWpqrTestResult(raw) {
     if (isBlankToken(raw)) return null;
     const n = String(raw).trim().toLowerCase();
-    if (/accettabile|satisfactory|acceptable/.test(n) || /^(ok|pass|passed)$/.test(n)) return 'OK';
+    // Fallimenti prima dei positivi: «not acceptable» contiene «acceptable».
+    // Mai KO in colonna: fail → null (la WPQR resta da revisionare, non «conforme»).
+    if (/\b(?:unaccettabile|unacceptable)\b/.test(n)
+        || /\bnot\s+(?:acceptable|satisfactory)\b/.test(n)
+        || /\bnon\s+(?:accettabile|conforme|soddisfacente)\b/.test(n)
+        || /\b(?:ko|fail|failed)\b/.test(n)) {
+        return null;
+    }
     if (/not required|non richiesto/.test(n) || /^(n\.a\.|n\/a|na|n\.a|none|--|-)$/.test(n)) return 'NA';
-    if (/^(ko|fail|failed|not acceptable)$/.test(n)) return null;
+    if (/\b(?:accettabile|satisfactory|acceptable)\b/.test(n) || /^(ok|pass|passed)$/.test(n)) return 'OK';
     return String(raw).trim();
 }
 
@@ -406,6 +413,18 @@ function mapTestRun(raw) {
 function mapTestRuns(raw) {
     if (!Array.isArray(raw)) return [];
     return raw.map(mapTestRun).filter(Boolean);
+}
+
+/** Staging rielaborazione: `test_runs` in cima, oppure nidificato sotto `wpqr_test_runs`. */
+function testRunsFromReprocessFields(fields) {
+    if (!fields || typeof fields !== 'object') return [];
+    if (Array.isArray(fields.test_runs)) return mapTestRuns(fields.test_runs);
+    const wrapped = fields.wpqr_test_runs;
+    if (wrapped && typeof wrapped === 'object' && !Array.isArray(wrapped) && Array.isArray(wrapped.test_runs)) {
+        return mapTestRuns(wrapped.test_runs);
+    }
+    if (Array.isArray(wrapped)) return mapTestRuns(wrapped);
+    return [];
 }
 
 function mapPage2HeaderFields(f) {
@@ -1117,7 +1136,7 @@ async function applyFieldReprocessUpdate(targetWpqrId, organizationId, fieldScop
     }
 
     const check = await query(
-        'SELECT id FROM wpqr_records WHERE id=@id AND organization_id=@orgId',
+        'SELECT id, company_id FROM wpqr_records WHERE id=@id AND organization_id=@orgId',
         { id: targetWpqrId, orgId: organizationId },
     );
     if (!check.recordset.length) {
@@ -1125,17 +1144,18 @@ async function applyFieldReprocessUpdate(targetWpqrId, organizationId, fieldScop
         err.code = 'NOT_FOUND';
         throw err;
     }
+    const parentCompanyId = check.recordset[0].company_id;
 
     const updatable = [];
     const insertedKeys = [];
     for (const key of scopeFields) {
         if (key === 'wpqr_test_runs') {
-            const runs = mapTestRuns(fields && fields.test_runs);
+            const runs = testRunsFromReprocessFields(fields);
             if (runs.length) {
                 const inserted = await wpqrTestRuns.insertAiTestRunsIfEmpty({
                     wpqrId: targetWpqrId,
                     organizationId,
-                    companyId: fields && fields.company_id,
+                    companyId: parentCompanyId,
                     runs,
                 });
                 if (inserted > 0) insertedKeys.push(key);
