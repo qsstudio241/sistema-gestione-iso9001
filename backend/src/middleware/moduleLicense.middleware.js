@@ -11,8 +11,6 @@ const {
 } = require('../services/moduleLicense.service');
 
 async function userHasAnyLicensedModule(req, moduleKeys) {
-    const role = req.user?.role ? String(req.user.role).trim().toLowerCase() : '';
-    if (role === 'superadmin' || role === 'admin') return true;
     const keys = await getLicensedModuleKeysForOrg(req.user.organization_id);
     // Bridge ISO 3834 P0: 'saldatura' implica accesso a 'cnd' (vedi moduleLicense.service).
     const effectiveKeys = expandWithImpliedModuleKeys(keys);

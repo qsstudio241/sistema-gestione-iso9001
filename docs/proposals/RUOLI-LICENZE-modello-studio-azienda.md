@@ -109,7 +109,7 @@ Le chiamate sono sotto `/api/v1`:
 
 **Menu.** Se l’elenco è vuoto, il menu mostra tutti i moduli. Se è scritto, nasconde le voci che non ci sono. L’admin non salta questo filtro del menu, salvo due eccezioni già nel codice: il profilo di conformità e Material Compliance.
 
-**API.** Chi non è admin né superadmin, se chiama un modulo fuori dall’elenco effettivo, riceve 403 con codice `MODULE_NOT_LICENSED`. Admin e superadmin **oggi passano sempre**, anche se il modulo non è nell’elenco (`moduleLicense.middleware.js`). È il bypass che la decisione 6 toglie in un passo successivo. Non è già tolto.
+**API.** Chi chiama un modulo fuori dall’elenco effettivo riceve 403 con codice `MODULE_NOT_LICENSED`, admin e superadmin compresi (`moduleLicense.middleware.js`, file protetti, coda di ingest). Elenco vuoto o NULL resta tutti i moduli. Il superadmin continua a salvare le licenze. La decisione 6 è applicata sulle API.
 
 Su TEST (database `2026-06-18_SGQ_ISO9001`), il 17/10/2026:
 

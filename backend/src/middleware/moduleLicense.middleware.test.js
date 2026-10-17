@@ -58,13 +58,40 @@ describe("moduleLicense.middleware — bridge saldatura -> cnd", () => {
     expect(next).toHaveBeenCalledWith();
   });
 
-  it('admin/superadmin bypassano sempre la verifica licenza', async () => {
+  it('admin con elenco scritto senza il modulo riceve 403', async () => {
+    getLicensedModuleKeysForOrg.mockResolvedValue(['audit', 'nc']);
+    const { req, res, next } = buildReqRes(1004, 'admin');
+
+    await requireLicensedModule('saldatura')(req, res, next);
+
+    expect(getLicensedModuleKeysForOrg).toHaveBeenCalledWith(1004);
+    expect(next).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      code: 'MODULE_NOT_LICENSED',
+      module: 'saldatura',
+    }));
+  });
+
+  it('superadmin con elenco scritto senza il modulo riceve 403', async () => {
+    getLicensedModuleKeysForOrg.mockResolvedValue(['audit', 'nc']);
     const { req, res, next } = buildReqRes(1004, 'superadmin');
 
-    await requireLicensedModule('cnd')(req, res, next);
+    await requireLicensedModule('saldatura')(req, res, next);
+
+    expect(next).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(403);
+  });
+
+  it('admin passa se l\'elenco effettivo contiene il modulo (vuoto/NULL = tutti)', async () => {
+    const { KNOWN_MODULE_KEYS } = jest.requireActual('../services/moduleLicense.service');
+    getLicensedModuleKeysForOrg.mockResolvedValue([...KNOWN_MODULE_KEYS]);
+    const { req, res, next } = buildReqRes(1005, 'admin');
+
+    await requireLicensedModule('saldatura')(req, res, next);
 
     expect(next).toHaveBeenCalledWith();
-    expect(getLicensedModuleKeysForOrg).not.toHaveBeenCalled();
+    expect(res.status).not.toHaveBeenCalled();
   });
 });
 
