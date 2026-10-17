@@ -1224,6 +1224,9 @@ export default function ContractReviewPage() {
         gapReport = null;
       }
       const c = detail.case || {};
+      const approvedEvent = (detail.history || [])
+        .filter((h) => h.to_status === 'APPROVED')
+        .slice(-1)[0];
       await exportContractReviewChecklistDocx({
         caseMeta: {
           id: c.id || caseId,
@@ -1232,6 +1235,8 @@ export default function ContractReviewPage() {
           status: c.status,
           commercial_customer_name: c.commercial_customer_name,
           company_name: companyLabel(c.company_id, companiesById) || '',
+          compiler_name: user?.full_name || '',
+          approved_at: approvedEvent?.created_at || '',
         },
         checklist: detail.checklist,
         gapReport,
