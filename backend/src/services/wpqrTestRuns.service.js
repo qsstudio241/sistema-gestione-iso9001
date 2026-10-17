@@ -358,7 +358,14 @@ function requireTenant(organizationId) {
 async function assertWpqrCompany(user, wpqr, level) {
     if (!user) return;
     const accessList = await ensureCompanyAccessLoaded(user);
-    if (!hasCompanyAccessRows(accessList)) return;
+    if (!hasCompanyAccessRows(accessList)) {
+        if (level !== 'write') return;
+        const denied = await assertMutatingAllowed(user, {});
+        if (denied) {
+            throw new TestRunsError(denied.status, denied.body.code || 'FORBIDDEN', denied.body.error);
+        }
+        return;
+    }
     const companyId = (wpqr.company_id != null && wpqr.company_id !== '')
         ? wpqr.company_id
         : wpqr.wps_company_id;
