@@ -151,7 +151,7 @@ async function listAttachments(req, res) {
 
         const { joinSql, orgClause, rbacClause, scopeParams } = await attachmentScope(req.user);
 
-        let whereConditions = [orgClause, 'att.deleted_at IS NULL'];
+        let whereConditions = [orgClause, 'att.deleted_at IS NULL', '(att.nc_id IS NULL OR nc.deleted_at IS NULL)'];
         let params = { organization_id, limit: parseInt(limit), offset, ...scopeParams };
 
         if (audit_id) {

@@ -1257,9 +1257,12 @@ async function deleteNonConformity(req, res) {
 
         // Delete NC (CASCADE elimina anche attachments)
         await query(`
-            UPDATE non_conformities
+            UPDATE nc
             SET deleted_at = SYSUTCDATETIME(), deleted_by = @actor_user_id
-            WHERE nc_id = @id AND organization_id = @organization_id AND deleted_at IS NULL
+            FROM non_conformities nc
+            LEFT JOIN audits a ON a.audit_id = nc.audit_id
+            WHERE nc.nc_id = @id AND nc.deleted_at IS NULL
+              AND COALESCE(nc.organization_id, a.organization_id) = @organization_id
         `, { id: parseInt(id), organization_id, actor_user_id: req.user.user_id });
         await query(`
             UPDATE nc_actions
@@ -1267,7 +1270,9 @@ async function deleteNonConformity(req, res) {
             WHERE nc_id = @id AND deleted_at IS NULL
               AND EXISTS (
                 SELECT 1 FROM non_conformities nc
-                WHERE nc.nc_id = nc_actions.nc_id AND nc.organization_id = @organization_id
+                LEFT JOIN audits a ON a.audit_id = nc.audit_id
+                WHERE nc.nc_id = nc_actions.nc_id
+                  AND COALESCE(nc.organization_id, a.organization_id) = @organization_id
               )
         `, { id: parseInt(id), organization_id, actor_user_id: req.user.user_id });
         await query(`
@@ -1276,7 +1281,9 @@ async function deleteNonConformity(req, res) {
             WHERE nc_id = @id AND deleted_at IS NULL
               AND EXISTS (
                 SELECT 1 FROM non_conformities nc
-                WHERE nc.nc_id = attachments.nc_id AND nc.organization_id = @organization_id
+                LEFT JOIN audits a ON a.audit_id = nc.audit_id
+                WHERE nc.nc_id = attachments.nc_id
+                  AND COALESCE(nc.organization_id, a.organization_id) = @organization_id
               )
         `, { id: parseInt(id), organization_id, actor_user_id: req.user.user_id });
         await logEntityChange({
@@ -1452,6 +1459,10 @@ async function listNcActions(req, res) {
             FROM nc_actions a
             LEFT JOIN users u ON a.created_by = u.user_id
             WHERE a.nc_id = @id AND a.deleted_at IS NULL
+              AND EXISTS (
+                SELECT 1 FROM non_conformities nc
+                WHERE nc.nc_id = a.nc_id AND nc.deleted_at IS NULL
+              )
             ORDER BY a.created_at ASC
         `, { id: parseInt(id) });
 
@@ -1994,8 +2005,9 @@ async function undoPushAuditToNcRegister(req, res) {
         const eligibleRes = await query(`
             SELECT nc.nc_id
             FROM non_conformities nc
+            LEFT JOIN audits a ON a.audit_id = nc.audit_id
             WHERE nc.audit_id = @audit_id
-              AND nc.organization_id = @organization_id
+              AND COALESCE(nc.organization_id, a.organization_id) = @organization_id
               AND nc.deleted_at IS NULL
               AND nc.source_type IN ('audit_nc', 'audit_oss')
               AND nc.status = 'open'
@@ -2020,10 +2032,24 @@ async function undoPushAuditToNcRegister(req, res) {
         await query(`UPDATE pending_issues SET nc_id = NULL WHERE nc_id IN (${idList})`);
 
         // Elimina le NC
-        const delRes = await query(`
-            UPDATE non_conformities
+        await query(`
+            UPDATE nc
             SET deleted_at = SYSUTCDATETIME(), deleted_by = @actor_user_id
-            WHERE nc_id IN (${idList}) AND organization_id = @organization_id AND deleted_at IS NULL
+            FROM non_conformities nc
+            LEFT JOIN audits a ON a.audit_id = nc.audit_id
+            WHERE nc.nc_id IN (${idList}) AND nc.deleted_at IS NULL
+              AND COALESCE(nc.organization_id, a.organization_id) = @organization_id
+        `, { actor_user_id: user_id, organization_id });
+        await query(`
+            UPDATE attachments
+            SET deleted_at = SYSUTCDATETIME(), deleted_by = @actor_user_id
+            WHERE nc_id IN (${idList}) AND deleted_at IS NULL
+              AND EXISTS (
+                SELECT 1 FROM non_conformities nc
+                LEFT JOIN audits a ON a.audit_id = nc.audit_id
+                WHERE nc.nc_id = attachments.nc_id
+                  AND COALESCE(nc.organization_id, a.organization_id) = @organization_id
+              )
         `, { actor_user_id: user_id, organization_id });
 
         // Aggiorna contatore audit

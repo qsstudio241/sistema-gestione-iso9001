@@ -342,7 +342,8 @@ async function findWpqrInTenant(wpqrId, organizationId) {
          FROM wpqr_records wq
          LEFT JOIN welding_procedures w
            ON w.id = wq.wps_id AND w.organization_id = wq.organization_id
-         WHERE wq.id = @wpqr_id AND wq.organization_id = @organization_id AND wq.deleted_at IS NULL`,
+         WHERE wq.id = @wpqr_id AND wq.organization_id = @organization_id AND wq.deleted_at IS NULL
+           AND (wq.wps_id IS NULL OR w.deleted_at IS NULL)`,
         { wpqr_id: wpqrId, organization_id: organizationId }
     );
     return r.recordset.length ? r.recordset[0] : null;
@@ -389,8 +390,9 @@ async function listTestRuns({ wpqrId, organizationId, user }) {
 }
 
 /**
- * Replace-set in transazione: cancella le passate della WPQR e inserisce quelle ricevute.
- * Tutto o niente: un errore a metà annulla anche la cancellazione.
+ * Replace-set in transazione: sostituisce le passate attive della WPQR.
+ * Non è l'Elimina: le righe sostituite escono dal set e non finiscono nel cestino,
+ * altrimenti un Ripristina le rimetterebbe accanto a quelle nuove.
  */
 async function replaceTestRuns({ wpqrId, organizationId, runs, user }) {
     requireTenant(organizationId);
@@ -428,9 +430,9 @@ async function replaceTestRuns({ wpqrId, organizationId, runs, user }) {
             return request.query(sqlText);
         };
         await run(
-            `UPDATE wpqr_test_runs SET deleted_at = SYSUTCDATETIME(), deleted_by = @actor_user_id
+            `DELETE FROM wpqr_test_runs
              WHERE wpqr_id = @wpqr_id AND organization_id = @organization_id AND deleted_at IS NULL`,
-            { wpqr_id: wpqrId, organization_id: organizationId, actor_user_id: actorUserId }
+            { wpqr_id: wpqrId, organization_id: organizationId }
         );
         const columns = ['organization_id', 'company_id', 'wpqr_id', ...WRITABLE_COLUMNS, 'created_at', 'updated_at'];
         const values = [

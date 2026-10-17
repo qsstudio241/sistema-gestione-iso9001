@@ -48,6 +48,14 @@ function makeDb({ tables = ['wpqr_test_runs', 'wps_wpqr_links'], failOnInsert = 
             const rows = db.runs.filter((r) => r.wpqr_id === params.wpqr_id && !r.deleted_at && (!scoped(text) || r.organization_id === params.organization_id));
             return { recordset: rows };
         }
+        if (/^DELETE FROM wpqr_test_runs/.test(text)) {
+            db.runs = db.runs.filter((r) => {
+                const sameWpqr = params.wpqr_id != null ? r.wpqr_id === params.wpqr_id : true;
+                const drop = sameWpqr && !r.deleted_at && (!scoped(text) || r.organization_id === params.organization_id);
+                return !drop;
+            });
+            return { recordset: [] };
+        }
         if (/^UPDATE wpqr_test_runs SET deleted_at/.test(text)) {
             db.runs.forEach((r) => {
                 const sameWpqr = params.wpqr_id != null
@@ -243,9 +251,11 @@ describe('replaceTestRuns', () => {
             expect(s.params.wpqr_id).toBe(10);
         });
         expect(inserts[1].params.run_no).toBe(3);
-        const del = db.statements.find((s) => /^UPDATE wpqr_test_runs SET deleted_at/.test(s.text));
+        const del = db.statements.find((s) => /^DELETE FROM wpqr_test_runs/.test(s.text));
         expect(del.text).toContain('organization_id = @organization_id');
+        expect(del.text).not.toContain('SET deleted_at');
         expect(del.tx).toBe(true);
+        expect(db.runs.some((r) => r.id === 1)).toBe(false);
         expect(db.runs.some((r) => r.id === 2 && !r.deleted_at)).toBe(true);
         const audit = db.statements.find((s) => /INSERT INTO entity_change_log/.test(s.text));
         expect(audit.params.action_type).toBe('updated');
@@ -297,7 +307,7 @@ describe('replaceTestRuns', () => {
         const { db } = makeDb();
         const out = await svc.replaceTestRuns({ wpqrId: 10, organizationId: ORG_A, runs: [] });
         expect(out.runs).toEqual([]);
-        expect(db.runs.find((r) => r.id === 1).deleted_at).toBeTruthy();
+        expect(db.runs.find((r) => r.id === 1)).toBeUndefined();
         expect(db.runs.find((r) => r.id === 2).deleted_at).toBeFalsy();
     });
 

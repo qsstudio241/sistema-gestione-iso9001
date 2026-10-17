@@ -306,6 +306,96 @@ async function loadTrashRow(entity, id, organizationId) {
     return result.recordset?.[0] || null;
 }
 
+const NC_ORG = 'COALESCE(nc.organization_id, au.organization_id) = @organization_id';
+
+/** Il figlio non torna in elenco finché il padre è nel cestino. */
+async function parentStillTrashed(entity, id, organizationId) {
+    const sqlByEntity = {
+        wpqr_records: `SELECT w.deleted_at AS parent_deleted
+            FROM wpqr_records t
+            INNER JOIN welding_procedures w ON w.id = t.wps_id AND w.organization_id = t.organization_id
+            WHERE t.id = @id AND t.organization_id = @organization_id`,
+        wpqr_test_runs: `SELECT COALESCE(wq.deleted_at, w.deleted_at) AS parent_deleted
+            FROM wpqr_test_runs t
+            INNER JOIN wpqr_records wq ON wq.id = t.wpqr_id AND wq.organization_id = t.organization_id
+            LEFT JOIN welding_procedures w ON w.id = wq.wps_id AND w.organization_id = wq.organization_id
+            WHERE t.id = @id AND t.organization_id = @organization_id`,
+        wps_wpqr_links: `SELECT w.deleted_at AS parent_deleted
+            FROM wps_wpqr_links t
+            INNER JOIN welding_procedures w ON w.id = t.wps_id AND w.organization_id = t.organization_id
+            WHERE t.id = @id AND t.organization_id = @organization_id`,
+        wps_welders: `SELECT w.deleted_at AS parent_deleted
+            FROM wps_welders t
+            INNER JOIN welding_procedures w ON w.id = t.wps_id AND w.organization_id = t.organization_id
+            WHERE t.id = @id AND t.organization_id = @organization_id`,
+        project_welders: `SELECT p.deleted_at AS parent_deleted
+            FROM project_welders t
+            INNER JOIN projects p ON p.id = t.project_id AND p.organization_id = t.organization_id
+            WHERE t.id = @id AND t.organization_id = @organization_id`,
+        nc_actions: `SELECT nc.deleted_at AS parent_deleted
+            FROM nc_actions t
+            INNER JOIN non_conformities nc ON nc.nc_id = t.nc_id
+            LEFT JOIN audits au ON au.audit_id = nc.audit_id
+            WHERE t.action_id = @id AND ${NC_ORG}`,
+    };
+    const sql = entity === 'attachments'
+        ? `SELECT nc.deleted_at AS parent_deleted
+            FROM attachments t
+            INNER JOIN non_conformities nc ON nc.nc_id = t.nc_id
+            LEFT JOIN audits au ON au.audit_id = nc.audit_id
+            WHERE t.attachment_id = @id AND t.nc_id IS NOT NULL AND ${NC_ORG}`
+        : sqlByEntity[entity];
+    if (!sql) return false;
+    const result = await query(sql, { id, organization_id: organizationId });
+    return Boolean(result.recordset?.[0]?.parent_deleted);
+}
+
+function childRestoreSql(entity) {
+    if (entity === 'non_conformities') {
+        return [
+            `UPDATE a SET deleted_at = NULL, deleted_by = NULL
+             FROM nc_actions a
+             INNER JOIN non_conformities nc ON nc.nc_id = a.nc_id
+             LEFT JOIN audits au ON au.audit_id = nc.audit_id
+             WHERE a.nc_id = @id AND a.deleted_at IS NOT NULL AND ${NC_ORG}`,
+            `UPDATE att SET deleted_at = NULL, deleted_by = NULL
+             FROM attachments att
+             INNER JOIN non_conformities nc ON nc.nc_id = att.nc_id
+             LEFT JOIN audits au ON au.audit_id = nc.audit_id
+             WHERE att.nc_id = @id AND att.deleted_at IS NOT NULL AND ${NC_ORG}`,
+        ];
+    }
+    if (entity === 'welding_procedures') {
+        return [
+            `UPDATE wpqr_records SET deleted_at = NULL, deleted_by = NULL
+             WHERE wps_id = @id AND organization_id = @organization_id AND deleted_at IS NOT NULL`,
+            `UPDATE r SET deleted_at = NULL, deleted_by = NULL
+             FROM wpqr_test_runs r
+             INNER JOIN wpqr_records wq ON wq.id = r.wpqr_id AND wq.organization_id = r.organization_id
+             WHERE wq.wps_id = @id AND r.organization_id = @organization_id AND r.deleted_at IS NOT NULL`,
+            `UPDATE wps_wpqr_links SET deleted_at = NULL, deleted_by = NULL
+             WHERE wps_id = @id AND organization_id = @organization_id AND deleted_at IS NOT NULL`,
+            `UPDATE wps_welders SET deleted_at = NULL, deleted_by = NULL
+             WHERE wps_id = @id AND organization_id = @organization_id AND deleted_at IS NOT NULL`,
+        ];
+    }
+    if (entity === 'projects') {
+        return [
+            `UPDATE project_welders SET deleted_at = NULL, deleted_by = NULL
+             WHERE project_id = @id AND organization_id = @organization_id AND deleted_at IS NOT NULL`,
+        ];
+    }
+    if (entity === 'wpqr_records') {
+        return [
+            `UPDATE wpqr_test_runs SET deleted_at = NULL, deleted_by = NULL
+             WHERE wpqr_id = @id AND organization_id = @organization_id AND deleted_at IS NOT NULL`,
+            `UPDATE wps_wpqr_links SET deleted_at = NULL, deleted_by = NULL
+             WHERE wpqr_id = @id AND organization_id = @organization_id AND deleted_at IS NOT NULL`,
+        ];
+    }
+    return [];
+}
+
 async function restoreTrash(req, res) {
     try {
         if (!isTrashAdmin(req.user)) return forbid(res);
@@ -330,6 +420,12 @@ async function restoreTrash(req, res) {
         if (denied) return sendAccessDenied(res, denied);
         if (!row.deleted_at) {
             return res.status(409).json({ error: 'Il record non è nel cestino', code: 'NOT_DELETED' });
+        }
+        if (await parentStillTrashed(entity, id, organizationId)) {
+            return res.status(409).json({
+                error: 'Il record padre è ancora nel cestino. Ripristina prima quello.',
+                code: 'PARENT_IN_TRASH',
+            });
         }
 
         const spec = ENTITIES[entity];
@@ -358,6 +454,9 @@ async function restoreTrash(req, res) {
             organization_id: organizationId,
             actor_user_id: req.user.user_id,
         });
+        for (const childSql of childRestoreSql(entity)) {
+            await query(childSql, { id, organization_id: organizationId });
+        }
         await logEntityChange({
             organizationId,
             entityTable: spec ? spec.table : entity,

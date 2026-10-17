@@ -332,6 +332,7 @@ IF OBJECT_ID(N'dbo.qualifications', N'U') IS NOT NULL
         SELECT 1 FROM sys.indexes
         WHERE name = N'UX_qualif_org_company_cert_person_active'
           AND object_id = OBJECT_ID(N'dbo.qualifications')
+          AND (has_filter = 0 OR filter_definition NOT LIKE N'%deleted_at%')
    )
 BEGIN
     DROP INDEX UX_qualif_org_company_cert_person_active ON dbo.qualifications;

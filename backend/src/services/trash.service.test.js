@@ -152,4 +152,37 @@ describe('cestino', () => {
         expect(restoreSql).toContain('@organization_id');
         expect(restoreSql).not.toMatch(/WHERE attachment_id = @id AND deleted_at IS NOT NULL\s*$/);
     });
+
+    it('il ripristino di una WPS riporta anche WPQR, passate, link e saldatori', async () => {
+        query.mockImplementation(async (sql) => {
+            if (/INSERT INTO entity_change_log/.test(sql) || /SET deleted_at = NULL/.test(sql)) return { recordset: [] };
+            return { recordset: [{ id: 6, company_id: 5, deleted_at: '2026-10-17T00:00:00Z', status: 'attiva', title: 'WPS-1' }] };
+        });
+        const res = resMock();
+        await restoreTrash({
+            user: { role: 'admin', organization_id: 1, user_id: 9, company_access: [] },
+            params: { entity: 'welding_procedures', id: '6' },
+        }, res);
+        expect(res.statusCode).toBe(200);
+        const sqls = query.mock.calls.map((call) => String(call[0]));
+        expect(sqls.some((sql) => /UPDATE wpqr_records SET deleted_at = NULL/.test(sql) && sql.includes('organization_id = @organization_id'))).toBe(true);
+        expect(sqls.some((sql) => /UPDATE r SET deleted_at = NULL/.test(sql))).toBe(true);
+        expect(sqls.some((sql) => /UPDATE wps_wpqr_links SET deleted_at = NULL/.test(sql))).toBe(true);
+        expect(sqls.some((sql) => /UPDATE wps_welders SET deleted_at = NULL/.test(sql))).toBe(true);
+    });
+
+    it('non ripristina una WPQR se la WPS è ancora nel cestino', async () => {
+        query.mockImplementation(async (sql) => {
+            if (/parent_deleted/.test(sql)) return { recordset: [{ parent_deleted: '2026-10-17T00:00:00Z' }] };
+            return { recordset: [{ id: 3, company_id: 5, deleted_at: '2026-10-17T00:00:00Z', status: 'approvata', title: 'WPQR-1' }] };
+        });
+        const res = resMock();
+        await restoreTrash({
+            user: { role: 'admin', organization_id: 1, user_id: 9, company_access: [] },
+            params: { entity: 'wpqr_records', id: '3' },
+        }, res);
+        expect(res.statusCode).toBe(409);
+        expect(res.body.code).toBe('PARENT_IN_TRASH');
+        expect(query.mock.calls.some((call) => /SET deleted_at = NULL/.test(String(call[0])))).toBe(false);
+    });
 });

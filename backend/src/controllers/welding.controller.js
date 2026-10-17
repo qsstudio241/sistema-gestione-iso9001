@@ -545,7 +545,11 @@ async function listWPQR(req, res) {
         } = req.query;
 
         const offset = (parseInt(page) - 1) * parseInt(limit);
-        const conditions = ['wq.organization_id = @organization_id', 'wq.deleted_at IS NULL'];
+        const conditions = [
+            'wq.organization_id = @organization_id',
+            'wq.deleted_at IS NULL',
+            '(wq.wps_id IS NULL OR w.deleted_at IS NULL)',
+        ];
         const params = { organization_id, limit: parseInt(limit), offset };
 
         if (company_id != null && company_id !== '') {
@@ -624,6 +628,7 @@ async function getWPQR(req, res) {
             FROM wpqr_records wq
             LEFT JOIN welding_procedures w ON wq.wps_id = w.id
             WHERE wq.id = @id AND wq.organization_id = @organization_id
+              AND (wq.wps_id IS NULL OR w.deleted_at IS NULL)
         `, { id: parseInt(id), organization_id });
 
         if (result.recordset.length === 0) {
@@ -1018,7 +1023,7 @@ async function listWpsWelders(req, res) {
 
         const wpsCheck = await query(`
             SELECT id, company_id FROM welding_procedures
-            WHERE id = @id AND organization_id = @organization_id
+            WHERE id = @id AND organization_id = @organization_id AND deleted_at IS NULL
         `, { id: parseInt(id), organization_id });
 
         if (wpsCheck.recordset.length === 0) {
@@ -1060,7 +1065,7 @@ async function assignWpsWelder(req, res) {
         // Verifica WPS appartenga alla stessa org
         const wpsCheck = await query(`
             SELECT id, company_id FROM welding_procedures
-            WHERE id = @id AND organization_id = @organization_id
+            WHERE id = @id AND organization_id = @organization_id AND deleted_at IS NULL
         `, { id: parseInt(id), organization_id });
 
         if (wpsCheck.recordset.length === 0) {
@@ -1165,7 +1170,11 @@ async function getWPQRStats(req, res) {
         const { company_id } = req.query;
 
         const params = { organization_id };
-        const conditions = ['wq.organization_id = @organization_id', 'wq.deleted_at IS NULL'];
+        const conditions = [
+            'wq.organization_id = @organization_id',
+            'wq.deleted_at IS NULL',
+            '(wq.wps_id IS NULL OR w.deleted_at IS NULL)',
+        ];
         if (company_id != null && company_id !== '') {
             if (await denyOutsideCompany(res, req.user, company_id, 'read')) return;
         }
@@ -1188,6 +1197,7 @@ async function getWPQRStats(req, res) {
             LEFT JOIN welding_procedures w ON wq.wps_id = w.id
             WHERE wq.organization_id = @organization_id
               AND wq.deleted_at IS NULL
+              AND (wq.wps_id IS NULL OR w.deleted_at IS NULL)
               AND (wq.status IS NULL OR wq.status != 'revocata')
               ${companyClause}
         `, params);

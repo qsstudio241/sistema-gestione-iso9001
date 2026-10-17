@@ -69,6 +69,7 @@ describe('migrazione 176 — slot unico e cestino', () => {
         const path = require('path');
         const sql = fs.readFileSync(path.resolve(__dirname, '../../../database/migrations/176_soft_delete_columns.sql'), 'utf8');
         expect(sql).toContain('UX_qualif_org_company_cert_person_active');
+        expect(sql).toContain('filter_definition NOT LIKE N\'%deleted_at%\'');
         expect(sql).toContain("AND deleted_at IS NULL");
         expect(sql).toContain('UX_wps_wpqr_links_pair_active');
         expect(sql).toContain('WHERE deleted_at IS NULL');

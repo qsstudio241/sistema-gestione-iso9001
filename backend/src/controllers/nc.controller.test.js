@@ -521,7 +521,10 @@ describe('deleteNonConformity — scope organizzazione', () => {
         await ctrl.deleteNonConformity(req, res);
         const updates = query.mock.calls.map((call) => String(call[0])).filter((sql) => /SET deleted_at/.test(sql));
         expect(updates).toHaveLength(3);
-        updates.forEach((sql) => expect(sql).toContain('@organization_id'));
+        updates.forEach((sql) => {
+            expect(sql).toContain('@organization_id');
+            expect(sql).toContain('COALESCE(nc.organization_id, a.organization_id)');
+        });
         expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
     });
 });
