@@ -727,6 +727,8 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
     }, [form.inspector, form.report_type, form.company_id, eligibilityNonce]);
 
     const gateReasonsText = (inspectorGate.reasons || []).filter(Boolean).join(" ");
+    const inspectorCandidates = inspectorGate.candidates || [];
+    const inspectorListed = inspectorCandidates.some((c) => c.person_name === form.inspector);
     const canComplete = !inspectorGate.loading && inspectorGate.ok;
     const completeTitle = inspectorGate.loading
         ? "Verifica patentino ISO 9712 in corso\u2026"
@@ -1529,26 +1531,41 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
                                     <input type="text" value={form.responsible} onChange={e => set("responsible", e.target.value)} placeholder="Nome responsabile" />
                                 </div>
                                 <div className="ndt-form-group">
-                                    <label>
+                                    <label htmlFor="ndt-inspector">
                                         {"L\u2019Ispettore"}
                                         {form.inspector === currentUserName && currentUserName && (
                                             <span className="eq-computed-label"> (utente corrente)</span>
                                         )}
                                     </label>
-                                    <input
-                                        type="text"
-                                        list="ndt-inspector-candidates"
-                                        value={form.inspector}
+                                    <select
+                                        id="ndt-inspector"
+                                        value={form.inspector || ""}
                                         onChange={e => set("inspector", e.target.value)}
-                                        placeholder="Nome ispettore (patentino 9712)"
-                                    />
-                                    <datalist id="ndt-inspector-candidates">
-                                        {(inspectorGate.candidates || []).map((c) => (
+                                    >
+                                        <option value="">
+                                            {inspectorCandidates.length === 0
+                                                ? "Nessun ispettore con patentino 9712 per questo metodo"
+                                                : "\u2014 scegli un ispettore con patentino 9712 \u2014"}
+                                        </option>
+                                        {form.inspector && !inspectorListed && (
+                                            <option value={form.inspector}>
+                                                {`${form.inspector} (nome gi\u00e0 sul verbale)`}
+                                            </option>
+                                        )}
+                                        {inspectorCandidates.map((c) => (
                                             <option key={c.person_name} value={c.person_name}>
-                                                {c.ndt_method ? `${c.ndt_method}${c.ndt_level != null ? ` liv.${c.ndt_level}` : ""}` : ""}
+                                                {c.person_name
+                                                    + (c.ndt_method
+                                                        ? ` \u2014 ${c.ndt_method}${c.ndt_level != null ? ` liv.${c.ndt_level}` : ""}`
+                                                        : "")}
                                             </option>
                                         ))}
-                                    </datalist>
+                                    </select>
+                                    {!inspectorGate.loading && inspectorCandidates.length === 0 && !judgmentLocked && (
+                                        <div className="ndt-notes-warning">
+                                            {"Nessun patentino ISO 9712 valido per questo metodo. Aggiungilo in Qualifiche."}
+                                        </div>
+                                    )}
                                     {judgmentLocked && (
                                         <div className="ndt-notes-warning">
                                             {gateReasonsText || "Scegli un ispettore con patentino ISO 9712 valido e visita medica visiva in corso."}
