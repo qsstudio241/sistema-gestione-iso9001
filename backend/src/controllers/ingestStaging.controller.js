@@ -17,9 +17,6 @@ const { getLicensedModuleKeysForOrg } = require('../services/moduleLicense.servi
 const { getLearningStats } = require('../services/ingestFeedback.service');
 
 async function assertModuleAccess(req, docType) {
-    const role = req.user?.role ? String(req.user.role).trim().toLowerCase() : '';
-    if (role === 'superadmin' || role === 'admin') return;
-
     const moduleKey = getModuleForDocType(docType);
     if (!moduleKey) {
         const err = new Error('Tipo documento non supportato');
