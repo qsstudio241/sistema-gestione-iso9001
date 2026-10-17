@@ -1,6 +1,16 @@
 # A3 — Tracciabilità delle modifiche e niente cancellazioni definitive
 
-Proposta. Nessun controller è stato modificato. I file `database/migrations/175_*` e `176_*` sono additivi e **non sono stati applicati** su TEST né su PROD.
+Proposta. Nessun controller è stato modificato in questa PR. I file `database/migrations/175_*` e `176_*` sono additivi e **non sono stati applicati** su TEST né su PROD.
+
+## Approvazione 17/10/2026
+
+Il committente ha approvato le tre raccomandazioni, con questa formulazione:
+
+1. nessuna purge automatica;
+2. cestino, storico e ripristino solo per admin e superadmin della stessa organizzazione;
+3. Elimina = soft delete; revocata e chiusa restano stati di business, distinti dal cestino.
+
+Nessuna purge entra nel codice. Gli SQL 175 e 176 restano quelli già in questa bozza e restano non applicati: servono alla PR di codice, che è separata.
 
 Base di lettura: `origin/main` `c799174518084c488a4b87096200badde25dc031`. Ultima migrazione su quel commit: `174`. Numeri usati qui: **175** e **176** (liberi; nessuna PR aperta li occupa).
 
@@ -203,23 +213,20 @@ In testa a 175 e 176: «NON APPLICARE senza sì». Non lanciare `run-migration-*
 
 Nessun `ON DELETE CASCADE`. Statement separati (`GO` fra un `ALTER` e il successivo). Nessun backfill.
 
-Non ho scritto SQL per: durata di retention, `deleted_by` sulle tabelle che hanno già `is_deleted`, documenti, audit, aziende, job di import. La forma di quelle colonne dipende dall'allineamento applicativo della fase 6, non da una decisione ancora aperta sulle tre domande sotto: per quelle tre la forma di 175/176 basta.
+Non ho scritto SQL per: durata di retention, `deleted_by` sulle tabelle che hanno già `is_deleted`, documenti, audit, aziende, job di import. Dal 17/10/2026 le tre decisioni della sezione 12 sono approvate: nessuna purge, cestino solo admin/superadmin della stessa organizzazione, Elimina = soft delete con `revocata` e `chiusa` che restano stati. La forma di 175/176 copre quelle decisioni e non si cambia. Le colonne sulle altre tabelle restano all'allineamento applicativo successivo.
 
 ## 11. PR a fasi
 
-Nessuna di queste PR, tranne la bozza di questa proposta, va mergiata da questo agente.
+Nessuna di queste PR va mergiata da questo agente. Questa bozza resta bozza.
 
-1. **Questa PR (solo doc + SQL).** Nessun controller.
-2. **Apply**, solo dopo il sì: 175 poi 176, prima TEST poi PROD, con i runner già nel repo, verify dei companion, backup prima del PROD. Rollback = i file `*_rollback.sql`, non un `DROP` inventato al momento.
-3. **Qualifiche e legami saldatore** (`wps_welders`, `project_welders`): l'Elimina scrive `deleted_at`/`deleted_by` e il log; liste, stats, copertura e alert filtrano; `revocata` resta uno stato. Si toglie l'uso di `/permanent` dalla UI.
-4. **WPS, WPQR, passate, link** `wps_wpqr_links`: stesso schema. Cancellare una WPS non fa più `DELETE` delle WPQR figlie: soft delete della WPS; le WPQR restano, con il legame soft-deleted.
-5. **Allegati, NC e azioni, unlink del riesame.** L'allegato resta su disco. La NC non cancella le azioni via CASCADE: o si soft-deleta la famiglia, o il soft delete della testata nasconde le azioni ancora vive.
-6. **Ripristino** (admin/superadmin) e lettura dello storico sul record.
-7. **Allineamento** di chi ha già `is_deleted` o `obsoleto`: scrivere anche il log; aggiungere `deleted_by` dove manca; chiudere l'hard delete degli audit (bozza/admin) e la cancellazione azienda, con un sì separato perché oggi è distruttiva.
-8. **DPA / residuo A2:** non introdurre una tabella prompt; dopo il commit, politica sul testo in `extracted_text` e sui byte in `uploads/`. Il PDF collegato al record soft-deleted resta.
+1. **Questa PR (solo doc + SQL).** Nessun controller. Decisioni approvate il 17/10/2026 (sezione 12).
+2. **Apply**, solo dopo un sì separato: 175 poi 176, prima TEST poi PROD, con i runner già nel repo, verify dei companion, backup prima del PROD. Rollback = i file `*_rollback.sql`, non un `DROP` inventato al momento. Un deploy del codice prima di quel sì rompe i DELETE, perché gli endpoint usano `deleted_at` e `deleted_by`.
+3. **Prima PR di codice** (dopo l'approvazione): qualifiche, WPS/WPQR, passate e link, commesse, allegati, NC. L'Elimina scrive `deleted_at`/`deleted_by` e una riga in `entity_change_log`; liste, stats, badge, export e copertura filtrano `deleted_at IS NULL`; `revocata` e `chiusa` restano stati. Cestino e ripristino solo per admin e superadmin della stessa organizzazione. Nessuna purge. Il PDF dell'allegato resta su disco. La NC non si appoggia al CASCADE sulle azioni: soft delete della famiglia.
+4. **Allineamento** di chi ha già `is_deleted` o `obsoleto`, unlink del riesame commerciale, hard delete degli audit (bozza/admin) e cancellazione azienda: sì separato, perché oggi è distruttivo.
+5. **DPA / residuo A2:** non introdurre una tabella prompt; dopo il commit, politica sul testo in `extracted_text` e sui byte in `uploads/`. Il PDF collegato al record soft-deleted resta.
 
-## 12. Decisioni per il committente
+## 12. Decisioni approvate il 17/10/2026
 
-1. **Durata di conservazione.** La norma, in A.6, lascia la durata all'organizzazione e non scrive un numero di anni. Raccomandazione: nessuna purge automatica in questa epic; record soft-deleted e `entity_change_log` restano finché non c'è una policy scritta. Il «10 anni» dell'ADR-003 non si adotta qui.
-2. **Chi vede il cestino, lo storico prima/dopo e può ripristinare.** Raccomandazione: admin e superadmin della stessa organizzazione. Gli altri ruoli non vedono le righe con `deleted_at` valorizzato e non leggono il log.
-3. **Elimina sulle qualifiche (e, allo stesso modo, l'offerta commessa).** Oggi l'Elimina in UI è il DELETE fisico; `revocata` e `chiusa` sono stati. Raccomandazione: l'Elimina diventa soft delete; `revocata` e `chiusa` restano stati editabili, distinti dal cestino.
+1. **Durata di conservazione — approvata: nessuna purge automatica.** La norma, in A.6, lascia la durata all'organizzazione e non scrive un numero di anni. Record soft-deleted e `entity_change_log` restano finché non c'è una policy scritta. Il «10 anni» dell'ADR-003 non si adotta. Nessun job cancella le righe dopo N anni.
+2. **Chi vede il cestino, lo storico prima/dopo e può ripristinare — approvata: solo admin e superadmin della stessa organizzazione.** Gli altri ruoli non vedono le righe con `deleted_at` valorizzato e non leggono il log. Fuori organizzazione la risposta è 404, come nel resto dello scope azienda.
+3. **Elimina — approvata: Elimina = soft delete; revocata e chiusa restano stati di business, distinti dal cestino.** L'Elimina in UI non è più il DELETE fisico. `revocata` sulla qualifica e `chiusa` sulla commessa restano stati editabili.
