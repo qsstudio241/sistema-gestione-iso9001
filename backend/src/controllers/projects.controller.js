@@ -17,10 +17,19 @@ const {
     sendAccessDenied,
 } = require('../services/companyAccess.service');
 
-/** Utente con user_company_access: 403 fuori dalle aziende consentite. Studio: nessun vincolo extra. */
+/** Utente con user_company_access: 403 fuori dalle aziende consentite.
+ *  Studio senza aziende assegnate: lettura libera; scrittura no per il viewer. */
 async function denyOutsideCompany(res, user, companyId, level = 'read') {
     const accessList = await ensureCompanyAccessLoaded(user);
-    if (!hasCompanyAccessRows(accessList)) return false;
+    if (!hasCompanyAccessRows(accessList)) {
+        if (level !== 'write') return false;
+        const studioDenied = await assertMutatingAllowed(user, {});
+        if (studioDenied) {
+            sendAccessDenied(res, studioDenied);
+            return true;
+        }
+        return false;
+    }
     let denied;
     if (companyId == null || companyId === '') {
         denied = { status: 403, body: { error: 'Accesso non consentito', code: 'FORBIDDEN' } };
