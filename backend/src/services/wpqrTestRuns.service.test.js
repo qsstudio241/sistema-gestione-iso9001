@@ -45,13 +45,18 @@ function makeDb({ tables = ['wpqr_test_runs', 'wps_wpqr_links'], failOnInsert = 
             return { recordset: rows };
         }
         if (/^SELECT .* FROM wpqr_test_runs/.test(text)) {
-            const rows = db.runs.filter((r) => r.wpqr_id === params.wpqr_id && (!scoped(text) || r.organization_id === params.organization_id));
+            const rows = db.runs.filter((r) => r.wpqr_id === params.wpqr_id && !r.deleted_at && (!scoped(text) || r.organization_id === params.organization_id));
             return { recordset: rows };
         }
-        if (/^DELETE FROM wpqr_test_runs WHERE wpqr_id = @wpqr_id/.test(text)) {
-            const keep = db.runs.filter((r) => !(r.wpqr_id === params.wpqr_id && (!scoped(text) || r.organization_id === params.organization_id)));
-            db.runs.length = 0;
-            db.runs.push(...keep);
+        if (/^UPDATE wpqr_test_runs SET deleted_at/.test(text)) {
+            db.runs.forEach((r) => {
+                const sameWpqr = params.wpqr_id != null
+                    ? r.wpqr_id === params.wpqr_id
+                    : true;
+                if (sameWpqr && !r.deleted_at && (!scoped(text) || r.organization_id === params.organization_id)) {
+                    r.deleted_at = 'cestino';
+                }
+            });
             return { recordset: [] };
         }
         if (/^INSERT INTO wpqr_test_runs/.test(text)) {
@@ -238,10 +243,16 @@ describe('replaceTestRuns', () => {
             expect(s.params.wpqr_id).toBe(10);
         });
         expect(inserts[1].params.run_no).toBe(3);
-        const del = db.statements.find((s) => /^DELETE FROM wpqr_test_runs/.test(s.text));
+        const del = db.statements.find((s) => /^UPDATE wpqr_test_runs SET deleted_at/.test(s.text));
         expect(del.text).toContain('organization_id = @organization_id');
         expect(del.tx).toBe(true);
-        expect(db.runs.some((r) => r.id === 2)).toBe(true);
+        expect(db.runs.some((r) => r.id === 2 && !r.deleted_at)).toBe(true);
+        const audit = db.statements.find((s) => /INSERT INTO entity_change_log/.test(s.text));
+        expect(audit.params.action_type).toBe('updated');
+        expect(audit.params.entity_table).toBe('wpqr_test_runs');
+        expect(audit.params.old_value).toContain('1');
+        expect(audit.params.new_value).toContain('2');
+        expect(audit.tx).toBe(false);
     });
 
     it('cross-tenant negativo: nessuna cancellazione né inserimento, dati dell\'altro tenant intatti', async () => {
@@ -249,7 +260,7 @@ describe('replaceTestRuns', () => {
         await expect(svc.replaceTestRuns({ wpqrId: 20, organizationId: ORG_A, runs: [validRun()] }))
             .rejects.toMatchObject({ status: 404 });
         expect(tx.begin).not.toHaveBeenCalled();
-        expect(db.statements.some((s) => /^(DELETE|INSERT)/.test(s.text))).toBe(false);
+        expect(db.statements.some((s) => /^(DELETE|INSERT|UPDATE)/.test(s.text))).toBe(false);
         expect(db.runs.map((r) => r.id).sort()).toEqual([1, 2]);
     });
 
@@ -286,7 +297,8 @@ describe('replaceTestRuns', () => {
         const { db } = makeDb();
         const out = await svc.replaceTestRuns({ wpqrId: 10, organizationId: ORG_A, runs: [] });
         expect(out.runs).toEqual([]);
-        expect(db.runs.map((r) => r.id)).toEqual([2]);
+        expect(db.runs.find((r) => r.id === 1).deleted_at).toBeTruthy();
+        expect(db.runs.find((r) => r.id === 2).deleted_at).toBeFalsy();
     });
 
     it('log senza valori di prova né nomi: solo id e conteggio', async () => {
@@ -304,12 +316,12 @@ describe('cancellazione dipendenze', () => {
     it('deleteWpqrDependents: passate e link con scope tenant, ID solo numerici', async () => {
         const { db } = makeDb();
         await svc.deleteWpqrDependents({ organizationId: ORG_A, wpqrIds: [10, '11', '1; DROP TABLE x', -4, 10] });
-        const deletes = db.statements.filter((s) => /^DELETE/.test(s.text));
-        expect(deletes.map((d) => d.text.match(/FROM (\w+)/)[1])).toEqual(['wpqr_test_runs', 'wps_wpqr_links']);
-        deletes.forEach((d) => {
+        const updates = db.statements.filter((s) => /^UPDATE \w+ SET deleted_at/.test(s.text));
+        expect(updates.map((d) => d.text.match(/UPDATE (\w+)/)[1])).toEqual(['wpqr_test_runs', 'wps_wpqr_links']);
+        updates.forEach((d) => {
             expect(d.text).toContain('organization_id = @organization_id');
             expect(d.text).toContain('wpqr_id IN (10,11)');
-            expect(d.params).toEqual({ organization_id: ORG_A });
+            expect(d.params.organization_id).toBe(ORG_A);
         });
     });
 
@@ -317,7 +329,7 @@ describe('cancellazione dipendenze', () => {
         const { db } = makeDb({ tables: [] });
         await svc.deleteWpqrDependents({ organizationId: ORG_A, wpqrIds: [10] });
         await svc.deleteWpsLinks({ organizationId: ORG_A, wpsId: 4 });
-        expect(db.statements.some((s) => /^DELETE/.test(s.text))).toBe(false);
+        expect(db.statements.some((s) => /^DELETE/.test(s.text) || /^UPDATE \w+ SET deleted_at/.test(s.text))).toBe(false);
     });
 
     it('nessun id valido: nessuna query', async () => {
@@ -331,9 +343,10 @@ describe('cancellazione dipendenze', () => {
     it('deleteWpsLinks: scope tenant e wps_id parametrizzato', async () => {
         const { db } = makeDb();
         await svc.deleteWpsLinks({ organizationId: ORG_A, wpsId: 4 });
-        const del = db.statements.find((s) => /^DELETE FROM wps_wpqr_links/.test(s.text));
+        const del = db.statements.find((s) => /^UPDATE wps_wpqr_links SET deleted_at/.test(s.text));
         expect(del.text).toContain('organization_id = @organization_id');
-        expect(del.params).toEqual({ organization_id: ORG_A, wps_id: 4 });
+        expect(del.params.organization_id).toBe(ORG_A);
+        expect(del.params.wps_id).toBe(4);
     });
 });
 

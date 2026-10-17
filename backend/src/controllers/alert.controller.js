@@ -55,6 +55,7 @@ async function getAlertCount(req, res) {
         FROM non_conformities nc
         INNER JOIN audits a ON nc.audit_id = a.audit_id
         WHERE a.organization_id = @orgId
+          AND nc.deleted_at IS NULL
           AND nc.status NOT IN ('closed', 'verified')
           AND DATEDIFF(day, nc.created_at, GETDATE()) > 30
           ${ncFilter.clause ? `AND ${ncFilter.clause}` : ''}
@@ -78,6 +79,7 @@ async function getAlertCount(req, res) {
           COALESCE(SUM(CASE WHEN ${SITUAZIONE_BUCKET_SQL.urgenti_30} THEN 1 ELSE 0 END), 0) AS expiring
         FROM qualifications q
         WHERE q.organization_id = @orgId
+          AND q.deleted_at IS NULL
           ${qualifFilter.clause ? `AND ${qualifFilter.clause}` : ''}
       `);
       qualifExpired = qualifResult.recordset[0]?.expired || 0;
@@ -168,6 +170,7 @@ async function getAlerts(req, res) {
         FROM qualifications q
         LEFT JOIN companies c ON q.company_id = c.id
         WHERE q.organization_id = @orgId
+          AND q.deleted_at IS NULL
           AND ${ACTIVE_STATUS_SQL}
           AND ${EFFECTIVE_SQL} IS NOT NULL
           AND ${EFFECTIVE_SQL} <= DATEADD(day, @days, CAST(GETDATE() AS DATE))

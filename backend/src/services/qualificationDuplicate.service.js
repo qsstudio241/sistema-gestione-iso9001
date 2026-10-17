@@ -35,6 +35,7 @@ async function findQualificationDuplicate(db, {
          WHERE organization_id = @orgId
            AND certificate_number = @certNum
            AND company_id = @compId
+           AND deleted_at IS NULL
            AND status <> 'revocata'
            AND (@excludeId IS NULL OR id <> @excludeId)
            AND (qualification_type = @qualType OR person_name = @personName)`,

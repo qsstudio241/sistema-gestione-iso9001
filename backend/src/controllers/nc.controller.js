@@ -8,6 +8,7 @@
 
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
+const { logEntityChange, trashedDetailHidden } = require('../services/entityChangeLog.service');
 const {
     studioScopeClause,
     appendScopeSql,
@@ -228,6 +229,7 @@ async function listNonConformities(req, res) {
         // Org filter: supporta NC con audit_id NULL (organization_id diretto)
         let whereConditions = [
             '(COALESCE(a.organization_id, nc.organization_id) = @organization_id)',
+            'nc.deleted_at IS NULL',
         ];
         let params = { organization_id, limit: parseInt(limit), offset };
 
@@ -294,8 +296,8 @@ async function listNonConformities(req, res) {
         c.complaint_number AS source_complaint_number,
         approver.full_name AS approved_by_name,
         (SELECT COUNT(*) FROM attachments WHERE nc_id = nc.nc_id) AS attachments_count,
-        (SELECT COUNT(*) FROM nc_actions WHERE nc_id = nc.nc_id AND action_type = 'immediate' AND status IN ('completed','verified')) AS correction_completed_count,
-        (SELECT COUNT(*) FROM nc_actions WHERE nc_id = nc.nc_id AND action_type = 'corrective' AND status IN ('completed','verified')) AS corrective_completed_count,
+        (SELECT COUNT(*) FROM nc_actions WHERE nc_id = nc.nc_id AND deleted_at IS NULL AND action_type = 'immediate' AND status IN ('completed','verified')) AS correction_completed_count,
+        (SELECT COUNT(*) FROM nc_actions WHERE nc_id = nc.nc_id AND deleted_at IS NULL AND action_type = 'corrective' AND status IN ('completed','verified')) AS corrective_completed_count,
         CASE
           WHEN nc.due_date < CAST(GETDATE() AS DATE) AND nc.status <> 'closed'
           THEN 1 ELSE 0
@@ -449,8 +451,8 @@ async function getNonConformityById(req, res) {
         cs.section_title,
         approver.full_name AS approved_by_name,
         (SELECT COUNT(*) FROM attachments WHERE nc_id = nc.nc_id) AS attachments_count,
-        (SELECT COUNT(*) FROM nc_actions WHERE nc_id = nc.nc_id AND action_type = 'immediate' AND status IN ('completed','verified')) AS correction_completed_count,
-        (SELECT COUNT(*) FROM nc_actions WHERE nc_id = nc.nc_id AND action_type = 'corrective' AND status IN ('completed','verified')) AS corrective_completed_count,
+        (SELECT COUNT(*) FROM nc_actions WHERE nc_id = nc.nc_id AND deleted_at IS NULL AND action_type = 'immediate' AND status IN ('completed','verified')) AS correction_completed_count,
+        (SELECT COUNT(*) FROM nc_actions WHERE nc_id = nc.nc_id AND deleted_at IS NULL AND action_type = 'corrective' AND status IN ('completed','verified')) AS corrective_completed_count,
         CASE 
           WHEN nc.due_date < CAST(GETDATE() AS DATE) AND nc.status <> 'closed'
           THEN 1 
@@ -477,6 +479,9 @@ async function getNonConformityById(req, res) {
         }
 
         const nc = withEffectiveCompanyId(result.recordset[0]);
+        if (trashedDetailHidden(req.user, nc)) {
+            return res.status(404).json({ error: 'Non conformità non trovata', code: 'NC_NOT_FOUND' });
+        }
 
         // Recupera allegati
         const attachmentsResult = await query(`
@@ -491,7 +496,7 @@ async function getNonConformityById(req, res) {
         description,
         created_at
       FROM attachments
-      WHERE nc_id = @id
+      WHERE nc_id = @id AND deleted_at IS NULL
       ORDER BY created_at DESC
     `, { id: parseInt(id) });
 
@@ -804,13 +809,22 @@ async function createNonConformity(req, res) {
             await query(`
         UPDATE audits
         SET non_conformities_count = (
-          SELECT COUNT(*) FROM non_conformities WHERE audit_id = @audit_id
+          SELECT COUNT(*) FROM non_conformities WHERE audit_id = @audit_id AND deleted_at IS NULL
         ),
         updated_at = GETDATE()
         WHERE audit_id = @audit_id
       `, { audit_id: parseInt(audit_id) });
         }
 
+        await logEntityChange({
+            organizationId: organization_id,
+            entityTable: 'non_conformities',
+            entityId: newNC.nc_id,
+            actionType: 'created',
+            actorUserId: req.user.user_id,
+            after: { nc_number: newNC.nc_number, status: newNC.status, severity: newNC.severity },
+            fields: ['nc_number', 'status', 'severity'],
+        });
         logger.info('NC created', {
             nc_id: newNC.nc_id,
             audit_id: isAuditBased ? audit_id : null,
@@ -1196,7 +1210,7 @@ async function updateNonConformity(req, res) {
             await query(`
         UPDATE audits
         SET non_conformities_count = (
-          SELECT COUNT(*) FROM non_conformities WHERE audit_id = @audit_id
+          SELECT COUNT(*) FROM non_conformities WHERE audit_id = @audit_id AND deleted_at IS NULL
         ),
         updated_at = GETDATE()
         WHERE audit_id = @audit_id
@@ -1242,14 +1256,37 @@ async function deleteNonConformity(req, res) {
         const audit_id = ncWrite.row?.audit_id ?? null;
 
         // Delete NC (CASCADE elimina anche attachments)
-        await query(`DELETE FROM non_conformities WHERE nc_id = @id`, { id: parseInt(id) });
+        await query(`
+            UPDATE non_conformities
+            SET deleted_at = SYSUTCDATETIME(), deleted_by = @actor_user_id
+            WHERE nc_id = @id AND deleted_at IS NULL
+        `, { id: parseInt(id), actor_user_id: req.user.user_id });
+        await query(`
+            UPDATE nc_actions
+            SET deleted_at = SYSUTCDATETIME(), deleted_by = @actor_user_id
+            WHERE nc_id = @id AND deleted_at IS NULL
+        `, { id: parseInt(id), actor_user_id: req.user.user_id });
+        await query(`
+            UPDATE attachments
+            SET deleted_at = SYSUTCDATETIME(), deleted_by = @actor_user_id
+            WHERE nc_id = @id AND deleted_at IS NULL
+        `, { id: parseInt(id), actor_user_id: req.user.user_id });
+        await logEntityChange({
+            organizationId: organization_id,
+            entityTable: 'non_conformities',
+            entityId: parseInt(id),
+            actionType: 'soft_deleted',
+            actorUserId: req.user.user_id,
+            before: { deleted_at: null },
+            after: { deleted_at: 'cestino' },
+        });
 
         // Aggiorna contatore NC nell'audit (solo se NC legata ad audit)
         if (audit_id) {
             await query(`
         UPDATE audits
         SET non_conformities_count = (
-          SELECT COUNT(*) FROM non_conformities WHERE audit_id = @audit_id
+          SELECT COUNT(*) FROM non_conformities WHERE audit_id = @audit_id AND deleted_at IS NULL
         ),
         updated_at = GETDATE()
         WHERE audit_id = @audit_id
@@ -1281,7 +1318,7 @@ async function getNonConformitiesStatistics(req, res) {
         const { organization_id } = req.user;
         const { company_id } = req.query;
 
-        let whereConditions = ['(COALESCE(a.organization_id, nc.organization_id) = @organization_id)'];
+        let whereConditions = ['(COALESCE(a.organization_id, nc.organization_id) = @organization_id)', 'nc.deleted_at IS NULL'];
         const params = { organization_id };
 
         if (company_id) {
@@ -1406,7 +1443,7 @@ async function listNcActions(req, res) {
             SELECT a.*, u.full_name AS created_by_name
             FROM nc_actions a
             LEFT JOIN users u ON a.created_by = u.user_id
-            WHERE a.nc_id = @id
+            WHERE a.nc_id = @id AND a.deleted_at IS NULL
             ORDER BY a.created_at ASC
         `, { id: parseInt(id) });
 
@@ -1613,7 +1650,20 @@ async function deleteNcAction(req, res) {
         const ncWrite = await assertNcWriteAccess(req, res, id);
         if (ncWrite.denied) return;
 
-        await query(`DELETE FROM nc_actions WHERE action_id = @actionId`, { actionId: parseInt(actionId) });
+        await query(`
+            UPDATE nc_actions
+            SET deleted_at = SYSUTCDATETIME(), deleted_by = @actor_user_id
+            WHERE action_id = @actionId AND deleted_at IS NULL
+        `, { actionId: parseInt(actionId), actor_user_id: req.user.user_id });
+        await logEntityChange({
+            organizationId: organization_id,
+            entityTable: 'nc_actions',
+            entityId: parseInt(actionId),
+            actionType: 'soft_deleted',
+            actorUserId: req.user.user_id,
+            before: { deleted_at: null },
+            after: { deleted_at: 'cestino' },
+        });
 
         logger.info('NC action deleted', { action_id: actionId, organization_id });
         res.json({ success: true, message: 'Azione eliminata' });
@@ -1855,7 +1905,7 @@ async function pushAuditToNcRegister(req, res) {
         await query(`
             UPDATE audits
             SET non_conformities_count = (
-                SELECT COUNT(*) FROM non_conformities WHERE audit_id = @audit_id AND severity != 'observation'
+                SELECT COUNT(*) FROM non_conformities WHERE audit_id = @audit_id AND deleted_at IS NULL AND severity != 'observation'
             ),
             updated_at = GETDATE()
             WHERE audit_id = @audit_id
@@ -1951,13 +2001,17 @@ async function undoPushAuditToNcRegister(req, res) {
         await query(`UPDATE pending_issues SET nc_id = NULL WHERE nc_id IN (${idList})`);
 
         // Elimina le NC
-        const delRes = await query(`DELETE FROM non_conformities WHERE nc_id IN (${idList})`);
+        const delRes = await query(`
+            UPDATE non_conformities
+            SET deleted_at = SYSUTCDATETIME(), deleted_by = @actor_user_id
+            WHERE nc_id IN (${idList}) AND deleted_at IS NULL
+        `, { actor_user_id: user_id });
 
         // Aggiorna contatore audit
         await query(`
             UPDATE audits
             SET non_conformities_count = (
-                SELECT COUNT(*) FROM non_conformities WHERE audit_id = @audit_id AND severity != 'observation'
+                SELECT COUNT(*) FROM non_conformities WHERE audit_id = @audit_id AND deleted_at IS NULL AND severity != 'observation'
             ),
             updated_at = GETDATE()
             WHERE audit_id = @audit_id
@@ -2062,6 +2116,8 @@ async function listAggregateDueNcActions(req, res) {
             ncScope.orgSql,
             "na.status NOT IN ('completed', 'verified')",
             "nc.status NOT IN ('resolved', 'verified', 'closed')",
+            'nc.deleted_at IS NULL',
+            'na.deleted_at IS NULL',
         ];
         const params = { organization_id, limit: parseInt(limit, 10) || 100 };
         const dueWithin = parseInt(due_within_days, 10);

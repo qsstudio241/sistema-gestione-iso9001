@@ -84,6 +84,7 @@ async function loadStudioAggregates(user) {
        FROM qualifications q
        INNER JOIN companies c ON c.id = q.company_id
        WHERE q.organization_id = @organizationId
+         AND q.deleted_at IS NULL
          ${audFilterQual}`,
       params
     ),
@@ -130,6 +131,7 @@ async function loadStudioAggregates(user) {
        FROM qualifications q
        INNER JOIN companies c ON c.id = q.company_id
        WHERE q.organization_id = @organizationId
+         AND q.deleted_at IS NULL
          ${audFilterQual}
        GROUP BY q.company_id
        HAVING SUM(CASE
@@ -282,6 +284,7 @@ async function loadAmbitoFacts(user, companyId) {
             THEN 1 ELSE 0 END) AS quals_expiring_30
        FROM qualifications q
        WHERE q.organization_id = @organizationId
+         AND q.deleted_at IS NULL
          AND q.company_id = @companyId`,
       params
     ),

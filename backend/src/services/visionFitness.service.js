@@ -76,6 +76,7 @@ async function findVisionFitnessGaps(organizationId, opts = {}) {
     FROM qualifications q
     LEFT JOIN companies c ON c.id = q.company_id
     WHERE q.organization_id = @orgId
+      AND q.deleted_at IS NULL
       AND q.status NOT IN ('revocata', 'sospesa')
       ${companyClause}
     ORDER BY q.person_name, q.id
@@ -98,6 +99,7 @@ async function findVisionFitnessGaps(organizationId, opts = {}) {
            q.expiry_date, q.status, q.company_id
     FROM qualifications q
     WHERE q.organization_id = @orgId
+      AND q.deleted_at IS NULL
       AND q.status NOT IN ('revocata', 'sospesa')
       AND q.qualification_type IN (${visionIn})
       ${visionCompany}

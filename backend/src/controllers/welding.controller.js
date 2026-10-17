@@ -7,6 +7,7 @@
 
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
+const { logEntityChange, trashedDetailHidden, softDeleteSql } = require('../services/entityChangeLog.service');
 const {
     ensureCompanyAccessLoaded,
     companyAccessSqlFilter,
@@ -71,6 +72,7 @@ const WPQR_SCOPE_SQL = `
     LEFT JOIN welding_procedures w
       ON w.id = wq.wps_id AND w.organization_id = wq.organization_id
     WHERE wq.id = @id AND wq.organization_id = @organization_id
+      AND wq.deleted_at IS NULL
 `;
 
 async function pushWpqrCompanyScope(user, conditions, params, prefix) {
@@ -129,7 +131,7 @@ async function listWPS(req, res) {
         } = req.query;
 
         const offset = (parseInt(page) - 1) * parseInt(limit);
-        const conditions = ['w.organization_id = @organization_id'];
+        const conditions = ['w.organization_id = @organization_id', 'w.deleted_at IS NULL'];
         const params = { organization_id, limit: parseInt(limit), offset };
 
         if (company_id != null && company_id !== '') {
@@ -162,6 +164,7 @@ async function listWPS(req, res) {
                 c.name AS company_name,
                 (SELECT COUNT(*) FROM wpqr_records wq
                  WHERE wq.wps_id = w.id AND wq.organization_id = @organization_id
+                   AND wq.deleted_at IS NULL
                 ) AS wpqr_count
             FROM welding_procedures w
             LEFT JOIN companies c ON w.company_id = c.id
@@ -211,11 +214,14 @@ async function getWPS(req, res) {
         if (result.recordset.length === 0) {
             return res.status(404).json({ error: 'WPS non trovata', code: 'WPS_NOT_FOUND' });
         }
+        if (trashedDetailHidden(req.user, result.recordset[0])) {
+            return res.status(404).json({ error: 'WPS non trovata', code: 'WPS_NOT_FOUND' });
+        }
         if (await denyOutsideCompany(res, req.user, result.recordset[0].company_id, 'read')) return;
 
         const wpqrResult = await query(`
             SELECT * FROM wpqr_records
-            WHERE wps_id = @wps_id AND organization_id = @organization_id
+            WHERE wps_id = @wps_id AND organization_id = @organization_id AND deleted_at IS NULL
             ORDER BY test_date DESC
         `, { wps_id: parseInt(id), organization_id });
 
@@ -369,6 +375,15 @@ async function createWPS(req, res) {
         });
 
         const newId = result.recordset[0].id;
+        await logEntityChange({
+            organizationId: organization_id,
+            entityTable: 'welding_procedures',
+            entityId: newId,
+            actionType: 'created',
+            actorUserId: user_id,
+            after: { wps_code, status, company_id, welding_process, notes: notes || null },
+            fields: ['wps_code', 'status', 'company_id', 'welding_process', 'notes'],
+        });
         logger.info('WPS created', { id: newId, organization_id, wps_code });
 
         res.status(201).json({ success: true, data: { id: newId, wps_code, status } });
@@ -385,8 +400,8 @@ async function updateWPS(req, res) {
         const { organization_id } = req.user;
 
         const existing = await query(`
-            SELECT id, company_id FROM welding_procedures
-            WHERE id = @id AND organization_id = @organization_id
+            SELECT id, company_id, wps_code, status, notes, deleted_at FROM welding_procedures
+            WHERE id = @id AND organization_id = @organization_id AND deleted_at IS NULL
         `, { id: parseInt(id), organization_id });
 
         if (existing.recordset.length === 0) {
@@ -432,6 +447,16 @@ async function updateWPS(req, res) {
             WHERE id = @id
         `, params);
 
+        await logEntityChange({
+            organizationId: organization_id,
+            entityTable: 'welding_procedures',
+            entityId: parseInt(id),
+            actionType: 'updated',
+            actorUserId: req.user.user_id,
+            before: existing.recordset[0],
+            after: req.body,
+            fields: allowed,
+        });
         logger.info('WPS updated', { id, organization_id });
         res.json({ success: true, message: 'WPS aggiornata con successo' });
     } catch (error) {
@@ -448,7 +473,7 @@ async function deleteWPS(req, res) {
 
         const existing = await query(`
             SELECT id, company_id FROM welding_procedures
-            WHERE id = @id AND organization_id = @organization_id
+            WHERE id = @id AND organization_id = @organization_id AND deleted_at IS NULL
         `, { id: parseInt(id), organization_id });
 
         if (existing.recordset.length === 0) {
@@ -457,25 +482,46 @@ async function deleteWPS(req, res) {
         if (await denyOutsideCompany(res, req.user, existing.recordset[0].company_id, 'write')) return;
 
         // FK 173/174 senza ON DELETE: passate e link prima delle WPQR e della WPS (tabelle assenti = saltate).
+        const wpsId = parseInt(id);
         const childWpqr = await query(`
             SELECT id FROM wpqr_records
-            WHERE wps_id = @id AND organization_id = @organization_id
-        `, { id: parseInt(id), organization_id });
+            WHERE wps_id = @id AND organization_id = @organization_id AND deleted_at IS NULL
+        `, { id: wpsId, organization_id });
         await wpqrTestRuns.deleteWpqrDependents({
             organizationId: organization_id,
             wpqrIds: childWpqr.recordset.map((r) => r.id),
+            actorUserId: req.user.user_id,
         });
-        await wpqrTestRuns.deleteWpsLinks({ organizationId: organization_id, wpsId: parseInt(id) });
+        await wpqrTestRuns.deleteWpsLinks({
+            organizationId: organization_id,
+            wpsId,
+            actorUserId: req.user.user_id,
+        });
 
+        await query(softDeleteSql('wpqr_records', 'id').replace('id = @id', 'wps_id = @id'), {
+            id: wpsId,
+            organization_id,
+            actor_user_id: req.user.user_id,
+        });
         await query(`
-            DELETE FROM wpqr_records
-            WHERE wps_id = @id AND organization_id = @organization_id
-        `, { id: parseInt(id), organization_id });
-
-        await query(`
-            DELETE FROM welding_procedures
-            WHERE id = @id AND organization_id = @organization_id
-        `, { id: parseInt(id), organization_id });
+            UPDATE wps_welders
+            SET deleted_at = SYSUTCDATETIME(), deleted_by = @actor_user_id
+            WHERE wps_id = @id AND organization_id = @organization_id AND deleted_at IS NULL
+        `, { id: wpsId, organization_id, actor_user_id: req.user.user_id });
+        await query(softDeleteSql('welding_procedures', 'id'), {
+            id: wpsId,
+            organization_id,
+            actor_user_id: req.user.user_id,
+        });
+        await logEntityChange({
+            organizationId: organization_id,
+            entityTable: 'welding_procedures',
+            entityId: wpsId,
+            actionType: 'soft_deleted',
+            actorUserId: req.user.user_id,
+            before: { company_id: existing.recordset[0].company_id, deleted_at: null },
+            after: { deleted_at: 'cestino' },
+        });
 
         logger.info('WPS deleted', { id, organization_id });
         res.json({ success: true, message: 'WPS eliminata con successo' });
@@ -499,7 +545,7 @@ async function listWPQR(req, res) {
         } = req.query;
 
         const offset = (parseInt(page) - 1) * parseInt(limit);
-        const conditions = ['wq.organization_id = @organization_id'];
+        const conditions = ['wq.organization_id = @organization_id', 'wq.deleted_at IS NULL'];
         const params = { organization_id, limit: parseInt(limit), offset };
 
         if (company_id != null && company_id !== '') {
@@ -581,6 +627,9 @@ async function getWPQR(req, res) {
         `, { id: parseInt(id), organization_id });
 
         if (result.recordset.length === 0) {
+            return res.status(404).json({ error: 'WPQR non trovato', code: 'WPQR_NOT_FOUND' });
+        }
+        if (trashedDetailHidden(req.user, result.recordset[0])) {
             return res.status(404).json({ error: 'WPQR non trovato', code: 'WPQR_NOT_FOUND' });
         }
         if (await denyOutsideCompany(res, req.user, wpqrScopeCompany(result.recordset[0]), 'read')) return;
@@ -733,6 +782,15 @@ async function createWPQR(req, res) {
         });
 
         const newId = result.recordset[0].id;
+        await logEntityChange({
+            organizationId: organization_id,
+            entityTable: 'wpqr_records',
+            entityId: newId,
+            actionType: 'created',
+            actorUserId: user_id,
+            after: { wpqr_code, wps_id: parseInt(wps_id), certificate_number, welder_name },
+            fields: ['wpqr_code', 'wps_id', 'certificate_number', 'welder_name'],
+        });
         logger.info('WPQR created', { id: newId, organization_id, wps_id });
 
         res.status(201).json({ success: true, data: { id: newId, wpqr_code, wps_id: parseInt(wps_id) } });
@@ -843,6 +901,16 @@ async function updateWPQR(req, res) {
             WHERE id = @id AND organization_id = @organization_id
         `, params);
 
+        await logEntityChange({
+            organizationId: organization_id,
+            entityTable: 'wpqr_records',
+            entityId: parseInt(id),
+            actionType: 'updated',
+            actorUserId: req.user.user_id,
+            before: existing.recordset[0],
+            after: req.body,
+            fields: allowed,
+        });
         logger.info('WPQR updated', { id, organization_id });
         res.json({ success: true, message: 'WPQR aggiornato con successo' });
     } catch (error) {
@@ -864,12 +932,26 @@ async function deleteWPQR(req, res) {
         }
         if (await denyOutsideCompany(res, req.user, wpqrScopeCompany(existing.recordset[0]), 'write')) return;
 
-        await wpqrTestRuns.deleteWpqrDependents({ organizationId: organization_id, wpqrIds: [parseInt(id)] });
+        await wpqrTestRuns.deleteWpqrDependents({
+            organizationId: organization_id,
+            wpqrIds: [parseInt(id)],
+            actorUserId: req.user.user_id,
+        });
 
-        await query(`
-            DELETE FROM wpqr_records
-            WHERE id = @id AND organization_id = @organization_id
-        `, { id: parseInt(id), organization_id });
+        await query(softDeleteSql('wpqr_records', 'id'), {
+            id: parseInt(id),
+            organization_id,
+            actor_user_id: req.user.user_id,
+        });
+        await logEntityChange({
+            organizationId: organization_id,
+            entityTable: 'wpqr_records',
+            entityId: parseInt(id),
+            actionType: 'soft_deleted',
+            actorUserId: req.user.user_id,
+            before: { deleted_at: null },
+            after: { deleted_at: 'cestino' },
+        });
 
         logger.info('WPQR deleted', { id, organization_id });
         res.json({ success: true, message: 'WPQR eliminato con successo' });
@@ -953,6 +1035,7 @@ async function listWpsWelders(req, res) {
             FROM wps_welders ww
             JOIN qualifications q ON ww.qualification_id = q.id
             WHERE ww.wps_id = @id AND ww.organization_id = @organization_id
+              AND ww.deleted_at IS NULL AND q.deleted_at IS NULL
             ORDER BY q.person_name
         `, { id: parseInt(id), organization_id });
 
@@ -1039,6 +1122,7 @@ async function removeWpsWelder(req, res) {
             FROM wps_welders ww
             JOIN welding_procedures w ON w.id = ww.wps_id AND w.organization_id = ww.organization_id
             WHERE ww.id = @welderId AND ww.wps_id = @wps_id AND ww.organization_id = @organization_id
+              AND ww.deleted_at IS NULL
         `, { welderId: parseInt(welderId), wps_id: parseInt(id), organization_id });
 
         if (existing.recordset.length === 0) {
@@ -1047,9 +1131,19 @@ async function removeWpsWelder(req, res) {
         if (await denyOutsideCompany(res, req.user, existing.recordset[0].company_id, 'write')) return;
 
         await query(`
-            DELETE FROM wps_welders
-            WHERE id = @welderId AND organization_id = @organization_id
-        `, { welderId: parseInt(welderId), organization_id });
+            UPDATE wps_welders
+            SET deleted_at = SYSUTCDATETIME(), deleted_by = @actor_user_id
+            WHERE id = @welderId AND organization_id = @organization_id AND deleted_at IS NULL
+        `, { welderId: parseInt(welderId), organization_id, actor_user_id: req.user.user_id });
+        await logEntityChange({
+            organizationId: organization_id,
+            entityTable: 'wps_welders',
+            entityId: parseInt(welderId),
+            actionType: 'soft_deleted',
+            actorUserId: req.user.user_id,
+            before: { deleted_at: null },
+            after: { deleted_at: 'cestino' },
+        });
 
         logger.info('WPS welder removed', { welderId, wps_id: id, organization_id });
         res.json({ success: true, message: 'Assegnazione rimossa con successo' });
@@ -1070,7 +1164,7 @@ async function getWPQRStats(req, res) {
         const { company_id } = req.query;
 
         const params = { organization_id };
-        const conditions = ['wq.organization_id = @organization_id'];
+        const conditions = ['wq.organization_id = @organization_id', 'wq.deleted_at IS NULL'];
         if (company_id != null && company_id !== '') {
             if (await denyOutsideCompany(res, req.user, company_id, 'read')) return;
         }
@@ -1092,6 +1186,7 @@ async function getWPQRStats(req, res) {
             FROM wpqr_records wq
             LEFT JOIN welding_procedures w ON wq.wps_id = w.id
             WHERE wq.organization_id = @organization_id
+              AND wq.deleted_at IS NULL
               AND (wq.status IS NULL OR wq.status != 'revocata')
               ${companyClause}
         `, params);
@@ -1403,6 +1498,7 @@ async function getWpsCoverage(req, res) {
         // WPS attive+approvate per l'azienda della commessa
         const baseConditions = [
             'w.organization_id = @organization_id',
+            'w.deleted_at IS NULL',
             "(w.approval_status = 'approvata' OR w.approval_status IS NULL)",
             "(w.status = 'attiva' OR w.status = 'bozza')",
         ];
@@ -1432,6 +1528,7 @@ async function getWpsCoverage(req, res) {
                 c.name AS company_name,
                 (SELECT COUNT(*) FROM wpqr_records wq
                  WHERE wq.wps_id = w.id AND wq.organization_id = @organization_id
+                   AND wq.deleted_at IS NULL
                 ) AS wpqr_count
             FROM welding_procedures w
             LEFT JOIN companies c ON c.id = w.company_id

@@ -122,7 +122,7 @@ export function useNcActions({ ncId, ncStatus, companyId = null, organizationId 
   }
 
   async function handleDelete(action) {
-    if (!window.confirm(`Eliminare l'azione "${action.description.substring(0, 50)}..."?`)) return;
+    if (!window.confirm(`L'azione "${action.description.substring(0, 50)}..." va nel cestino. Non è una cancellazione definitiva.`)) return;
     try {
       await apiService.deleteNcAction(ncId, action.action_id);
       await load();

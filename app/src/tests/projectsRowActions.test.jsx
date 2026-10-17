@@ -88,7 +88,7 @@ describe("ProjectsPage — azioni di riga a icone", () => {
     fireEvent.click(trashBtn);
 
     await waitFor(() => {
-      expect(screen.getByText("Eliminare?")).toBeInTheDocument();
+      expect(screen.getByText("Il record va nel cestino. Non è una cancellazione definitiva.")).toBeInTheDocument();
     });
   });
 

@@ -1520,7 +1520,7 @@ function WeldingProceduresPage() {
                       <td onClick={(e) => e.stopPropagation()}>
                         {deleteWpsId === w.id ? (
                           <div className="wp-confirm">
-                            <span>Eliminare?</span>
+                            <span>Il record va nel cestino. Non è una cancellazione definitiva.</span>
                             <button className="wp-confirm-yes" onClick={() => handleDeleteWps(w.id)}>Si</button>
                             <button className="wp-confirm-no" onClick={() => setDeleteWpsId(null)}>No</button>
                           </div>
@@ -1640,7 +1640,7 @@ function WeldingProceduresPage() {
                       <td onClick={(e) => e.stopPropagation()}>
                         {deleteWpqrId === wq.id ? (
                           <div className="wp-confirm">
-                            <span>Eliminare?</span>
+                            <span>Il record va nel cestino. Non è una cancellazione definitiva.</span>
                             <button className="wp-confirm-yes" onClick={() => handleDeleteWpqr(wq.id)}>S{"\u00ec"}</button>
                             <button className="wp-confirm-no" onClick={() => setDeleteWpqrId(null)}>No</button>
                           </div>

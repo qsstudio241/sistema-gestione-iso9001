@@ -164,8 +164,8 @@ export function QualRow({ q, tabKey, onEdit, onHardDelete, onRenew, onHistory, h
         <td className="sq-col-actions">
             {hardDeleteId === q.id ? (
                 <div className="sq-confirm">
-                    <span title="Elimina anche le eventuali conferme semestrali registrate">
-                        Eliminare definitivamente? (anche le conferme semestrali)
+                    <span title="Il record va nel cestino. Non è una cancellazione definitiva.">
+                        Il record va nel cestino. Non è una cancellazione definitiva.
                     </span>
                     <button className="sq-confirm-yes" onClick={() => onHardDelete(q.id)}>{"S\u00EC"}</button>
                     <button className="sq-confirm-no" onClick={() => setHardDeleteId(null)}>No</button>
@@ -175,7 +175,7 @@ export function QualRow({ q, tabKey, onEdit, onHardDelete, onRenew, onHistory, h
                     <button className="sq-btn-icon" title="Modifica" onClick={() => onEdit(q)}>{"\u270F\uFE0F"}</button>
                     <button className="sq-btn-icon sq-btn-renew" title="Rinnova" onClick={() => onRenew(q)}>{"\u267B\uFE0F"}</button>
                     <button className="sq-btn-icon sq-btn-history" title="Storico rinnovi" onClick={() => onHistory(q)}>{"\uD83D\uDCC5"}</button>
-                    <button className="sq-btn-icon sq-btn-hard-del" title="Elimina (dato inserito per errore)" onClick={() => setHardDeleteId(q.id)}>{"\uD83D\uDDD1\uFE0F"}</button>
+                    <button className="sq-btn-icon sq-btn-hard-del" title="Elimina: il record va nel cestino" onClick={() => setHardDeleteId(q.id)}>{"\uD83D\uDDD1\uFE0F"}</button>
                 </div>
             )}
         </td>

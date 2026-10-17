@@ -22,8 +22,8 @@
  *   GET    /qualifications/:id          → dettaglio
  *   POST   /qualifications              → crea (sempre attiva, approval_status=approvata)
  *   PUT    /qualifications/:id          → aggiorna
- *   DELETE /qualifications/:id          → soft delete (status=revocata) — non più esposto in UI
- *   DELETE /qualifications/:id/permanent → cancellazione fisica (nessun legame residuo)
+ *   DELETE /qualifications/:id          → stato di business revocata — non è il cestino
+ *   DELETE /qualifications/:id/permanent → cestino (deleted_at): non è una cancellazione definitiva
  *   POST   /qualifications/:id/renew    → rinnovo → nuovo record con previous_qualification_id
  */
 
@@ -31,6 +31,7 @@ const path = require('path');
 const fs   = require('fs');
 const { getPool } = require('../config/database');
 const logger = require('../utils/logger');
+const { logEntityChange, trashedDetailHidden } = require('../services/entityChangeLog.service');
 const {
     ensureCompanyAccessLoaded,
     companyAccessSqlFilter,
@@ -300,7 +301,7 @@ async function listQualifications(req, res) {
         const pageNum = Math.max(1, parseInt(page, 10) || 1);
         const limitNum = Math.min(500, Math.max(1, parseInt(limit, 10) || 50));
         const offset = (pageNum - 1) * limitNum;
-        let where = ['q.organization_id = @orgId'];
+        let where = ['q.organization_id = @orgId', 'q.deleted_at IS NULL'];
         if (companyFilter.clause) where.push(companyFilter.clause);
         if (search) where.push("(q.person_name LIKE @search OR q.qualification_type LIKE @search OR q.certificate_number LIKE @search)");
         if (companyScope.value !== null) where.push('q.company_id = @companyId');
@@ -390,7 +391,7 @@ async function getStats(req, res) {
         }
         const typeScope = buildQualificationTypeScope(req.query?.qualification_type);
 
-        const where = ['q.organization_id = @orgId'];
+        const where = ['q.organization_id = @orgId', 'q.deleted_at IS NULL'];
         if (companyFilter.clause) where.push(companyFilter.clause);
         if (companyScope.value !== null) where.push('q.company_id = @companyId');
         if (typeScope.clause) where.push(typeScope.clause);
@@ -474,7 +475,7 @@ async function getCoverage(req, res) {
         const projResult = await pool.request()
             .input('projId', parseInt(project_id))
             .input('orgId', orgId)
-            .query(`SELECT id, project_code, applicable_wps_ids, company_id FROM projects WHERE id=@projId AND organization_id=@orgId`);
+            .query(`SELECT id, project_code, applicable_wps_ids, company_id FROM projects WHERE id=@projId AND organization_id=@orgId AND deleted_at IS NULL`);
         if (!projResult.recordset.length) return res.status(404).json({ error: 'Commessa non trovata.' });
 
         const project = projResult.recordset[0];
@@ -495,7 +496,7 @@ async function getCoverage(req, res) {
                        thickness_range_min, thickness_range_max, thickness_range,
                        welding_positions, position
                 FROM welding_procedures
-                WHERE id IN (${ph}) AND organization_id = @orgId AND status != 'annullata'
+                WHERE id IN (${ph}) AND organization_id = @orgId AND status != 'annullata' AND deleted_at IS NULL
             `);
             wpsRows = wRes.recordset;
         }
@@ -594,6 +595,7 @@ async function getOne(req, res) {
         if (!r.recordset.length) return res.status(404).json({ error: 'Non trovata.' });
 
         const row = r.recordset[0];
+        if (trashedDetailHidden(req.user, row)) return res.status(404).json({ error: 'Non trovata.' });
         const accessList = await ensureCompanyAccessLoaded(req.user);
         if (hasCompanyAccessRows(accessList)) {
             if (!row.company_id) {
@@ -813,6 +815,15 @@ async function createQualification(req, res) {
             `);
 
         logger.info(`[Qualif] Creata id=${r.recordset[0].id} per org ${orgId}`);
+        await logEntityChange({
+            organizationId: orgId,
+            entityTable: 'qualifications',
+            entityId: r.recordset[0].id,
+            actionType: 'created',
+            actorUserId: req.user.user_id,
+            after: body,
+            fields: QUALIFICATION_MANUAL_EDITABLE_FIELDS,
+        });
         res.status(201).json({ success: true, id: r.recordset[0].id });
     } catch (err) {
         if (isQualificationDuplicateIndexError(err)) {
@@ -832,7 +843,7 @@ async function updateQualification(req, res) {
         const { body, designationApplicable } = applyFieldApplicability(req.body);
 
         const check = await pool.request().input('id', id).input('orgId', orgId)
-            .query('SELECT id, company_id, certificate_file_url FROM qualifications WHERE id=@id AND organization_id=@orgId');
+            .query('SELECT * FROM qualifications WHERE id=@id AND organization_id=@orgId AND deleted_at IS NULL');
         if (!check.recordset.length) return res.status(404).json({ error: 'Non trovata.' });
 
         const targetCompanyId = body.company_id !== undefined ? body.company_id : check.recordset[0].company_id;
@@ -995,6 +1006,16 @@ async function updateQualification(req, res) {
                 WHERE id=@id AND organization_id=@orgId
             `);
 
+        await logEntityChange({
+            organizationId: orgId,
+            entityTable: 'qualifications',
+            entityId: id,
+            actionType: 'updated',
+            actorUserId: req.user.user_id,
+            before: check.recordset[0],
+            after: body,
+            fields: QUALIFICATION_MANUAL_EDITABLE_FIELDS,
+        });
         res.json({ success: true });
     } catch (err) {
         if (isQualificationDuplicateIndexError(err)) {
@@ -1005,7 +1026,7 @@ async function updateQualification(req, res) {
     }
 }
 
-/** DELETE /qualifications/:id — soft delete */
+/** DELETE /qualifications/:id — stato di business revocata, distinto dal cestino. */
 async function deleteQualification(req, res) {
     try {
         const pool  = await getPool();
@@ -1013,14 +1034,24 @@ async function deleteQualification(req, res) {
         const id    = parseInt(req.params.id);
 
         const check = await pool.request().input('id', id).input('orgId', orgId)
-            .query('SELECT id, company_id FROM qualifications WHERE id=@id AND organization_id=@orgId');
+            .query('SELECT id, company_id, status FROM qualifications WHERE id=@id AND organization_id=@orgId AND deleted_at IS NULL');
         if (!check.recordset.length) return res.status(404).json({ error: 'Non trovata.' });
 
         const writeDenied = await assertMutatingAllowed(req.user, { companyId: check.recordset[0].company_id });
         if (writeDenied) return sendAccessDenied(res, writeDenied);
 
         await pool.request().input('id', id).input('orgId', orgId)
-            .query("UPDATE qualifications SET status='revocata', updated_at=GETDATE() WHERE id=@id AND organization_id=@orgId");
+            .query("UPDATE qualifications SET status='revocata', updated_at=GETDATE() WHERE id=@id AND organization_id=@orgId AND deleted_at IS NULL");
+        await logEntityChange({
+            organizationId: orgId,
+            entityTable: 'qualifications',
+            entityId: id,
+            actionType: 'updated',
+            actorUserId: req.user.user_id,
+            before: { status: check.recordset[0].status },
+            after: { status: 'revocata' },
+            fields: ['status'],
+        });
 
         res.json({ success: true });
     } catch (err) {
@@ -1030,34 +1061,24 @@ async function deleteQualification(req, res) {
 }
 
 /**
- * DELETE /qualifications/:id/permanent — cancellazione fisica reale.
- *
- * Decisione di prodotto 28/07/2026: rimosso il concetto di "bozza mai approvata"
- * (non esiste più un gate di approvazione interna — v. header file). L'Elimina
- * definitiva è ora l'unica azione di rimozione esposta in UI (oltre alla modifica
- * diretta dello Stato) ed è consentita per QUALSIASI qualifica, purché non abbia
- * legami reali che ne renderebbero pericolosa la cancellazione:
- *  - non è collegata a un file di import (import_job_files.qualification_id);
- *  - non è la versione "precedente" di un rinnovo (nessun'altra qualifica la referenzia
- *    tramite previous_qualification_id);
- *  - non è assegnata a un WPS (wps_welders) o a una commessa (project_welders).
- *
- * Figli "logistici" eliminati in cascade esplicito (FK senza ON DELETE CASCADE):
- *  - qualification_confirmations (rilievo Mason 24/08/2026)
- *  - qual_notification_log (rilievo Mason 24/08/2026 — tipico su qualifiche
- *    con conferma semestrale già alertate: alert_kind=confirmation)
- * ingest_staging.target_qualification_id ha ON DELETE SET NULL (mig. 137).
+ * DELETE /qualifications/:id/permanent — cestino.
+ * Il nome della route resta per i client già in uso. Non cancella il file né
+ * le conferme: imposta deleted_at e deleted_by. revocata resta un altro stato.
  */
 async function hardDeleteQualification(req, res) {
     try {
         const pool  = await getPool();
         const orgId = req.user.organization_id;
         const id    = parseInt(req.params.id);
+        if (!Number.isInteger(id) || id <= 0) {
+            return res.status(400).json({ error: 'Identificativo non valido.', code: 'INVALID_ID' });
+        }
 
         const check = await pool.request().input('id', id).input('orgId', orgId)
             .query(`
-                SELECT id, company_id, approval_status, approved_at, certificate_file_url
-                FROM qualifications WHERE id=@id AND organization_id=@orgId
+                SELECT id, company_id, status, certificate_number, person_name
+                FROM qualifications
+                WHERE id=@id AND organization_id=@orgId AND deleted_at IS NULL
             `);
         if (!check.recordset.length) return res.status(404).json({ error: 'Non trovata.' });
 
@@ -1065,78 +1086,22 @@ async function hardDeleteQualification(req, res) {
         const writeDenied = await assertMutatingAllowed(req.user, { companyId: row.company_id });
         if (writeDenied) return sendAccessDenied(res, writeDenied);
 
-        const [importLinks, renewalRefs] = await Promise.all([
-            pool.request().input('id', id)
-                .query('SELECT COUNT(*) AS cnt FROM import_job_files WHERE qualification_id=@id'),
-            pool.request().input('id', id)
-                .query('SELECT COUNT(*) AS cnt FROM qualifications WHERE previous_qualification_id=@id'),
-        ]);
+        await pool.request().input('id', id).input('orgId', orgId).input('actor', req.user.user_id)
+            .query(`UPDATE qualifications
+                    SET deleted_at = SYSUTCDATETIME(), deleted_by = @actor
+                    WHERE id=@id AND organization_id=@orgId AND deleted_at IS NULL`);
 
-        if (importLinks.recordset[0].cnt > 0) {
-            return res.status(409).json({
-                error: 'Impossibile eliminare: la qualifica \u00e8 collegata a un documento importato.',
-                code: 'HAS_IMPORT_LINK',
-            });
-        }
-        if (renewalRefs.recordset[0].cnt > 0) {
-            return res.status(409).json({
-                error: 'Impossibile eliminare: la qualifica \u00e8 collegata a un rinnovo successivo.',
-                code: 'HAS_RENEWAL_LINK',
-            });
-        }
+        await logEntityChange({
+            organizationId: orgId,
+            entityTable: 'qualifications',
+            entityId: id,
+            actionType: 'soft_deleted',
+            actorUserId: req.user.user_id,
+            before: { status: row.status, certificate_number: row.certificate_number, person_name: row.person_name, deleted_at: null },
+            after: { deleted_at: 'cestino' },
+        });
 
-        try {
-            const wpsLink = await pool.request().input('id', id)
-                .query('SELECT COUNT(*) AS cnt FROM wps_welders WHERE qualification_id=@id');
-            if (wpsLink.recordset[0].cnt > 0) {
-                return res.status(409).json({
-                    error: 'Impossibile eliminare: la qualifica \u00e8 assegnata a una procedura di saldatura (WPS).',
-                    code: 'HAS_WPS_LINK',
-                });
-            }
-        } catch (wpsErr) {
-            // Tabella wps_welders assente in alcuni ambienti storici: non blocca l'eliminazione.
-            logger.warn('[Qualif] Verifica wps_welders non eseguita:', wpsErr.message);
-        }
-
-        try {
-            const projLink = await pool.request().input('id', id)
-                .query('SELECT COUNT(*) AS cnt FROM project_welders WHERE qualification_id=@id');
-            if (projLink.recordset[0].cnt > 0) {
-                return res.status(409).json({
-                    error: 'Impossibile eliminare: la qualifica \u00e8 assegnata a una commessa.',
-                    code: 'HAS_PROJECT_LINK',
-                });
-            }
-        } catch (projErr) {
-            logger.warn('[Qualif] Verifica project_welders non eseguita:', projErr.message);
-        }
-
-        // Cascade esplicito: FK senza ON DELETE CASCADE (mig. 093/094).
-        // Ordine: figli logistici → qualifica. Il log alert (soprattutto
-        // confirmation per 9606/14732) era il blocco visto da Mason in produzione.
-        await pool.request().input('id', id).input('orgId', orgId)
-            .query('DELETE FROM qualification_confirmations WHERE qualification_id=@id AND organization_id=@orgId');
-        await pool.request().input('id', id).input('orgId', orgId)
-            .query('DELETE FROM qual_notification_log WHERE qualification_id=@id AND organization_id=@orgId');
-
-        await pool.request().input('id', id).input('orgId', orgId)
-            .query('DELETE FROM qualifications WHERE id=@id AND organization_id=@orgId');
-
-        if (row.certificate_file_url) {
-            try {
-                const uploadBase = process.env.UPLOAD_DIR
-                    ? path.resolve(process.env.UPLOAD_DIR)
-                    : path.resolve(__dirname, '../../uploads');
-                const relPart = row.certificate_file_url.replace(/^\//, '').replace(/^uploads\//, '');
-                const filePath = path.join(uploadBase, relPart);
-                if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-            } catch (_) {
-                /* best-effort: la cancellazione del record non deve fallire per questo */
-            }
-        }
-
-        logger.info(`[Qualif] Eliminata definitivamente id=${id} da user ${req.user.user_id} org ${orgId}`);
+        logger.info(`[Qualif] Nel cestino id=${id} da user ${req.user.user_id} org ${orgId}`);
         res.json({ success: true });
     } catch (err) {
         logger.error('hardDeleteQualification:', err.message);
@@ -1157,7 +1122,7 @@ async function renewQualification(req, res) {
         const userId = req.user.user_id;
 
         const check = await pool.request().input('id', id).input('orgId', orgId)
-            .query('SELECT * FROM qualifications WHERE id=@id AND organization_id=@orgId');
+            .query('SELECT * FROM qualifications WHERE id=@id AND organization_id=@orgId AND deleted_at IS NULL');
         if (!check.recordset.length) return res.status(404).json({ error: 'Non trovata.' });
 
         const q = check.recordset[0];
@@ -1406,7 +1371,7 @@ async function uploadCertificate(req, res) {
         if (!req.file) return res.status(400).json({ error: 'Nessun file caricato.' });
 
         const check = await pool.request().input('id', id).input('orgId', orgId)
-            .query('SELECT id, company_id, certificate_file_url FROM qualifications WHERE id=@id AND organization_id=@orgId');
+            .query('SELECT * FROM qualifications WHERE id=@id AND organization_id=@orgId AND deleted_at IS NULL');
         if (!check.recordset.length) {
             fs.unlinkSync(req.file.path);
             return res.status(404).json({ error: 'Qualifica non trovata.' });
@@ -1851,7 +1816,7 @@ async function exportConfirmations(req, res) {
             if (await denyOutsideCompany(res, req.user, qualRow.recordset[0].company_id, 'read')) return;
         }
 
-        const conditions = ['qc.organization_id = @orgId'];
+        const conditions = ['qc.organization_id = @orgId', 'q.deleted_at IS NULL'];
         const params = { orgId };
         const companyFilter = companyAccessSqlFilter(accessList, 'qc');
         if (companyFilter.clause) {

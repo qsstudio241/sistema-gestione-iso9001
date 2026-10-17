@@ -6,6 +6,7 @@
  */
 
 const { query } = require('../config/database');
+const { logEntityChange, trashedDetailHidden, softDeleteSql } = require('../services/entityChangeLog.service');
 const logger = require('../utils/logger');
 const {
     ensureCompanyAccessLoaded,
@@ -122,7 +123,7 @@ async function listProjects(req, res) {
         const accessList = await ensureCompanyAccessLoaded(req.user);
         const companyFilter = companyAccessSqlFilter(accessList, 'p');
 
-        const conditions = ['p.organization_id = @organization_id'];
+        const conditions = ['p.organization_id = @organization_id', 'p.deleted_at IS NULL'];
         const params = { organization_id, limit: parseInt(limit), offset };
         Object.assign(params, companyFilter.params);
 
@@ -157,6 +158,7 @@ async function listProjects(req, res) {
                 cp.external_ref AS end_customer_ref,
                 (SELECT COUNT(*) FROM project_welders pw
                  WHERE pw.project_id = p.id AND pw.organization_id = @organization_id
+                   AND pw.deleted_at IS NULL
                 ) AS welders_count
             FROM projects p
             LEFT JOIN companies c ON p.company_id = c.id
@@ -219,7 +221,7 @@ async function getProjectStats(req, res) {
                 SUM(CASE WHEN p.status = 'completata' THEN 1 ELSE 0 END) AS completata,
                 SUM(CASE WHEN p.status = 'chiusa' THEN 1 ELSE 0 END) AS chiusa
             FROM projects p
-            WHERE p.organization_id = @organization_id${whereExtra}
+            WHERE p.organization_id = @organization_id AND p.deleted_at IS NULL${whereExtra}
         `, params);
 
         res.json({ success: true, data: result.recordset[0] });
@@ -248,6 +250,9 @@ async function getProject(req, res) {
         }
 
         const project = result.recordset[0];
+        if (trashedDetailHidden(req.user, project)) {
+            return res.status(404).json({ error: 'Progetto non trovato', code: 'PROJECT_NOT_FOUND' });
+        }
         if (await denyOutsideCompany(res, req.user, project.company_id, 'read')) return;
 
         // Parse WPS ids e recupera dettagli
@@ -262,7 +267,7 @@ async function getProject(req, res) {
                     const wpsResult = await query(`
                         SELECT id, wps_code, welding_process, status
                         FROM welding_procedures
-                        WHERE id IN (${placeholders}) AND organization_id = @organization_id
+                        WHERE id IN (${placeholders}) AND organization_id = @organization_id AND deleted_at IS NULL
                     `, wpsParams);
                     wpsDetails = wpsResult.recordset;
                 }
@@ -275,6 +280,7 @@ async function getProject(req, res) {
             FROM project_welders pw
             JOIN qualifications q ON pw.qualification_id = q.id
             WHERE pw.project_id = @id AND pw.organization_id = @organization_id
+              AND pw.deleted_at IS NULL AND q.deleted_at IS NULL
             ORDER BY q.person_name
         `, { id: parseInt(id), organization_id });
 
@@ -365,6 +371,15 @@ async function createProject(req, res) {
         });
 
         const newId = result.recordset[0].id;
+        await logEntityChange({
+            organizationId: organization_id,
+            entityTable: 'projects',
+            entityId: newId,
+            actionType: 'created',
+            actorUserId: user_id,
+            after: { project_code, status, company_id: companyIdVal, description: description || null, notes: notes || null },
+            fields: ['project_code', 'status', 'company_id', 'description', 'notes'],
+        });
         logger.info('Project created', { id: newId, organization_id, project_code });
 
         res.status(201).json({ success: true, data: { id: newId, project_code, status } });
@@ -381,8 +396,10 @@ async function updateProject(req, res) {
         const { organization_id } = req.user;
 
         const existing = await query(`
-            SELECT id, company_id, end_customer_id, client_name, technical_review_checklist FROM projects
-            WHERE id = @id AND organization_id = @organization_id
+            SELECT id, company_id, end_customer_id, client_name, technical_review_checklist,
+                   project_code, description, status, notes, deleted_at
+            FROM projects
+            WHERE id = @id AND organization_id = @organization_id AND deleted_at IS NULL
         `, { id: parseInt(id), organization_id });
 
         if (existing.recordset.length === 0) {
@@ -468,6 +485,16 @@ async function updateProject(req, res) {
             WHERE id = @id
         `, params);
 
+        await logEntityChange({
+            organizationId: organization_id,
+            entityTable: 'projects',
+            entityId: parseInt(id),
+            actionType: 'updated',
+            actorUserId: req.user.user_id,
+            before: existingProject,
+            after: req.body,
+            fields: allowed,
+        });
         logger.info('Project updated', { id, organization_id });
         res.json({ success: true, message: 'Progetto aggiornato con successo' });
     } catch (error) {
@@ -482,10 +509,14 @@ async function deleteProject(req, res) {
         const { id } = req.params;
         const { organization_id } = req.user;
 
+        const projectId = parseInt(id);
+        if (!Number.isInteger(projectId) || projectId <= 0) {
+            return res.status(400).json({ error: 'Identificativo non valido.', code: 'INVALID_ID' });
+        }
         const existing = await query(`
-            SELECT id, status, company_id FROM projects
-            WHERE id = @id AND organization_id = @organization_id
-        `, { id: parseInt(id), organization_id });
+            SELECT id, status, company_id, project_code FROM projects
+            WHERE id = @id AND organization_id = @organization_id AND deleted_at IS NULL
+        `, { id: projectId, organization_id });
 
         if (existing.recordset.length === 0) {
             return res.status(404).json({ error: 'Progetto non trovato', code: 'PROJECT_NOT_FOUND' });
@@ -494,26 +525,28 @@ async function deleteProject(req, res) {
         const project = existing.recordset[0];
         if (await denyOutsideCompany(res, req.user, project.company_id, 'write')) return;
 
-        if (project.status === 'offerta') {
-            // Hard delete per progetti in stato offerta (+ saldatori collegati)
-            await query(`
-                DELETE FROM project_welders
-                WHERE project_id = @id AND organization_id = @organization_id
-            `, { id: parseInt(id), organization_id });
-            await query(`
-                DELETE FROM projects
-                WHERE id = @id AND organization_id = @organization_id
-            `, { id: parseInt(id), organization_id });
-        } else {
-            // Soft delete: status = chiusa
-            await query(`
-                UPDATE projects SET status = 'chiusa', updated_at = GETDATE()
-                WHERE id = @id AND organization_id = @organization_id
-            `, { id: parseInt(id), organization_id });
-        }
+        await query(`
+            UPDATE project_welders
+            SET deleted_at = SYSUTCDATETIME(), deleted_by = @actor_user_id
+            WHERE project_id = @id AND organization_id = @organization_id AND deleted_at IS NULL
+        `, { id: projectId, organization_id, actor_user_id: req.user.user_id });
+        await query(softDeleteSql('projects', 'id'), {
+            id: projectId,
+            organization_id,
+            actor_user_id: req.user.user_id,
+        });
+        await logEntityChange({
+            organizationId: organization_id,
+            entityTable: 'projects',
+            entityId: projectId,
+            actionType: 'soft_deleted',
+            actorUserId: req.user.user_id,
+            before: { status: project.status, project_code: project.project_code, deleted_at: null },
+            after: { deleted_at: 'cestino' },
+        });
 
-        logger.info('Project deleted', { id, organization_id, hard: project.status === 'offerta' });
-        res.json({ success: true, message: 'Progetto eliminato con successo' });
+        logger.info('Project moved to trash', { id, organization_id, status: project.status });
+        res.json({ success: true, message: 'Commessa spostata nel cestino' });
     } catch (error) {
         logger.error('Error deleting project', { error: error.message });
         res.status(500).json({ error: 'Errore durante l\'eliminazione del progetto', code: 'PROJECT_DELETE_ERROR' });
@@ -545,7 +578,7 @@ async function addProjectWelder(req, res) {
         const qualCheck = await query(
             `SELECT id, company_id, approval_status, status, expiry_date, person_name
              FROM qualifications
-             WHERE id=@qid AND organization_id=@organization_id`,
+             WHERE id=@qid AND organization_id=@organization_id AND deleted_at IS NULL`,
             { qid: parseInt(qualification_id), organization_id }
         );
         if (!qualCheck.recordset.length) {
@@ -639,10 +672,20 @@ async function removeProjectWelder(req, res) {
         if (await denyOutsideCompany(res, req.user, check.recordset[0].company_id, 'write')) return;
 
         await query(
-            `DELETE FROM project_welders
-             WHERE project_id=@pid AND qualification_id=@qid AND organization_id=@organization_id`,
-            { pid: parseInt(id), qid: parseInt(qualificationId), organization_id }
+            `UPDATE project_welders
+             SET deleted_at = SYSUTCDATETIME(), deleted_by = @actor_user_id
+             WHERE project_id=@pid AND qualification_id=@qid AND organization_id=@organization_id AND deleted_at IS NULL`,
+            { pid: parseInt(id), qid: parseInt(qualificationId), organization_id, actor_user_id: req.user.user_id }
         );
+        await logEntityChange({
+            organizationId: organization_id,
+            entityTable: 'project_welders',
+            entityId: check.recordset[0].id,
+            actionType: 'soft_deleted',
+            actorUserId: req.user.user_id,
+            before: { deleted_at: null },
+            after: { deleted_at: 'cestino' },
+        });
 
         logger.info('ProjectWelder removed', { project_id: id, qualification_id: qualificationId, organization_id });
         res.json({ success: true });

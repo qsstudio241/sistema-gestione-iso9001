@@ -30,6 +30,7 @@ const ReportTemplatesAdminPage = React.lazy(() => import("./components/ReportTem
 const CustomChecklistsPage = React.lazy(() => import("./components/CustomChecklistsPage"));
 const NotificationsSettingsPage = React.lazy(() => import("./pages/NotificationsSettingsPage"));
 const QualificationsPage = React.lazy(() => import("./pages/QualificationsPage"));
+const TrashPage = React.lazy(() => import("./pages/TrashPage"));
 const NCPage = React.lazy(() => import("./pages/NCPage"));
 const RisksPage = React.lazy(() => import("./pages/RisksPage"));
 const ComplaintsPage = React.lazy(() => import("./pages/ComplaintsPage"));
@@ -185,6 +186,7 @@ function AppContent() {
         <Route path="/deadlines"  element={<LicensedRoute moduleKey="documents"><DeadlinesPage /></LicensedRoute>} />
         <Route path="/management-reviews" element={<LicensedRoute moduleKey="riesame_direzione"><ManagementReviewsPage /></LicensedRoute>} />
         <Route path="/qualifiche" element={<LicensedRoute moduleKey="qualifiche"><QualificationsPage /></LicensedRoute>} />
+        <Route path="/cestino" element={<TrashPage />} />
         <Route path="/nc"         element={<LicensedRoute moduleKey="nc"><NCPage /></LicensedRoute>} />
         <Route path="/rischi"     element={<LicensedRoute moduleKey="rischi"><RisksPage /></LicensedRoute>} />
         <Route path="/reclami"          element={<LicensedRoute moduleKey="reclami"><ComplaintsPage /></LicensedRoute>} />
