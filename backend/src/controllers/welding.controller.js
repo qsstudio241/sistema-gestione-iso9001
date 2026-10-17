@@ -1083,6 +1083,7 @@ async function assignWpsWelder(req, res) {
         const dupCheck = await query(`
             SELECT id FROM wps_welders
             WHERE wps_id = @wps_id AND qualification_id = @qualification_id AND organization_id = @organization_id
+              AND deleted_at IS NULL
         `, { wps_id: parseInt(id), qualification_id: parseInt(qualification_id), organization_id });
 
         if (dupCheck.recordset.length > 0) {

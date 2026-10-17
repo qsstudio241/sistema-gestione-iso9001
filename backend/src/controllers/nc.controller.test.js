@@ -64,6 +64,7 @@ describe('listNonConformities  -  RBAC studio', () => {
         const listSql = query.mock.calls[0][0];
         const listParams = query.mock.calls[0][1];
         expect(listSql).toContain('auditor_org_id = @auditor_org_id');
+        expect(listSql).toContain('FROM attachments WHERE nc_id = nc.nc_id AND deleted_at IS NULL');
         expect(listSql).toContain('LEFT JOIN projects');
         expect(listParams).toMatchObject({
             organization_id: ORG_ID,
@@ -501,5 +502,26 @@ describe('createNonConformity  -  project_id opzionale', () => {
         expect(res.json).toHaveBeenCalledWith(
             expect.objectContaining({ code: 'PROJECT_COMPANY_MISMATCH' }),
         );
+    });
+});
+
+describe('deleteNonConformity — scope organizzazione', () => {
+    it('il soft delete porta organization_id su NC, azioni e allegati', async () => {
+        query.mockImplementation(async (sql) => {
+            if (/SELECT nc\.nc_id/.test(sql)) {
+                return { recordset: [{ nc_id: 7, audit_id: null, source_category: 'manual', company_id: 5 }] };
+            }
+            return { recordset: [] };
+        });
+        const req = mockReq({
+            user: { role: 'admin', company_access: [] },
+            params: { id: '7' },
+        });
+        const res = mockRes();
+        await ctrl.deleteNonConformity(req, res);
+        const updates = query.mock.calls.map((call) => String(call[0])).filter((sql) => /SET deleted_at/.test(sql));
+        expect(updates).toHaveLength(3);
+        updates.forEach((sql) => expect(sql).toContain('@organization_id'));
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
     });
 });

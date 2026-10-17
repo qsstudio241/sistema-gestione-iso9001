@@ -295,7 +295,7 @@ async function listNonConformities(req, res) {
         cs.section_title,
         c.complaint_number AS source_complaint_number,
         approver.full_name AS approved_by_name,
-        (SELECT COUNT(*) FROM attachments WHERE nc_id = nc.nc_id) AS attachments_count,
+        (SELECT COUNT(*) FROM attachments WHERE nc_id = nc.nc_id AND deleted_at IS NULL) AS attachments_count,
         (SELECT COUNT(*) FROM nc_actions WHERE nc_id = nc.nc_id AND deleted_at IS NULL AND action_type = 'immediate' AND status IN ('completed','verified')) AS correction_completed_count,
         (SELECT COUNT(*) FROM nc_actions WHERE nc_id = nc.nc_id AND deleted_at IS NULL AND action_type = 'corrective' AND status IN ('completed','verified')) AS corrective_completed_count,
         CASE
@@ -450,7 +450,7 @@ async function getNonConformityById(req, res) {
         a.audit_date,
         cs.section_title,
         approver.full_name AS approved_by_name,
-        (SELECT COUNT(*) FROM attachments WHERE nc_id = nc.nc_id) AS attachments_count,
+        (SELECT COUNT(*) FROM attachments WHERE nc_id = nc.nc_id AND deleted_at IS NULL) AS attachments_count,
         (SELECT COUNT(*) FROM nc_actions WHERE nc_id = nc.nc_id AND deleted_at IS NULL AND action_type = 'immediate' AND status IN ('completed','verified')) AS correction_completed_count,
         (SELECT COUNT(*) FROM nc_actions WHERE nc_id = nc.nc_id AND deleted_at IS NULL AND action_type = 'corrective' AND status IN ('completed','verified')) AS corrective_completed_count,
         CASE 
@@ -1259,18 +1259,26 @@ async function deleteNonConformity(req, res) {
         await query(`
             UPDATE non_conformities
             SET deleted_at = SYSUTCDATETIME(), deleted_by = @actor_user_id
-            WHERE nc_id = @id AND deleted_at IS NULL
-        `, { id: parseInt(id), actor_user_id: req.user.user_id });
+            WHERE nc_id = @id AND organization_id = @organization_id AND deleted_at IS NULL
+        `, { id: parseInt(id), organization_id, actor_user_id: req.user.user_id });
         await query(`
             UPDATE nc_actions
             SET deleted_at = SYSUTCDATETIME(), deleted_by = @actor_user_id
             WHERE nc_id = @id AND deleted_at IS NULL
-        `, { id: parseInt(id), actor_user_id: req.user.user_id });
+              AND EXISTS (
+                SELECT 1 FROM non_conformities nc
+                WHERE nc.nc_id = nc_actions.nc_id AND nc.organization_id = @organization_id
+              )
+        `, { id: parseInt(id), organization_id, actor_user_id: req.user.user_id });
         await query(`
             UPDATE attachments
             SET deleted_at = SYSUTCDATETIME(), deleted_by = @actor_user_id
             WHERE nc_id = @id AND deleted_at IS NULL
-        `, { id: parseInt(id), actor_user_id: req.user.user_id });
+              AND EXISTS (
+                SELECT 1 FROM non_conformities nc
+                WHERE nc.nc_id = attachments.nc_id AND nc.organization_id = @organization_id
+              )
+        `, { id: parseInt(id), organization_id, actor_user_id: req.user.user_id });
         await logEntityChange({
             organizationId: organization_id,
             entityTable: 'non_conformities',
@@ -1654,7 +1662,13 @@ async function deleteNcAction(req, res) {
             UPDATE nc_actions
             SET deleted_at = SYSUTCDATETIME(), deleted_by = @actor_user_id
             WHERE action_id = @actionId AND deleted_at IS NULL
-        `, { actionId: parseInt(actionId), actor_user_id: req.user.user_id });
+              AND EXISTS (
+                SELECT 1 FROM non_conformities nc
+                WHERE nc.nc_id = nc_actions.nc_id
+                  AND nc.nc_id = @nc_id
+                  AND nc.organization_id = @organization_id
+              )
+        `, { actionId: parseInt(actionId), nc_id: parseInt(id), organization_id, actor_user_id: req.user.user_id });
         await logEntityChange({
             organizationId: organization_id,
             entityTable: 'nc_actions',
@@ -1981,10 +1995,15 @@ async function undoPushAuditToNcRegister(req, res) {
             SELECT nc.nc_id
             FROM non_conformities nc
             WHERE nc.audit_id = @audit_id
+              AND nc.organization_id = @organization_id
+              AND nc.deleted_at IS NULL
               AND nc.source_type IN ('audit_nc', 'audit_oss')
               AND nc.status = 'open'
-              AND NOT EXISTS (SELECT 1 FROM nc_actions a WHERE a.nc_id = nc.nc_id)
-        `, { audit_id });
+              AND NOT EXISTS (
+                SELECT 1 FROM nc_actions a
+                WHERE a.nc_id = nc.nc_id AND a.deleted_at IS NULL
+              )
+        `, { audit_id, organization_id });
 
         const eligibleIds = (eligibleRes.recordset || []).map(r => r.nc_id);
 
@@ -2004,8 +2023,8 @@ async function undoPushAuditToNcRegister(req, res) {
         const delRes = await query(`
             UPDATE non_conformities
             SET deleted_at = SYSUTCDATETIME(), deleted_by = @actor_user_id
-            WHERE nc_id IN (${idList}) AND deleted_at IS NULL
-        `, { actor_user_id: user_id });
+            WHERE nc_id IN (${idList}) AND organization_id = @organization_id AND deleted_at IS NULL
+        `, { actor_user_id: user_id, organization_id });
 
         // Aggiorna contatore audit
         await query(`

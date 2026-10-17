@@ -333,11 +333,26 @@ async function restoreTrash(req, res) {
         }
 
         const spec = ENTITIES[entity];
-        const sql = entity === 'attachments'
-            ? 'UPDATE attachments SET deleted_at = NULL, deleted_by = NULL WHERE attachment_id = @id AND deleted_at IS NOT NULL'
-            : entity === 'nc_actions'
-                ? 'UPDATE nc_actions SET deleted_at = NULL, deleted_by = NULL WHERE action_id = @id AND deleted_at IS NOT NULL'
-                : restoreSql(spec.table, spec.idColumn, { hasOrg: true });
+        let sql;
+        if (entity === 'attachments') {
+            const scope = attachmentScopeSync({ role: 'admin' });
+            sql = `UPDATE att
+                SET deleted_at = NULL, deleted_by = NULL
+                FROM attachments att
+                ${scope.joinSql}
+                WHERE att.attachment_id = @id AND att.deleted_at IS NOT NULL
+                  AND ${scope.orgClause}`;
+        } else if (entity === 'nc_actions') {
+            sql = `UPDATE a
+                SET deleted_at = NULL, deleted_by = NULL
+                FROM nc_actions a
+                INNER JOIN non_conformities nc ON nc.nc_id = a.nc_id
+                LEFT JOIN audits au ON au.audit_id = nc.audit_id
+                WHERE a.action_id = @id AND a.deleted_at IS NOT NULL
+                  AND COALESCE(nc.organization_id, au.organization_id) = @organization_id`;
+        } else {
+            sql = restoreSql(spec.table, spec.idColumn, { hasOrg: true });
+        }
         await query(sql, {
             id,
             organization_id: organizationId,

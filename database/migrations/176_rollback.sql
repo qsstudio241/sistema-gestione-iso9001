@@ -69,6 +69,30 @@ BEGIN
 END
 GO
 IF OBJECT_ID(N'dbo.qualifications', N'U') IS NOT NULL
+   AND EXISTS (
+        SELECT 1 FROM sys.indexes
+        WHERE name = N'UX_qualif_org_company_cert_person_active'
+          AND object_id = OBJECT_ID(N'dbo.qualifications')
+          AND has_filter = 1
+          AND filter_definition LIKE N'%deleted_at%'
+   )
+BEGIN
+    DROP INDEX UX_qualif_org_company_cert_person_active ON dbo.qualifications;
+    PRINT N'176 rollback: indice unico qualifiche (filtro cestino) rimosso.';
+END
+GO
+IF OBJECT_ID(N'dbo.wps_wpqr_links', N'U') IS NOT NULL
+   AND EXISTS (
+        SELECT 1 FROM sys.indexes
+        WHERE name = N'UX_wps_wpqr_links_pair_active'
+          AND object_id = OBJECT_ID(N'dbo.wps_wpqr_links')
+   )
+BEGIN
+    DROP INDEX UX_wps_wpqr_links_pair_active ON dbo.wps_wpqr_links;
+    PRINT N'176 rollback: indice unico legami attivi rimosso.';
+END
+GO
+IF OBJECT_ID(N'dbo.qualifications', N'U') IS NOT NULL
    AND COL_LENGTH(N'dbo.qualifications', N'deleted_by') IS NOT NULL
 BEGIN
     ALTER TABLE dbo.qualifications DROP COLUMN deleted_by;
@@ -80,6 +104,21 @@ IF OBJECT_ID(N'dbo.qualifications', N'U') IS NOT NULL
 BEGIN
     ALTER TABLE dbo.qualifications DROP COLUMN deleted_at;
     PRINT N'176 rollback: qualifications.deleted_at rimossa.';
+END
+GO
+IF OBJECT_ID(N'dbo.qualifications', N'U') IS NOT NULL
+   AND NOT EXISTS (
+        SELECT 1 FROM sys.indexes
+        WHERE name = N'UX_qualif_org_company_cert_person_active'
+          AND object_id = OBJECT_ID(N'dbo.qualifications')
+   )
+BEGIN
+    CREATE UNIQUE INDEX UX_qualif_org_company_cert_person_active
+        ON dbo.qualifications (organization_id, company_id, certificate_number, person_name)
+        WHERE status <> 'revocata'
+          AND certificate_number IS NOT NULL
+          AND certificate_number <> '';
+    PRINT N'176 rollback: indice unico qualifiche ripristinato (solo revocate escluse).';
 END
 GO
 IF OBJECT_ID(N'dbo.welding_procedures', N'U') IS NOT NULL
@@ -136,6 +175,18 @@ IF OBJECT_ID(N'dbo.wps_wpqr_links', N'U') IS NOT NULL
 BEGIN
     ALTER TABLE dbo.wps_wpqr_links DROP COLUMN deleted_at;
     PRINT N'176 rollback: wps_wpqr_links.deleted_at rimossa.';
+END
+GO
+IF OBJECT_ID(N'dbo.wps_wpqr_links', N'U') IS NOT NULL
+   AND NOT EXISTS (
+        SELECT 1 FROM sys.key_constraints
+        WHERE name = N'UQ_wps_wpqr_links_wps_wpqr'
+          AND parent_object_id = OBJECT_ID(N'dbo.wps_wpqr_links')
+   )
+BEGIN
+    ALTER TABLE dbo.wps_wpqr_links
+        ADD CONSTRAINT UQ_wps_wpqr_links_wps_wpqr UNIQUE (wps_id, wpqr_id);
+    PRINT N'176 rollback: UNIQUE legami WPS-WPQR ripristinato.';
 END
 GO
 IF OBJECT_ID(N'dbo.wps_welders', N'U') IS NOT NULL

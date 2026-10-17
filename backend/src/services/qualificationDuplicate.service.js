@@ -3,8 +3,8 @@
  *
  * Due criteri convivono nel DB:
  *  - applicativo: stesso certificato + azienda + tipo (qualunque persona);
- *  - indice unico filtrato UX_qualif_org_company_cert_person_active (migrazione 087):
- *    organizzazione + azienda + certificato + persona (qualunque tipo), escluse le revocate.
+ *  - indice unico filtrato UX_qualif_org_company_cert_person_active (087, riallineato da 176):
+ *    organizzazione + azienda + certificato + persona (qualunque tipo), escluse le revocate e le cestinate.
  * Il controllo applicativo li copre entrambi; l'errore dell'indice (race o scritture dirette)
  * viene tradotto nello stesso messaggio, senza esporre nome indice o dati SQL.
  */

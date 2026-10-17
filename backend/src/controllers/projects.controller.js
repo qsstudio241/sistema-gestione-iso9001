@@ -625,7 +625,7 @@ async function addProjectWelder(req, res) {
 
         // Evita duplicati
         const dup = await query(
-            `SELECT id FROM project_welders WHERE project_id=@pid AND qualification_id=@qid AND organization_id=@organization_id`,
+            `SELECT id FROM project_welders WHERE project_id=@pid AND qualification_id=@qid AND organization_id=@organization_id AND deleted_at IS NULL`,
             { pid: parseInt(id), qid: parseInt(qualification_id), organization_id }
         );
         if (dup.recordset.length) {

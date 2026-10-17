@@ -718,10 +718,15 @@ async function deleteAttachment(req, res) {
         const attachment = result.recordset[0];
 
         await query(`
-      UPDATE attachments
+      UPDATE att
       SET deleted_at = SYSUTCDATETIME(), deleted_by = @actor_user_id
-      WHERE attachment_id = @id AND deleted_at IS NULL
-    `, { id: parseInt(id), actor_user_id: req.user.user_id });
+      FROM attachments att
+      ${joinSql}
+      WHERE att.attachment_id = @id
+        AND att.deleted_at IS NULL
+        AND ${orgClause}
+        ${rbacClause}
+    `, { id: parseInt(id), organization_id, actor_user_id: req.user.user_id, ...scopeParams });
         await logEntityChange({
             organizationId: organization_id,
             entityTable: 'attachments',

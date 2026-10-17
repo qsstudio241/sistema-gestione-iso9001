@@ -123,5 +123,33 @@ describe('cestino', () => {
         expect(insert[1].organization_id).toBe(1);
         expect(insert[1].old_value).toContain('2026-10-17');
         expect(insert[1].new_value).toContain('null');
+        const restoreSql = String(query.mock.calls.find((call) => /SET deleted_at = NULL/.test(String(call[0])))[0]);
+        expect(restoreSql).toContain('organization_id = @organization_id');
+    });
+
+    it('il ripristino di un allegato porta lo scope organizzazione nello stesso UPDATE', async () => {
+        query.mockImplementation(async (sql) => {
+            if (/INSERT INTO entity_change_log/.test(sql)) return { recordset: [] };
+            if (/SET deleted_at = NULL/.test(sql)) return { recordset: [] };
+            return {
+                recordset: [{
+                    id: 4,
+                    company_id: 5,
+                    deleted_at: '2026-10-17T00:00:00Z',
+                    title: 'foto.pdf',
+                    organization_id: 1,
+                }],
+            };
+        });
+        const res = resMock();
+        await restoreTrash({
+            user: { role: 'admin', organization_id: 1, user_id: 9, company_access: [] },
+            params: { entity: 'attachments', id: '4' },
+        }, res);
+        expect(res.statusCode).toBe(200);
+        const restoreSql = String(query.mock.calls.find((call) => /SET deleted_at = NULL/.test(String(call[0])))[0]);
+        expect(restoreSql).toContain('organization_id');
+        expect(restoreSql).toContain('@organization_id');
+        expect(restoreSql).not.toMatch(/WHERE attachment_id = @id AND deleted_at IS NOT NULL\s*$/);
     });
 });

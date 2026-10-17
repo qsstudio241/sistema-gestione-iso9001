@@ -62,3 +62,15 @@ describe('qualifiche — cestino fuori da conteggi e dettaglio', () => {
         expect(visible.json).toHaveBeenCalled();
     });
 });
+
+describe('migrazione 176 — slot unico e cestino', () => {
+    it('l\'indice unico delle qualifiche e dei legami WPS esclude deleted_at', () => {
+        const fs = require('fs');
+        const path = require('path');
+        const sql = fs.readFileSync(path.resolve(__dirname, '../../../database/migrations/176_soft_delete_columns.sql'), 'utf8');
+        expect(sql).toContain('UX_qualif_org_company_cert_person_active');
+        expect(sql).toContain("AND deleted_at IS NULL");
+        expect(sql).toContain('UX_wps_wpqr_links_pair_active');
+        expect(sql).toContain('WHERE deleted_at IS NULL');
+    });
+});
