@@ -4,6 +4,11 @@
 
 jest.mock('../config/database', () => ({
     query: jest.fn(),
+    getPool: jest.fn(),
+    sql: {
+        Transaction: jest.fn(),
+        Request: jest.fn(),
+    },
 }));
 jest.mock('../utils/logger', () => ({
     info: jest.fn(),
@@ -12,7 +17,7 @@ jest.mock('../utils/logger', () => ({
     debug: jest.fn(),
 }));
 
-const { query } = require('../config/database');
+const { query, getPool, sql } = require('../config/database');
 const { linkApprovedCaseToProject } = require('./commercialCaseHandoffProject.service');
 
 const ORG = 1005;
@@ -28,12 +33,41 @@ function user(role, companyAccess = []) {
     return { user_id: 7, organization_id: ORG, role, company_access: companyAccess };
 }
 
-function sqlOf(call) {
-    return String(call[0]);
+function installTx(route) {
+    const state = { began: 0, committed: 0, rolled: 0, calls: [] };
+    getPool.mockResolvedValue({});
+    sql.Transaction.mockImplementation(() => ({
+        begin: jest.fn(async () => { state.began += 1; }),
+        commit: jest.fn(async () => { state.committed += 1; }),
+        rollback: jest.fn(async () => { state.rolled += 1; }),
+    }));
+    sql.Request.mockImplementation(() => {
+        const inputs = {};
+        return {
+            input(name, value) {
+                inputs[name] = value;
+                return this;
+            },
+            query: jest.fn(async (text) => {
+                const snap = { ...inputs };
+                state.calls.push({ sql: String(text), inputs: snap });
+                return route(String(text), snap);
+            }),
+        };
+    });
+    return state;
+}
+
+function sqls(state) {
+    return state.calls.map((c) => c.sql);
 }
 
 beforeEach(() => {
     query.mockReset();
+    getPool.mockReset();
+    sql.Transaction.mockReset();
+    sql.Request.mockReset();
+    query.mockResolvedValue({ recordset: [] });
 });
 
 describe('linkApprovedCaseToProject', () => {
@@ -48,6 +82,7 @@ describe('linkApprovedCaseToProject', () => {
         expect(result.status).toBe(403);
         expect(result.code).toBe('AUTH_FORBIDDEN');
         expect(query).not.toHaveBeenCalled();
+        expect(getPool).not.toHaveBeenCalled();
     });
 
     it('il cliente in sola lettura sulla azienda non collega', async () => {
@@ -58,7 +93,7 @@ describe('linkApprovedCaseToProject', () => {
             handoffRef: 'COMM-1',
         });
         expect(result.status).toBe(403);
-        expect(query).not.toHaveBeenCalled();
+        expect(getPool).not.toHaveBeenCalled();
     });
 
     it('elenco licenze senza Commesse blocca il collegamento', async () => {
@@ -73,15 +108,18 @@ describe('linkApprovedCaseToProject', () => {
         });
         expect(result.ok).toBe(false);
         expect(result.code).toBe('MODULE_NOT_LICENSED');
-        expect(query).toHaveBeenCalledTimes(1);
+        expect(getPool).not.toHaveBeenCalled();
     });
 
-    it('licenza vuota vale come tutti i moduli e crea la commessa', async () => {
-        query.mockImplementation(async (sql) => {
-            const text = String(sql);
-            if (text.includes('licensed_modules')) {
+    it('due passaggi dello stesso caso prendono il lock prima di creare la commessa', async () => {
+        query.mockImplementation(async (text) => {
+            if (String(text).includes('licensed_modules')) {
                 return { recordset: [{ licensed_modules: '[]' }] };
             }
+            return { recordset: [] };
+        });
+        const state = installTx((text) => {
+            if (text.includes('sp_getapplock')) return { recordset: [{ lock_result: 0 }] };
             if (text.includes('FROM projects') && text.includes('commercial_case_id = @caseId')) {
                 return { recordset: [] };
             }
@@ -100,13 +138,18 @@ describe('linkApprovedCaseToProject', () => {
         });
 
         expect(result).toMatchObject({ ok: true, action: 'created', project: { id: 81 } });
-        const insert = query.mock.calls.map(sqlOf).find((s) => s.includes('INSERT INTO projects'));
-        expect(insert).toContain('status, requirements_review_date');
-        expect(insert).toContain("'offerta'");
-        expect(insert).toContain('commercial_case_id');
-        expect(query.mock.calls.map(sqlOf).some((s) => s.includes('deleted_at IS NULL'))).toBe(true);
-        const insertParams = query.mock.calls.find((c) => String(c[0]).includes('INSERT INTO projects'))[1];
-        expect(insertParams).toMatchObject({
+        expect(state.began).toBe(1);
+        expect(state.committed).toBe(1);
+        expect(state.rolled).toBe(0);
+        const texts = sqls(state);
+        const lockAt = texts.findIndex((s) => s.includes('sp_getapplock'));
+        const insertAt = texts.findIndex((s) => s.includes('INSERT INTO projects'));
+        expect(lockAt).toBeGreaterThanOrEqual(0);
+        expect(insertAt).toBeGreaterThan(lockAt);
+        expect(texts.some((s) => s.includes('UPDLOCK'))).toBe(true);
+        const insert = state.calls.find((c) => c.sql.includes('INSERT INTO projects'));
+        expect(insert.sql).toContain("'offerta'");
+        expect(insert.inputs).toMatchObject({
             organizationId: ORG,
             companyId: 44,
             projectCode: 'COMM-1',
@@ -118,10 +161,31 @@ describe('linkApprovedCaseToProject', () => {
         });
     });
 
+    it('se il lock non arriva non crea una seconda commessa', async () => {
+        query.mockResolvedValue({ recordset: [{ licensed_modules: null }] });
+        const state = installTx((text) => {
+            if (text.includes('sp_getapplock')) return { recordset: [{ lock_result: -1 }] };
+            if (text.includes('INSERT INTO projects')) {
+                return { recordset: [{ id: 99 }] };
+            }
+            return { recordset: [] };
+        });
+        const result = await linkApprovedCaseToProject({
+            organizationId: ORG,
+            user: user('auditor'),
+            caseRow: CASE_ROW,
+            handoffRef: 'COMM-1',
+        });
+        expect(result).toMatchObject({ ok: false, status: 409, code: 'HANDOFF_BUSY' });
+        expect(sqls(state).some((s) => s.includes('INSERT INTO projects'))).toBe(false);
+        expect(state.committed).toBe(0);
+        expect(state.rolled).toBe(1);
+    });
+
     it('collega la commessa già presente con lo stesso codice e la stessa azienda', async () => {
-        query.mockImplementation(async (sql) => {
-            const text = String(sql);
-            if (text.includes('licensed_modules')) return { recordset: [{ licensed_modules: null }] };
+        query.mockResolvedValue({ recordset: [{ licensed_modules: null }] });
+        const state = installTx((text) => {
+            if (text.includes('sp_getapplock')) return { recordset: [{ lock_result: 0 }] };
             if (text.includes('FROM projects') && text.includes('commercial_case_id = @caseId')) {
                 return { recordset: [] };
             }
@@ -141,16 +205,18 @@ describe('linkApprovedCaseToProject', () => {
             handoffRef: 'COMM-1',
         });
         expect(result).toMatchObject({ ok: true, action: 'linked', project: { id: 5, commercial_case_id: 10 } });
-        expect(query.mock.calls.map(sqlOf).some((s) => s.includes('INSERT INTO projects'))).toBe(false);
-        const update = query.mock.calls.map(sqlOf).find((s) => s.includes('UPDATE projects'));
+        const texts = sqls(state);
+        expect(texts.some((s) => s.includes('INSERT INTO projects'))).toBe(false);
+        const update = texts.find((s) => s.includes('UPDATE projects'));
         expect(update).toContain('commercial_case_id = @caseId');
         expect(update).toContain('requirements_review_date');
+        expect(state.committed).toBe(1);
     });
 
     it('non ruba una commessa già collegata a un altro caso', async () => {
-        query.mockImplementation(async (sql) => {
-            const text = String(sql);
-            if (text.includes('licensed_modules')) return { recordset: [] };
+        query.mockResolvedValue({ recordset: [] });
+        const state = installTx((text) => {
+            if (text.includes('sp_getapplock')) return { recordset: [{ lock_result: 0 }] };
             if (text.includes('FROM projects') && text.includes('commercial_case_id = @caseId')) {
                 return { recordset: [] };
             }
@@ -166,13 +232,14 @@ describe('linkApprovedCaseToProject', () => {
             handoffRef: 'COMM-1',
         });
         expect(result.code).toBe('PROJECT_ALREADY_LINKED');
-        expect(query.mock.calls.map(sqlOf).some((s) => s.includes('UPDATE projects') || s.includes('INSERT INTO projects'))).toBe(false);
+        expect(sqls(state).some((s) => s.includes('UPDATE projects') || s.includes('INSERT INTO projects'))).toBe(false);
+        expect(state.rolled).toBe(1);
     });
 
     it("non collega una commessa di un'altra azienda", async () => {
-        query.mockImplementation(async (sql) => {
-            const text = String(sql);
-            if (text.includes('licensed_modules')) return { recordset: [] };
+        query.mockResolvedValue({ recordset: [] });
+        installTx((text) => {
+            if (text.includes('sp_getapplock')) return { recordset: [{ lock_result: 0 }] };
             if (text.includes('FROM projects') && text.includes('commercial_case_id = @caseId')) {
                 return { recordset: [] };
             }
@@ -191,9 +258,9 @@ describe('linkApprovedCaseToProject', () => {
     });
 
     it('se la commessa è già di questo caso non ne crea un’altra', async () => {
-        query.mockImplementation(async (sql) => {
-            const text = String(sql);
-            if (text.includes('licensed_modules')) return { recordset: [] };
+        query.mockResolvedValue({ recordset: [] });
+        const state = installTx((text) => {
+            if (text.includes('sp_getapplock')) return { recordset: [{ lock_result: 0 }] };
             if (text.includes('FROM projects') && text.includes('commercial_case_id = @caseId')) {
                 return { recordset: [{ id: 5, project_code: 'COMM-1', company_id: 44, commercial_case_id: 10 }] };
             }
@@ -206,6 +273,7 @@ describe('linkApprovedCaseToProject', () => {
             handoffRef: 'COMM-ALTRO',
         });
         expect(result).toMatchObject({ ok: true, action: 'already_linked', project: { id: 5 } });
-        expect(query.mock.calls.map(sqlOf).some((s) => s.includes('INSERT INTO projects'))).toBe(false);
+        expect(sqls(state).some((s) => s.includes('INSERT INTO projects'))).toBe(false);
+        expect(state.committed).toBe(1);
     });
 });

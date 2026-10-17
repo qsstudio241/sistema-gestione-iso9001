@@ -4,7 +4,7 @@
  * (colonna già presente, migrazione 085). Non è una soglia normativa nuova.
  */
 
-const { query } = require('../config/database');
+const { query, getPool, sql } = require('../config/database');
 const logger = require('../utils/logger');
 const { assertMutatingAllowed } = require('./companyAccess.service');
 const { getLicensedModuleKeysForOrg } = require('./moduleLicense.service');
@@ -66,11 +66,99 @@ async function linkApprovedCaseToProject({ organizationId, user, caseRow, handof
     const description = textOrNull(caseRow.title, 500);
     const clientName = textOrNull(caseRow.commercial_customer_name, 255);
     const endCustomerId = intOrNull(caseRow.commercial_customer_id);
+    const userId = user && user.user_id;
 
-    const already = await query(
+    const pool = await getPool();
+    const transaction = new sql.Transaction(pool);
+    await transaction.begin();
+    try {
+        const outcome = await linkProjectInTransaction(transaction, {
+            organizationId,
+            caseId,
+            projectCode,
+            companyId,
+            description,
+            clientName,
+            endCustomerId,
+            userId,
+            lockResource: `sgq-handoff-${organizationId}-${caseId}`,
+        });
+        if (!outcome.ok) {
+            await transaction.rollback();
+            return outcome;
+        }
+        await transaction.commit();
+        if (outcome.action !== 'already_linked') {
+            await logEntityChange({
+                organizationId,
+                entityTable: 'projects',
+                entityId: outcome.project.id,
+                actionType: outcome.action === 'created' ? 'created' : 'updated',
+                actorUserId: userId,
+                after: outcome.action === 'created'
+                    ? {
+                        project_code: outcome.project.project_code,
+                        company_id: outcome.project.company_id,
+                        commercial_case_id: caseId,
+                        status: 'offerta',
+                    }
+                    : {
+                        commercial_case_id: caseId,
+                        company_id: outcome.project.company_id,
+                    },
+                fields: outcome.action === 'created'
+                    ? ['project_code', 'company_id', 'commercial_case_id', 'status']
+                    : ['commercial_case_id', 'company_id'],
+            });
+        }
+        return outcome;
+    } catch (err) {
+        try { await transaction.rollback(); } catch (_) { /* già chiusa */ }
+        throw err;
+    }
+}
+
+async function txQuery(transaction, text, params) {
+    const req = new sql.Request(transaction);
+    Object.entries(params || {}).forEach(([key, value]) => {
+        req.input(key, value);
+    });
+    return req.query(text);
+}
+
+async function linkProjectInTransaction(transaction, ctx) {
+    const lock = await txQuery(
+        transaction,
+        `
+        DECLARE @lockResult INT;
+        EXEC @lockResult = sp_getapplock
+            @Resource = @lockResource,
+            @LockMode = 'Exclusive',
+            @LockOwner = 'Transaction',
+            @LockTimeout = 10000;
+        SELECT @lockResult AS lock_result;
+        `,
+        { lockResource: ctx.lockResource },
+    );
+    const lockResult = lock.recordset[0] && Number(lock.recordset[0].lock_result);
+    if (!Number.isFinite(lockResult) || lockResult < 0) {
+        return {
+            ok: false,
+            status: 409,
+            error: 'Un altro passaggio per questo caso è ancora in corso. Riprovare.',
+            code: 'HANDOFF_BUSY',
+        };
+    }
+
+    const {
+        organizationId, caseId, projectCode, companyId, description, clientName, endCustomerId, userId,
+    } = ctx;
+
+    const already = await txQuery(
+        transaction,
         `
         SELECT TOP 1 id, project_code, company_id, commercial_case_id
-        FROM projects
+        FROM projects WITH (UPDLOCK, HOLDLOCK)
         WHERE organization_id = @organizationId
           AND commercial_case_id = @caseId
           AND deleted_at IS NULL
@@ -82,10 +170,11 @@ async function linkApprovedCaseToProject({ organizationId, user, caseRow, handof
         return { ok: true, action: 'already_linked', project: already.recordset[0] };
     }
 
-    const byCode = await query(
+    const byCode = await txQuery(
+        transaction,
         `
         SELECT TOP 1 id, project_code, company_id, commercial_case_id
-        FROM projects
+        FROM projects WITH (UPDLOCK, HOLDLOCK)
         WHERE organization_id = @organizationId
           AND project_code = @projectCode
           AND deleted_at IS NULL
@@ -112,7 +201,8 @@ async function linkApprovedCaseToProject({ organizationId, user, caseRow, handof
                 code: 'PROJECT_COMPANY_MISMATCH',
             };
         }
-        const linked = await query(
+        const linked = await txQuery(
+            transaction,
             `
             UPDATE projects
             SET commercial_case_id = @caseId,
@@ -153,19 +243,11 @@ async function linkApprovedCaseToProject({ organizationId, user, caseRow, handof
                 code: 'PROJECT_ALREADY_LINKED',
             };
         }
-        await logEntityChange({
-            organizationId,
-            entityTable: 'projects',
-            entityId: project.id,
-            actionType: 'updated',
-            actorUserId: user && user.user_id,
-            after: { commercial_case_id: caseId, company_id: project.company_id },
-            fields: ['commercial_case_id', 'company_id'],
-        });
         return { ok: true, action: 'linked', project };
     }
 
-    const inserted = await query(
+    const inserted = await txQuery(
+        transaction,
         `
         INSERT INTO projects (
             organization_id, company_id, project_code, client_name,
@@ -187,7 +269,7 @@ async function linkApprovedCaseToProject({ organizationId, user, caseRow, handof
             endCustomerId,
             description,
             caseId,
-            userId: user && user.user_id,
+            userId,
         },
     );
     const project = inserted.recordset[0];
@@ -200,20 +282,6 @@ async function linkApprovedCaseToProject({ organizationId, user, caseRow, handof
             code: 'PROJECT_CREATE_ERROR',
         };
     }
-    await logEntityChange({
-        organizationId,
-        entityTable: 'projects',
-        entityId: project.id,
-        actionType: 'created',
-        actorUserId: user && user.user_id,
-        after: {
-            project_code: projectCode,
-            company_id: companyId,
-            commercial_case_id: caseId,
-            status: 'offerta',
-        },
-        fields: ['project_code', 'company_id', 'commercial_case_id', 'status'],
-    });
     return { ok: true, action: 'created', project };
 }
 
