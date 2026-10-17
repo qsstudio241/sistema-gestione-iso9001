@@ -146,6 +146,56 @@ function metaParagraph(label, value) {
   });
 }
 
+function personName(raw) {
+  const text = String(raw || '').trim();
+  if (!text || /^\d+$/.test(text)) return '';
+  return text;
+}
+
+function closureFacts({ caseMeta = {}, checklist = [] } = {}) {
+  const items = Array.isArray(checklist) ? checklist : [];
+  let latest = null;
+  for (const item of items) {
+    const at = item?.answered_at || item?.answeredAt || null;
+    const t = at ? new Date(at).getTime() : NaN;
+    if (Number.isNaN(t)) continue;
+    if (!latest || t >= latest.t) {
+      latest = {
+        t,
+        at,
+        name: personName(item.answered_by_name || item.answeredByName),
+      };
+    }
+  }
+  const compilerName = (latest && latest.name)
+    || personName(caseMeta.compiler_name || caseMeta.compilerName);
+  const approved = String(caseMeta.status || '').toUpperCase() === 'APPROVED';
+  return {
+    compilerName,
+    compiledAt: latest?.at || '',
+    approved,
+    approvedAt: caseMeta.approved_at || caseMeta.approvedAt || '',
+  };
+}
+
+function buildClosureBlock({ caseMeta, checklist }) {
+  const facts = closureFacts({ caseMeta, checklist });
+  const children = [
+    new Paragraph({
+      heading: HeadingLevel.HEADING_2,
+      spacing: { before: 360 },
+      children: [new TextRun('Chiusura del riesame')],
+    }),
+    metaParagraph('Data', facts.compiledAt ? formatDateIt(facts.compiledAt) : ''),
+    metaParagraph('Nome', facts.compilerName),
+  ];
+  if (facts.approved) {
+    const when = facts.approvedAt ? formatDateIt(facts.approvedAt) : '';
+    children.push(metaParagraph('Esito', when ? `Approvato il ${when}` : 'Approvato'));
+  }
+  return children;
+}
+
 function buildGapAppendix(gapReport) {
   if (!gapReport || typeof gapReport !== 'object') return [];
   const summary = gapReport.summary || {};
@@ -327,6 +377,7 @@ export function buildContractReviewChecklistDocx({
   }
 
   children.push(...buildGapAppendix(gapReport));
+  children.push(...buildClosureBlock({ caseMeta, checklist: items }));
 
   children.push(
     new Paragraph({
