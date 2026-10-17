@@ -7,10 +7,10 @@ const express = require('express');
 const router = express.Router();
 const ctrl = require('../controllers/documentTags.controller');
 const { authenticate } = require('../middleware/auth.middleware');
-const { requireLicensedModule } = require('../middleware/moduleLicense.middleware');
+const { useModuleLicense } = require('../middleware/moduleLicense.middleware');
 
 router.use(authenticate);
-router.use(requireLicensedModule('documents'));
+useModuleLicense(router, 'documents');
 
 // Tag CRUD
 router.get('/document-tags', ctrl.listTags);

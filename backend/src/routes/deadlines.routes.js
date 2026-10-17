@@ -7,11 +7,11 @@
 const express = require('express');
 const router  = express.Router();
 const { authenticate } = require('../middleware/auth.middleware');
-const { requireLicensedModule } = require('../middleware/moduleLicense.middleware');
+const { useModuleLicense } = require('../middleware/moduleLicense.middleware');
 const ctrl = require('../controllers/deadlines.controller');
 
 router.use(authenticate);
-router.use(requireLicensedModule('documents'));
+useModuleLicense(router, 'documents');
 
 // Detect + import (scoped al documento)
 router.post('/documents/:id/detect-deadlines',  ctrl.detectDeadlines);

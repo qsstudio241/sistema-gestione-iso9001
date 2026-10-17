@@ -13,8 +13,10 @@ jest.mock('../services/moduleLicense.service', () => {
 });
 jest.mock('../utils/logger', () => ({ warn: jest.fn(), error: jest.fn(), info: jest.fn() }));
 
+const express = require('express');
+const request = require('supertest');
 const { getLicensedModuleKeysForOrg, hasMaterialComplianceCapability } = require('../services/moduleLicense.service');
-const { requireLicensedModule, requireLicensedModuleAny, requireMaterialComplianceCapability } = require('./moduleLicense.middleware');
+const { requireLicensedModule, requireLicensedModuleAny, requireMaterialComplianceCapability, useModuleLicense } = require('./moduleLicense.middleware');
 
 function buildReqRes(organizationId, role = 'user') {
   const req = { user: { organization_id: organizationId, role }, path: '/test' };
@@ -115,5 +117,43 @@ describe('requireMaterialComplianceCapability (AND saldatura + ai_import)', () =
     const { req, res, next } = buildReqRes(1004);
     await requireMaterialComplianceCapability()(req, res, next);
     expect(next).toHaveBeenCalledWith();
+  });
+});
+
+describe('useModuleLicense non ferma i moduli montati dopo', () => {
+  function appWith(keys) {
+    getLicensedModuleKeysForOrg.mockResolvedValue(keys);
+    const app = express();
+    app.use((req, _res, next) => {
+      req.user = { organization_id: 1005, role: 'admin' };
+      next();
+    });
+    const nc = express.Router();
+    useModuleLicense(nc, 'nc');
+    nc.get('/non-conformities', (_req, res) => res.json({ ok: 'nc' }));
+    const welding = express.Router();
+    useModuleLicense(welding, 'saldatura');
+    welding.get('/welding/wps', (_req, res) => res.json({ ok: 'wps' }));
+    app.use('/api/v1', nc);
+    app.use('/api/v1', welding);
+    return app;
+  }
+
+  it('senza nc, WPS con saldatura resta 200 e le NC sono 403', async () => {
+    const app = appWith(['audit', 'saldatura']);
+    const wps = await request(app).get('/api/v1/welding/wps');
+    const nc = await request(app).get('/api/v1/non-conformities');
+    expect(wps.status).toBe(200);
+    expect(nc.status).toBe(403);
+    expect(nc.body).toEqual(expect.objectContaining({ code: 'MODULE_NOT_LICENSED', module: 'nc' }));
+  });
+
+  it('senza saldatura, WPS è 403 e le NC con nc restano 200', async () => {
+    const app = appWith(['audit', 'nc']);
+    const wps = await request(app).get('/api/v1/welding/wps');
+    const nc = await request(app).get('/api/v1/non-conformities');
+    expect(wps.status).toBe(403);
+    expect(wps.body.module).toBe('saldatura');
+    expect(nc.status).toBe(200);
   });
 });

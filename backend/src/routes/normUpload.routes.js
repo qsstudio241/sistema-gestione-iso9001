@@ -10,13 +10,13 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const { authenticate } = require('../middleware/auth.middleware');
-const { requireLicensedModule } = require('../middleware/moduleLicense.middleware');
+const { useModuleLicense } = require('../middleware/moduleLicense.middleware');
 const normUploadCtrl = require('../controllers/normUpload.controller');
 const normChunker = require('../services/normChunker.service');
 const logger = require('../utils/logger');
 
 router.use(authenticate);
-router.use(requireLicensedModule('documents'));
+useModuleLicense(router, 'documents');
 
 // Multer storage dedicato per norme: uploads/norms/{org_id}/
 const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
