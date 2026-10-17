@@ -2,7 +2,37 @@
  * @jest-environment node
  */
 // Cestino: solo admin/superadmin, scope A4, audit di ripristino.
-jest.mock('../config/database', () => ({ query: jest.fn() }));
+jest.mock('../config/database', () => {
+    const query = jest.fn();
+    const tx = {
+        begin: jest.fn(async () => {}),
+        commit: jest.fn(async () => {}),
+        rollback: jest.fn(async () => {}),
+    };
+    return {
+        query,
+        getPool: jest.fn(async () => ({
+            transaction: () => ({
+                begin: tx.begin,
+                commit: tx.commit,
+                rollback: tx.rollback,
+                request() {
+                    const params = {};
+                    return {
+                        input(key, value) {
+                            params[key] = value;
+                            return this;
+                        },
+                        query(sqlText) {
+                            return query(sqlText, params);
+                        },
+                    };
+                },
+            }),
+        })),
+        __tx: tx,
+    };
+});
 jest.mock('../utils/logger', () => ({ info: jest.fn(), error: jest.fn(), warn: jest.fn(), debug: jest.fn() }));
 jest.mock('../controllers/attachment.controller', () => ({
     attachmentScopeSync: () => ({
@@ -26,7 +56,7 @@ jest.mock('./companyAccess.service', () => ({
     sendAccessDenied: jest.fn((res, denied) => res.status(denied.status).json(denied.body)),
 }));
 
-const { query } = require('../config/database');
+const { query, __tx } = require('../config/database');
 const { listTrash, restoreTrash } = require('./trash.service');
 
 function resMock() {
@@ -460,5 +490,122 @@ describe('cestino', () => {
         }, res);
         expect(res.statusCode).toBe(409);
         expect(res.body.code).toBe('RESTORE_CONFLICT');
+        expect(res.body.error).toContain('non è stato modificato');
+        expect(__tx.rollback).toHaveBeenCalled();
+        expect(__tx.commit).not.toHaveBeenCalled();
+    });
+
+    it('il ripristino di una WPS riporta una sola copia cestinata per legame e per saldatore', async () => {
+        query.mockImplementation(async (sql) => {
+            if (/INSERT INTO entity_change_log/.test(sql) || /SET deleted_at = NULL/.test(sql)) return { recordset: [] };
+            return { recordset: [{ id: 6, company_id: 5, deleted_at: '2026-10-17T00:00:00Z', status: 'attiva', title: 'WPS-1' }] };
+        });
+        const res = resMock();
+        await restoreTrash({
+            user: { role: 'admin', organization_id: 1, user_id: 9, company_access: [] },
+            params: { entity: 'welding_procedures', id: '6' },
+        }, res);
+        expect(res.statusCode).toBe(200);
+        const sqls = query.mock.calls.map((call) => String(call[0]));
+        const links = sqls.find((sql) => /UPDATE wps_wpqr_links SET deleted_at = NULL/.test(sql) && /wps_id = @id/.test(sql));
+        const welders = sqls.find((sql) => /UPDATE wps_welders SET deleted_at = NULL/.test(sql));
+        for (const sql of [links, welders]) {
+            expect(sql).toContain('MAX(pick.id)');
+            expect(sql).toContain('pick.deleted_at IS NOT NULL');
+            expect(sql).toContain('NOT EXISTS');
+            expect(sql).toContain('active.deleted_at IS NULL');
+        }
+        expect(links).toContain('pick.wpqr_id = wps_wpqr_links.wpqr_id');
+        expect(welders).toContain('pick.qualification_id = wps_welders.qualification_id');
+    });
+
+    it('il ripristino di una commessa riporta un solo saldatore per qualifica tra le righe cestinate', async () => {
+        query.mockImplementation(async (sql) => {
+            if (/INSERT INTO entity_change_log/.test(sql) || /SET deleted_at = NULL/.test(sql)) return { recordset: [] };
+            return { recordset: [{ id: 8, company_id: 5, deleted_at: '2026-10-17T00:00:00Z', status: 'attiva', title: 'P-9' }] };
+        });
+        const res = resMock();
+        await restoreTrash({
+            user: { role: 'admin', organization_id: 1, user_id: 9, company_access: [] },
+            params: { entity: 'projects', id: '8' },
+        }, res);
+        expect(res.statusCode).toBe(200);
+        const projectSql = query.mock.calls.map((call) => String(call[0])).find((sql) => /UPDATE project_welders SET deleted_at = NULL/.test(sql));
+        expect(projectSql).toContain('MAX(pick.id)');
+        expect(projectSql).toContain('pick.deleted_at IS NOT NULL');
+        expect(projectSql).toContain('pick.qualification_id = project_welders.qualification_id');
+        expect(projectSql).toContain('NOT EXISTS');
+        expect(projectSql).toContain('active.deleted_at IS NULL');
+    });
+
+    it('il ripristino di un WPQR riporta un solo legame per coppia tra le righe cestinate', async () => {
+        query.mockImplementation(async (sql) => {
+            if (/parent_deleted/.test(sql)) return { recordset: [{ parent_deleted: null }] };
+            if (/INSERT INTO entity_change_log/.test(sql) || /SET deleted_at = NULL/.test(sql)) return { recordset: [] };
+            return { recordset: [{ id: 3, company_id: 5, deleted_at: '2026-10-17T00:00:00Z', status: 'approvata', title: 'WPQR-1' }] };
+        });
+        const res = resMock();
+        await restoreTrash({
+            user: { role: 'admin', organization_id: 1, user_id: 9, company_access: [] },
+            params: { entity: 'wpqr_records', id: '3' },
+        }, res);
+        expect(res.statusCode).toBe(200);
+        const links = query.mock.calls.map((call) => String(call[0])).find((sql) => /UPDATE wps_wpqr_links SET deleted_at = NULL/.test(sql));
+        expect(links).toContain('wpqr_id = @id');
+        expect(links).toContain('MAX(pick.id)');
+        expect(links).toContain('pick.deleted_at IS NOT NULL');
+        expect(links).toContain('pick.wps_id = wps_wpqr_links.wps_id');
+        expect(links).toContain('NOT EXISTS');
+        expect(links).toContain('active.deleted_at IS NULL');
+    });
+
+    it('una violazione di indice sul figlio annulla anche il padre e risponde 409', async () => {
+        let restores = 0;
+        query.mockImplementation(async (sql) => {
+            if (/SET deleted_at = NULL/.test(sql)) {
+                restores += 1;
+                if (restores > 1) {
+                    const err = new Error('Cannot insert duplicate key row in object UNIQUE');
+                    err.number = 2601;
+                    throw err;
+                }
+                return { recordset: [] };
+            }
+            if (/INSERT INTO entity_change_log/.test(sql)) return { recordset: [] };
+            return { recordset: [{ id: 6, company_id: 5, deleted_at: '2026-10-17T00:00:00Z', status: 'attiva', title: 'WPS-1' }] };
+        });
+        const res = resMock();
+        await restoreTrash({
+            user: { role: 'admin', organization_id: 1, user_id: 9, company_access: [] },
+            params: { entity: 'welding_procedures', id: '6' },
+        }, res);
+        expect(res.statusCode).toBe(409);
+        expect(res.body.code).toBe('RESTORE_CONFLICT');
+        expect(res.body.error).toContain('non è stato modificato');
+        expect(__tx.rollback).toHaveBeenCalled();
+        expect(__tx.commit).not.toHaveBeenCalled();
+        expect(query.mock.calls.some((call) => /INSERT INTO entity_change_log/.test(String(call[0])))).toBe(false);
+    });
+
+    it('se il rollback fallisce il 409 non dice che il cestino è intatto', async () => {
+        __tx.rollback.mockRejectedValueOnce(new Error('rollback failed'));
+        query.mockImplementation(async (sql) => {
+            if (/SET deleted_at = NULL/.test(sql)) {
+                const err = new Error('Cannot insert duplicate key row in object UNIQUE');
+                err.number = 2627;
+                throw err;
+            }
+            return { recordset: [{ id: 8, company_id: 5, deleted_at: '2026-10-17', status: 'attiva', title: 'P-9' }] };
+        });
+        const res = resMock();
+        await restoreTrash({
+            user: { role: 'admin', organization_id: 1, user_id: 9, company_access: [] },
+            params: { entity: 'projects', id: '8' },
+        }, res);
+        expect(res.statusCode).toBe(409);
+        expect(res.body.code).toBe('RESTORE_CONFLICT');
+        expect(res.body.error).toContain('rimasto a metà');
+        expect(res.body.error).not.toContain('non è stato modificato');
+        expect(__tx.commit).not.toHaveBeenCalled();
     });
 });

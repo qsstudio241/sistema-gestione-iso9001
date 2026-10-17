@@ -5,7 +5,7 @@
  * organizzazione. Scope azienda come A4: altra org 404, azienda non consentita 403.
  */
 
-const { query } = require('../config/database');
+const { query, getPool } = require('../config/database');
 const {
     ensureCompanyAccessLoaded,
     hasCompanyAccessRows,
@@ -404,6 +404,29 @@ async function parentStillTrashed(entity, id, organizationId) {
     return Boolean(result.recordset?.[0]?.parent_deleted);
 }
 
+/**
+ * Tra le righe cestinate con la stessa chiave ne torna una sola (id più alto).
+ * Se la chiave è già attiva, non torna nessuna.
+ */
+function restoreOneTrashedSlot(table, parentColumn, keyColumns) {
+    const same = (alias) => keyColumns.map((col) => `${alias}.${col} = ${table}.${col}`).join(' AND ');
+    return `UPDATE ${table} SET deleted_at = NULL, deleted_by = NULL
+             WHERE ${parentColumn} = @id AND organization_id = @organization_id AND deleted_at IS NOT NULL
+               AND id = (
+                 SELECT MAX(pick.id) FROM ${table} pick
+                 WHERE ${same('pick')}
+                   AND pick.organization_id = ${table}.organization_id
+                   AND pick.deleted_at IS NOT NULL
+               )
+               AND NOT EXISTS (
+                 SELECT 1 FROM ${table} active
+                 WHERE ${same('active')}
+                   AND active.organization_id = ${table}.organization_id
+                   AND active.deleted_at IS NULL
+                   AND active.id <> ${table}.id
+               )`;
+}
+
 function childRestoreSql(entity) {
     if (entity === 'non_conformities') {
         return [
@@ -427,57 +450,54 @@ function childRestoreSql(entity) {
              FROM wpqr_test_runs r
              INNER JOIN wpqr_records wq ON wq.id = r.wpqr_id AND wq.organization_id = r.organization_id
              WHERE wq.wps_id = @id AND r.organization_id = @organization_id AND r.deleted_at IS NOT NULL`,
-            `UPDATE wps_wpqr_links SET deleted_at = NULL, deleted_by = NULL
-             WHERE wps_id = @id AND organization_id = @organization_id AND deleted_at IS NOT NULL
-               AND NOT EXISTS (
-                 SELECT 1 FROM wps_wpqr_links active
-                 WHERE active.wps_id = wps_wpqr_links.wps_id
-                   AND active.wpqr_id = wps_wpqr_links.wpqr_id
-                   AND active.deleted_at IS NULL
-                   AND active.id <> wps_wpqr_links.id
-               )`,
-            `UPDATE wps_welders SET deleted_at = NULL, deleted_by = NULL
-             WHERE wps_id = @id AND organization_id = @organization_id AND deleted_at IS NOT NULL
-               AND NOT EXISTS (
-                 SELECT 1 FROM wps_welders active
-                 WHERE active.wps_id = wps_welders.wps_id
-                   AND active.qualification_id = wps_welders.qualification_id
-                   AND active.organization_id = wps_welders.organization_id
-                   AND active.deleted_at IS NULL
-                   AND active.id <> wps_welders.id
-               )`,
+            restoreOneTrashedSlot('wps_wpqr_links', 'wps_id', ['wps_id', 'wpqr_id']),
+            restoreOneTrashedSlot('wps_welders', 'wps_id', ['wps_id', 'qualification_id']),
         ];
     }
     if (entity === 'projects') {
         return [
-            `UPDATE project_welders SET deleted_at = NULL, deleted_by = NULL
-             WHERE project_id = @id AND organization_id = @organization_id AND deleted_at IS NOT NULL
-               AND NOT EXISTS (
-                 SELECT 1 FROM project_welders active
-                 WHERE active.project_id = project_welders.project_id
-                   AND active.qualification_id = project_welders.qualification_id
-                   AND active.organization_id = project_welders.organization_id
-                   AND active.deleted_at IS NULL
-                   AND active.id <> project_welders.id
-               )`,
+            restoreOneTrashedSlot('project_welders', 'project_id', ['project_id', 'qualification_id']),
         ];
     }
     if (entity === 'wpqr_records') {
         return [
             `UPDATE wpqr_test_runs SET deleted_at = NULL, deleted_by = NULL
              WHERE wpqr_id = @id AND organization_id = @organization_id AND deleted_at IS NOT NULL`,
-            `UPDATE wps_wpqr_links SET deleted_at = NULL, deleted_by = NULL
-             WHERE wpqr_id = @id AND organization_id = @organization_id AND deleted_at IS NOT NULL
-               AND NOT EXISTS (
-                 SELECT 1 FROM wps_wpqr_links active
-                 WHERE active.wps_id = wps_wpqr_links.wps_id
-                   AND active.wpqr_id = wps_wpqr_links.wpqr_id
-                   AND active.deleted_at IS NULL
-                   AND active.id <> wps_wpqr_links.id
-               )`,
+            restoreOneTrashedSlot('wps_wpqr_links', 'wpqr_id', ['wps_id', 'wpqr_id']),
         ];
     }
     return [];
+}
+
+/** Padre, figli e contatore nella stessa transazione: un indice unico annulla tutto. */
+async function withTransaction(work) {
+    const pool = await getPool();
+    const tx = pool.transaction();
+    let started = false;
+    try {
+        await tx.begin();
+        started = true;
+        const run = async (sqlText, params = {}) => {
+            const request = tx.request();
+            Object.entries(params).forEach(([key, value]) => request.input(key, value));
+            return request.query(sqlText);
+        };
+        const result = await work(run);
+        await tx.commit();
+        return result;
+    } catch (err) {
+        if (!started) {
+            err.rolledBack = true;
+            throw err;
+        }
+        try {
+            await tx.rollback();
+            err.rolledBack = true;
+        } catch {
+            err.rolledBack = false;
+        }
+        throw err;
+    }
 }
 
 /** Lo slot attivo è già occupato: il ripristino violerebbe l'indice unico o il duplicato applicativo. */
@@ -620,25 +640,27 @@ async function restoreTrash(req, res) {
         } else {
             sql = restoreSql(spec.table, spec.idColumn, { hasOrg: true });
         }
-        await query(sql, {
-            id,
-            organization_id: organizationId,
-            actor_user_id: req.user.user_id,
+        await withTransaction(async (run) => {
+            await run(sql, {
+                id,
+                organization_id: organizationId,
+                actor_user_id: req.user.user_id,
+            });
+            for (const childSql of childRestoreSql(entity)) {
+                await run(childSql, { id, organization_id: organizationId });
+            }
+            if (entity === 'non_conformities' && row.audit_id) {
+                await run(`
+                    UPDATE audits
+                    SET non_conformities_count = (
+                        SELECT COUNT(*) FROM non_conformities
+                        WHERE audit_id = @audit_id AND deleted_at IS NULL
+                    ),
+                    updated_at = GETDATE()
+                    WHERE audit_id = @audit_id AND organization_id = @organization_id
+                `, { audit_id: row.audit_id, organization_id: organizationId });
+            }
         });
-        for (const childSql of childRestoreSql(entity)) {
-            await query(childSql, { id, organization_id: organizationId });
-        }
-        if (entity === 'non_conformities' && row.audit_id) {
-            await query(`
-                UPDATE audits
-                SET non_conformities_count = (
-                    SELECT COUNT(*) FROM non_conformities
-                    WHERE audit_id = @audit_id AND deleted_at IS NULL
-                ),
-                updated_at = GETDATE()
-                WHERE audit_id = @audit_id AND organization_id = @organization_id
-            `, { audit_id: row.audit_id, organization_id: organizationId });
-        }
         await logEntityChange({
             organizationId,
             entityTable: spec ? spec.table : entity,
@@ -650,7 +672,13 @@ async function restoreTrash(req, res) {
         });
         res.json({ success: true, message: 'Record ripristinato' });
     } catch (err) {
-        if (isUniqueViolation(err)) return restoreConflictResponse(res);
+        if (isUniqueViolation(err) && err.rolledBack) return restoreConflictResponse(res);
+        if (isUniqueViolation(err)) {
+            return res.status(409).json({
+                error: 'Nel registro attivo c\'è già un record con la stessa chiave. Controlla il cestino: il ripristino potrebbe essere rimasto a metà.',
+                code: 'RESTORE_CONFLICT',
+            });
+        }
         return res.status(500).json({ error: 'Errore durante il ripristino', code: 'TRASH_RESTORE_ERROR' });
     }
 }
