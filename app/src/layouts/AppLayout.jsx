@@ -106,9 +106,11 @@ function buildNavItems(user, alerts = {}) {
       items: filterByLicense([
         ...(!isCompanyClient ? [{ to: "/settings/studio", icon: "🏢", label: "Il mio Studio" }] : []),
         companiesNavItem,
+        ...((isAdmin || user?.role === "auditor") && !isCompanyClient
+          ? [{ to: "/cestino", icon: "\uD83D\uDDD1\uFE0F", label: "Cestino" }]
+          : []),
         ...(isAdmin && !isCompanyClient ? [
           { to: "/settings/users",    icon: "👥", label: "Utenti" },
-          { to: "/cestino", icon: "\uD83D\uDDD1\uFE0F", label: "Cestino" },
           { to: "/settings/licenses", icon: "🔑", label: "Licenze moduli" },
           ...(isSuperadmin ? [
             { to: "/settings/billing", icon: "💳", label: "Fatturazione" },

@@ -116,7 +116,7 @@ const ENTITIES = {
 
 function forbid(res) {
     return res.status(403).json({
-        error: 'Accesso negato: cestino riservato ad admin e superadmin',
+        error: 'Accesso negato: cestino riservato ad admin, auditor e superadmin',
         code: 'AUTH_FORBIDDEN',
     });
 }
