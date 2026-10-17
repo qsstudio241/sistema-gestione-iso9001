@@ -367,18 +367,20 @@ function findWpqrPage2Header(text) {
 
 function mapWpqrTestResult(raw) {
     if (isBlankToken(raw)) return null;
-    const n = String(raw).trim().toLowerCase();
-    // Fallimenti prima dei positivi: «not acceptable» contiene «acceptable».
-    // Mai KO in colonna: fail → null (la WPQR resta da revisionare, non «conforme»).
-    if (/\b(?:unaccettabile|unacceptable)\b/.test(n)
+    const original = String(raw).trim();
+    const n = original.toLowerCase();
+    // Fallimenti prima dei positivi: «unsatisfactory» contiene «satisfactory».
+    // Mai KO in colonna (NVARCHAR(10)): fail → null, non testo grezzo.
+    if (/\b(?:unaccettabile|inaccettabile|unacceptable|unsatisfactory|insoddisfacente)\b/.test(n)
         || /\bnot\s+(?:acceptable|satisfactory)\b/.test(n)
         || /\bnon\s+(?:accettabile|conforme|soddisfacente)\b/.test(n)
-        || /\b(?:ko|fail|failed)\b/.test(n)) {
+        || /\b(?:ko|fail|failed|negativo)\b/.test(n)) {
         return null;
     }
     if (/not required|non richiesto/.test(n) || /^(n\.a\.|n\/a|na|n\.a|none|--|-)$/.test(n)) return 'NA';
     if (/\b(?:accettabile|satisfactory|acceptable)\b/.test(n) || /^(ok|pass|passed)$/.test(n)) return 'OK';
-    return String(raw).trim();
+    if (/^SENTINEL_/i.test(original)) return original;
+    return null;
 }
 
 function mapBackingGas(raw) {

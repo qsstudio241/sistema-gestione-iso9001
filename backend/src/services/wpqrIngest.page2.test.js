@@ -58,6 +58,11 @@ describe('normalizzazione token', () => {
         expect(mapWpqrTestResult('not acceptable')).toBeNull();
         expect(mapWpqrTestResult('Unacceptable')).toBeNull();
         expect(mapWpqrTestResult('non accettabile')).toBeNull();
+        expect(mapWpqrTestResult('unsatisfactory')).toBeNull();
+        expect(mapWpqrTestResult('inaccettabile')).toBeNull();
+        expect(mapWpqrTestResult('Not acceptable / unsatisfactory')).toBeNull();
+        expect(mapWpqrTestResult('SENTINEL_vt_result_1')).toBe('SENTINEL_vt_result_1');
+        expect(mapWpqrTestResult('esito troppo lungo per la colonna')).toBeNull();
     });
 });
 
