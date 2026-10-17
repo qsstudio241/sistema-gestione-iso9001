@@ -444,3 +444,125 @@ describe('CND-7 — posa Registro su Completa', () => {
     expect(res.json.mock.calls[0][0].registry_pose).toBeUndefined();
   });
 });
+
+describe('inspection_phase prima / durante / dopo', () => {
+  function insertParams() {
+    const call = query.mock.calls.find(([sql]) => String(sql).includes('INSERT INTO ndt_reports'));
+    return call && call[1];
+  }
+
+  it('create senza fase: salva after', async () => {
+    query.mockImplementation(async (sql) => {
+      if (sql.includes('COUNT(*) AS cnt')) return { recordset: [{ cnt: 0 }] };
+      if (sql.includes('INSERT INTO ndt_reports')) {
+        return { recordset: [{ id: 99, report_number: 'VT-2026-001' }] };
+      }
+      return { recordset: [] };
+    });
+    const res = mockRes();
+    await ctrl.createNdtReport(mockReq({
+      user: studioAdmin,
+      body: { company_id: 12, client: 'Cliente', status: 'draft' },
+    }), res);
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(insertParams().inspection_phase).toBe('after');
+    expect(String(query.mock.calls.find(([sql]) => String(sql).includes('INSERT INTO ndt_reports'))[0]))
+      .toMatch(/inspection_phase/);
+  });
+
+  it('create during: salva during', async () => {
+    query.mockImplementation(async (sql) => {
+      if (sql.includes('COUNT(*) AS cnt')) return { recordset: [{ cnt: 0 }] };
+      if (sql.includes('INSERT INTO ndt_reports')) {
+        return { recordset: [{ id: 100, report_number: 'VT-2026-002' }] };
+      }
+      return { recordset: [] };
+    });
+    const res = mockRes();
+    await ctrl.createNdtReport(mockReq({
+      user: studioAdmin,
+      body: { company_id: 12, client: 'Cliente', status: 'draft', inspection_phase: 'during' },
+    }), res);
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(insertParams().inspection_phase).toBe('during');
+  });
+
+  it('create con fase sconosciuta → 400, nessun INSERT', async () => {
+    const res = mockRes();
+    await ctrl.createNdtReport(mockReq({
+      user: studioAdmin,
+      body: { company_id: 12, client: 'Cliente', inspection_phase: 'lux-350' },
+    }), res);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ code: 'NDT_PHASE_INVALID' }));
+    expect(query).not.toHaveBeenCalled();
+  });
+
+  it('lista filtra per before', async () => {
+    mockListQueries();
+    const res = mockRes();
+    await ctrl.listNdtReports(mockReq({
+      user: studioAdmin,
+      query: { inspection_phase: 'before' },
+    }), res);
+    const sql = query.mock.calls[0][0];
+    const params = query.mock.calls[0][1];
+    expect(sql).toMatch(/r\.inspection_phase = @inspection_phase/);
+    expect(sql).toMatch(/r\.inspection_phase/);
+    expect(params.inspection_phase).toBe('before');
+  });
+
+  it('lista con fase sconosciuta → 400', async () => {
+    const res = mockRes();
+    await ctrl.listNdtReports(mockReq({
+      user: studioAdmin,
+      query: { inspection_phase: 'dopo-saldatura' },
+    }), res);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(query).not.toHaveBeenCalled();
+  });
+
+  it('update scrive before e non tocca una fase assente nel body', async () => {
+    query.mockImplementation(async (sql) => {
+      if (sql.includes('FROM ndt_reports WHERE id = @id') && sql.includes('company_id')) {
+        return {
+          recordset: [{
+            id: 5, company_id: 12, project_id: null, report_type: 'VT',
+            inspector: 'Mario Rossi', inspection_phase: 'after',
+          }],
+        };
+      }
+      return { recordset: [] };
+    });
+    const resKeep = mockRes();
+    await ctrl.updateNdtReport(mockReq({
+      params: { id: '5' },
+      user: studioAdmin,
+      body: { status: 'draft', inspector: 'Mario Rossi' },
+    }), resKeep);
+    const keepCall = query.mock.calls.find(([sql]) => String(sql).includes('UPDATE ndt_reports'));
+    expect(keepCall[1].inspection_phase).toBe('after');
+
+    query.mockClear();
+    query.mockImplementation(async (sql) => {
+      if (sql.includes('FROM ndt_reports WHERE id = @id') && sql.includes('company_id')) {
+        return {
+          recordset: [{
+            id: 5, company_id: 12, project_id: null, report_type: 'VT',
+            inspector: 'Mario Rossi', inspection_phase: 'after',
+          }],
+        };
+      }
+      return { recordset: [] };
+    });
+    const resSet = mockRes();
+    await ctrl.updateNdtReport(mockReq({
+      params: { id: '5' },
+      user: studioAdmin,
+      body: { status: 'draft', inspector: 'Mario Rossi', inspection_phase: 'before' },
+    }), resSet);
+    const setCall = query.mock.calls.find(([sql]) => String(sql).includes('UPDATE ndt_reports'));
+    expect(setCall[1].inspection_phase).toBe('before');
+    expect(resSet.status).not.toHaveBeenCalledWith(400);
+  });
+});

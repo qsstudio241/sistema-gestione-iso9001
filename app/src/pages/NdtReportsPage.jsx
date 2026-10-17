@@ -26,6 +26,11 @@ import {
     EMPTY_NDT_MARK_ITEM,
 } from "../hooks/useNdtAutoSave.js";
 import {
+    INSPECTION_PHASES,
+    DEFAULT_INSPECTION_PHASE,
+    inspectionPhaseShort,
+} from "../utils/ndtInspectionPhase.js";
+import {
     defaultMethodParams,
     defaultPtParams,
     defaultMtParams,
@@ -556,6 +561,7 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
         responsible: "",
         inspector: currentUserName,   // auto-fill nome utente loggato
         client_representative: "",
+        inspection_phase: DEFAULT_INSPECTION_PHASE,
         status: "draft",
     };
 
@@ -583,6 +589,7 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
             responsible:          report.responsible || "",
             inspector:            report.inspector || currentUserName || "",
             client_representative: report.client_representative || "",
+            inspection_phase:     report.inspection_phase || DEFAULT_INSPECTION_PHASE,
             status:               report.status || "draft",
         };
     });
@@ -1008,6 +1015,7 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
                                     <label htmlFor="ndt-report-type">Tipo metodo</label>
                                     <select
                                         id="ndt-report-type"
+                                        aria-label="Tipo metodo"
                                         value={form.report_type}
                                         onChange={e => {
                                             const v = e.target.value;
@@ -1021,6 +1029,18 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
                                         title={isEdit ? "Il metodo \u00e8 fissato alla creazione (numero verbale)." : undefined}
                                     >
                                         {REPORT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                                    </select>
+                                </div>
+                                <div className="ndt-form-group">
+                                    <label htmlFor="ndt-inspection-phase">Fase ispezione</label>
+                                    <select
+                                        id="ndt-inspection-phase"
+                                        value={form.inspection_phase || DEFAULT_INSPECTION_PHASE}
+                                        onChange={e => set("inspection_phase", e.target.value)}
+                                    >
+                                        {INSPECTION_PHASES.map(p => (
+                                            <option key={p.value} value={p.value}>{p.label}</option>
+                                        ))}
                                     </select>
                                 </div>
                                 <div className="ndt-form-group ndt-grow">
@@ -1569,6 +1589,7 @@ export default function NdtReportsPage() {
 
     const [filterType, setFilterType] = useState("");
     const [filterStatus, setFilterStatus] = useState("");
+    const [filterPhase, setFilterPhase] = useState("");
     const [searchText, setSearchText] = useState("");
 
     const [view, setView] = useState("list"); // "list" | "form"
@@ -1598,6 +1619,7 @@ export default function NdtReportsPage() {
                 project_code: null,
                 job_order: fd.job_order || "",
                 inspector: fd.inspector || "",
+                inspection_phase: fd.inspection_phase || "",
                 inspection_date: fd.inspection_date || null,
                 items_count: Array.isArray(d.items) ? d.items.length : 0,
                 status: "draft",
@@ -1606,9 +1628,9 @@ export default function NdtReportsPage() {
                 items: d.items || [{ ...EMPTY_NDT_MARK_ITEM }],
                 method_params: fd.method_params,
             };
-        });
+        }).filter((row) => !filterPhase || row.inspection_phase === filterPhase);
         return [...localRows, ...server];
-    }, []);
+    }, [filterPhase]);
 
     const loadData = useCallback(async () => {
         setLoading(true);
@@ -1617,6 +1639,7 @@ export default function NdtReportsPage() {
             const params = {};
             if (filterType)    params.report_type = filterType;
             if (filterStatus)  params.status = filterStatus;
+            if (filterPhase)   params.inspection_phase = filterPhase;
             if (filterCompany) params.company_id = filterCompany;
             if (searchText)    params.search = searchText;
 
@@ -1639,7 +1662,7 @@ export default function NdtReportsPage() {
         } finally {
             setLoading(false);
         }
-    }, [filterType, filterStatus, filterCompany, searchText, mergeLocalDraftsIntoList]);
+    }, [filterType, filterStatus, filterPhase, filterCompany, searchText, mergeLocalDraftsIntoList]);
 
     useEffect(() => { loadData(); }, [loadData]);
 
@@ -1827,9 +1850,13 @@ export default function NdtReportsPage() {
                     <option value="">Tutti i metodi</option>
                     {REPORT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                 </select>
-                <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+                <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} aria-label="Stato">
                     <option value="">Tutti gli stati</option>
                     {REPORT_STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                </select>
+                <select value={filterPhase} onChange={e => setFilterPhase(e.target.value)} aria-label="Fase ispezione">
+                    <option value="">Tutte le fasi</option>
+                    {INSPECTION_PHASES.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
                 </select>
             </div>
 
@@ -1842,6 +1869,7 @@ export default function NdtReportsPage() {
                             <tr>
                                 <th>N. Verbale</th>
                                 <th>Tipo</th>
+                                <th>Fase</th>
                                 <th>Cliente</th>
                                 <th>Commessa</th>
                                 <th>Ispettore</th>
@@ -1853,7 +1881,7 @@ export default function NdtReportsPage() {
                         </thead>
                         <tbody>
                             {reports.length === 0 && (
-                                <tr><td colSpan={9} className="ndt-empty">Nessun verbale trovato</td></tr>
+                                <tr><td colSpan={10} className="ndt-empty">Nessun verbale trovato</td></tr>
                             )}
                             {reports.map(r => {
                                 const st = REPORT_STATUSES.find(s => s.value === r.status) || REPORT_STATUSES[0];
@@ -1870,6 +1898,7 @@ export default function NdtReportsPage() {
                                             {r.report_number || (r._local ? <em>bozza locale</em> : <em>bozza</em>)}
                                         </td>
                                         <td><span className="ndt-type-tag">{r.report_type}</span></td>
+                                        <td>{inspectionPhaseShort(r.inspection_phase) || "\u2014"}</td>
                                         <td>{r.client || "—"}</td>
                                         <td>{r.project_code || r.job_order || "—"}</td>
                                         <td>{r.inspector || "—"}</td>
