@@ -1,6 +1,6 @@
 # DEPUTYTASK_VERIFICA_WPQR_NORME_DOC — WV-2: estratto operativo «dati di prova WPQR» (Annex B / A / C ↔ clausole ↔ campi) + stati backlog
 
-**Stato:** CHIUSO — TEST OK (08/10/2026; PR draft `cursor/wv-2-norme-doc-wpqr-064b`, rischio Basso, solo documentazione)  
+**Stato:** CHIUSO — TEST OK (08/10/2026, mergiata [#756](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/756))  
 **Aperto:** 07/10/2026  
 **Piano:** [`PLAN_VERIFICA_WPQR_SLICES.md`](PLAN_VERIFICA_WPQR_SLICES.md) § 2 (modello dati) · § 4 (inventario norme) · § 5 (regole) · § 6.3 WV-2  
 **Dipende da:** nessuna (onda 1)  
