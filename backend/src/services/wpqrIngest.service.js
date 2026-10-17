@@ -494,21 +494,32 @@ async function previewLinksForWpqr(reviewFields, organizationId, companyId) {
         const wps = await wpsWpqrLinks.resolveWpsRef({ organizationId, companyId, ref: reviewFields.wps_ref });
         wpsMatch = wps.match;
         flags.push(...wps.flags);
-        const supportingRefs = splitRefList(reviewFields.supporting_wpqr_refs);
-        if (supportingRefs.length > 0) {
-            const supporting = await wpsWpqrLinks.resolveSupportingWpqrRefs({ organizationId, companyId, refs: supportingRefs });
-            flags.push(...supporting.flags);
-        }
     } catch (err) {
-        logger.warn('WPQR: ricerca legami non riuscita', { organizationId, error: err.message });
-        const refs = [reviewFields.wps_ref, ...splitRefList(reviewFields.supporting_wpqr_refs)].filter(Boolean);
-        flags.push(...(refs.length ? refs : [null]).map((ref) => ({
-            ref,
+        logger.warn('WPQR: ricerca WPS non riuscita', { organizationId, error: err.message });
+        const ref = reviewFields.wps_ref && String(reviewFields.wps_ref).trim();
+        flags.push({
+            ref: ref || null,
             status: 'resolve_error',
             message: ref
-                ? `${ref}: verifica dei legami WPS/WPQR non riuscita — da verificare.`
-                : 'Verifica dei legami WPS/WPQR non riuscita — da verificare.',
-        })));
+                ? `WPS ${ref}: verifica non riuscita — da verificare.`
+                : 'Verifica del legame con la WPS non riuscita — da verificare.',
+        });
+    }
+    const supportingRefs = splitRefList(reviewFields.supporting_wpqr_refs);
+    if (supportingRefs.length > 0) {
+        try {
+            const supporting = await wpsWpqrLinks.resolveSupportingWpqrRefs({
+                organizationId, companyId, refs: supportingRefs,
+            });
+            flags.push(...supporting.flags);
+        } catch (err) {
+            logger.warn('WPQR: ricerca WPQR di supporto non riuscita', { organizationId, error: err.message });
+            flags.push(...supportingRefs.map((ref) => ({
+                ref,
+                status: 'resolve_error',
+                message: `WPQR di supporto ${ref}: verifica non riuscita — da verificare.`,
+            })));
+        }
     }
     return { wpsMatch, flags };
 }

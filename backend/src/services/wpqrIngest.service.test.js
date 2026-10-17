@@ -843,10 +843,46 @@ This WPQR is supported by NDT and mechanical tests related to the WPQR n. XX0001
         mockPipeline({ supporting_wpqr_refs: 'XX0001/99' });
         const out = await extractWPQRFromPdf(Buffer.from('%PDF'), 'x.pdf', 1001, 2001);
         expect(out.status).toBe('pending_review');
+        expect(out.wps_match).toBeNull();
         expect(out.verification_flags.map((f) => [f.ref, f.status])).toEqual([
             ['ZZ 01/99', 'resolve_error'],
             ['XX0001/99', 'resolve_error'],
         ]);
         expect(out.verification_flags.every((f) => f.ref)).toBe(true);
+    });
+
+    it('WPS già trovata: un errore sui supporti non la marca «da verificare»', async () => {
+        query.mockImplementation(async (sql, params = {}) => {
+            const text = sql.replace(/\s+/g, ' ').trim();
+            if (/FROM welding_procedures/.test(text) && /LIKE/.test(text)) {
+                return { recordset: [{ id: 3, organization_id: 1001, company_id: 2001, wps_code: 'ZZ 01/99' }] };
+            }
+            if (/FROM wpqr_records/.test(text) && /LIKE/.test(text)) throw new Error('timeout lookup');
+            return { recordset: [] };
+        });
+        mockPipeline({ supporting_wpqr_refs: 'XX0001/99, YY0202/98' });
+        const out = await extractWPQRFromPdf(Buffer.from('%PDF'), 'x.pdf', 1001, 2001);
+        expect(out.wps_match).toEqual({ ref: 'ZZ 01/99', wps_id: 3 });
+        expect(out.verification_flags.map((f) => [f.ref, f.status])).toEqual([
+            ['XX0001/99', 'resolve_error'],
+            ['YY0202/98', 'resolve_error'],
+        ]);
+        expect(out.verification_flags.some((f) => f.ref === 'ZZ 01/99')).toBe(false);
+    });
+
+    it('WPS non trovata: un errore sui supporti non duplica la segnalazione sulla WPS', async () => {
+        query.mockImplementation(async (sql) => {
+            const text = sql.replace(/\s+/g, ' ').trim();
+            if (/FROM welding_procedures/.test(text) && /LIKE/.test(text)) return { recordset: [] };
+            if (/FROM wpqr_records/.test(text) && /LIKE/.test(text)) throw new Error('timeout lookup');
+            return { recordset: [] };
+        });
+        mockPipeline({ supporting_wpqr_refs: 'XX0001/99' });
+        const out = await extractWPQRFromPdf(Buffer.from('%PDF'), 'x.pdf', 1001, 2001);
+        expect(out.wps_match).toBeNull();
+        expect(out.verification_flags.map((f) => [f.ref, f.status])).toEqual([
+            ['ZZ 01/99', 'not_found'],
+            ['XX0001/99', 'resolve_error'],
+        ]);
     });
 });
