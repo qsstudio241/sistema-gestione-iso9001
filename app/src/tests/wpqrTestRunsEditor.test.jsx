@@ -214,6 +214,34 @@ describe("WpqrTestRunsEditor — validazione formale (non bloccante)", () => {
     fireEvent.blur(screen.getByLabelText("Apporto termico — riga 1"));
     expect(screen.queryByRole("alert")).toBeNull();
   });
+
+  it("campi testo non numerici: etichetta, polarità, processo, trasferimento, note senza MSG_NUMBER", () => {
+    const spy = vi.fn();
+    render(<Harness initial={[ARC_RUN]} onChangeSpy={spy} />);
+    const cases = [
+      ["Passata — riga 1", "2 +n"],
+      ["Corrente/polarità — riga 1", "DC-EP"],
+      ["Processo — riga 1", "135 MAG"],
+      ["Trasferimento — riga 1", "spray"],
+      ["Note — riga 1", "root + filler"],
+    ];
+    for (const [label, value] of cases) {
+      const el = screen.getByLabelText(label);
+      setValue(el, value);
+      fireEvent.blur(el);
+      expect(el).not.toHaveAttribute("aria-invalid", "true");
+    }
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(spy).toHaveBeenCalled();
+    const last = spy.mock.calls.at(-1)[0][0];
+    expect(last).toEqual(expect.objectContaining({
+      run_label: "2 +n",
+      current_polarity: "DC-EP",
+      welding_process: "135 MAG",
+      metal_transfer: "spray",
+      remarks: "root + filler",
+    }));
+  });
 });
 
 describe("WpqrTestRunsEditor — velocità filo opzionale", () => {

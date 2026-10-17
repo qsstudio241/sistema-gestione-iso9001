@@ -133,7 +133,12 @@ function groupOf(field) {
   return pair ? pair[0] : field;
 }
 
+function isNumericGroup(group) {
+  return Boolean(UNIT_PAIRS[group]) || ARC_NUMERIC.includes(group) || STUD_NUMERIC.includes(group);
+}
+
 function validateGroup(draft, group) {
+  if (!isNumericGroup(group)) return null;
   const pair = UNIT_PAIRS[group];
   const raw = draft[group];
   if (!isBlank(raw) && parseDecimal(raw) === null) return MSG_NUMBER;
