@@ -168,6 +168,21 @@ describe('BW / FW / UNKNOWN, piastra vs tubo, L1 vs L2', () => {
         expect(f.field).toBe('product_type');
     });
 
+    test('15614-2 tubo senza diametro → warn (nessun livello L1/L2)', () => {
+        const f = only(run(complete15614_2({
+            product_type: 'T', diameter_test_mm: null, diameter_min: null,
+        })), `${P2}DIAMETER`);
+        expect(f.severity).toBe(SEVERITY.WARN);
+        expect(f.source.clause).toBe('§8.3.2.4');
+        expect(validateFinding(f)).toEqual({ ok: true, errors: [] });
+    });
+
+    test('15614-2 product_type NULL → non_verificabile_dato_mancante', () => {
+        const f = only(run(complete15614_2({ product_type: null })), `${P2}DIAMETER`);
+        expect(f.status).toBe(STATUS.NON_VERIFICABILE_DATO_MANCANTE);
+        expect(f.severity).toBe(SEVERITY.INFO);
+    });
+
     test('livello assente → COMP.LEVEL info e applicato L2 (diametro ancora essenziale su tubo)', () => {
         const r = run(complete15614({
             qualification_level: null, product_type: 'T', diameter_test_mm: null, diameter_min: null,
@@ -242,6 +257,11 @@ describe('evidenze campione 07/10/2026', () => {
         expect(f.status).toBe(STATUS.VERIFICABILE);
     });
 
+    test('HEAT_INPUT_KIND non scatta se il tipo è scritto in forma non canonica', () => {
+        const r = run(complete15614({ heat_input_kind: 'apporto termico (k)' }));
+        expect(find(r, `${P1}HEAT_INPUT_KIND`)).toHaveLength(0);
+    });
+
     test('wire_feed_speed assente: nessun finding', () => {
         const r = run(complete15614({ test_runs: [arcRun({ wire_feed_speed: null })] }));
         expect(r.findings.some((f) => /wire_feed/i.test(JSON.stringify(f)))).toBe(false);
@@ -293,6 +313,26 @@ describe('arco vs stud', () => {
         expect(find(r, `${P2}FILLER`)[0].severity).toBe(SEVERITY.WARN);
         expect(find(r, `${P2}RUNS_PRESENT`)).toHaveLength(1);
         expect(r.findings.some((f) => f.code.startsWith(P1))).toBe(false);
+    });
+
+    test('142 autogeno: niente FILLER in testata né Ø filler in passata', () => {
+        const r = run(complete15614({
+            welding_process: '142',
+            filler_material: null,
+            test_runs: [arcRun({ welding_process: '142', filler_diameter_mm: null })],
+        }));
+        expect(find(r, `${P1}FILLER`)).toHaveLength(0);
+        expect(find(r, `${P1}RUN_FIELDS`).some((f) => f.fields.includes('runs[0].filler_diameter_mm'))).toBe(false);
+    });
+
+    test('processo 142 solo in passata: FILLER di testata non richiesto', () => {
+        const r = run(complete15614({
+            welding_process: null,
+            filler_material: null,
+            test_runs: [arcRun({ welding_process: '142', filler_diameter_mm: null })],
+        }));
+        expect(find(r, `${P1}FILLER`)).toHaveLength(0);
+        expect(find(r, `${P1}PROCESS`)).toHaveLength(0);
     });
 
     test('14555: niente FILLER/CURRENT_TYPE/DIAMETER/INTERPASS; RUN_FIELDS stud', () => {

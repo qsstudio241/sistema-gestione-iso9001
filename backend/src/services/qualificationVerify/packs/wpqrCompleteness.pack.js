@@ -19,6 +19,7 @@ const { STANDARD_FAMILY } = require('../wpqrRecordView');
 const EXTRACT_REF = 'docs/reference/WPQR-dati-prova-pagina-2-estratto.md';
 const STUD_PROCESS_CODES = new Set(['783', '784', '785', '786']);
 const CD_STUD_CODES = new Set(['785', '786']);
+const NO_FILLER_PROCESSES = new Set(['142', '311']);
 const NONE_RE = /^(?:none|nessuno|nessuna|no|n\.?\s?a\.?|--)$/i;
 
 const FAMILY_META = {
@@ -47,6 +48,31 @@ const isNum = (v) => typeof v === 'number' && Number.isFinite(v);
 const isNone = (v) => !isBlank(v) && NONE_RE.test(String(v).trim());
 const isStud = (view) => view.standard && view.standard.family === STANDARD_FAMILY.WPQR_14555;
 const isArc = (view) => !isStud(view) && !STUD_PROCESS_CODES.has(view.welding_process_code);
+const isAutogenous = (code) => code && NO_FILLER_PROCESSES.has(code);
+
+function processCodesOn(view) {
+    const out = [];
+    if (view.welding_process_code) out.push(view.welding_process_code);
+    for (const r of view.runs || []) {
+        if (r.welding_process_code) out.push(r.welding_process_code);
+    }
+    return out;
+}
+
+function fillerNotRequired(view) {
+    const codes = processCodesOn(view);
+    return codes.length > 0 && codes.every(isAutogenous);
+}
+
+function diameterIsEssential(view) {
+    if (isStud(view)) return false;
+    if (view.standard && view.standard.family === STANDARD_FAMILY.WPQR_15614_2) return true;
+    return isDiameterEssentialVariable(view.level);
+}
+
+function diameterClause(view) {
+    return view.standard && view.standard.family === STANDARD_FAMILY.WPQR_15614_2 ? '§8.3.2.4' : '§8.3.3';
+}
 
 function metaOf(view) {
     return FAMILY_META[view.standard && view.standard.family] || FAMILY_META[STANDARD_FAMILY.WPQR_15614_1];
@@ -161,10 +187,8 @@ const RULES = [
     }),
 
     rule('FILLER', (view) => {
-        if (isStud(view) || !isArc(view)) return [];
+        if (isStud(view) || !isArc(view) || fillerNotRequired(view)) return [];
         if (!isBlank(view.filler_material) || !isBlank(view.filler_material_key)) return [];
-        const code = view.welding_process_code;
-        if (code === '142' || code === '311') return [];
         return [missingFinding(view, {
             suffix: 'FILLER',
             field: 'filler_material',
@@ -202,9 +226,9 @@ const RULES = [
     rule('DIAMETER', (view) => {
         if (isStud(view)) return [];
         if (view.product_type === 'P') return [];
-        if (!isDiameterEssentialVariable(view.level)) return [];
+        if (!diameterIsEssential(view)) return [];
         const fields = ['diameter_test_mm', 'diameter_min', 'diameter_max', 'product_type'];
-        const clause = '§8.3.3';
+        const clause = diameterClause(view);
         const label = 'Diametro esterno del tubo di prova';
         if (view.product_type == null) {
             return [missingFinding(view, {
@@ -215,7 +239,9 @@ const RULES = [
                 clause,
                 label,
                 status: STATUS.NON_VERIFICABILE_DATO_MANCANTE,
-                note: 'tipo di prodotto non dichiarato: il diametro è variabile essenziale solo per i tubi in Level 2',
+                note: view.standard.family === STANDARD_FAMILY.WPQR_15614_2
+                    ? 'tipo di prodotto non dichiarato: il diametro è richiesto per i tubi (Tab. 7)'
+                    : 'tipo di prodotto non dichiarato: il diametro è variabile essenziale solo per i tubi in Level 2',
             })];
         }
         if (view.product_type !== 'T' && view.product_type !== 'P+T') return [];
@@ -270,7 +296,7 @@ const RULES = [
     rule('HEAT_INPUT_KIND', (view) => {
         if (isStud(view)) return [];
         if (!heatInputPresent(view)) return [];
-        if (!isBlank(view.heat_input_kind)) return [];
+        if (!isBlank(view.heat_input_kind) || !isBlank(view.heat_input_kind_read)) return [];
         return [infoFinding(view, {
             suffix: 'HEAT_INPUT_KIND',
             field: 'heat_input_kind',
@@ -398,7 +424,8 @@ const RULES = [
             }
             if (!isNum(run.current_a)) pushMissing(run, index, 'current_a', SEVERITY.WARN, 'corrente');
             if (!isNum(run.voltage_v)) pushMissing(run, index, 'voltage_v', SEVERITY.WARN, 'tensione');
-            if (!isNum(run.filler_diameter_mm)) {
+            const runCode = run.welding_process_code || view.welding_process_code;
+            if (!isAutogenous(runCode) && !isNum(run.filler_diameter_mm)) {
                 pushMissing(run, index, 'filler_diameter_mm', SEVERITY.WARN, 'diametro del materiale d\'apporto');
             }
             if (isBlank(run.polarity_effective)) {
