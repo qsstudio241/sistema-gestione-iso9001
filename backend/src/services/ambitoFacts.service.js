@@ -71,6 +71,7 @@ async function loadStudioAggregates(user) {
        FROM non_conformities nc
        LEFT JOIN audits a ON nc.audit_id = a.audit_id
        WHERE COALESCE(a.organization_id, nc.organization_id) = @organizationId
+         AND nc.deleted_at IS NULL
          ${audFilterNc}`,
       params
     ),
@@ -111,6 +112,7 @@ async function loadStudioAggregates(user) {
        LEFT JOIN audits a ON nc.audit_id = a.audit_id
        LEFT JOIN companies c ON c.id = COALESCE(a.company_id, nc.company_id)
        WHERE COALESCE(a.organization_id, nc.organization_id) = @organizationId
+         AND nc.deleted_at IS NULL
          AND COALESCE(a.company_id, nc.company_id) IS NOT NULL
          ${audFilterNc}
        GROUP BY COALESCE(a.company_id, nc.company_id)
@@ -272,6 +274,7 @@ async function loadAmbitoFacts(user, companyId) {
        FROM non_conformities nc
        LEFT JOIN audits a ON nc.audit_id = a.audit_id
        WHERE COALESCE(a.organization_id, nc.organization_id) = @organizationId
+         AND nc.deleted_at IS NULL
          AND COALESCE(a.company_id, nc.company_id) = @companyId`,
       params
     ),

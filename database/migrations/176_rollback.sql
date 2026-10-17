@@ -239,6 +239,58 @@ BEGIN
 END
 GO
 IF OBJECT_ID(N'dbo.non_conformities', N'U') IS NOT NULL
+   AND EXISTS (
+        SELECT 1 FROM sys.indexes
+        WHERE name = N'IX_nc_audit_question_unique'
+          AND object_id = OBJECT_ID(N'dbo.non_conformities')
+          AND has_filter = 1
+          AND filter_definition LIKE N'%deleted_at%'
+   )
+BEGIN
+    DROP INDEX IX_nc_audit_question_unique ON dbo.non_conformities;
+    PRINT N'176 rollback: indice unico domanda audit (filtro cestino) rimosso.';
+END
+GO
+IF OBJECT_ID(N'dbo.non_conformities', N'U') IS NOT NULL
+   AND NOT EXISTS (
+        SELECT 1 FROM sys.indexes
+        WHERE name = N'IX_nc_audit_question_unique'
+          AND object_id = OBJECT_ID(N'dbo.non_conformities')
+   )
+BEGIN
+    CREATE UNIQUE INDEX IX_nc_audit_question_unique
+        ON dbo.non_conformities (audit_id, source_question_id)
+        WHERE source_question_id IS NOT NULL;
+    PRINT N'176 rollback: indice unico domanda audit ripristinato.';
+END
+GO
+IF OBJECT_ID(N'dbo.non_conformities', N'U') IS NOT NULL
+   AND EXISTS (
+        SELECT 1 FROM sys.indexes
+        WHERE name = N'IX_nc_audit_custom_item_unique'
+          AND object_id = OBJECT_ID(N'dbo.non_conformities')
+          AND has_filter = 1
+          AND filter_definition LIKE N'%deleted_at%'
+   )
+BEGIN
+    DROP INDEX IX_nc_audit_custom_item_unique ON dbo.non_conformities;
+    PRINT N'176 rollback: indice unico voce custom (filtro cestino) rimosso.';
+END
+GO
+IF OBJECT_ID(N'dbo.non_conformities', N'U') IS NOT NULL
+   AND NOT EXISTS (
+        SELECT 1 FROM sys.indexes
+        WHERE name = N'IX_nc_audit_custom_item_unique'
+          AND object_id = OBJECT_ID(N'dbo.non_conformities')
+   )
+BEGIN
+    CREATE UNIQUE INDEX IX_nc_audit_custom_item_unique
+        ON dbo.non_conformities (audit_id, source_custom_item_id)
+        WHERE source_custom_item_id IS NOT NULL;
+    PRINT N'176 rollback: indice unico voce custom ripristinato.';
+END
+GO
+IF OBJECT_ID(N'dbo.non_conformities', N'U') IS NOT NULL
    AND COL_LENGTH(N'dbo.non_conformities', N'deleted_at') IS NOT NULL
 BEGIN
     ALTER TABLE dbo.non_conformities DROP COLUMN deleted_at;

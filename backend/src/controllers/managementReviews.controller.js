@@ -351,6 +351,7 @@ async function getInputSummary(req, res) {
             FROM non_conformities nc
             LEFT JOIN audits a ON nc.audit_id = a.audit_id
             WHERE COALESCE(a.organization_id, nc.organization_id) = @orgId
+              AND nc.deleted_at IS NULL
               ${companyCond}
         `);
         const nc = ncRes.recordset[0];
@@ -376,6 +377,7 @@ async function getInputSummary(req, res) {
             FROM non_conformities nc
             LEFT JOIN audits a ON nc.audit_id = a.audit_id
             WHERE COALESCE(a.organization_id, nc.organization_id) = @orgId
+              AND nc.deleted_at IS NULL
               AND nc.status NOT IN ('closed','verified')
               ${ncDetCompanyCond}
             ORDER BY
@@ -711,7 +713,7 @@ async function generateDraft(req, res) {
                 SUM(CASE WHEN nc.status IN ('closed','verified') AND nc.updated_at >= @dateFrom AND nc.updated_at <= DATEADD(day,1,CAST(@dateTo AS DATE)) THEN 1 ELSE 0 END) AS closed_period
             FROM non_conformities nc
             LEFT JOIN audits a ON nc.audit_id = a.audit_id
-            WHERE COALESCE(a.organization_id, nc.organization_id) = @orgId ${companyCond}
+            WHERE COALESCE(a.organization_id, nc.organization_id) = @orgId AND nc.deleted_at IS NULL ${companyCond}
         `);
         const r = ncRes.recordset[0];
         nc = { open: r.open_count || 0, overdue: r.overdue_count || 0, total_closed_period: r.closed_period || 0 };
@@ -987,7 +989,7 @@ async function generateOutputs(req, res) {
                 SUM(CASE WHEN nc.status NOT IN ('closed','verified') AND nc.due_date < CAST(GETDATE() AS DATE) THEN 1 ELSE 0 END) AS overdue_count
             FROM non_conformities nc
             LEFT JOIN audits a ON nc.audit_id = a.audit_id
-            WHERE COALESCE(a.organization_id, nc.organization_id) = @orgId ${companyCond}
+            WHERE COALESCE(a.organization_id, nc.organization_id) = @orgId AND nc.deleted_at IS NULL ${companyCond}
         `);
         const r = ncRes.recordset[0];
         nc = { open: r.open_count || 0, overdue: r.overdue_count || 0 };

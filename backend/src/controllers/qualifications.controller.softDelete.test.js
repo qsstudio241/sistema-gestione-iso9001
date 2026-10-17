@@ -73,5 +73,13 @@ describe('migrazione 176 — slot unico e cestino', () => {
         expect(sql).toContain("AND deleted_at IS NULL");
         expect(sql).toContain('UX_wps_wpqr_links_pair_active');
         expect(sql).toContain('WHERE deleted_at IS NULL');
+        expect(sql).toContain('IX_nc_audit_question_unique');
+        expect(sql).toContain('source_question_id IS NOT NULL AND deleted_at IS NULL');
+        expect(sql).toContain('IX_nc_audit_custom_item_unique');
+        expect(sql).toContain('source_custom_item_id IS NOT NULL AND deleted_at IS NULL');
+        const rollback = fs.readFileSync(path.resolve(__dirname, '../../../database/migrations/176_rollback.sql'), 'utf8');
+        expect(rollback).toContain('WHERE source_question_id IS NOT NULL;');
+        expect(rollback).toContain('WHERE source_custom_item_id IS NOT NULL;');
+        expect(rollback.indexOf('DROP INDEX IX_nc_audit_question_unique')).toBeLessThan(rollback.indexOf('non_conformities.deleted_at rimossa'));
     });
 });

@@ -93,6 +93,7 @@ async function assertNcWriteAccess(req, res, ncId) {
       FROM   non_conformities nc
       ${ncScope.joinSql}
       WHERE  nc.nc_id = @id
+        AND  nc.deleted_at IS NULL
         AND  ${ncScope.orgSql}
         ${ncScope.scopeSql}
     `, { id: parseInt(ncId, 10), organization_id, ...ncScope.params });
@@ -904,6 +905,7 @@ async function updateNonConformity(req, res) {
       FROM non_conformities nc
       LEFT JOIN audits a ON nc.audit_id = a.audit_id
       WHERE nc.nc_id = @id
+        AND nc.deleted_at IS NULL
         AND (
               (nc.audit_id IS NOT NULL AND a.organization_id = @organization_id)
               OR (nc.audit_id IS NULL AND nc.organization_id = @organization_id)
@@ -1091,6 +1093,7 @@ async function updateNonConformity(req, res) {
                 const correctionCheck = await query(`
                     SELECT COUNT(*) AS cnt FROM nc_actions
                     WHERE nc_id = @id AND action_type = 'immediate'
+                      AND deleted_at IS NULL
                       AND status IN ('completed', 'verified')
                 `, { id: parseInt(id) });
                 if ((correctionCheck.recordset[0]?.cnt || 0) === 0) {
@@ -1143,6 +1146,7 @@ async function updateNonConformity(req, res) {
                     const correctiveCheck = await query(`
                         SELECT COUNT(*) AS cnt FROM nc_actions
                         WHERE nc_id = @id AND action_type = 'corrective'
+                          AND deleted_at IS NULL
                           AND status IN ('completed', 'verified')
                     `, { id: parseInt(id) });
                     if ((correctiveCheck.recordset[0]?.cnt || 0) === 0) {
@@ -1202,7 +1206,7 @@ async function updateNonConformity(req, res) {
         await query(`
       UPDATE non_conformities
       SET ${updates.join(', ')}
-      WHERE nc_id = @id
+      WHERE nc_id = @id AND deleted_at IS NULL
     `, params);
 
         // Aggiorna contatore NC nell'audit (solo se NC legata ad audit)
@@ -1216,6 +1220,17 @@ async function updateNonConformity(req, res) {
         WHERE audit_id = @audit_id
       `, { audit_id });
         }
+
+        await logEntityChange({
+            organizationId: organization_id,
+            entityTable: 'non_conformities',
+            entityId: parseInt(id, 10),
+            actionType: 'updated',
+            actorUserId: req.user.user_id,
+            before: { ...existingRow, status: existingRow.current_status },
+            after: req.body,
+            fields: Object.keys(req.body || {}),
+        });
 
         logger.info('NC updated', {
             nc_id: id,
@@ -1429,7 +1444,7 @@ async function listNcActions(req, res) {
             SELECT nc.nc_id, nc.description, nc.source_type
             FROM non_conformities nc
             ${ncScope.joinSql}
-            WHERE nc.nc_id = @id AND ${ncScope.orgSql}
+            WHERE nc.nc_id = @id AND nc.deleted_at IS NULL AND ${ncScope.orgSql}
               ${ncScope.scopeSql}
         `, { id: parseInt(id), organization_id, ...ncScope.params });
 
@@ -1499,7 +1514,7 @@ async function createNcAction(req, res) {
         const ncCheck = await query(`
             SELECT nc.nc_id FROM non_conformities nc
             ${ncScope.joinSql}
-            WHERE nc.nc_id = @id AND ${ncScope.orgSql}
+            WHERE nc.nc_id = @id AND nc.deleted_at IS NULL AND ${ncScope.orgSql}
               ${ncScope.scopeSql}
         `, { id: parseInt(id), organization_id, ...ncScope.params });
 
@@ -1508,6 +1523,9 @@ async function createNcAction(req, res) {
         }
 
         const ncWrite = await assertNcWriteAccess(req, res, id);
+        if (ncWrite.notFound) {
+            return res.status(404).json({ error: 'Non conformità non trovata', code: 'NC_NOT_FOUND' });
+        }
         if (ncWrite.denied) return;
 
         const responsibleResolved = await resolveNotificationContact(
@@ -1532,8 +1550,18 @@ async function createNcAction(req, res) {
         await query(`
             UPDATE non_conformities
             SET status = 'in_progress', updated_at = GETDATE()
-            WHERE nc_id = @id AND status = 'open'
+            WHERE nc_id = @id AND status = 'open' AND deleted_at IS NULL
         `, { id: parseInt(id) });
+
+        await logEntityChange({
+            organizationId: organization_id,
+            entityTable: 'nc_actions',
+            entityId: result.recordset[0].action_id,
+            actionType: 'created',
+            actorUserId: user_id,
+            after: { action_type, description, nc_id: parseInt(id, 10) },
+            fields: ['action_type', 'description', 'nc_id'],
+        });
 
         logger.info('NC action created', { nc_id: id, action_id: result.recordset[0].action_id, organization_id });
 
@@ -1557,11 +1585,12 @@ async function updateNcAction(req, res) {
         // Ownership tollerante alle NC non-audit (audit_id NULL)
         const ncScope = ncOwnershipScope(req.user, { auditAlias: 'au' });
         const check = await query(`
-            SELECT a.action_id, a.status AS current_status, a.verification_note
+            SELECT a.action_id, a.status AS current_status, a.verification_note, a.description
             FROM nc_actions a
             INNER JOIN non_conformities nc ON a.nc_id = nc.nc_id
             ${ncScope.joinSql}
             WHERE a.action_id = @actionId AND nc.nc_id = @nc_id
+              AND a.deleted_at IS NULL AND nc.deleted_at IS NULL
               AND ${ncScope.orgSql}
               ${ncScope.scopeSql}
         `, { actionId: parseInt(actionId), nc_id: parseInt(id), organization_id, ...ncScope.params });
@@ -1571,6 +1600,9 @@ async function updateNcAction(req, res) {
         }
 
         const ncWrite = await assertNcWriteAccess(req, res, id);
+        if (ncWrite.notFound) {
+            return res.status(404).json({ error: 'Non conformità non trovata', code: 'NC_NOT_FOUND' });
+        }
         if (ncWrite.denied) return;
 
         const updates = [];
@@ -1621,8 +1653,23 @@ async function updateNcAction(req, res) {
 
         await query(`
             UPDATE nc_actions SET ${updates.join(', ')}
-            WHERE action_id = @actionId
+            WHERE action_id = @actionId AND deleted_at IS NULL
         `, params);
+
+        await logEntityChange({
+            organizationId: organization_id,
+            entityTable: 'nc_actions',
+            entityId: parseInt(actionId, 10),
+            actionType: 'updated',
+            actorUserId: req.user.user_id,
+            before: {
+                status: check.recordset[0].current_status,
+                description: check.recordset[0].description,
+                verification_note: check.recordset[0].verification_note,
+            },
+            after: req.body,
+            fields: ['status', 'description', 'responsible', 'due_date', 'verification_note'],
+        });
 
         // Flusso semplificato Aperta/Chiusa: il completamento azioni NON cambia lo stato NC.
         // La chiusura resta un atto esplicito con gate (verifica + responsabile selezionato).
@@ -1658,6 +1705,7 @@ async function deleteNcAction(req, res) {
             INNER JOIN non_conformities nc ON a.nc_id = nc.nc_id
             ${ncScope.joinSql}
             WHERE a.action_id = @actionId AND nc.nc_id = @nc_id
+              AND a.deleted_at IS NULL AND nc.deleted_at IS NULL
               AND ${ncScope.orgSql}
               ${ncScope.scopeSql}
         `, { actionId: parseInt(actionId), nc_id: parseInt(id), organization_id, ...ncScope.params });
@@ -1667,6 +1715,9 @@ async function deleteNcAction(req, res) {
         }
 
         const ncWrite = await assertNcWriteAccess(req, res, id);
+        if (ncWrite.notFound) {
+            return res.status(404).json({ error: 'Non conformità non trovata', code: 'NC_NOT_FOUND' });
+        }
         if (ncWrite.denied) return;
 
         await query(`
@@ -1675,9 +1726,11 @@ async function deleteNcAction(req, res) {
             WHERE action_id = @actionId AND deleted_at IS NULL
               AND EXISTS (
                 SELECT 1 FROM non_conformities nc
+                LEFT JOIN audits au ON au.audit_id = nc.audit_id
                 WHERE nc.nc_id = nc_actions.nc_id
                   AND nc.nc_id = @nc_id
-                  AND nc.organization_id = @organization_id
+                  AND nc.deleted_at IS NULL
+                  AND COALESCE(nc.organization_id, au.organization_id) = @organization_id
               )
         `, { actionId: parseInt(actionId), nc_id: parseInt(id), organization_id, actor_user_id: req.user.user_id });
         await logEntityChange({
@@ -1779,6 +1832,7 @@ async function pushAuditToNcRegister(req, res) {
             SELECT source_question_id, source_custom_item_id, nc_id, nc_number, status
             FROM non_conformities
             WHERE audit_id = @audit_id
+              AND deleted_at IS NULL
               AND (source_question_id IS NOT NULL OR source_custom_item_id IS NOT NULL)
         `, { audit_id });
 
@@ -2104,7 +2158,7 @@ async function approveNcClosure(req, res) {
             SELECT nc.nc_id, nc.status, nc.approved_at
             FROM non_conformities nc
             ${ncScope.joinSql}
-            WHERE nc.nc_id = @id AND ${ncScope.orgSql}${ncScope.scopeSql}
+            WHERE nc.nc_id = @id AND nc.deleted_at IS NULL AND ${ncScope.orgSql}${ncScope.scopeSql}
         `, params);
 
         if (!existing.recordset.length) {
@@ -2129,7 +2183,7 @@ async function approveNcClosure(req, res) {
         await query(`
             UPDATE non_conformities
             SET approved_by = @approved_by, approved_at = GETDATE(), updated_at = GETDATE()
-            WHERE nc_id = @id
+            WHERE nc_id = @id AND deleted_at IS NULL
         `, { id: parseInt(id), approved_by: user_id });
 
         logger.info('NC closure approved', { nc_id: id, approved_by: user_id, organization_id });

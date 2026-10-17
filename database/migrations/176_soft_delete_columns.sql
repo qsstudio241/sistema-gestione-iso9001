@@ -386,3 +386,62 @@ BEGIN
     PRINT N'176: indice unico legami WPS-WPQR attivi creato.';
 END
 GO
+
+-- Una NC cestinata non deve bloccare un nuovo push della stessa domanda o voce custom.
+IF OBJECT_ID(N'dbo.non_conformities', N'U') IS NOT NULL
+   AND COL_LENGTH(N'dbo.non_conformities', N'deleted_at') IS NOT NULL
+   AND EXISTS (
+        SELECT 1 FROM sys.indexes
+        WHERE name = N'IX_nc_audit_question_unique'
+          AND object_id = OBJECT_ID(N'dbo.non_conformities')
+          AND (has_filter = 0 OR filter_definition NOT LIKE N'%deleted_at%')
+   )
+BEGIN
+    DROP INDEX IX_nc_audit_question_unique ON dbo.non_conformities;
+    PRINT N'176: indice unico domanda audit rimosso per escludere il cestino.';
+END
+GO
+
+IF OBJECT_ID(N'dbo.non_conformities', N'U') IS NOT NULL
+   AND COL_LENGTH(N'dbo.non_conformities', N'deleted_at') IS NOT NULL
+   AND NOT EXISTS (
+        SELECT 1 FROM sys.indexes
+        WHERE name = N'IX_nc_audit_question_unique'
+          AND object_id = OBJECT_ID(N'dbo.non_conformities')
+   )
+BEGIN
+    CREATE UNIQUE INDEX IX_nc_audit_question_unique
+        ON dbo.non_conformities (audit_id, source_question_id)
+        WHERE source_question_id IS NOT NULL AND deleted_at IS NULL;
+    PRINT N'176: indice unico domanda audit ricreato (escluse le cestinate).';
+END
+GO
+
+IF OBJECT_ID(N'dbo.non_conformities', N'U') IS NOT NULL
+   AND COL_LENGTH(N'dbo.non_conformities', N'deleted_at') IS NOT NULL
+   AND EXISTS (
+        SELECT 1 FROM sys.indexes
+        WHERE name = N'IX_nc_audit_custom_item_unique'
+          AND object_id = OBJECT_ID(N'dbo.non_conformities')
+          AND (has_filter = 0 OR filter_definition NOT LIKE N'%deleted_at%')
+   )
+BEGIN
+    DROP INDEX IX_nc_audit_custom_item_unique ON dbo.non_conformities;
+    PRINT N'176: indice unico voce custom rimosso per escludere il cestino.';
+END
+GO
+
+IF OBJECT_ID(N'dbo.non_conformities', N'U') IS NOT NULL
+   AND COL_LENGTH(N'dbo.non_conformities', N'deleted_at') IS NOT NULL
+   AND NOT EXISTS (
+        SELECT 1 FROM sys.indexes
+        WHERE name = N'IX_nc_audit_custom_item_unique'
+          AND object_id = OBJECT_ID(N'dbo.non_conformities')
+   )
+BEGIN
+    CREATE UNIQUE INDEX IX_nc_audit_custom_item_unique
+        ON dbo.non_conformities (audit_id, source_custom_item_id)
+        WHERE source_custom_item_id IS NOT NULL AND deleted_at IS NULL;
+    PRINT N'176: indice unico voce custom ricreato (escluse le cestinate).';
+END
+GO

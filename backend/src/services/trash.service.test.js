@@ -185,4 +185,73 @@ describe('cestino', () => {
         expect(res.body.code).toBe('PARENT_IN_TRASH');
         expect(query.mock.calls.some((call) => /SET deleted_at = NULL/.test(String(call[0])))).toBe(false);
     });
+
+    it('la NC da audit compare nel cestino con organizzazione e azienda dell\'audit', async () => {
+        query.mockImplementation(async (sql) => {
+            expect(sql).toContain('COALESCE(t.organization_id, au.organization_id) = @organization_id');
+            expect(sql).toContain('LEFT JOIN audits au');
+            expect(sql).toContain('COALESCE(t.company_id, au.company_id)');
+            expect(sql).toContain('deleted_at IS NOT NULL');
+            return { recordset: [{ id: 12, company_id: 5, deleted_at: '2026-10-17', title: 'NC-1', code: 'NC-1', status: 'open' }] };
+        });
+        const res = resMock();
+        await listTrash({
+            user: {
+                role: 'admin',
+                organization_id: 1,
+                user_id: 9,
+                company_access: [{ company_id: 5, permission: 'read' }],
+            },
+            query: { entity: 'non_conformities' },
+        }, res);
+        expect(res.statusCode).toBe(200);
+        expect(res.body.data).toHaveLength(1);
+        expect(res.body.data[0].entity).toBe('non_conformities');
+        const sql = String(query.mock.calls[0][0]);
+        expect(sql).toContain('COALESCE(t.company_id, au.company_id) IN (@co0)');
+        expect(sql).not.toContain('t.organization_id = @organization_id');
+    });
+
+    it('il ripristino di una NC da audit usa COALESCE e riporta azioni e allegati', async () => {
+        query.mockImplementation(async (sql) => {
+            if (/INSERT INTO entity_change_log/.test(sql) || /SET deleted_at = NULL/.test(sql)) return { recordset: [] };
+            return {
+                recordset: [{
+                    id: 12,
+                    company_id: 5,
+                    deleted_at: '2026-10-17T00:00:00Z',
+                    status: 'open',
+                    title: 'NC-1',
+                    organization_id: 1,
+                }],
+            };
+        });
+        const res = resMock();
+        await restoreTrash({
+            user: { role: 'admin', organization_id: 1, user_id: 9, company_access: [] },
+            params: { entity: 'non_conformities', id: '12' },
+        }, res);
+        expect(res.statusCode).toBe(200);
+        const sqls = query.mock.calls.map((call) => String(call[0]));
+        const parent = sqls.find((sql) => /UPDATE nc\s+SET deleted_at = NULL/.test(sql));
+        expect(parent).toContain('COALESCE(nc.organization_id, au.organization_id) = @organization_id');
+        expect(parent).toContain('LEFT JOIN audits au');
+        expect(sqls.some((sql) => /UPDATE a SET deleted_at = NULL/.test(sql) && sql.includes('FROM nc_actions'))).toBe(true);
+        expect(sqls.some((sql) => /UPDATE att SET deleted_at = NULL/.test(sql))).toBe(true);
+        const insert = query.mock.calls.find((call) => /INSERT INTO entity_change_log/.test(String(call[0])));
+        expect(insert[1].action_type).toBe('restored');
+    });
+
+    it('una NC di un\'altra organizzazione non si ripristina', async () => {
+        query.mockResolvedValue({
+            recordset: [{ id: 12, company_id: 5, deleted_at: '2026-10-17', organization_id: 2, title: 'NC-1' }],
+        });
+        const res = resMock();
+        await restoreTrash({
+            user: { role: 'admin', organization_id: 1, user_id: 9, company_access: [] },
+            params: { entity: 'non_conformities', id: '12' },
+        }, res);
+        expect(res.statusCode).toBe(404);
+        expect(query.mock.calls.some((call) => /SET deleted_at = NULL/.test(String(call[0])))).toBe(false);
+    });
 });

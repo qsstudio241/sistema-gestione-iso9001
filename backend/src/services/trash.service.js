@@ -153,6 +153,10 @@ async function listTrash(req, res) {
                 rows.push(...await listTrashedNcActions(organizationId, accessList));
                 continue;
             }
+            if (key === 'non_conformities') {
+                rows.push(...await listTrashedNonConformities(organizationId, accessList));
+                continue;
+            }
             const spec = ENTITIES[key];
             if (!spec) continue;
             const companyAlias = spec.companyAlias || 't';
@@ -254,6 +258,38 @@ async function listTrashedNcActions(organizationId, accessList) {
     }));
 }
 
+/** NC da audit: l'organizzazione e l'azienda stanno sull'audit, non sulla riga NC. */
+async function listTrashedNonConformities(organizationId, accessList) {
+    const companyFilter = companyAccessSqlFilter(accessList, 't');
+    const companyClause = companyFilter.clause
+        ? companyFilter.clause.replaceAll('t.company_id', 'COALESCE(t.company_id, au.company_id)')
+        : '';
+    const where = [
+        'COALESCE(t.organization_id, au.organization_id) = @organization_id',
+        't.deleted_at IS NOT NULL',
+    ];
+    if (companyClause) where.push(companyClause);
+    const result = await query(`
+        SELECT TOP 200
+            t.nc_id AS id,
+            COALESCE(t.company_id, au.company_id) AS company_id,
+            t.deleted_at,
+            t.deleted_by,
+            t.nc_number AS title,
+            t.nc_number AS code,
+            t.status AS status
+        FROM non_conformities t
+        LEFT JOIN audits au ON au.audit_id = t.audit_id
+        WHERE ${where.join(' AND ')}
+        ORDER BY t.deleted_at DESC
+    `, { organization_id: organizationId, ...companyFilter.params });
+    return (result.recordset || []).map((row) => ({
+        ...row,
+        entity: 'non_conformities',
+        entity_label: ENTITIES.non_conformities.label,
+    }));
+}
+
 async function loadTrashRow(entity, id, organizationId) {
     if (entity === 'attachments') {
         const scope = attachmentScopeSync({ role: 'admin' });
@@ -285,6 +321,23 @@ async function loadTrashRow(entity, id, organizationId) {
             INNER JOIN non_conformities nc ON nc.nc_id = a.nc_id
             LEFT JOIN audits au ON au.audit_id = nc.audit_id
             WHERE a.action_id = @id
+        `, { id });
+        const row = result.recordset?.[0];
+        if (!row || Number(row.organization_id) !== Number(organizationId)) return null;
+        return row;
+    }
+    if (entity === 'non_conformities') {
+        const result = await query(`
+            SELECT
+                t.nc_id AS id,
+                t.deleted_at,
+                t.status,
+                t.nc_number AS title,
+                COALESCE(t.organization_id, au.organization_id) AS organization_id,
+                COALESCE(t.company_id, au.company_id) AS company_id
+            FROM non_conformities t
+            LEFT JOIN audits au ON au.audit_id = t.audit_id
+            WHERE t.nc_id = @id
         `, { id });
         const row = result.recordset?.[0];
         if (!row || Number(row.organization_id) !== Number(organizationId)) return null;
@@ -445,6 +498,13 @@ async function restoreTrash(req, res) {
                 INNER JOIN non_conformities nc ON nc.nc_id = a.nc_id
                 LEFT JOIN audits au ON au.audit_id = nc.audit_id
                 WHERE a.action_id = @id AND a.deleted_at IS NOT NULL
+                  AND COALESCE(nc.organization_id, au.organization_id) = @organization_id`;
+        } else if (entity === 'non_conformities') {
+            sql = `UPDATE nc
+                SET deleted_at = NULL, deleted_by = NULL
+                FROM non_conformities nc
+                LEFT JOIN audits au ON au.audit_id = nc.audit_id
+                WHERE nc.nc_id = @id AND nc.deleted_at IS NOT NULL
                   AND COALESCE(nc.organization_id, au.organization_id) = @organization_id`;
         } else {
             sql = restoreSql(spec.table, spec.idColumn, { hasOrg: true });

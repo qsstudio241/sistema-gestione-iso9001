@@ -496,7 +496,7 @@ async function uploadAttachment(req, res) {
         SELECT nc.nc_id, nc.company_id
         FROM non_conformities nc
         ${ncScope.joinSql}
-        WHERE nc.nc_id = @nc_id AND ${ncScope.orgSql}
+        WHERE nc.nc_id = @nc_id AND nc.deleted_at IS NULL AND ${ncScope.orgSql}
           ${ncScope.scopeSql}
       `, { nc_id: parseInt(nc_id), organization_id, ...ncScope.params });
 

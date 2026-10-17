@@ -566,7 +566,7 @@ async function addProjectWelder(req, res) {
 
         // Verifica progetto
         const proj = await query(
-            `SELECT id, company_id FROM projects WHERE id=@id AND organization_id=@organization_id`,
+            `SELECT id, company_id FROM projects WHERE id=@id AND organization_id=@organization_id AND deleted_at IS NULL`,
             { id: parseInt(id), organization_id }
         );
         if (!proj.recordset.length) {
@@ -595,7 +595,7 @@ async function addProjectWelder(req, res) {
             }
             const nextWps = await query(`
                 SELECT id, company_id FROM welding_procedures
-                WHERE id = @wps_id AND organization_id = @organization_id
+                WHERE id = @wps_id AND organization_id = @organization_id AND deleted_at IS NULL
             `, { wps_id: welderWpsId, organization_id });
             if (nextWps.recordset.length === 0) {
                 return res.status(404).json({ error: 'WPS di riferimento non trovata', code: 'WPS_NOT_FOUND' });

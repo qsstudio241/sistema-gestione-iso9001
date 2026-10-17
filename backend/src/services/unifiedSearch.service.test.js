@@ -59,6 +59,7 @@ describe('unifiedSearch', () => {
         expect(query).toHaveBeenCalledTimes(1);
         const [sql, params] = query.mock.calls[0];
         expect(sql).toMatch(/non_conformities nc/i);
+        expect(sql).toMatch(/nc\.deleted_at IS NULL/);
         expect(sql).toMatch(/nc\.description LIKE @pattern/i);
         expect(sql).toMatch(/auditor_org_id = @auditor_org_id/i);
         expect(params).toMatchObject({

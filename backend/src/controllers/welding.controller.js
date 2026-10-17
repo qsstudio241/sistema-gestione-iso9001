@@ -677,7 +677,7 @@ async function createWPQR(req, res) {
 
         const wpsExists = await query(`
             SELECT id, company_id FROM welding_procedures
-            WHERE id = @wps_id AND organization_id = @organization_id
+            WHERE id = @wps_id AND organization_id = @organization_id AND deleted_at IS NULL
         `, { wps_id: parseInt(wps_id), organization_id });
 
         if (wpsExists.recordset.length === 0) {
@@ -826,7 +826,7 @@ async function updateWPQR(req, res) {
             }
             const nextWps = await query(`
                 SELECT id, company_id FROM welding_procedures
-                WHERE id = @wps_id AND organization_id = @organization_id
+                WHERE id = @wps_id AND organization_id = @organization_id AND deleted_at IS NULL
             `, { wps_id: nextWpsId, organization_id });
             if (nextWps.recordset.length === 0) {
                 return res.status(404).json({ error: 'WPS di riferimento non trovata', code: 'WPS_NOT_FOUND' });
@@ -1076,7 +1076,7 @@ async function assignWpsWelder(req, res) {
         // Verifica qualifica appartenga alla stessa org
         const qualCheck = await query(`
             SELECT id, company_id FROM qualifications
-            WHERE id = @qualification_id AND organization_id = @organization_id
+            WHERE id = @qualification_id AND organization_id = @organization_id AND deleted_at IS NULL
         `, { qualification_id: parseInt(qualification_id), organization_id });
 
         if (qualCheck.recordset.length === 0) {
@@ -1492,7 +1492,7 @@ async function getWpsCoverage(req, res) {
         const projResult = await query(`
             SELECT id, project_code, company_id, applicable_wps_ids
             FROM projects
-            WHERE id = @project_id AND organization_id = @organization_id
+            WHERE id = @project_id AND organization_id = @organization_id AND deleted_at IS NULL
         `, { project_id: parseInt(project_id), organization_id });
 
         if (projResult.recordset.length === 0) {
