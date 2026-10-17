@@ -33,7 +33,7 @@ afterEach(() => {
     ensureDefaultPacks();
 });
 
-describe('verifyWpqr — pack stub (nessuna regola)', () => {
+describe('verifyWpqr — profilo risolto (pack completezza attivo)', () => {
     const covered = [
         [{ standard_reference: 'ISO 15614-1:2017', joint_type: 'BW' }, '15614-1:BW', '15614-1', '2017'],
         [{ standard_reference: 'ISO 15614-1:2017+A1:2019', joint_type: 'FW' }, '15614-1:FW', '15614-1', '2017+A1:2019'],
@@ -43,20 +43,15 @@ describe('verifyWpqr — pack stub (nessuna regola)', () => {
         [{ standard_reference: 'ISO 14555:2025' }, '14555:SW', '14555', '2025'],
     ];
 
-    test.each(covered)('%j → profilo %s, findings vuoti, summary a zero', (input, profile, family, edition) => {
+    test.each(covered)('%j → profilo %s, domain wpqr (finding di completezza ammessi sul record minimo)', (input, profile, family, edition) => {
         for (const mode of ['ingest', 'review', 'db']) {
             const r = verifyWpqr(input, { mode });
-            expect(r).toEqual({
-                profile,
-                standard: { family, edition },
-                findings: [],
-                summary: {
-                    warn: 0, info: 0, verificabili: 0, non_verificabili: 0,
-                },
-                engine_version: ENGINE_VERSION,
-                mode,
-                domain: 'wpqr',
-            });
+            expect(r.profile).toBe(profile);
+            expect(r.standard).toEqual({ family, edition });
+            expect(r.engine_version).toBe(ENGINE_VERSION);
+            expect(r.mode).toBe(mode);
+            expect(r.domain).toBe('wpqr');
+            r.findings.forEach((f) => expect(validateFinding(f)).toEqual({ ok: true, errors: [] }));
         }
     });
 
@@ -134,7 +129,7 @@ describe('verifyWpqr — norma o edizione non coperta / dato mancante', () => {
         });
         expect(r.profile).toBe('15614-1:FW');
         expect(r.standard).toEqual({ family: '15614-1', edition: '2017+A1:2019' });
-        expect(r.findings).toEqual([]);
+        r.findings.forEach((f) => expect(validateFinding(f)).toEqual({ ok: true, errors: [] }));
     });
 });
 
@@ -160,10 +155,8 @@ describe('verifyWpqr — dispatch via registry', () => {
             { id: 'T.WPQR.WARN', family: FAMILY.COMPLETEZZA, run: () => [verifiable({ code: 'T.WPQR.WARN', family: FAMILY.COMPLETEZZA })] },
         ]);
         const r = verifyWpqr(wpqr(), { runs: [{ run_label: '1', current_a: 200 }] });
-        expect(r.findings.map((f) => f.code)).toEqual(['T.WPQR.WARN', 'T.WPQR.INFO']);
-        expect(r.summary).toEqual({
-            warn: 1, info: 1, verificabili: 2, non_verificabili: 0,
-        });
+        const fromTest = r.findings.filter((f) => f.code.startsWith('T.WPQR'));
+        expect(fromTest.map((f) => f.code)).toEqual(['T.WPQR.WARN', 'T.WPQR.INFO']);
         expect(seen[0].profile).toBe('15614-1:BW');
         expect(seen[0].runs[0].current_a).toBe(200);
         r.findings.forEach((f) => expect(validateFinding(f)).toEqual({ ok: true, errors: [] }));
@@ -175,8 +168,8 @@ describe('verifyWpqr — dispatch via registry', () => {
             { id: 'T.WPQR.OK', family: FAMILY.CORRETTEZZA, run: () => [verifiable({ code: 'T.WPQR.OK' })] },
         ]);
         const r = verifyWpqr(wpqr());
-        expect(r.findings.map((f) => f.code).sort()).toEqual([ENGINE_CODES.RULE_ERROR, 'T.WPQR.OK'].sort());
-        const err = r.findings.find((f) => f.code === ENGINE_CODES.RULE_ERROR);
+        const err = r.findings.find((f) => f.code === ENGINE_CODES.RULE_ERROR && f.message_it.includes('boom'));
+        expect(r.findings.some((f) => f.code === 'T.WPQR.OK')).toBe(true);
         expect(err).toMatchObject({ severity: SEVERITY.INFO, status: STATUS.NON_VERIFICABILE_DATO_MANCANTE });
         expect(err.message_it).toContain('boom');
     });
@@ -188,9 +181,10 @@ describe('verifyWpqr — dispatch via registry', () => {
             { id: 'T.WPQR.NOARRAY', family: FAMILY.CORRETTEZZA, run: () => ({}) },
         ]);
         const r = verifyWpqr(wpqr());
-        expect(r.findings).toHaveLength(3);
-        expect(r.findings.every((f) => f.code === ENGINE_CODES.RULE_ERROR)).toBe(true);
-        expect(r.summary.warn).toBe(0);
+        const fromTest = r.findings.filter((f) => f.code === ENGINE_CODES.RULE_ERROR && /T\.WPQR/.test(f.message_it));
+        expect(fromTest).toHaveLength(3);
+        expect(fromTest.every((f) => f.code === ENGINE_CODES.RULE_ERROR)).toBe(true);
+        expect(fromTest.every((f) => f.severity === SEVERITY.INFO)).toBe(true);
     });
 
     test('codice duplicato → errore di registrazione; codice riservato rifiutato', () => {
@@ -217,18 +211,20 @@ describe('verifyWpqr — dispatch via registry', () => {
         const w = verifyWpqr(wpqr());
         expect(w.domain).toBe('wpqr');
         expect(w.profile).toBe('15614-1:BW');
-        expect(w.findings).toEqual([]);
+        expect(q.findings.some((f) => String(f.code).startsWith('WPQR'))).toBe(false);
+        expect(w.findings.some((f) => String(f.code).startsWith('WQ9606'))).toBe(false);
     });
 });
 
-describe('registry di default — stub WPQR', () => {
-    test('quattro stub WPQR registrati, vuoti, con famiglia, edizioni e profili dichiarati', () => {
+describe('registry di default — pack WPQR', () => {
+    test('quattro pack WPQR registrati, completezza con regole, correttezza ancora stub', () => {
         ensureDefaultPacks();
         const ids = ['wpqr.completeness', 'wpqr.15614_1.correctness', 'wpqr.15614_2.correctness', 'wpqr.14555.correctness'];
         for (const id of ids) {
             const pack = registry.getRulePack(id);
             expect(pack).toBeTruthy();
-            expect(pack.rules).toEqual([]);
+            if (id === 'wpqr.completeness') expect(pack.rules.length).toBeGreaterThan(0);
+            else expect(pack.rules).toEqual([]);
             expect(pack.editions.length).toBeGreaterThan(0);
             expect(pack.profiles.length).toBeGreaterThan(0);
         }
