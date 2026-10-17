@@ -60,3 +60,36 @@ Renewal / Rinnovo
         expect(result.confidence).toBe('high');
     });
 });
+
+describe('classifyDocument — WPS che cita la propria WPQR di supporto (non è una WPQR)', () => {
+    // Pagina WPS EN ISO 15609-1, testo sintetico: nomina la WPQR di supporto e la norma 15614, nessuna prova.
+    const wpsPage = `EN ISO 15609 - 1 MANUFACTURER'S WELDING PROCEDURE SPECIFICATION
+WPS-n./WPS n. ZZ 01/99
+Supporting WPQR n./ WPQR di supporto n.
+10/08/2023 XX0001/99
+Procedura qualificata secondo EN ISO 15614-1
+Preheat Tp 20 Interpass Ti 250 heat input`;
+
+    it('classifica come wps (prima del fix: wpqr 6 vs wps 5, con rifiuto dell\'upload nel modulo WPS)', () => {
+        const r = classifyDocument(wpsPage);
+        expect(r.detected_type).toBe('wps');
+        expect(r.confidence).toBe('high');
+        expect(r.all_scores.wpqr).toBeLessThanOrEqual(2);
+    });
+
+    it('una WPQR vera che incorpora la pagina WPS resta wpqr (ha prove, provini, esaminatore)', () => {
+        const wpqr = `WELDING PROCEDURE QUALIFICATION RECORD (WPQR) EN ISO 15614-1
+Examining body / Ente Esaminatore
+TENSILE TEST bending test hardness macro
+${wpsPage}`;
+        expect(classifyDocument(wpqr).detected_type).toBe('wpqr');
+    });
+
+    it('una WPS senza riga di supporto non cambia comportamento', () => {
+        expect(classifyDocument('Welding procedure specification WPS 01 preheat interpass').detected_type).toBe('wps');
+    });
+
+    it('l\'etichetta «WPQR di supporto» da sola non rende wpqr un documento senza altri segnali WPQR', () => {
+        expect(classifyDocument('WPQR di supporto n. XX0001/99').detected_type).not.toBe('wpqr');
+    });
+});
