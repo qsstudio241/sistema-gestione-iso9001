@@ -171,6 +171,20 @@ describe('evaluateInspectorFromRows', () => {
     expect(out.reasons[0]).toMatch(/visiva scaduta/);
     expect(out.vision.state).toBe('expired');
   });
+
+  it('fallisce se il test dei colori è passato anche con la visita ancora valida', () => {
+    const out = evaluateInspectorFromRows({
+      ...base,
+      ndtQuals: [ndtQual()],
+      visionRows: [visionQual({
+        expiry_date: null,
+        near_vision_expiry_date: '2030-01-01',
+        colour_vision_expiry_date: '2020-01-01',
+      })],
+    });
+    expect(out.ok).toBe(false);
+    expect(out.vision.state).toBe('expired');
+  });
 });
 
 describe('evaluateNdtInspectorGate', () => {
