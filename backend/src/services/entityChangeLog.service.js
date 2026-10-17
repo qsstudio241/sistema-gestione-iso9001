@@ -22,10 +22,10 @@ function notDeleted(alias) {
 
 function isTrashAdmin(user) {
     const role = String(user?.role || '').toLowerCase();
-    return role === 'admin' || role === 'superadmin';
+    return role === 'admin' || role === 'auditor' || role === 'superadmin';
 }
 
-/** Dettaglio di una riga cestinata: 404 per chi non è admin o superadmin. */
+/** Dettaglio di una riga cestinata: nascosto a chi non può aprire il cestino. */
 function trashedDetailHidden(user, row) {
     return Boolean(row && row.deleted_at) && !isTrashAdmin(user);
 }

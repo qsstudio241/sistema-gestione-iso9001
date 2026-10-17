@@ -1,7 +1,7 @@
 /**
  * @jest-environment node
  */
-// Cestino: solo admin/superadmin, scope A4, audit di ripristino.
+// Cestino: admin, auditor e superadmin della propria org. Il viewer no.
 jest.mock('../config/database', () => {
     const query = jest.fn();
     const tx = {
@@ -69,11 +69,33 @@ function resMock() {
 describe('cestino', () => {
     beforeEach(() => jest.clearAllMocks());
 
-    it('un ruolo non admin riceve 403 e non legge le righe', async () => {
+    it('il viewer riceve 403 e non legge le righe', async () => {
         const res = resMock();
-        await listTrash({ user: { role: 'auditor', organization_id: 1, user_id: 3 }, query: {} }, res);
+        await listTrash({ user: { role: 'viewer', organization_id: 1, user_id: 3 }, query: {} }, res);
         expect(res.statusCode).toBe(403);
         expect(query).not.toHaveBeenCalled();
+    });
+
+    it('l\'auditor della propria organizzazione legge il cestino', async () => {
+        query.mockResolvedValue({ recordset: [] });
+        const res = resMock();
+        await listTrash({
+            user: { role: 'auditor', organization_id: 1, user_id: 3, company_access: [] },
+            query: { entity: 'projects' },
+        }, res);
+        expect(res.statusCode).toBe(200);
+        expect(query).toHaveBeenCalled();
+    });
+
+    it('l\'auditor di un\'altra organizzazione non trova la riga', async () => {
+        query.mockResolvedValue({ recordset: [] });
+        const res = resMock();
+        await restoreTrash({
+            user: { role: 'auditor', organization_id: 1, user_id: 3, company_access: [] },
+            params: { entity: 'projects', id: '8' },
+        }, res);
+        expect(res.statusCode).toBe(404);
+        expect(String(query.mock.calls[0][0])).toContain('organization_id = @organization_id');
     });
 
     it('admin della stessa organizzazione vede solo le righe cestinate della propria org', async () => {

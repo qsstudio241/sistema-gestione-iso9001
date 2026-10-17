@@ -38,10 +38,17 @@ describe("TrashPage", () => {
         await waitFor(() => expect(restoreTrash).toHaveBeenCalledWith("qualifications", 4));
     });
 
-    it("un altro ruolo non carica il cestino", async () => {
+    it("l'auditor vede la riga", async () => {
         role = "auditor";
         render(<TrashPage />);
-        expect(await screen.findByText(/Solo admin e superadmin/)).toBeTruthy();
+        expect(await screen.findByText("Ada")).toBeTruthy();
+        expect(listTrash).toHaveBeenCalled();
+    });
+
+    it("il viewer non carica il cestino", async () => {
+        role = "viewer";
+        render(<TrashPage />);
+        expect(await screen.findByText(/Solo admin, auditor e superadmin/)).toBeTruthy();
         expect(listTrash).not.toHaveBeenCalled();
     });
 });
