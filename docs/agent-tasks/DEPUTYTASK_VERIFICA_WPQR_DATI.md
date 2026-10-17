@@ -1,6 +1,6 @@
 # DEPUTYTASK_VERIFICA_WPQR_DATI — WV-3: migrazioni additive per i dati di prova WPQR (`wpqr_test_runs` + colonne di testata) e per la chiave WPS↔WPQR (`wps_wpqr_links`) + verify/rollback + runner VPS + `DATABASE.md`
 
-**Stato:** APERTO — lanciabile **solo dopo il merge su `origin/main`** della PR di charting (gate DEPUTYTASK: `git show origin/main:docs/agent-tasks/DEPUTYTASK_VERIFICA_WPQR_DATI.md` deve mostrare `APERTO`)  
+**Stato:** CHIUSO — TEST OK (15/10/2026, mergiata [#784](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/784): migrazioni 173/174; API in [#785](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/785))  
 **Aperto:** 07/10/2026  
 **Piano:** [`PLAN_VERIFICA_WPQR_SLICES.md`](PLAN_VERIFICA_WPQR_SLICES.md) § 2.2 (schema proposto) · § 2.3 · § 6.3 WV-3  
 **Dipende da:** nessuna (onda 1)  
