@@ -22,6 +22,7 @@ const caseDocumentAnalysisService = require('../services/caseDocumentAnalysis.se
 const caseCapabilityGapReportService = require('../services/caseCapabilityGapReport.service');
 const commercialChecklistTemplateService = require('../services/commercialChecklistTemplate.service');
 const commercialChecklistAttachmentService = require('../services/commercialChecklistAttachment.service');
+const { linkApprovedCaseToProject } = require('../services/commercialCaseHandoffProject.service');
 const {
     PRELIMINARY_ITEMS,
 } = require('../data/commercialChecklistDefaults');
@@ -1756,6 +1757,16 @@ async function registerHandoff(req, res) {
         const notesVal =
             notes !== undefined && notes !== null ? String(notes).trim().substring(0, 500) : null;
 
+        const link = await linkApprovedCaseToProject({
+            organizationId,
+            user: req.user,
+            caseRow: existing,
+            handoffRef,
+        });
+        if (!link.ok) {
+            return sendErr(res, link.status, link.error, link.code);
+        }
+
         const upd = await query(
             `
             UPDATE commercial_cases
@@ -1780,7 +1791,12 @@ async function registerHandoff(req, res) {
             return sendErr(res, 404, 'Caso non trovato', 'NOT_FOUND');
         }
 
-        return res.json(upd.recordset[0]);
+        return res.json({
+            ...upd.recordset[0],
+            project_id: link.project.id,
+            project_link: link.action,
+            project_code: link.project.project_code,
+        });
     } catch (err) {
         logger.error('registerHandoff', err.message);
         return sendErr(res, 500, err.message, 'SERVER_ERROR');
