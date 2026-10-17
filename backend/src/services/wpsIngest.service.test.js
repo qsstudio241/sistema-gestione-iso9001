@@ -117,6 +117,7 @@ Procedura qualificata secondo EN ISO 15614-1 Preheat Tp 20 Interpass Ti 250 heat
             if (/SELECT id FROM welding_procedures/.test(text)) return { recordset: duplicate ? [{ id: 1 }] : [] };
             if (/^INSERT INTO welding_procedures/.test(text)) return { recordset: [{ id: 55 }] };
             if (/^INSERT INTO wps_wpqr_links/.test(text)) return { recordset: [{ id: 1 }] };
+            if (/^UPDATE welding_procedures/.test(text)) return { recordset: [] };
             return { recordset: [] };
         });
         return log;
@@ -206,5 +207,38 @@ Procedura qualificata secondo EN ISO 15614-1 Preheat Tp 20 Interpass Ti 250 heat
         expect(res.wps_id).toBe(55);
         expect(log.some((s) => /FROM wpqr_records/.test(s.text))).toBe(false);
         expect(res.verification_flags).toEqual([]);
+    });
+
+    it('commit: data nel campo wpqr_ref (layout IIS) non è un numero da verificare', async () => {
+        const log = routeQuery({ wpqrRows: [] });
+        const res = await commitWPSFromFields(
+            { wps_number: 'ZZ 01/99', wpqr_ref: '10/08/2023 XX0001/99, YY0202/98' },
+            1001, 2001, {}
+        );
+        const ins = log.find((s) => /^INSERT INTO welding_procedures/.test(s.text));
+        expect(ins.params.notes).toBe('WPQR di supporto da verificare: XX0001/99, YY0202/98');
+        expect(ins.params.notes).not.toMatch(/10\/08/);
+        expect(res.verification_flags.map((f) => f.ref).sort()).toEqual(['XX0001/99', 'YY0202/98']);
+    });
+
+    it('commit: errore di ricerca conserva i numeri in notes (non si perdono)', async () => {
+        const log = [];
+        query.mockImplementation(async (sql, params = {}) => {
+            const text = sql.replace(/\s+/g, ' ').trim();
+            log.push({ text, params });
+            if (/FROM wpqr_records/.test(text)) throw new Error('timeout lookup');
+            if (/SELECT id FROM welding_procedures/.test(text)) return { recordset: [] };
+            if (/^INSERT INTO welding_procedures/.test(text)) return { recordset: [{ id: 55 }] };
+            if (/^SELECT OBJECT_ID/.test(text)) return { recordset: [{ object_id: 1 }] };
+            return { recordset: [] };
+        });
+        const res = await commitWPSFromFields({ wps_number: 'ZZ 01/99', wpqr_ref: 'XX0001/99, YY0202/98' }, 1001, 2001, {});
+        const ins = log.find((s) => /^INSERT INTO welding_procedures/.test(s.text));
+        expect(ins.params.notes).toBe('WPQR di supporto da verificare: XX0001/99, YY0202/98');
+        expect(res.linked_wpqr).toEqual([]);
+        expect(res.verification_flags.map((f) => [f.ref, f.status])).toEqual([
+            ['XX0001/99', 'resolve_error'],
+            ['YY0202/98', 'resolve_error'],
+        ]);
     });
 });

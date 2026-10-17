@@ -22,7 +22,9 @@ const FLAG = Object.freeze({
     NOT_FOUND: 'not_found',
     AMBIGUOUS: 'ambiguous',
     LINKS_UNAVAILABLE: 'links_unavailable',
+    RESOLVE_ERROR: 'resolve_error',
 });
+const ROLE_RANK = Object.freeze({ [ROLES.SUPPORTING]: 1, [ROLES.PRIMARY]: 2 });
 
 function requireTenant(organizationId) {
     if (!Number.isSafeInteger(Number(organizationId)) || Number(organizationId) <= 0) {
@@ -184,7 +186,26 @@ async function insertLink({ organizationId, companyId, wpsId, wpqrId, role, user
            )`,
         params
     );
-    return { created: Boolean(r && r.recordset && r.recordset.length > 0), available: true };
+    if (r && r.recordset && r.recordset.length > 0) {
+        return { created: true, updated: false, available: true };
+    }
+    // Coppia già presente: `primary` (WPQR→WPS) vince su `supporting` (WPS→WPQR). Mai il contrario.
+    const newRank = ROLE_RANK[role] || 0;
+    if (newRank < ROLE_RANK[ROLES.PRIMARY]) {
+        return { created: false, updated: false, available: true };
+    }
+    const u = await query(
+        `UPDATE l
+         SET role = @role
+         OUTPUT INSERTED.id
+         FROM wps_wpqr_links l
+         INNER JOIN welding_procedures w ON w.id = l.wps_id AND w.organization_id = @organization_id AND ${wpsCompany}
+         INNER JOIN wpqr_records q ON q.id = l.wpqr_id AND q.organization_id = @organization_id AND ${wpqrCompany}
+         WHERE l.organization_id = @organization_id AND l.wps_id = @wps_id AND l.wpqr_id = @wpqr_id
+           AND l.role <> @role`,
+        params
+    );
+    return { created: false, updated: Boolean(u && u.recordset && u.recordset.length > 0), available: true };
 }
 
 /**
@@ -206,7 +227,7 @@ async function linkWpsToSupportingWpqr({ organizationId, companyId, wpsId, match
             });
             break;
         }
-        if (res.created) linked.push(m);
+        if (res.created || res.updated) linked.push(m);
     }
     return { linked, flags };
 }
@@ -227,7 +248,7 @@ async function linkWpqrToWps({ organizationId, companyId, wpqrId, match, userId 
             }],
         };
     }
-    return { linked: res.created ? [match] : [], flags: [] };
+    return { linked: (res.created || res.updated) ? [match] : [], flags: [] };
 }
 
 module.exports = {

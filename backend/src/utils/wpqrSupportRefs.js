@@ -18,6 +18,20 @@ const SEPARATOR_SRC = '(?:\\s*(?:,|;|\\+|&|\\be\\b|\\band\\b)\\s*)';
 const LABEL_RUN_RE = new RegExp(`(?:${LABEL_SRC}[\\s/:.\\-]*)+`, 'gi');
 const REF_LIST_RE = new RegExp(`^\\s*(?:${DATE_SRC}\\s*)?(?!${DATE_SRC})(${REF_SRC}(?:${SEPARATOR_SRC}${REF_SRC})*)`, 'i');
 const REF_RE = new RegExp(REF_SRC, 'gi');
+const DATE_RE = new RegExp(DATE_SRC, 'g');
+const DATE_FRAGMENT_RE = /^(\d{1,2})[/.\-](\d{1,2})$/;
+
+/** `10/08` o `10/08/2023`: frammento di data, non un numero di certificato. */
+function isDateLikeToken(token) {
+    const t = String(token || '').trim();
+    if (!t) return true;
+    if (new RegExp(`^${DATE_SRC}$`).test(t)) return true;
+    const m = t.match(DATE_FRAGMENT_RE);
+    if (!m) return false;
+    const a = Number(m[1]);
+    const b = Number(m[2]);
+    return a <= 31 && b <= 31;
+}
 const SUPPORTED_BY_RE = new RegExp(
     `supported\\s+by[^.]{0,120}?(?:wpqr|pqr)\\s*${NUM_ABBR}\\s*[:.]?\\s*(${REF_SRC})`,
     'gi'
@@ -47,8 +61,9 @@ function cleanRefDisplay(ref) {
 function splitRefList(value) {
     if (value == null) return [];
     const raw = Array.isArray(value) ? value.join(' ; ') : String(value);
-    const found = raw.match(REF_RE) || [];
-    return uniqueRefs(found);
+    const withoutDates = raw.replace(DATE_RE, ' ');
+    const found = withoutDates.match(REF_RE) || [];
+    return uniqueRefs(found.filter((item) => !isDateLikeToken(item)));
 }
 
 function uniqueRefs(list) {

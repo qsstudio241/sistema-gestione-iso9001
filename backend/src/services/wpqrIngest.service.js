@@ -501,7 +501,14 @@ async function previewLinksForWpqr(reviewFields, organizationId, companyId) {
         }
     } catch (err) {
         logger.warn('WPQR: ricerca legami non riuscita', { organizationId, error: err.message });
-        flags.push({ ref: null, status: 'resolve_error', message: 'Verifica dei legami WPS/WPQR non riuscita — da verificare.' });
+        const refs = [reviewFields.wps_ref, ...splitRefList(reviewFields.supporting_wpqr_refs)].filter(Boolean);
+        flags.push(...(refs.length ? refs : [null]).map((ref) => ({
+            ref,
+            status: 'resolve_error',
+            message: ref
+                ? `${ref}: verifica dei legami WPS/WPQR non riuscita — da verificare.`
+                : 'Verifica dei legami WPS/WPQR non riuscita — da verificare.',
+        })));
     }
     return { wpsMatch, flags };
 }
@@ -618,7 +625,13 @@ async function linkWpqrAfterInsert({ wpqrId, organizationId, companyId, userId, 
         return flags;
     } catch (err) {
         logger.warn('WPQR: scrittura legame con la WPS non riuscita', { wpqrId, organizationId, error: err.message });
-        return [{ ref: null, status: 'resolve_error', message: 'Legame con la WPS non salvato — da verificare.' }];
+        return [{
+            ref: wpsRef || null,
+            status: 'resolve_error',
+            message: wpsRef
+                ? `WPS ${wpsRef}: legame non salvato — da verificare.`
+                : 'Legame con la WPS non salvato — da verificare.',
+        }];
     }
 }
 

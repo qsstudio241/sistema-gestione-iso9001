@@ -49,6 +49,16 @@ function makeDb({ wpqr = [], wps = [], links = [], linksTable = true } = {}) {
             db.links.push(row);
             return { recordset: [{ id: row.id }] };
         }
+        if (/^UPDATE/.test(text) && /wps_wpqr_links/.test(text)) {
+            const w = db.wps.find((x) => x.id === params.wps_id && x.organization_id === params.organization_id);
+            const q = db.wpqr.find((x) => x.id === params.wpqr_id && x.organization_id === params.organization_id);
+            const row = db.links.find((l) => l.wps_id === params.wps_id && l.wpqr_id === params.wpqr_id
+                && l.organization_id === params.organization_id);
+            const companyOk = params.company_id === undefined ? (w && w.company_id == null) : (w && w.company_id === params.company_id);
+            if (!w || !q || !row || !companyOk || row.role === params.role) return { recordset: [] };
+            row.role = params.role;
+            return { recordset: [{ id: row.id }] };
+        }
         return { recordset: [] };
     });
     return db;
@@ -232,6 +242,33 @@ describe('insertLink / linkWpsToSupportingWpqr / linkWpqrToWps', () => {
         expect(query).not.toHaveBeenCalled();
         const r = await svc.linkWpqrToWps({ organizationId: ORG_A, companyId: 5, wpqrId: 10, match: { ref: 'ZZ 01/99', wps_id: 3 } });
         expect(r.linked).toHaveLength(1);
+        expect(db.links[0].role).toBe('primary');
+    });
+
+    it('stessa coppia: supporting poi primary → il ruolo diventa primary (non resta quello del primo upload)', async () => {
+        const db = makeDb({ wpqr: [WPQR_A], wps: [WPS] });
+        await svc.linkWpsToSupportingWpqr({
+            organizationId: ORG_A, companyId: 5, wpsId: 3, matches: [{ ref: 'XX0001/99', wpqr_id: 10 }],
+        });
+        expect(db.links[0].role).toBe('supporting');
+        const r = await svc.linkWpqrToWps({
+            organizationId: ORG_A, companyId: 5, wpqrId: 10, match: { ref: 'ZZ 01/99', wps_id: 3 },
+        });
+        expect(r.linked).toHaveLength(1);
+        expect(db.links).toHaveLength(1);
+        expect(db.links[0].role).toBe('primary');
+    });
+
+    it('stessa coppia: primary poi supporting → resta primary (nessun downgrade)', async () => {
+        const db = makeDb({ wpqr: [WPQR_A], wps: [WPS] });
+        await svc.linkWpqrToWps({
+            organizationId: ORG_A, companyId: 5, wpqrId: 10, match: { ref: 'ZZ 01/99', wps_id: 3 },
+        });
+        const r = await svc.linkWpsToSupportingWpqr({
+            organizationId: ORG_A, companyId: 5, wpsId: 3, matches: [{ ref: 'XX0001/99', wpqr_id: 10 }],
+        });
+        expect(r.linked).toEqual([]);
+        expect(db.links).toHaveLength(1);
         expect(db.links[0].role).toBe('primary');
     });
 

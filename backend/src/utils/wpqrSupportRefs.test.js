@@ -75,6 +75,14 @@ describe('normalizzazione e liste', () => {
         expect(splitRefList(null)).toEqual([]);
         expect(splitRefList(['AA0001/20', 'BB0002/21'])).toEqual(['AA0001/20', 'BB0002/21']);
     });
+
+    it('splitRefList: la data tra etichetta e numero (e i frammenti dd/mm) non è un riferimento', () => {
+        expect(splitRefList('10/08/2023 XX0001/99')).toEqual(['XX0001/99']);
+        expect(splitRefList('10.08.2023, YY0202/98 e 24-03390-01')).toEqual(['YY0202/98', '24-03390-01']);
+        expect(splitRefList('10/08 XX0001/99')).toEqual(['XX0001/99']);
+        expect(splitRefList('10/08/2023')).toEqual([]);
+        expect(splitRefList('10/08')).toEqual([]);
+    });
 });
 
 describe('estrattori a regole', () => {

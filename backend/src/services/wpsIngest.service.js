@@ -21,7 +21,23 @@ const { toNumericOrNull } = require('../utils/numericSanitizer');
 const { splitRefList } = require('../utils/wpqrSupportRefs');
 const wpsWpqrLinks = require('./wpsWpqrLinks.service');
 
-const VERIFY_FLAG_STATUSES = new Set([wpsWpqrLinks.FLAG.NOT_FOUND, wpsWpqrLinks.FLAG.AMBIGUOUS]);
+const NOTE_FLAG_STATUSES = new Set([
+    wpsWpqrLinks.FLAG.NOT_FOUND,
+    wpsWpqrLinks.FLAG.AMBIGUOUS,
+    wpsWpqrLinks.FLAG.LINKS_UNAVAILABLE,
+    wpsWpqrLinks.FLAG.RESOLVE_ERROR,
+]);
+
+function notesFromSupportFlags(flags) {
+    const seen = new Set();
+    const refs = [];
+    for (const fl of flags || []) {
+        if (!NOTE_FLAG_STATUSES.has(fl.status) || !fl.ref || seen.has(fl.ref)) continue;
+        seen.add(fl.ref);
+        refs.push(fl.ref);
+    }
+    return refs.length ? `WPQR di supporto da verificare: ${refs.join(', ')}` : null;
+}
 
 /**
  * «WPQR di supporto n.» → match sicuro nel tenant oppure segnalazione «da verificare». Mai bloccante:
@@ -38,7 +54,11 @@ async function resolveSupportingForWps(wpqrRef, organizationId, companyId) {
         return {
             refs,
             matches: [],
-            flags: [{ ref: null, status: 'resolve_error', message: 'Verifica della WPQR di supporto non riuscita — da verificare.' }],
+            flags: refs.map((ref) => ({
+                ref,
+                status: wpsWpqrLinks.FLAG.RESOLVE_ERROR,
+                message: `WPQR di supporto ${ref}: verifica non riuscita — da verificare.`,
+            })),
         };
     }
 }
@@ -207,10 +227,7 @@ async function commitWPSFromFields(fields, organizationId, companyId, options = 
     }
 
     const supporting = await resolveSupportingForWps(mapped.wpqr_ref, organizationId, companyId);
-    const unresolved = supporting.flags.filter((fl) => VERIFY_FLAG_STATUSES.has(fl.status) && fl.ref);
-    const notes = unresolved.length
-        ? `WPQR di supporto da verificare: ${unresolved.map((fl) => fl.ref).join(', ')}`
-        : null;
+    const notes = notesFromSupportFlags(supporting.flags);
 
     const insertResult = await query(`
         INSERT INTO welding_procedures (
@@ -255,8 +272,21 @@ async function commitWPSFromFields(fields, organizationId, companyId, options = 
             flags.push(...result.flags);
         } catch (err) {
             logger.warn('WPS: scrittura legami WPQR di supporto non riuscita', { wpsId, organizationId, error: err.message });
-            flags.push({ ref: null, status: 'resolve_error', message: 'Legame con la WPQR di supporto non salvato — da verificare.' });
+            flags.push(...supporting.matches.map((m) => ({
+                ref: m.ref,
+                status: wpsWpqrLinks.FLAG.RESOLVE_ERROR,
+                message: `WPQR di supporto ${m.ref}: legame non salvato — da verificare.`,
+            })));
         }
+    }
+    const finalNotes = notesFromSupportFlags(flags);
+    if (finalNotes && finalNotes !== notes) {
+        await query(
+            `UPDATE welding_procedures
+             SET notes = @notes
+             WHERE id = @id AND organization_id = @organization_id`,
+            { notes: finalNotes, id: wpsId, organization_id: organizationId }
+        );
     }
     if (linked.length > 0) {
         logger.info('WPS: legami WPQR di supporto creati', { wpsId, organizationId, count: linked.length });

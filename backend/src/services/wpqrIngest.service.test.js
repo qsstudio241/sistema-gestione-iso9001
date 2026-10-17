@@ -814,4 +814,39 @@ This WPQR is supported by NDT and mechanical tests related to the WPQR n. XX0001
         const ins = log.find((s) => /^INSERT INTO wpqr_records/.test(s.text));
         expect(ins.params.notes).toBeNull();
     });
+
+    it('data nel campo supporting_wpqr_refs (layout IIS) non è un numero da verificare', async () => {
+        routeQuery();
+        mockPipeline({ supporting_wpqr_refs: '10/08/2023 XX0001/99, YY0202/98' });
+        const out = await extractWPQRFromPdf(Buffer.from('%PDF'), 'x.pdf', 1001, 2001);
+        expect(out.fields.supporting_wpqr_refs).toBe('XX0001/99, YY0202/98');
+        expect(out.fields.supporting_wpqr_refs).not.toMatch(/10\/08/);
+        expect(out.verification_flags.map((f) => f.ref).sort()).toEqual(['XX0001/99', 'YY0202/98', 'ZZ 01/99']);
+        const log = routeQuery();
+        const res = await commitWPQRFromFields({
+            wpqr_number: 'XX0002/99', supporting_wpqr_refs: '10/08/2023 XX0001/99, YY0202/98',
+        }, 1001, 2001, {});
+        const ins = log.find((s) => /^INSERT INTO wpqr_records/.test(s.text));
+        expect(ins.params.notes).toBe('WPQR di supporto: XX0001/99, YY0202/98');
+        expect(ins.params.notes).not.toMatch(/10\/08/);
+        expect(res.wpqr_id).toBe(700);
+    });
+
+    it('errore di ricerca conserva i riferimenti nelle segnalazioni (non ref null)', async () => {
+        query.mockImplementation(async (sql) => {
+            const text = sql.replace(/\s+/g, ' ').trim();
+            if (/LIKE/.test(text) && (/FROM welding_procedures/.test(text) || /FROM wpqr_records/.test(text))) {
+                throw new Error('timeout lookup');
+            }
+            return { recordset: [] };
+        });
+        mockPipeline({ supporting_wpqr_refs: 'XX0001/99' });
+        const out = await extractWPQRFromPdf(Buffer.from('%PDF'), 'x.pdf', 1001, 2001);
+        expect(out.status).toBe('pending_review');
+        expect(out.verification_flags.map((f) => [f.ref, f.status])).toEqual([
+            ['ZZ 01/99', 'resolve_error'],
+            ['XX0001/99', 'resolve_error'],
+        ]);
+        expect(out.verification_flags.every((f) => f.ref)).toBe(true);
+    });
 });
