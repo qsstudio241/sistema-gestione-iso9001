@@ -1,0 +1,435 @@
+'use strict';
+
+/**
+ * aiPromptPrivacy.js — redazione dei dati personali/aziendali nei prompt di CONTORNO verso l'AI
+ * (retry JSON, few-shot per organizzazione, pattern di riferimento, nome file).
+ *
+ * Perimetro: SOLO il contorno del prompt. Il testo del documento (PDF/OCR) resta inviato all'AI
+ * per l'estrazione dei campi: e' un residuo da trattare con DPA/regione dati (slice A3), non qui.
+ * Nulla di quanto fa questo modulo tocca i dati salvati nel DB: la redazione avviene a runtime,
+ * quindi vale anche per le correzioni storiche gia' presenti in `import_extraction_feedback`.
+ */
+
+const PLACEHOLDERS = Object.freeze({
+    FILE: '[FILE]',
+    NOME: '[NOME]',
+    NUMERO_CERTIFICATO: '[NUMERO_CERTIFICATO]',
+    DATORE: '[DATORE]',
+    DATA_NASCITA: '[DATA_NASCITA]',
+    LUOGO_NASCITA: '[LUOGO_NASCITA]',
+    ID_PERSONALE: '[ID_PERSONALE]',
+    CODICE_FISCALE: '[CODICE_FISCALE]',
+    EMAIL: '[EMAIL]',
+    TELEFONO: '[TELEFONO]',
+    INDIRIZZO: '[INDIRIZZO]',
+    NUMERO_WPS_WPQR: '[NUMERO_WPS_WPQR]',
+    NUMERO_RIFERIMENTO: '[NUMERO_RIFERIMENTO]',
+});
+
+/** Tipi documento di qualifica del personale: profilo di redazione completo. */
+const QUALIFICATION_AI_DOC_TYPES = new Set(['patentino_saldatore', 'qualifica_14732', 'cert_ndt']);
+
+function isQualificationAiDocType(docType) {
+    return QUALIFICATION_AI_DOC_TYPES.has(docType);
+}
+
+/**
+ * Chiavi sempre personali, per ogni tipo documento (contatti, anagrafica, nomi di persona).
+ * L'ordine conta: la prima regola che combacia vince.
+ */
+const ALWAYS_KEY_RULES = [
+    [/(^|_)(birth|nascita)_?(date|data)$|^(date_of_birth|data_nascita|dob|birthdate)$/, PLACEHOLDERS.DATA_NASCITA],
+    [/^(place_of_birth|birth_place|birthplace|luogo_nascita|luogo_di_nascita)$/, PLACEHOLDERS.LUOGO_NASCITA],
+    [/^(codice_fiscale|fiscal_code|tax_id|tax_code|cf|ssn|partita_iva|piva|vat_number|vat_no)$/, PLACEHOLDERS.CODICE_FISCALE],
+    [/(^|_)(e_?mail|pec)(_address)?$/, PLACEHOLDERS.EMAIL],
+    [/(^|_)(phone|telefono|tel|mobile|cellulare)(_number)?$/, PLACEHOLDERS.TELEFONO],
+    [/(^|_)(address|indirizzo|city|citta|zip|cap|postal_code)$/, PLACEHOLDERS.INDIRIZZO],
+    [
+        /(^|_)(welder|operator|inspector|examiner|tester|signer|signatory|person|holder|employee|candidate|worker|titolare|full|first|last|sur)_?name$|^(nome|cognome|surname|titolare)$/,
+        PLACEHOLDERS.NOME,
+    ],
+];
+
+/** Chiavi aggiuntive per i documenti di qualifica (numeri certificato, datore, id personali, WPS/WPQR cliente). */
+const QUALIFICATION_KEY_RULES = [
+    [/^(certificate|cert|qualification|licen[sc]e|patent|card)_?(number|no|num|nr|id)$/, PLACEHOLDERS.NUMERO_CERTIFICATO],
+    [
+        /^(employer|employer_name|employer_company|datore|datore_lavoro|datore_di_lavoro|ragione_sociale|company_name|company|business_name|customer|cliente|client_name)$/,
+        PLACEHOLDERS.DATORE,
+    ],
+    [
+        /^(matricola|employee_id|employee_number|personal_id|welder_id|welder_number|operator_id|operator_number|stamp_number|badge|badge_number|id_number|identification_(number|no)|passport_number|id_card_number)$/,
+        PLACEHOLDERS.ID_PERSONALE,
+    ],
+    [/^(wps|wpqr|pqr)(_(number|no|num|nr|ref|reference|id))?$/, PLACEHOLDERS.NUMERO_WPS_WPQR],
+    [/^(reference|document|report|procedure)_(number|no)$/, PLACEHOLDERS.NUMERO_RIFERIMENTO],
+    // Sui certificati di persona `examiner_body` e' il nome dell'esaminatore firmatario (non un ente).
+    [/^examiner_body$/, PLACEHOLDERS.NOME],
+];
+
+function normalizeKey(key) {
+    return String(key || '').normalize('NFC').trim().toLowerCase().replace(/[\s-]+/g, '_');
+}
+
+/**
+ * Campi tecnici (processo, norma, ente, materiale, date...): qui non si sostituiscono frammenti di nome ne' valori
+ * personali brevi di una sola parola (es. `Tig`, `TUV`, `135`), che potrebbero coincidere con una sigla di processo/norma/ente.
+ */
+const TECHNICAL_KEY_RE = new RegExp(
+    '(^|_)(process|processo|standard|norma|norm|material|materiale|group|gruppo|body|ente|issuing|authority|'
+    + 'position|positions|posizione|posizioni|thickness|spessore|diameter|diametro|filler|gas|joint|type|tipo|'
+    + 'class|classe|level|livello|grade|result|esito|code|codice|date|data|unit|status|stato|revision|rev|edition|year|anno|designation|designazione)(_|$)'
+);
+
+function isTechnicalKey(key) {
+    return TECHNICAL_KEY_RE.test(normalizeKey(key));
+}
+
+/** Nei campi tecnici restano valide solo le identita' inequivocabili: nome completo (piu' parole) o identificativo con cifre. */
+function isStrongKnown(k) {
+    return !k.token && (/\s/.test(k.value) || (/\d/.test(k.value) && k.value.length >= 5));
+}
+
+function knownForKey(key, known) {
+    return key != null && isTechnicalKey(key) ? known.filter(isStrongKnown) : known;
+}
+
+/**
+ * Segnaposto per una chiave campo personale, o null se la chiave non e' sensibile.
+ * @param {string} key
+ * @param {string|null} [docType]
+ * @returns {string|null}
+ */
+function placeholderForFieldKey(key, docType = null) {
+    const k = normalizeKey(key);
+    if (!k) return null;
+    for (const [re, ph] of ALWAYS_KEY_RULES) if (re.test(k)) return ph;
+    if (isQualificationAiDocType(docType)) {
+        for (const [re, ph] of QUALIFICATION_KEY_RULES) if (re.test(k)) return ph;
+    }
+    return null;
+}
+
+const EMAIL_RE = /(?<![A-Z0-9._%+-])[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
+const CODICE_FISCALE_RE = /(?<![A-Z0-9])[A-Z]{6}\d{2}[A-EHLMPR-T]\d{2}[A-Z]\d{3}[A-Z](?![A-Z0-9])/gi;
+const NAME_STOPWORDS = new Set(['di', 'de', 'del', 'della', 'dei', 'da', 'van', 'von', 'la', 'le', 'lo', 'the', 'and']);
+
+const PHONE_MIN_DIGITS = 6;
+const PHONE_MAX_DIGITS = 13;
+const PHONE_MAX_GROUPS = 4;
+const PHONE_SEP_RE = /[.\s/-]/;
+const PHONE_CONTEXT_LEAD_RE = /(?<![\p{L}])(?:tel(?:efono)?|cell(?:ulare)?|mobile|fax)[:.\s]{0,8}$/iu;
+
+const INTL_BOUNDARY_BLOCK_RE = /[\p{L}\p{N}_/-]/u;
+
+/**
+ * `+39`/`0039` valgono come prefisso solo se non sono attaccati a lettere, cifre, `_`, `-`, `/`
+ * o a un gruppo numerico puntato (es. `ABC-0039-1`, `24.0039`): `Tel:+39..`, `;+39..`, `"+39..` restano validi.
+ */
+function isIntlPrefixBoundary(text, i) {
+    if (i <= 0) return true;
+    const prev = text[i - 1];
+    if (INTL_BOUNDARY_BLOCK_RE.test(prev)) return false;
+    return !(prev === '.' && /\d/.test(text[i - 2] || ''));
+}
+
+/**
+ * Telefono plausibile da `s` (inizia da cifra o da un separatore singolo + cifra).
+ * 6-13 cifre, max 4 gruppi, un solo separatore (spazio / - .) tra gruppi.
+ * Un gruppo che farebbe superare 13 cifre non viene preso: il numero gia' valido resta redatto
+ * (se resta un ultimo gruppo corto, e' piu' probabile un codice adiacente e viene lasciato fuori).
+ * Un primo gruppo oltre 13 cifre non e' un telefono (codice tecnico): null.
+ */
+function takePlausiblePhone(s, { allowLeadingSep = false } = {}) {
+    let i = 0;
+    if (allowLeadingSep && PHONE_SEP_RE.test(s[0] || '') && /\d/.test(s[1] || '')) i = 1;
+    if (!/\d/.test(s[i] || '')) return null;
+
+    let digits = 0;
+    let groups = 0;
+    let end = i;
+    let lastGroupStart = i;
+    let lastGroupLen = 0;
+    while (end < s.length && groups < PHONE_MAX_GROUPS) {
+        let j = end;
+        if (groups > 0) {
+            if (!PHONE_SEP_RE.test(s[j]) || !/\d/.test(s[j + 1] || '')) break;
+            j += 1;
+        }
+        const start = j;
+        while (j < s.length && /\d/.test(s[j]) && digits + (j - start) < PHONE_MAX_DIGITS + 1) j += 1;
+        const n = j - start;
+        if (digits + n > PHONE_MAX_DIGITS) {
+            if (groups === 0) return null;
+            if (lastGroupLen <= 3 && digits - lastGroupLen >= 8) {
+                digits -= lastGroupLen;
+                end = lastGroupStart;
+            }
+            break;
+        }
+        lastGroupStart = end;
+        lastGroupLen = n;
+        digits += n;
+        groups += 1;
+        end = j;
+    }
+    if (digits < PHONE_MIN_DIGITS) return null;
+    return s.slice(0, end);
+}
+
+function matchIntlPhoneAt(text, i) {
+    const prefix = text.startsWith('+39', i) ? '+39' : text.startsWith('0039', i) ? '0039' : null;
+    if (!prefix || !isIntlPrefixBoundary(text, i)) return null;
+    const body = takePlausiblePhone(text.slice(i + prefix.length), { allowLeadingSep: true });
+    if (!body) return null;
+    return prefix + body;
+}
+
+function matchContextPhoneAt(text, i) {
+    if (!/\d/.test(text[i] || '')) return null;
+    const before = text.slice(Math.max(0, i - 24), i);
+    if (!PHONE_CONTEXT_LEAD_RE.test(before)) return null;
+    return takePlausiblePhone(text.slice(i));
+}
+
+function scrubPhonesInFreeText(text) {
+    let out = '';
+    let i = 0;
+    while (i < text.length) {
+        const intl = matchIntlPhoneAt(text, i);
+        if (intl) {
+            out += PLACEHOLDERS.TELEFONO;
+            i += intl.length;
+            continue;
+        }
+        const ctx = matchContextPhoneAt(text, i);
+        if (ctx) {
+            out += PLACEHOLDERS.TELEFONO;
+            i += ctx.length;
+            continue;
+        }
+        out += text[i];
+        i += 1;
+    }
+    return out;
+}
+
+function escapeRegExp(s) {
+    return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * Toglie da un testo libero email, codici fiscali, telefoni e i valori personali noti
+ * (token del nome, numeri certificato, datore...) che compaiono altrove nell'esempio.
+ * @param {unknown} text
+ * @param {Array<{ value: string, placeholder: string }>} [known]
+ * @returns {unknown} stringa redatta; i non-stringa tornano invariati
+ */
+function scrubFreeTextForAi(text, known = []) {
+    if (typeof text !== 'string' || !text) return text;
+    let out = text
+        .replace(EMAIL_RE, PLACEHOLDERS.EMAIL)
+        .replace(CODICE_FISCALE_RE, PLACEHOLDERS.CODICE_FISCALE);
+    for (const { value, placeholder } of known) {
+        const re = new RegExp(
+            `(?<![\\p{L}\\p{N}])${escapeRegExp(value)}(?![\\p{L}\\p{N}])`,
+            'giu'
+        );
+        out = out.replace(re, placeholder);
+    }
+    return scrubPhonesInFreeText(out);
+}
+
+function nameTokens(name) {
+    return String(name || '')
+        .normalize('NFC')
+        .split(/[\s,;]+/)
+        .map((t) => t.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, ''))
+        .filter((t) => t.length >= 3 && !NAME_STOPWORDS.has(t.toLowerCase()));
+}
+
+function pushKnown(list, value, placeholder, { tokens = false } = {}) {
+    if (typeof value !== 'string' && typeof value !== 'number') return;
+    const s = String(value).normalize('NFC').trim();
+    if (s.length < 3) return;
+    list.push({ value: s, placeholder });
+    if (tokens) {
+        for (const t of nameTokens(s)) if (t !== s) list.push({ value: t, placeholder, token: true });
+    }
+}
+
+function collectKnownFromPayload(payload, docType, known) {
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return;
+    for (const [key, val] of Object.entries(payload)) {
+        const ph = placeholderForFieldKey(key, docType);
+        if (!ph) continue;
+        const values = Array.isArray(val) ? val : [val];
+        for (const v of values) {
+            pushKnown(known, v, ph, { tokens: ph === PLACEHOLDERS.NOME });
+        }
+    }
+}
+
+function dedupeKnown(known) {
+    const seen = new Set();
+    return [...known.filter((k) => !k.token), ...known.filter((k) => k.token)]
+        .filter(({ value }) => {
+            const k = value.toLowerCase();
+            if (seen.has(k)) return false;
+            seen.add(k);
+            return true;
+        })
+        .sort((a, b) => b.value.length - a.value.length);
+}
+
+function isEmptyValue(v) {
+    return v == null || (typeof v === 'string' && v.trim() === '') || (Array.isArray(v) && v.length === 0);
+}
+
+function redactValue(value, known, key = null) {
+    if (typeof value === 'string') return scrubFreeTextForAi(value, knownForKey(key, known));
+    if (Array.isArray(value)) return value.map((v) => redactValue(v, known, key));
+    if (value && typeof value === 'object') {
+        const out = {};
+        for (const [k, v] of Object.entries(value)) out[k] = redactValue(v, known, k);
+        return out;
+    }
+    return value;
+}
+
+/**
+ * Copia del payload (flat o annidato) con i valori personali sostituiti da segnaposto e il testo libero
+ * ripulito. Chiavi, null/vuoti, numeri e campi tecnici (processo, spessori, norma...) restano identici.
+ * @param {object} payload
+ * @param {{ docType?: string|null, known?: Array<{value:string, placeholder:string}> }} [options]
+ * @returns {object}
+ */
+function redactPayloadForAi(payload, { docType = null, known = null } = {}) {
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return {};
+    const knownValues = known || (() => {
+        const list = [];
+        collectKnownFromPayload(payload, docType, list);
+        return dedupeKnown(list);
+    })();
+    const out = {};
+    for (const [key, val] of Object.entries(payload)) {
+        const ph = placeholderForFieldKey(key, docType);
+        if (ph) {
+            out[key] = isEmptyValue(val) ? val : ph;
+        } else {
+            out[key] = redactValue(val, knownValues, key);
+        }
+    }
+    return out;
+}
+
+/**
+ * field_diffs `{ chiave: { ai, human } }`: i valori personali diventano segnaposto; una correzione che dopo la
+ * redazione non porta piu' informazione (stesso segnaposto da entrambi i lati) viene omessa.
+ * @param {object} diffs
+ * @param {{ docType?: string|null, known?: Array }} [options]
+ * @returns {object}
+ */
+function redactFieldDiffsForAi(diffs, { docType = null, known = [] } = {}) {
+    const out = {};
+    if (!diffs || typeof diffs !== 'object') return out;
+    for (const [key, diff] of Object.entries(diffs)) {
+        const ph = placeholderForFieldKey(key, docType);
+        const side = (v) => (ph ? (isEmptyValue(v) ? (v ?? null) : ph) : redactValue(v, known, key));
+        const ai = side(diff?.ai);
+        const human = side(diff?.human);
+        if (ph && ai === human) continue;
+        out[key] = { ai, human };
+    }
+    return out;
+}
+
+/**
+ * Esempio few-shot (riga `import_extraction_feedback`) pronto per il prompt: nome file -> `[FILE]`,
+ * valori personali -> segnaposto, stessa struttura. I valori personali raccolti da TUTTI i payload
+ * dell'esempio vengono tolti anche dal testo libero.
+ * @param {{ file_name?: string, action?: string, ai_payload?: object, human_payload?: object, field_diffs?: object }} example
+ * @param {string|null} [docType]
+ */
+function redactFeedbackExampleForAi(example, docType = null) {
+    const ex = example || {};
+    const list = [];
+    collectKnownFromPayload(ex.human_payload, docType, list);
+    collectKnownFromPayload(ex.ai_payload, docType, list);
+    for (const [key, diff] of Object.entries(ex.field_diffs || {})) {
+        const ph = placeholderForFieldKey(key, docType);
+        if (!ph) continue;
+        pushKnown(list, diff?.ai, ph, { tokens: ph === PLACEHOLDERS.NOME });
+        pushKnown(list, diff?.human, ph, { tokens: ph === PLACEHOLDERS.NOME });
+    }
+    const known = dedupeKnown(list);
+    return {
+        ...ex,
+        file_name: redactFileNameForAi(ex.file_name),
+        ai_payload: redactPayloadForAi(ex.ai_payload, { docType, known }),
+        human_payload: redactPayloadForAi(ex.human_payload, { docType, known }),
+        field_diffs: redactFieldDiffsForAi(ex.field_diffs, { docType, known }),
+    };
+}
+
+/**
+ * Il nome file non porta informazione utile all'estrazione e puo' contenere il titolare:
+ * all'AI arriva sempre e solo il segnaposto.
+ * @param {unknown} _name
+ * @returns {string}
+ */
+function redactFileNameForAi(_name) {
+    return PLACEHOLDERS.FILE;
+}
+
+/**
+ * Pattern di riferimento cross-tenant (Livello B). I pattern su campi personali o numerici di cliente
+ * (numero certificato, numero riferimento, WPS/WPQR; per i documenti di qualifica) vengono scartati: una
+ * coppia "numero -> numero" non insegna nulla e identifica un cliente. Sugli altri il testo viene ripulito.
+ * @param {Array<{ field_key: string, from_pattern: string, to_pattern: string, hit_count: number }>} patterns
+ * @param {string|null} [docType]
+ */
+function redactReferencePatternsForAi(patterns, docType = null) {
+    if (!Array.isArray(patterns)) return [];
+    const out = [];
+    for (const p of patterns) {
+        if (placeholderForFieldKey(p.field_key, docType)) continue;
+        out.push({
+            ...p,
+            from_pattern: scrubFreeTextForAi(p.from_pattern),
+            to_pattern: scrubFreeTextForAi(p.to_pattern),
+        });
+    }
+    return out;
+}
+
+const PLACEHOLDER_VALUES = new Set(Object.values(PLACEHOLDERS));
+
+/**
+ * Rete di sicurezza: se l'AI ricopia un segnaposto dei few-shot come valore di un campo estratto,
+ * il campo torna null (mai "[NOME]" nei dati di revisione/DB). Solo valori stringa di primo livello.
+ * @param {object} fields
+ * @returns {object}
+ */
+function dropPlaceholderValues(fields) {
+    if (!fields || typeof fields !== 'object' || Array.isArray(fields)) return fields;
+    const out = {};
+    for (const [k, v] of Object.entries(fields)) {
+        out[k] = typeof v === 'string' && PLACEHOLDER_VALUES.has(v.trim()) ? null : v;
+    }
+    return out;
+}
+
+module.exports = {
+    dropPlaceholderValues,
+    PLACEHOLDERS,
+    QUALIFICATION_AI_DOC_TYPES,
+    isQualificationAiDocType,
+    placeholderForFieldKey,
+    scrubFreeTextForAi,
+    redactPayloadForAi,
+    redactFieldDiffsForAi,
+    redactFeedbackExampleForAi,
+    redactFileNameForAi,
+    redactReferencePatternsForAi,
+};

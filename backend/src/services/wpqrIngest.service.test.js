@@ -537,9 +537,10 @@ describe('round-trip a sentinella — ogni campo aiExpectedSchema sopravvive fin
             aiModel: 'test',
             warnings: [],
         });
-        query.mockResolvedValueOnce({ recordset: [] }); // checkDuplicate (extract)
-        query.mockResolvedValueOnce({ recordset: [] }); // checkDuplicate (commit)
-        query.mockResolvedValueOnce({ recordset: [{ id: 777 }] }); // INSERT
+        // Instradamento per statement (non per ordine): l'ingest ora interroga anche le WPS per il legame D9.
+        query.mockImplementation(async (sql) => (
+            sql.includes('INSERT INTO wpqr_records') ? { recordset: [{ id: 777 }] } : { recordset: [] }
+        ));
 
         await ingestWPQRFromPdf(Buffer.from('%PDF'), 'sentinel.pdf', 1001, 2001, {});
 
@@ -687,5 +688,201 @@ describe('numero WPQR mancante: mai derivato dal nome file', () => {
         expect(err.code).toBe('DUPLICATE');
         expect(err.message).not.toContain('ZZ-WPQR-7788');
         expect(err.warnings[0]).toContain('ZZ-WPQR-7788');
+    });
+});
+
+/**
+ * WPQR che incorpora la pagina WPS con «WPQR di supporto n.»: il numero di supporto non è il numero della WPQR,
+ * viene conservato, e il legame con la WPS citata nasce solo con match univoco nel tenant. Dati sintetici.
+ */
+describe('WPQR con pagina WPS incorporata — WPQR di supporto e legame con la WPS', () => {
+    afterEach(() => { jest.clearAllMocks(); query.mockReset(); });
+
+    const TEXT = `WELDING PROCEDURE QUALIFICATION RECORD FORM (WPQR) Certificate No. / Certificato No. XX0002/99 rev.0
+IS QUALIFIED ACCORDING TO EN ISO 15614-1:2017 test piece tensile bending Examining body
+WPS No. ZZ 01/99 rev. 0
+Supporting WPQR n./ WPQR di supporto n.
+10/08/2023 XX0001/99
+This WPQR is supported by NDT and mechanical tests related to the WPQR n. XX0001/99 heading`;
+
+    function routeQuery({ wps = [], wpqr = [], linksTable = true } = {}) {
+        const log = [];
+        query.mockImplementation(async (sql, params = {}) => {
+            const text = sql.replace(/\s+/g, ' ').trim();
+            log.push({ text, params });
+            if (/^SELECT OBJECT_ID/.test(text)) return { recordset: [{ object_id: linksTable ? 1 : null }] };
+            if (/FROM welding_procedures/.test(text)) {
+                return { recordset: wps.filter((w) => w.organization_id === params.organization_id) };
+            }
+            if (/FROM wpqr_records/.test(text) && /LIKE/.test(text)) {
+                return { recordset: wpqr.filter((w) => w.organization_id === params.organization_id) };
+            }
+            if (/^INSERT INTO wpqr_records/.test(text)) return { recordset: [{ id: 700 }] };
+            if (/^INSERT INTO wps_wpqr_links/.test(text)) return { recordset: [{ id: 1 }] };
+            return { recordset: [] };
+        });
+        return log;
+    }
+
+    function mockPipeline(fields) {
+        runDocumentIngest.mockResolvedValue({
+            text: TEXT,
+            fields: { wpqr_number: 'XX0002/99', certificate_number: 'XX0002/99', wps_ref: 'ZZ 01/99', welding_process: '138', ...fields },
+            fieldConfidence: {},
+            extractionConfidence: 80,
+            aiModel: 'test',
+            warnings: [],
+        });
+    }
+
+    it('classificata WPQR (ha prove ed esaminatore): nessun wrong_module; supporto in revisione, escluso il numero proprio', async () => {
+        routeQuery({
+            wps: [{ id: 3, organization_id: 1001, company_id: 2001, wps_code: 'ZZ 01/99' }],
+            wpqr: [{ id: 10, organization_id: 1001, company_id: 2001, wpqr_code: 'XX0001/99' }],
+        });
+        mockPipeline({ supporting_wpqr_refs: 'XX0001/99, XX0002/99' });
+        const out = await extractWPQRFromPdf(Buffer.from('%PDF'), 'x.pdf', 1001, 2001);
+        expect(out.status).toBe('pending_review');
+        expect(out.fields.reference_number).toBe('XX0002/99');
+        expect(out.fields.supporting_wpqr_refs).toBe('XX0001/99');
+        expect(out.wps_match).toEqual({ ref: 'ZZ 01/99', wps_id: 3 });
+        expect(out.verification_flags).toEqual([]);
+    });
+
+    it('numero WPQR scelto uguale al supporto ma certificato diverso → avviso esplicito', async () => {
+        routeQuery();
+        mockPipeline({ wpqr_number: 'XX0001/99', certificate_number: 'XX0002/99', supporting_wpqr_refs: 'XX0001/99' });
+        const out = await extractWPQRFromPdf(Buffer.from('%PDF'), 'x.pdf', 1001, 2001);
+        expect(out.warnings.some((w) => w.includes('coincide con una WPQR di supporto'))).toBe(true);
+    });
+
+    it('WPS e supporto non presenti: segnalazioni «da verificare», nessun blocco', async () => {
+        routeQuery();
+        mockPipeline({ supporting_wpqr_refs: 'XX0001/99' });
+        const out = await extractWPQRFromPdf(Buffer.from('%PDF'), 'x.pdf', 1001, 2001);
+        expect(out.status).toBe('pending_review');
+        expect(out.wps_match).toBeNull();
+        expect(out.verification_flags.map((f) => f.status)).toEqual(['not_found', 'not_found']);
+    });
+
+    it('commit: WPQR di supporto conservata in notes; legame primary con la WPS univoca del tenant', async () => {
+        const log = routeQuery({ wps: [{ id: 3, organization_id: 1001, company_id: 2001, wps_code: 'ZZ 01/99' }] });
+        const res = await commitWPQRFromFields({
+            wpqr_number: 'XX0002/99', wps_ref: 'ZZ 01/99', supporting_wpqr_refs: 'XX0001/99, XX0002/99',
+        }, 1001, 2001, { userId: 4 });
+        expect(res.wpqr_id).toBe(700);
+        const ins = log.find((s) => /^INSERT INTO wpqr_records/.test(s.text));
+        expect(ins.params.notes).toBe('WPQR di supporto: XX0001/99');
+        const link = log.find((s) => /^INSERT INTO wps_wpqr_links/.test(s.text));
+        expect(link.params).toMatchObject({ organization_id: 1001, wps_id: 3, wpqr_id: 700, role: 'primary', created_by: 4 });
+    });
+
+    it('commit cross-tenant: la WPS omonima di un altro tenant non viene legata', async () => {
+        const log = routeQuery({ wps: [{ id: 30, organization_id: 2002, company_id: 2001, wps_code: 'ZZ 01/99' }] });
+        const res = await commitWPQRFromFields({ wpqr_number: 'XX0002/99', wps_ref: 'ZZ 01/99' }, 1001, 2001, {});
+        expect(log.some((s) => /^INSERT INTO wps_wpqr_links/.test(s.text))).toBe(false);
+        expect(res.warnings.some((w) => w.includes('da verificare'))).toBe(true);
+    });
+
+    it('commit con WPS ambigua: nessun legame', async () => {
+        const log = routeQuery({
+            wps: [
+                { id: 3, organization_id: 1001, company_id: 2001, wps_code: 'ZZ 01/99' },
+                { id: 4, organization_id: 1001, company_id: 2001, wps_code: 'zz 01/99 rev. 1' },
+            ],
+        });
+        const res = await commitWPQRFromFields({ wpqr_number: 'XX0002/99', wps_ref: 'ZZ 01/99' }, 1001, 2001, {});
+        expect(log.some((s) => /^INSERT INTO wps_wpqr_links/.test(s.text))).toBe(false);
+        expect(res.warnings.some((w) => w.includes('record corrispondenti'))).toBe(true);
+    });
+
+    it('migrazione 174 non applicata: WPQR creata comunque, avviso esplicito', async () => {
+        const log = routeQuery({
+            wps: [{ id: 3, organization_id: 1001, company_id: 2001, wps_code: 'ZZ 01/99' }],
+            linksTable: false,
+        });
+        const res = await commitWPQRFromFields({ wpqr_number: 'XX0002/99', wps_ref: 'ZZ 01/99' }, 1001, 2001, {});
+        expect(res.wpqr_id).toBe(700);
+        expect(log.some((s) => /^INSERT INTO wps_wpqr_links/.test(s.text))).toBe(false);
+        expect(res.warnings.some((w) => w.includes('migrazione database non applicata'))).toBe(true);
+    });
+
+    it('senza wps_ref né supporto: nessuna query di legame, notes null', async () => {
+        const log = routeQuery();
+        await commitWPQRFromFields({ wpqr_number: 'XX0002/99' }, 1001, 2001, {});
+        expect(log.some((s) => /welding_procedures|wps_wpqr_links/.test(s.text))).toBe(false);
+        const ins = log.find((s) => /^INSERT INTO wpqr_records/.test(s.text));
+        expect(ins.params.notes).toBeNull();
+    });
+
+    it('data nel campo supporting_wpqr_refs (layout IIS) non è un numero da verificare', async () => {
+        routeQuery();
+        mockPipeline({ supporting_wpqr_refs: '10/08/2023 XX0001/99, YY0202/98' });
+        const out = await extractWPQRFromPdf(Buffer.from('%PDF'), 'x.pdf', 1001, 2001);
+        expect(out.fields.supporting_wpqr_refs).toBe('XX0001/99, YY0202/98');
+        expect(out.fields.supporting_wpqr_refs).not.toMatch(/10\/08/);
+        expect(out.verification_flags.map((f) => f.ref).sort()).toEqual(['XX0001/99', 'YY0202/98', 'ZZ 01/99']);
+        const log = routeQuery();
+        const res = await commitWPQRFromFields({
+            wpqr_number: 'XX0002/99', supporting_wpqr_refs: '10/08/2023 XX0001/99, YY0202/98',
+        }, 1001, 2001, {});
+        const ins = log.find((s) => /^INSERT INTO wpqr_records/.test(s.text));
+        expect(ins.params.notes).toBe('WPQR di supporto: XX0001/99, YY0202/98');
+        expect(ins.params.notes).not.toMatch(/10\/08/);
+        expect(res.wpqr_id).toBe(700);
+    });
+
+    it('errore di ricerca conserva i riferimenti nelle segnalazioni (non ref null)', async () => {
+        query.mockImplementation(async (sql) => {
+            const text = sql.replace(/\s+/g, ' ').trim();
+            if (/LIKE/.test(text) && (/FROM welding_procedures/.test(text) || /FROM wpqr_records/.test(text))) {
+                throw new Error('timeout lookup');
+            }
+            return { recordset: [] };
+        });
+        mockPipeline({ supporting_wpqr_refs: 'XX0001/99' });
+        const out = await extractWPQRFromPdf(Buffer.from('%PDF'), 'x.pdf', 1001, 2001);
+        expect(out.status).toBe('pending_review');
+        expect(out.wps_match).toBeNull();
+        expect(out.verification_flags.map((f) => [f.ref, f.status])).toEqual([
+            ['ZZ 01/99', 'resolve_error'],
+            ['XX0001/99', 'resolve_error'],
+        ]);
+        expect(out.verification_flags.every((f) => f.ref)).toBe(true);
+    });
+
+    it('WPS già trovata: un errore sui supporti non la marca «da verificare»', async () => {
+        query.mockImplementation(async (sql, params = {}) => {
+            const text = sql.replace(/\s+/g, ' ').trim();
+            if (/FROM welding_procedures/.test(text) && /LIKE/.test(text)) {
+                return { recordset: [{ id: 3, organization_id: 1001, company_id: 2001, wps_code: 'ZZ 01/99' }] };
+            }
+            if (/FROM wpqr_records/.test(text) && /LIKE/.test(text)) throw new Error('timeout lookup');
+            return { recordset: [] };
+        });
+        mockPipeline({ supporting_wpqr_refs: 'XX0001/99, YY0202/98' });
+        const out = await extractWPQRFromPdf(Buffer.from('%PDF'), 'x.pdf', 1001, 2001);
+        expect(out.wps_match).toEqual({ ref: 'ZZ 01/99', wps_id: 3 });
+        expect(out.verification_flags.map((f) => [f.ref, f.status])).toEqual([
+            ['XX0001/99', 'resolve_error'],
+            ['YY0202/98', 'resolve_error'],
+        ]);
+        expect(out.verification_flags.some((f) => f.ref === 'ZZ 01/99')).toBe(false);
+    });
+
+    it('WPS non trovata: un errore sui supporti non duplica la segnalazione sulla WPS', async () => {
+        query.mockImplementation(async (sql) => {
+            const text = sql.replace(/\s+/g, ' ').trim();
+            if (/FROM welding_procedures/.test(text) && /LIKE/.test(text)) return { recordset: [] };
+            if (/FROM wpqr_records/.test(text) && /LIKE/.test(text)) throw new Error('timeout lookup');
+            return { recordset: [] };
+        });
+        mockPipeline({ supporting_wpqr_refs: 'XX0001/99' });
+        const out = await extractWPQRFromPdf(Buffer.from('%PDF'), 'x.pdf', 1001, 2001);
+        expect(out.wps_match).toBeNull();
+        expect(out.verification_flags.map((f) => [f.ref, f.status])).toEqual([
+            ['ZZ 01/99', 'not_found'],
+            ['XX0001/99', 'resolve_error'],
+        ]);
     });
 });

@@ -40,7 +40,7 @@ function mockRes() {
 describe('listStagingHandler — filtro ?module=', () => {
     afterEach(() => jest.clearAllMocks());
 
-    it('module=qualifiche mappa sui doc_type patentino_saldatore/qualifica_14732', async () => {
+    it('module=qualifiche mappa sui doc_type patentino_saldatore/qualifica_14732/cert_ndt', async () => {
         getModuleForDocType.mockReturnValue('qualifiche');
         getLicensedModuleKeysForOrg.mockResolvedValue(['qualifiche']);
         listStaging.mockResolvedValue([]);
@@ -50,7 +50,7 @@ describe('listStagingHandler — filtro ?module=', () => {
         await listStagingHandler(req, res);
 
         expect(listStaging).toHaveBeenCalledWith(expect.objectContaining({
-            docTypes: ['patentino_saldatore', 'qualifica_14732'],
+            docTypes: ['patentino_saldatore', 'qualifica_14732', 'cert_ndt'],
         }));
         expect(res.status).not.toHaveBeenCalledWith(400);
     });

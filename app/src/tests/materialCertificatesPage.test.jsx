@@ -39,6 +39,7 @@ vi.mock("../services/apiService", () => ({
     rejectMaterialCertificate: vi.fn(),
     archiveMaterialCertificate: vi.fn(),
     patchMaterialCertificate: vi.fn(),
+    fetchProtectedFileBlob: vi.fn(),
   },
 }));
 
@@ -178,8 +179,13 @@ describe("MaterialCertificatesPage (MC-5)", () => {
     expect(routerState.navigate).toHaveBeenCalledWith("/saldatura/materiali/21");
   });
 
-  it("anteprima PDF usa file_url web, non il path disco", async () => {
+  it("anteprima PDF passa da fetch autenticato sul file_url web (blob), mai sul path disco né su /uploads pubblico", async () => {
     routerState.path = "/saldatura/materiali/11";
+    const realCreate = URL.createObjectURL;
+    const realRevoke = URL.revokeObjectURL;
+    URL.createObjectURL = vi.fn(() => "blob:mc-preview");
+    URL.revokeObjectURL = vi.fn();
+    apiService.fetchProtectedFileBlob.mockResolvedValue(new Blob(["%PDF"], { type: "application/pdf" }));
     apiService.getMaterialCertificate.mockResolvedValue({
       data: {
         ...ROW,
@@ -189,9 +195,11 @@ describe("MaterialCertificatesPage (MC-5)", () => {
     });
     render(<MaterialCertificatesPage />);
     const iframe = await screen.findByTitle("Anteprima certificato");
-    expect(iframe.getAttribute("src")).toBe(
-      "https://example.test/uploads/material-certificates/1001/a.pdf"
-    );
+    expect(apiService.fetchProtectedFileBlob).toHaveBeenCalledWith("/uploads/material-certificates/1001/a.pdf");
+    expect(iframe.getAttribute("src")).toBe("blob:mc-preview");
     expect(iframe.getAttribute("src")).not.toContain("/var/www");
+    expect(iframe.getAttribute("src")).not.toContain("/uploads/");
+    URL.createObjectURL = realCreate;
+    URL.revokeObjectURL = realRevoke;
   });
 });

@@ -134,6 +134,7 @@ async function fetchOrgNcRows(pool, orgId) {
       LEFT JOIN notification_contacts rc ON nc.responsible_contact_id = rc.id AND rc.active = 1
       LEFT JOIN notification_contacts vc ON nc.verification_contact_id = vc.id AND vc.active = 1
       WHERE a.organization_id = @orgId
+        AND nc.deleted_at IS NULL
         AND nc.status NOT IN ('closed', 'verified')
     `);
   return result.recordset || [];
@@ -153,6 +154,8 @@ async function fetchOrgActionRows(pool, orgId) {
       INNER JOIN audits a ON nc.audit_id = a.audit_id
       LEFT JOIN notification_contacts rc ON na.responsible_contact_id = rc.id AND rc.active = 1
       WHERE a.organization_id = @orgId
+        AND na.deleted_at IS NULL
+        AND nc.deleted_at IS NULL
         AND na.status NOT IN ('verified')
         AND nc.status NOT IN ('closed', 'verified')
     `);

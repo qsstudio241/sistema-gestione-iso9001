@@ -8,6 +8,12 @@ const logger = require('../utils/logger');
 const { redactFileNameForLog, redactPersonForLog } = require('../utils/ingestErrorMessage');
 const { getPool } = require('../config/database');
 const { resolvePersonnelForQualification } = require('./personnelQualificationLink.service');
+const {
+    duplicateCertificateMessage,
+    findQualificationDuplicate,
+    isQualificationDuplicateIndexError,
+    poolDb,
+} = require('./qualificationDuplicate.service');
 const { runDocumentIngest, extractDocumentText } = require('./documentIngestPipeline.service');
 const {
     classifyQualificationDocType,
@@ -27,6 +33,7 @@ const {
     checkShieldingGasKnown,
 } = require('../utils/ingestPlausibilityChecks');
 const { toNumericOrNull } = require('../utils/numericSanitizer');
+const { expectedQualificationUrl } = require('./certificateFileUrl.service');
 const { FIELD_STATE, getFieldState, nullNotApplicableFields } = require('../data/jointTypeProfiles');
 
 /**
@@ -448,23 +455,23 @@ function mapPipelineFieldsToReview(f, pipelineText, fileName, docType = null) {
     };
 }
 
-async function checkQualificationDuplicate(certificateNumber, organizationId, companyId, qualificationType) {
+function duplicateCommitError(certificateNumber) {
+    const err = new Error(`Certificato ${certificateNumber} già presente`);
+    err.code = 'DUPLICATE';
+    err.warnings = [duplicateCertificateMessage(certificateNumber)];
+    return err;
+}
+
+async function checkQualificationDuplicate(certificateNumber, organizationId, companyId, qualificationType, personName) {
     if (!certificateNumber || !companyId) return false;
     const pool = await getPool();
-    const dupCheck = await pool.request()
-        .input('orgId', organizationId)
-        .input('certNum', certificateNumber)
-        .input('compId', companyId)
-        .input('qualType', qualificationType)
-        .query(`
-            SELECT COUNT(*) AS cnt FROM qualifications
-            WHERE organization_id=@orgId
-              AND certificate_number=@certNum
-              AND company_id=@compId
-              AND qualification_type=@qualType
-              AND status != 'revocata'
-        `);
-    return dupCheck.recordset[0].cnt > 0;
+    return findQualificationDuplicate(poolDb(pool), {
+        organizationId,
+        companyId,
+        certificateNumber,
+        qualificationType,
+        personName,
+    });
 }
 
 /**
@@ -605,8 +612,9 @@ async function extractQualificationFromPdf(pdfBuffer, fileName, organizationId, 
             organizationId,
             companyId,
             reviewFields.qualification_type,
+            reviewFields.person_name,
         )) {
-        warnings.push(`Duplicato: certificato ${reviewFields.certificate_number} già presente.`);
+        warnings.push(duplicateCertificateMessage(reviewFields.certificate_number));
         return {
             status: 'duplicate',
             person_name: reviewFields.person_name,
@@ -726,8 +734,15 @@ async function commitQualificationFromFields(fields, organizationId, companyId, 
     const transfer_mode = f.transfer_mode || null;
     const examiner_body = f.examiner_body || null;
     const scope_detail = f.scope_detail || null;
-    const certificate_file_url = buildCertificateFileUrl(filePath);
+    const builtFileUrl = buildCertificateFileUrl(filePath);
+    const certificate_file_url = expectedQualificationUrl(builtFileUrl, organizationId);
     const warnings = [];
+    if (builtFileUrl && !certificate_file_url) {
+        warnings.push('Il PDF non è stato collegato al certificato: percorso file non previsto.');
+        logger.warn('[QualificationIngest] certificate_file_url non nella forma attesa: collegamento omesso', {
+            file: redactFileNameForLog(filePath),
+        });
+    }
 
     // Designazione sintetica ISO 9606-1 §11 (stesso calcolo del form manuale —
     // qualifications.controller.js — vedi backend/src/utils/weldingDesignation.js).
@@ -748,11 +763,8 @@ async function commitQualificationFromFields(fields, organizationId, companyId, 
         });
 
     if (certificate_number && companyId
-        && await checkQualificationDuplicate(certificate_number, organizationId, companyId, qualificationType)) {
-        const err = new Error(`Certificato ${certificate_number} già presente`);
-        err.code = 'DUPLICATE';
-        err.warnings = [`Duplicato: certificato ${certificate_number} già presente.`];
-        throw err;
+        && await checkQualificationDuplicate(certificate_number, organizationId, companyId, qualificationType, person_name)) {
+        throw duplicateCommitError(certificate_number);
     }
 
     const personnelResult = await resolvePersonnelForQualification({
@@ -858,7 +870,10 @@ async function commitQualificationFromFields(fields, organizationId, companyId, 
                  @shieldGas, @jointType, @productType, @weldDetails, @transferMode, @examBody,
                  @weldProcTest, @weldProcValidity, @posTest, @thickSTest, @thickTTest, @pipeTest,
                  @designation, @certFileUrl)
-        `);
+        `).catch((err) => {
+            if (isQualificationDuplicateIndexError(err)) throw duplicateCommitError(certificate_number);
+            throw err;
+        });
 
     const qualification_id = ins.recordset[0].id;
     logger.info(`[QualifIngest] Committed qualifica id=${qualification_id} (${redactPersonForLog(person_name)}, ${qualificationType}) per org ${organizationId}`);

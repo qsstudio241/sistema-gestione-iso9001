@@ -43,17 +43,31 @@ function normalizePersonName(name) {
  * @param {{ companyId?: number|null }} [opts]
  * @returns {Promise<{ gaps: object[], summary: object }>}
  */
+function bindCompanyScope(request, { companyId, companyIds }) {
+  if (companyId && !Number.isNaN(companyId)) {
+    request.input('companyId', companyId);
+    return ' AND q.company_id = @companyId';
+  }
+  const ids = Array.isArray(companyIds)
+    ? companyIds.map((id) => parseInt(id, 10)).filter((id) => Number.isFinite(id))
+    : [];
+  if (!ids.length) return '';
+  const parts = ids.map((id, i) => {
+    const key = `visionCo_${i}`;
+    request.input(key, id);
+    return `@${key}`;
+  });
+  return ` AND q.company_id IN (${parts.join(', ')})`;
+}
+
 async function findVisionFitnessGaps(organizationId, opts = {}) {
   const companyId = opts.companyId != null ? parseInt(opts.companyId, 10) : null;
+  const companyIds = opts.companyIds || null;
   const pool = await getPool();
   const visionIn = visionFitnessSqlInList();
 
   const req = pool.request().input('orgId', organizationId);
-  let companyClause = '';
-  if (companyId && !Number.isNaN(companyId)) {
-    req.input('companyId', companyId);
-    companyClause = ' AND q.company_id = @companyId';
-  }
+  const companyClause = bindCompanyScope(req, { companyId, companyIds });
 
   const qualsRes = await req.query(`
     SELECT q.id, q.person_name, q.personnel_id, q.qualification_type,
@@ -62,6 +76,7 @@ async function findVisionFitnessGaps(organizationId, opts = {}) {
     FROM qualifications q
     LEFT JOIN companies c ON c.id = q.company_id
     WHERE q.organization_id = @orgId
+      AND q.deleted_at IS NULL
       AND q.status NOT IN ('revocata', 'sospesa')
       ${companyClause}
     ORDER BY q.person_name, q.id
@@ -78,16 +93,13 @@ async function findVisionFitnessGaps(organizationId, opts = {}) {
   }
 
   const visionReq = pool.request().input('orgId', organizationId);
-  let visionCompany = '';
-  if (companyId && !Number.isNaN(companyId)) {
-    visionReq.input('companyId', companyId);
-    visionCompany = ' AND q.company_id = @companyId';
-  }
+  const visionCompany = bindCompanyScope(visionReq, { companyId, companyIds });
   const visionRes = await visionReq.query(`
     SELECT q.id, q.person_name, q.personnel_id, q.qualification_type,
            q.expiry_date, q.status, q.company_id
     FROM qualifications q
     WHERE q.organization_id = @orgId
+      AND q.deleted_at IS NULL
       AND q.status NOT IN ('revocata', 'sospesa')
       AND q.qualification_type IN (${visionIn})
       ${visionCompany}
