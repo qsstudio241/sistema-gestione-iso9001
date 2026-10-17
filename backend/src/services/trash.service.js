@@ -330,6 +330,7 @@ async function loadTrashRow(entity, id, organizationId) {
         const result = await query(`
             SELECT
                 t.nc_id AS id,
+                t.audit_id,
                 t.deleted_at,
                 t.status,
                 t.nc_number AS title,
@@ -427,15 +428,38 @@ function childRestoreSql(entity) {
              INNER JOIN wpqr_records wq ON wq.id = r.wpqr_id AND wq.organization_id = r.organization_id
              WHERE wq.wps_id = @id AND r.organization_id = @organization_id AND r.deleted_at IS NOT NULL`,
             `UPDATE wps_wpqr_links SET deleted_at = NULL, deleted_by = NULL
-             WHERE wps_id = @id AND organization_id = @organization_id AND deleted_at IS NOT NULL`,
+             WHERE wps_id = @id AND organization_id = @organization_id AND deleted_at IS NOT NULL
+               AND NOT EXISTS (
+                 SELECT 1 FROM wps_wpqr_links active
+                 WHERE active.wps_id = wps_wpqr_links.wps_id
+                   AND active.wpqr_id = wps_wpqr_links.wpqr_id
+                   AND active.deleted_at IS NULL
+                   AND active.id <> wps_wpqr_links.id
+               )`,
             `UPDATE wps_welders SET deleted_at = NULL, deleted_by = NULL
-             WHERE wps_id = @id AND organization_id = @organization_id AND deleted_at IS NOT NULL`,
+             WHERE wps_id = @id AND organization_id = @organization_id AND deleted_at IS NOT NULL
+               AND NOT EXISTS (
+                 SELECT 1 FROM wps_welders active
+                 WHERE active.wps_id = wps_welders.wps_id
+                   AND active.qualification_id = wps_welders.qualification_id
+                   AND active.organization_id = wps_welders.organization_id
+                   AND active.deleted_at IS NULL
+                   AND active.id <> wps_welders.id
+               )`,
         ];
     }
     if (entity === 'projects') {
         return [
             `UPDATE project_welders SET deleted_at = NULL, deleted_by = NULL
-             WHERE project_id = @id AND organization_id = @organization_id AND deleted_at IS NOT NULL`,
+             WHERE project_id = @id AND organization_id = @organization_id AND deleted_at IS NOT NULL
+               AND NOT EXISTS (
+                 SELECT 1 FROM project_welders active
+                 WHERE active.project_id = project_welders.project_id
+                   AND active.qualification_id = project_welders.qualification_id
+                   AND active.organization_id = project_welders.organization_id
+                   AND active.deleted_at IS NULL
+                   AND active.id <> project_welders.id
+               )`,
         ];
     }
     if (entity === 'wpqr_records') {
@@ -443,10 +467,94 @@ function childRestoreSql(entity) {
             `UPDATE wpqr_test_runs SET deleted_at = NULL, deleted_by = NULL
              WHERE wpqr_id = @id AND organization_id = @organization_id AND deleted_at IS NOT NULL`,
             `UPDATE wps_wpqr_links SET deleted_at = NULL, deleted_by = NULL
-             WHERE wpqr_id = @id AND organization_id = @organization_id AND deleted_at IS NOT NULL`,
+             WHERE wpqr_id = @id AND organization_id = @organization_id AND deleted_at IS NOT NULL
+               AND NOT EXISTS (
+                 SELECT 1 FROM wps_wpqr_links active
+                 WHERE active.wps_id = wps_wpqr_links.wps_id
+                   AND active.wpqr_id = wps_wpqr_links.wpqr_id
+                   AND active.deleted_at IS NULL
+                   AND active.id <> wps_wpqr_links.id
+               )`,
         ];
     }
     return [];
+}
+
+/** Lo slot attivo è già occupato: il ripristino violerebbe l'indice unico o il duplicato applicativo. */
+const RESTORE_CONFLICT_SQL = {
+    non_conformities: `SELECT 1 AS conflict
+        FROM non_conformities t
+        WHERE t.nc_id = @id
+          AND (
+            (t.source_question_id IS NOT NULL AND EXISTS (
+              SELECT 1 FROM non_conformities o
+              WHERE o.audit_id = t.audit_id AND o.source_question_id = t.source_question_id
+                AND o.deleted_at IS NULL AND o.nc_id <> t.nc_id
+            ))
+            OR (t.source_custom_item_id IS NOT NULL AND EXISTS (
+              SELECT 1 FROM non_conformities o
+              WHERE o.audit_id = t.audit_id AND o.source_custom_item_id = t.source_custom_item_id
+                AND o.deleted_at IS NULL AND o.nc_id <> t.nc_id
+            ))
+          )`,
+    qualifications: `SELECT 1 AS conflict
+        FROM qualifications t
+        WHERE t.id = @id AND t.organization_id = @organization_id
+          AND t.status <> 'revocata'
+          AND t.certificate_number IS NOT NULL AND t.certificate_number <> ''
+          AND EXISTS (
+            SELECT 1 FROM qualifications o
+            WHERE o.organization_id = t.organization_id
+              AND o.company_id = t.company_id
+              AND o.certificate_number = t.certificate_number
+              AND o.person_name = t.person_name
+              AND o.deleted_at IS NULL AND o.status <> 'revocata' AND o.id <> t.id
+          )`,
+    wps_wpqr_links: `SELECT 1 AS conflict
+        FROM wps_wpqr_links t
+        WHERE t.id = @id AND t.organization_id = @organization_id
+          AND EXISTS (
+            SELECT 1 FROM wps_wpqr_links o
+            WHERE o.wps_id = t.wps_id AND o.wpqr_id = t.wpqr_id
+              AND o.organization_id = t.organization_id
+              AND o.deleted_at IS NULL AND o.id <> t.id
+          )`,
+    wps_welders: `SELECT 1 AS conflict
+        FROM wps_welders t
+        WHERE t.id = @id AND t.organization_id = @organization_id
+          AND EXISTS (
+            SELECT 1 FROM wps_welders o
+            WHERE o.wps_id = t.wps_id AND o.qualification_id = t.qualification_id
+              AND o.organization_id = t.organization_id
+              AND o.deleted_at IS NULL AND o.id <> t.id
+          )`,
+    project_welders: `SELECT 1 AS conflict
+        FROM project_welders t
+        WHERE t.id = @id AND t.organization_id = @organization_id
+          AND EXISTS (
+            SELECT 1 FROM project_welders o
+            WHERE o.project_id = t.project_id AND o.qualification_id = t.qualification_id
+              AND o.organization_id = t.organization_id
+              AND o.deleted_at IS NULL AND o.id <> t.id
+          )`,
+};
+
+function restoreConflictResponse(res) {
+    return res.status(409).json({
+        error: 'Nel registro attivo c\'è già un record con la stessa chiave. Il cestino non è stato modificato.',
+        code: 'RESTORE_CONFLICT',
+    });
+}
+
+async function activeSlotTaken(entity, id, organizationId) {
+    const sql = RESTORE_CONFLICT_SQL[entity];
+    if (!sql) return false;
+    const result = await query(sql, { id, organization_id: organizationId });
+    return Boolean(result.recordset?.[0]?.conflict);
+}
+
+function isUniqueViolation(err) {
+    return err?.number === 2601 || err?.number === 2627 || /UNIQUE|duplicate key/i.test(String(err?.message || ''));
 }
 
 async function restoreTrash(req, res) {
@@ -479,6 +587,9 @@ async function restoreTrash(req, res) {
                 error: 'Il record padre è ancora nel cestino. Ripristina prima quello.',
                 code: 'PARENT_IN_TRASH',
             });
+        }
+        if (await activeSlotTaken(entity, id, organizationId)) {
+            return restoreConflictResponse(res);
         }
 
         const spec = ENTITIES[entity];
@@ -517,6 +628,17 @@ async function restoreTrash(req, res) {
         for (const childSql of childRestoreSql(entity)) {
             await query(childSql, { id, organization_id: organizationId });
         }
+        if (entity === 'non_conformities' && row.audit_id) {
+            await query(`
+                UPDATE audits
+                SET non_conformities_count = (
+                    SELECT COUNT(*) FROM non_conformities
+                    WHERE audit_id = @audit_id AND deleted_at IS NULL
+                ),
+                updated_at = GETDATE()
+                WHERE audit_id = @audit_id AND organization_id = @organization_id
+            `, { audit_id: row.audit_id, organization_id: organizationId });
+        }
         await logEntityChange({
             organizationId,
             entityTable: spec ? spec.table : entity,
@@ -528,6 +650,7 @@ async function restoreTrash(req, res) {
         });
         res.json({ success: true, message: 'Record ripristinato' });
     } catch (err) {
+        if (isUniqueViolation(err)) return restoreConflictResponse(res);
         return res.status(500).json({ error: 'Errore durante il ripristino', code: 'TRASH_RESTORE_ERROR' });
     }
 }

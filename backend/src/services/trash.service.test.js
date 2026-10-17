@@ -254,4 +254,211 @@ describe('cestino', () => {
         expect(res.statusCode).toBe(404);
         expect(query.mock.calls.some((call) => /SET deleted_at = NULL/.test(String(call[0])))).toBe(false);
     });
+
+    it('il ripristino di una NC da audit ricalcola il contatore sull\'audit', async () => {
+        query.mockImplementation(async (sql) => {
+            if (/INSERT INTO entity_change_log/.test(sql) || /SET deleted_at = NULL/.test(sql) || /non_conformities_count/.test(sql)) {
+                return { recordset: [] };
+            }
+            return {
+                recordset: [{
+                    id: 12,
+                    audit_id: 44,
+                    company_id: 5,
+                    deleted_at: '2026-10-17T00:00:00Z',
+                    status: 'open',
+                    title: 'NC-1',
+                    organization_id: 1,
+                }],
+            };
+        });
+        const res = resMock();
+        await restoreTrash({
+            user: { role: 'admin', organization_id: 1, user_id: 9, company_access: [] },
+            params: { entity: 'non_conformities', id: '12' },
+        }, res);
+        expect(res.statusCode).toBe(200);
+        const counter = query.mock.calls.find((call) => /non_conformities_count/.test(String(call[0])));
+        expect(String(counter[0])).toContain('deleted_at IS NULL');
+        expect(String(counter[0])).toContain('organization_id = @organization_id');
+        expect(counter[1].audit_id).toBe(44);
+        expect(counter[1].organization_id).toBe(1);
+    });
+
+    it('non ripristina una NC se la stessa domanda ha già una NC attiva', async () => {
+        query.mockImplementation(async (sql) => {
+            if (/AS conflict/.test(sql)) {
+                expect(sql).toContain('source_question_id');
+                expect(sql).toContain('source_custom_item_id');
+                expect(sql).toContain('deleted_at IS NULL');
+                return { recordset: [{ conflict: 1 }] };
+            }
+            return {
+                recordset: [{
+                    id: 12, audit_id: 44, company_id: 5, deleted_at: '2026-10-17',
+                    status: 'open', title: 'NC-1', organization_id: 1,
+                }],
+            };
+        });
+        const res = resMock();
+        await restoreTrash({
+            user: { role: 'admin', organization_id: 1, user_id: 9, company_access: [] },
+            params: { entity: 'non_conformities', id: '12' },
+        }, res);
+        expect(res.statusCode).toBe(409);
+        expect(res.body.code).toBe('RESTORE_CONFLICT');
+        expect(query.mock.calls.some((call) => /SET deleted_at = NULL/.test(String(call[0])))).toBe(false);
+        expect(query.mock.calls.some((call) => /non_conformities_count/.test(String(call[0])))).toBe(false);
+    });
+
+    it('non ripristina una qualifica se lo slot attivo del certificato è occupato', async () => {
+        query.mockImplementation(async (sql) => {
+            if (/AS conflict/.test(sql)) {
+                expect(sql).toContain('certificate_number');
+                expect(sql).toContain("status <> 'revocata'");
+                expect(sql).toContain('deleted_at IS NULL');
+                return { recordset: [{ conflict: 1 }] };
+            }
+            return { recordset: [{ id: 4, company_id: 5, deleted_at: '2026-10-17', status: 'valida', title: 'Ada' }] };
+        });
+        const res = resMock();
+        await restoreTrash({
+            user: { role: 'admin', organization_id: 1, user_id: 9, company_access: [] },
+            params: { entity: 'qualifications', id: '4' },
+        }, res);
+        expect(res.statusCode).toBe(409);
+        expect(res.body.code).toBe('RESTORE_CONFLICT');
+        expect(query.mock.calls.some((call) => /SET deleted_at = NULL/.test(String(call[0])))).toBe(false);
+    });
+
+    it('non ripristina un legame WPS-WPQR se la coppia attiva esiste già', async () => {
+        query.mockImplementation(async (sql) => {
+            if (/AS conflict/.test(sql)) {
+                expect(sql).toContain('o.wps_id = t.wps_id');
+                expect(sql).toContain('o.wpqr_id = t.wpqr_id');
+                expect(sql).toContain('deleted_at IS NULL');
+                return { recordset: [{ conflict: 1 }] };
+            }
+            if (/parent_deleted/.test(sql)) return { recordset: [{ parent_deleted: null }] };
+            return { recordset: [{ id: 9, company_id: 5, deleted_at: '2026-10-17', title: '6' }] };
+        });
+        const res = resMock();
+        await restoreTrash({
+            user: { role: 'admin', organization_id: 1, user_id: 9, company_access: [] },
+            params: { entity: 'wps_wpqr_links', id: '9' },
+        }, res);
+        expect(res.statusCode).toBe(409);
+        expect(res.body.code).toBe('RESTORE_CONFLICT');
+        expect(query.mock.calls.some((call) => /SET deleted_at = NULL/.test(String(call[0])))).toBe(false);
+    });
+
+    it('non ripristina un saldatore su WPS se l\'assegnazione attiva esiste già', async () => {
+        query.mockImplementation(async (sql) => {
+            if (/AS conflict/.test(sql)) {
+                expect(sql).toContain('qualification_id');
+                expect(sql).toContain('deleted_at IS NULL');
+                return { recordset: [{ conflict: 1 }] };
+            }
+            if (/parent_deleted/.test(sql)) return { recordset: [{ parent_deleted: null }] };
+            return { recordset: [{ id: 2, company_id: 5, deleted_at: '2026-10-17', title: '9' }] };
+        });
+        const res = resMock();
+        await restoreTrash({
+            user: { role: 'admin', organization_id: 1, user_id: 9, company_access: [] },
+            params: { entity: 'wps_welders', id: '2' },
+        }, res);
+        expect(res.statusCode).toBe(409);
+        expect(res.body.code).toBe('RESTORE_CONFLICT');
+    });
+
+    it('non ripristina un saldatore di commessa se l\'assegnazione attiva esiste già', async () => {
+        query.mockImplementation(async (sql) => {
+            if (/AS conflict/.test(sql)) {
+                expect(sql).toContain('project_id');
+                expect(sql).toContain('deleted_at IS NULL');
+                return { recordset: [{ conflict: 1 }] };
+            }
+            if (/parent_deleted/.test(sql)) return { recordset: [{ parent_deleted: null }] };
+            return { recordset: [{ id: 3, company_id: 5, deleted_at: '2026-10-17', title: '9' }] };
+        });
+        const res = resMock();
+        await restoreTrash({
+            user: { role: 'admin', organization_id: 1, user_id: 9, company_access: [] },
+            params: { entity: 'project_welders', id: '3' },
+        }, res);
+        expect(res.statusCode).toBe(409);
+        expect(res.body.code).toBe('RESTORE_CONFLICT');
+        expect(query.mock.calls.some((call) => /SET deleted_at = NULL/.test(String(call[0])))).toBe(false);
+    });
+
+    it('il ripristino di una WPS non riporta i figli che occuperebbero uno slot attivo', async () => {
+        query.mockImplementation(async (sql) => {
+            if (/INSERT INTO entity_change_log/.test(sql) || /SET deleted_at = NULL/.test(sql)) return { recordset: [] };
+            return { recordset: [{ id: 6, company_id: 5, deleted_at: '2026-10-17T00:00:00Z', status: 'attiva', title: 'WPS-1' }] };
+        });
+        const res = resMock();
+        await restoreTrash({
+            user: { role: 'admin', organization_id: 1, user_id: 9, company_access: [] },
+            params: { entity: 'welding_procedures', id: '6' },
+        }, res);
+        expect(res.statusCode).toBe(200);
+        const sqls = query.mock.calls.map((call) => String(call[0]));
+        const links = sqls.find((sql) => /UPDATE wps_wpqr_links SET deleted_at = NULL/.test(sql) && /wps_id = @id/.test(sql));
+        const welders = sqls.find((sql) => /UPDATE wps_welders SET deleted_at = NULL/.test(sql));
+        expect(links).toContain('NOT EXISTS');
+        expect(links).toContain('active.deleted_at IS NULL');
+        expect(welders).toContain('NOT EXISTS');
+    });
+
+    it('il ripristino di una commessa non riporta un saldatore già assegnato', async () => {
+        query.mockImplementation(async (sql) => {
+            if (/INSERT INTO entity_change_log/.test(sql) || /SET deleted_at = NULL/.test(sql)) return { recordset: [] };
+            return { recordset: [{ id: 8, company_id: 5, deleted_at: '2026-10-17T00:00:00Z', status: 'attiva', title: 'P-9' }] };
+        });
+        const res = resMock();
+        await restoreTrash({
+            user: { role: 'admin', organization_id: 1, user_id: 9, company_access: [] },
+            params: { entity: 'projects', id: '8' },
+        }, res);
+        expect(res.statusCode).toBe(200);
+        const projectSql = query.mock.calls.map((call) => String(call[0])).find((sql) => /UPDATE project_welders SET deleted_at = NULL/.test(sql));
+        expect(projectSql).toContain('NOT EXISTS');
+        expect(projectSql).toContain('active.deleted_at IS NULL');
+    });
+
+    it('il ripristino di un WPQR non riporta un legame la cui coppia è già attiva', async () => {
+        query.mockImplementation(async (sql) => {
+            if (/parent_deleted/.test(sql)) return { recordset: [{ parent_deleted: null }] };
+            if (/INSERT INTO entity_change_log/.test(sql) || /SET deleted_at = NULL/.test(sql)) return { recordset: [] };
+            return { recordset: [{ id: 3, company_id: 5, deleted_at: '2026-10-17T00:00:00Z', status: 'approvata', title: 'WPQR-1' }] };
+        });
+        const res = resMock();
+        await restoreTrash({
+            user: { role: 'admin', organization_id: 1, user_id: 9, company_access: [] },
+            params: { entity: 'wpqr_records', id: '3' },
+        }, res);
+        expect(res.statusCode).toBe(200);
+        const links = query.mock.calls.map((call) => String(call[0])).find((sql) => /UPDATE wps_wpqr_links SET deleted_at = NULL/.test(sql));
+        expect(links).toContain('wpqr_id = @id');
+        expect(links).toContain('NOT EXISTS');
+        expect(links).toContain('active.deleted_at IS NULL');
+    });
+
+    it('una violazione di indice unico in corsa risponde 409', async () => {
+        query.mockImplementation(async (sql) => {
+            if (/SET deleted_at = NULL/.test(sql)) {
+                const err = new Error('Cannot insert duplicate key row in object UNIQUE');
+                err.number = 2601;
+                throw err;
+            }
+            return { recordset: [{ id: 8, company_id: 5, deleted_at: '2026-10-17', status: 'attiva', title: 'P-9' }] };
+        });
+        const res = resMock();
+        await restoreTrash({
+            user: { role: 'admin', organization_id: 1, user_id: 9, company_access: [] },
+            params: { entity: 'projects', id: '8' },
+        }, res);
+        expect(res.statusCode).toBe(409);
+        expect(res.body.code).toBe('RESTORE_CONFLICT');
+    });
 });
