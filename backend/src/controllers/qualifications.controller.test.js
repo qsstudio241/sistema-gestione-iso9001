@@ -153,7 +153,7 @@ describe('qualifications.controller — listQualifications filtro situazione', (
     expect(res.status).not.toHaveBeenCalledWith(500);
   });
 
-  it('situazione=valide filtra su status=valida E sulla data effettiva (non solo expiry_date)', async () => {
+  it('situazione=valide usa la data effettiva (non solo expiry_date) e non lo stato salvato valida/scaduta', async () => {
     const { pool, queryMock } = makeSharedPool();
     getPool.mockResolvedValue(pool);
     const { req, res } = makeReqRes({ situazione: 'valide' });
@@ -161,7 +161,8 @@ describe('qualifications.controller — listQualifications filtro situazione', (
     await listQualifications(req, res);
 
     const sql = selectSqlFrom(queryMock);
-    expect(sql).toContain("q.status = 'valida'");
+    expect(sql).not.toContain("q.status = 'valida'");
+    expect(sql).toContain("q.status NOT IN ('revocata','sospesa')");
     expect(sql).toContain('next_confirmation_due');
     expect(res.status).not.toHaveBeenCalledWith(500);
   });
@@ -210,16 +211,22 @@ describe('qualifications.controller — listQualifications filtro situazione', (
 describe('qualifications.controller — hardDeleteQualification', () => {
   function makePool(responses) {
     let i = 0;
-    return {
+    const sqls = [];
+    const pool = {
+      sqls,
       request: jest.fn(() => {
         const resp = responses[i] ?? { recordset: [] };
         i += 1;
         return {
           input: jest.fn().mockReturnThis(),
-          query: jest.fn().mockResolvedValue(resp),
+          query: jest.fn(async (sql) => {
+            sqls.push(sql);
+            return resp;
+          }),
         };
       }),
     };
+    return pool;
   }
 
   function makeReqRes(id = '1') {
@@ -250,85 +257,29 @@ describe('qualifications.controller — hardDeleteQualification', () => {
     expect(res.statusCode).toBe(404);
   });
 
-  it('elimina con successo anche se esistono conferme semestrali (cascade)', async () => {
-    getPool.mockResolvedValue(makePool([
-      { recordset: [{ id: 1, company_id: 5, approval_status: 'approvata', approved_at: '2026-01-01', certificate_file_url: null }] },
-      { recordset: [{ cnt: 0 }] }, // import links
-      { recordset: [{ cnt: 0 }] }, // renewal refs
-      { recordset: [{ cnt: 0 }] }, // wps_welders
-      { recordset: [{ cnt: 0 }] }, // project_welders
-      { recordset: [] },           // DELETE confirmations
-      { recordset: [] },           // DELETE notification_log
-      { recordset: [] },           // DELETE qualification
-    ]));
+  it('sposta nel cestino anche se esistono conferme o legami: niente DELETE fisico', async () => {
+    const pool = makePool([
+      { recordset: [{ id: 1, company_id: 5, status: 'valida', certificate_number: 'C-1', person_name: 'Ada' }] },
+      { recordset: [] },
+    ]);
+    getPool.mockResolvedValue(pool);
+    query.mockResolvedValue({ recordset: [] });
     const { req, res } = makeReqRes();
 
     await hardDeleteQualification(req, res);
 
     expect(res.statusCode).toBe(200);
     expect(res.body).toEqual({ success: true });
-  });
-
-  it('elimina con successo anche con righe in qual_notification_log (cascade, tipico 9606/14732 alertate)', async () => {
-    getPool.mockResolvedValue(makePool([
-      { recordset: [{ id: 1, company_id: 5, approval_status: 'approvata', approved_at: '2026-01-01', certificate_file_url: null }] },
-      { recordset: [{ cnt: 0 }] }, // import
-      { recordset: [{ cnt: 0 }] }, // renewal
-      { recordset: [{ cnt: 0 }] }, // wps
-      { recordset: [{ cnt: 0 }] }, // project
-      { recordset: [] },           // DELETE confirmations
-      { recordset: [] },           // DELETE notification_log
-      { recordset: [] },           // DELETE qualification
-    ]));
-    const { req, res } = makeReqRes();
-
-    await hardDeleteQualification(req, res);
-
-    expect(res.statusCode).toBe(200);
-    expect(res.body).toEqual({ success: true });
-  });
-
-  it('409 se collegata a un documento importato', async () => {
-    getPool.mockResolvedValue(makePool([
-      { recordset: [{ id: 1, company_id: 5, approval_status: 'approvata', approved_at: '2026-01-01', certificate_file_url: null }] },
-      { recordset: [{ cnt: 1 }] }, // import links
-    ]));
-    const { req, res } = makeReqRes();
-
-    await hardDeleteQualification(req, res);
-
-    expect(res.statusCode).toBe(409);
-    expect(res.body.code).toBe('HAS_IMPORT_LINK');
-  });
-
-  it('409 se è la versione precedente di un rinnovo', async () => {
-    getPool.mockResolvedValue(makePool([
-      { recordset: [{ id: 1, company_id: 5, approval_status: 'approvata', approved_at: '2026-01-01', certificate_file_url: null }] },
-      { recordset: [{ cnt: 0 }] }, // import links
-      { recordset: [{ cnt: 1 }] }, // renewal refs
-    ]));
-    const { req, res } = makeReqRes();
-
-    await hardDeleteQualification(req, res);
-
-    expect(res.statusCode).toBe(409);
-    expect(res.body.code).toBe('HAS_RENEWAL_LINK');
-  });
-
-  it('409 se assegnata a una commessa (project_welders)', async () => {
-    getPool.mockResolvedValue(makePool([
-      { recordset: [{ id: 1, company_id: 5, approval_status: 'approvata', approved_at: '2026-01-01', certificate_file_url: null }] },
-      { recordset: [{ cnt: 0 }] }, // import
-      { recordset: [{ cnt: 0 }] }, // renewal
-      { recordset: [{ cnt: 0 }] }, // wps
-      { recordset: [{ cnt: 2 }] }, // project_welders
-    ]));
-    const { req, res } = makeReqRes();
-
-    await hardDeleteQualification(req, res);
-
-    expect(res.statusCode).toBe(409);
-    expect(res.body.code).toBe('HAS_PROJECT_LINK');
+    const sql = pool.sqls.join('\n');
+    expect(sql).toContain('SET deleted_at = SYSUTCDATETIME()');
+    expect(sql).not.toContain('DELETE FROM qualifications');
+    expect(sql).not.toContain('DELETE FROM qualification_confirmations');
+    const audit = query.mock.calls.map((c) => String(c[0])).find((s) => s.includes('entity_change_log'));
+    expect(audit).toBeTruthy();
+    const params = query.mock.calls.find((c) => String(c[0]).includes('entity_change_log'))[1];
+    expect(params.action_type).toBe('soft_deleted');
+    expect(params.actor_user_id).toBe(42);
+    expect(params.old_value).toContain('valida');
   });
 
   it('403 se l\'utente non ha permesso di scrittura sull\'azienda', async () => {
@@ -343,23 +294,20 @@ describe('qualifications.controller — hardDeleteQualification', () => {
     expect(res.statusCode).toBe(403);
   });
 
-  it('elimina con successo una qualifica attiva (approvata) senza legami — nessun gate su approval_status', async () => {
-    getPool.mockResolvedValue(makePool([
-      { recordset: [{ id: 1, company_id: 5, approval_status: 'approvata', approved_at: '2026-01-01', certificate_file_url: null }] },
-      { recordset: [{ cnt: 0 }] }, // import links
-      { recordset: [{ cnt: 0 }] }, // renewal refs
-      { recordset: [{ cnt: 0 }] }, // wps_welders
-      { recordset: [{ cnt: 0 }] }, // project_welders
-      { recordset: [] },           // DELETE confirmations
-      { recordset: [] },           // DELETE notification_log
-      { recordset: [] },           // DELETE qualification
-    ]));
+  it('una qualifica revocata va nel cestino senza cambiare il significato di revocata', async () => {
+    const pool = makePool([
+      { recordset: [{ id: 1, company_id: 5, status: 'revocata', certificate_number: 'C-9', person_name: 'Nino' }] },
+      { recordset: [] },
+    ]);
+    getPool.mockResolvedValue(pool);
+    query.mockResolvedValue({ recordset: [] });
     const { req, res } = makeReqRes();
 
     await hardDeleteQualification(req, res);
 
     expect(res.statusCode).toBe(200);
-    expect(res.body).toEqual({ success: true });
+    expect(pool.sqls.join('\n')).not.toContain("status='revocata'");
+    expect(pool.sqls.join('\n')).toContain('deleted_at');
   });
 });
 
@@ -557,9 +505,74 @@ describe('qualifications.controller — collegamento personnel_id (createQualifi
 
     await createQualification(req, res);
 
-    expect(query).not.toHaveBeenCalled();
+    expect(query.mock.calls.some((call) => /FROM personnel/i.test(String(call[0])))).toBe(false);
+    expect(query.mock.calls.some((call) => /entity_change_log/.test(String(call[0])))).toBe(true);
     expect(insertReq.input).toHaveBeenCalledWith('personnelId', null);
     expect(res.status).not.toHaveBeenCalledWith(400);
+  });
+});
+
+describe('qualifications.controller — duplicato uniforme (409, nessun SQL grezzo)', () => {
+  const indexError = () => Object.assign(
+    new Error("Cannot insert duplicate key row in object 'dbo.qualifications' with unique index 'UX_qualif_org_company_cert_person_active'. The duplicate key value is (1, 2, X, Y)."),
+    { number: 2601 },
+  );
+  const bodyDup = {
+    person_name: 'Mario Rossi', company_id: 20, certificate_number: 'ZZ-1', qualification_type: 'Saldatore ISO 9606-1',
+  };
+  const mkRes = () => ({ status: jest.fn().mockReturnThis(), json: jest.fn() });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    assertMutatingAllowed.mockResolvedValue(null);
+  });
+
+  it('creazione: duplicato rilevato dal controllo applicativo -> 409 DUPLICATE_QUALIFICATION, nessun INSERT', async () => {
+    const req0 = { input: jest.fn().mockReturnThis(), query: jest.fn().mockResolvedValue({ recordset: [{ cnt: 1 }] }) };
+    getPool.mockResolvedValue({ request: jest.fn(() => req0) });
+    const res = mkRes();
+    await createQualification({ body: bodyDup, user: { organization_id: 10, user_id: 20 } }, res);
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(res.json.mock.calls[0][0].code).toBe('DUPLICATE_QUALIFICATION');
+    expect(req0.query).toHaveBeenCalledTimes(1);
+    expect(req0.input).toHaveBeenCalledWith('personName', 'Mario Rossi');
+  });
+
+  it('creazione: errore dell\'indice unico (race) -> 409 con messaggio pulito, non 500 con SQL', async () => {
+    const req0 = { input: jest.fn().mockReturnThis() };
+    req0.query = jest.fn()
+      .mockResolvedValueOnce({ recordset: [{ cnt: 0 }] })
+      .mockRejectedValueOnce(indexError());
+    getPool.mockResolvedValue({ request: jest.fn(() => req0) });
+    const res = mkRes();
+    await createQualification({ body: bodyDup, user: { organization_id: 10, user_id: 20 } }, res);
+    expect(res.status).toHaveBeenCalledWith(409);
+    const payload = res.json.mock.calls[0][0];
+    expect(payload.code).toBe('DUPLICATE_QUALIFICATION');
+    expect(payload.error).not.toMatch(/UX_qualif|dbo\.|duplicate key/i);
+  });
+
+  it('modifica: errore dell\'indice unico -> 409 pulito', async () => {
+    const req0 = { input: jest.fn().mockReturnThis() };
+    req0.query = jest.fn()
+      .mockResolvedValueOnce({ recordset: [{ id: 5, company_id: 20 }] })
+      .mockRejectedValueOnce(indexError());
+    getPool.mockResolvedValue({ request: jest.fn(() => req0) });
+    const res = mkRes();
+    await updateQualification({ params: { id: '5' }, body: bodyDup, user: { organization_id: 10, user_id: 20 } }, res);
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(res.json.mock.calls[0][0].error).not.toMatch(/UX_qualif|dbo\./);
+  });
+
+  it('un errore SQL diverso resta 500', async () => {
+    const req0 = { input: jest.fn().mockReturnThis() };
+    req0.query = jest.fn()
+      .mockResolvedValueOnce({ recordset: [{ cnt: 0 }] })
+      .mockRejectedValueOnce(Object.assign(new Error('timeout'), { number: -2 }));
+    getPool.mockResolvedValue({ request: jest.fn(() => req0) });
+    const res = mkRes();
+    await createQualification({ body: bodyDup, user: { organization_id: 10, user_id: 20 } }, res);
+    expect(res.status).toHaveBeenCalledWith(500);
   });
 });
 

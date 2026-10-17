@@ -14,20 +14,9 @@ const {
     ensureCompanyAccessLoaded,
     companyAccessSqlFilter,
 } = require('../services/companyAccess.service');
-const { effectiveAlertDue } = require('../services/qualificationAlert.service');
+const { EFFECTIVE_SQL, ACTIVE_STATUS_SQL, SITUAZIONE_BUCKET_SQL } = require('../services/qualificationExpirySql');
 // Giorni default per alert scadenza documenti
 const DEFAULT_ALERT_DAYS = 30;
-
-/** Espressione SQL: data guida qualifica (min tra expiry e conferma semestrale 9606/14732). */
-const SQL_QUAL_EFFECTIVE_DUE = `
-  CASE
-    WHEN (q.qualification_type LIKE '%9606%' OR q.qualification_type LIKE '%14732%')
-         AND q.next_confirmation_due IS NOT NULL
-         AND (q.expiry_date IS NULL OR q.next_confirmation_due < q.expiry_date)
-    THEN q.next_confirmation_due
-    ELSE q.expiry_date
-  END
-`;
 
 /**
  * GET /alerts/count
@@ -43,7 +32,7 @@ async function getAlertCount(req, res) {
     // Filtro company_access per documenti e qualifiche
     const docFilter    = companyAccessSqlFilter(accessList, 'document_registry', 'company_id', 'uca_doc');
     const ncFilter     = companyAccessSqlFilter(accessList, 'a',                 'company_id', 'uca_nc');
-    const qualifFilter = companyAccessSqlFilter(accessList, 'qualifications',    'company_id', 'uca_q');
+    const qualifFilter = companyAccessSqlFilter(accessList, 'q',                'company_id', 'uca_q');
 
     const docReq = pool.request().input('orgId', orgId).input('days', DEFAULT_ALERT_DAYS);
     Object.entries(docFilter.params).forEach(([k, v]) => docReq.input(k, v));
@@ -66,6 +55,7 @@ async function getAlertCount(req, res) {
         FROM non_conformities nc
         INNER JOIN audits a ON nc.audit_id = a.audit_id
         WHERE a.organization_id = @orgId
+          AND nc.deleted_at IS NULL
           AND nc.status NOT IN ('closed', 'verified')
           AND DATEDIFF(day, nc.created_at, GETDATE()) > 30
           ${ncFilter.clause ? `AND ${ncFilter.clause}` : ''}
@@ -77,23 +67,27 @@ async function getAlertCount(req, res) {
 
     const docCount = docResult.recordset[0]?.cnt || 0;
 
-    let qualifCount = 0;
+    // Stessi bucket delle card Qualifiche (Scadute + Urgenti 30gg): vedi qualificationExpirySql.
+    let qualifExpired = 0;
+    let qualifExpiring = 0;
     try {
       const qualifReq = pool.request().input('orgId', orgId);
       Object.entries(qualifFilter.params).forEach(([k, v]) => qualifReq.input(k, v));
       const qualifResult = await qualifReq.query(`
-        SELECT COUNT(*) AS cnt
+        SELECT
+          COALESCE(SUM(CASE WHEN ${SITUAZIONE_BUCKET_SQL.scadute} THEN 1 ELSE 0 END), 0) AS expired,
+          COALESCE(SUM(CASE WHEN ${SITUAZIONE_BUCKET_SQL.urgenti_30} THEN 1 ELSE 0 END), 0) AS expiring
         FROM qualifications q
         WHERE q.organization_id = @orgId
-          AND q.status NOT IN ('revocata','sospesa')
-          AND (${SQL_QUAL_EFFECTIVE_DUE}) IS NOT NULL
-          AND (${SQL_QUAL_EFFECTIVE_DUE}) <= DATEADD(day, 30, CAST(GETDATE() AS DATE))
+          AND q.deleted_at IS NULL
           ${qualifFilter.clause ? `AND ${qualifFilter.clause}` : ''}
       `);
-      qualifCount = qualifResult.recordset[0]?.cnt || 0;
+      qualifExpired = qualifResult.recordset[0]?.expired || 0;
+      qualifExpiring = qualifResult.recordset[0]?.expiring || 0;
     } catch {
       // Tabella qualifications non ancora creata — non bloccante
     }
+    const qualifCount = qualifExpired + qualifExpiring;
 
     const total = docCount + ncCount + qualifCount;
 
@@ -102,6 +96,8 @@ async function getAlertCount(req, res) {
       documents: docCount,
       nc: ncCount,
       qualifications: qualifCount,
+      qualifications_expired: qualifExpired,
+      qualifications_expiring: qualifExpiring,
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -165,20 +161,21 @@ async function getAlerts(req, res) {
           q.expiry_date,
           q.next_confirmation_due,
           c.name AS company_name,
-          (${SQL_QUAL_EFFECTIVE_DUE}) AS effective_due,
+          ${EFFECTIVE_SQL} AS effective_due,
           CASE
-            WHEN (${SQL_QUAL_EFFECTIVE_DUE}) < CAST(GETDATE() AS DATE) THEN 'expired'
+            WHEN ${EFFECTIVE_SQL} < CAST(GETDATE() AS DATE) THEN 'expired'
             ELSE 'expiring'
           END AS alert_type,
-          DATEDIFF(day, CAST(GETDATE() AS DATE), (${SQL_QUAL_EFFECTIVE_DUE})) AS days_remaining
+          DATEDIFF(day, CAST(GETDATE() AS DATE), ${EFFECTIVE_SQL}) AS days_remaining
         FROM qualifications q
         LEFT JOIN companies c ON q.company_id = c.id
         WHERE q.organization_id = @orgId
-          AND q.status NOT IN ('revocata','sospesa')
-          AND (${SQL_QUAL_EFFECTIVE_DUE}) IS NOT NULL
-          AND (${SQL_QUAL_EFFECTIVE_DUE}) <= DATEADD(day, @days, CAST(GETDATE() AS DATE))
+          AND q.deleted_at IS NULL
+          AND ${ACTIVE_STATUS_SQL}
+          AND ${EFFECTIVE_SQL} IS NOT NULL
+          AND ${EFFECTIVE_SQL} <= DATEADD(day, @days, CAST(GETDATE() AS DATE))
           ${qualFilter.clause ? `AND ${qualFilter.clause}` : ''}
-        ORDER BY (${SQL_QUAL_EFFECTIVE_DUE}) ASC
+        ORDER BY ${EFFECTIVE_SQL} ASC
       `);
       qualAlerts = (qualResult.recordset || []).map((q) => ({
         id: q.id,

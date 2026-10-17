@@ -29,6 +29,8 @@
 | Griglia dati | `SgqDataGrid.jsx` | Liste modulo (Qualifiche, Scadenzari, SAL, …) |
 | Overlay dialog ingest / split-view | `IngestDialogShell.jsx` | Guscio unico (PR #377); CSS specifico nel dialog figlio. Anche import Excel M03 (`RiskM03ImportDialog`) |
 | Overlay visualizzatore documenti (PDF / Word / Excel) | `DocumentViewerChrome.jsx` | Chrome unico: **Chiudi** + **Scarica** (se già previsto) + **Schermo intero / Riduci**. Toggle CSS sul viewport dell'app (non Fullscreen API, non finestra Windows). Vietato imitare ─ □ ✕ di sistema. `DocFileDialog` resta il form file. Allegati Word/Excel: `InAppOfficeViewer.jsx` (stesso chrome). |
+| Apertura / anteprima certificati in `/uploads` (qualifiche, WPQR, materiali) | `ProtectedFile.jsx` (`ProtectedFileLink`, `ProtectedFilePreview`) + `apiService.fetchProtectedFileBlob` | `/uploads` non è pubblico: fetch con Authorization → blob → `DocumentPdfViewer` (`loadBlob`). Vietato `<a href>` / `iframe src` / `window.open` verso `/uploads`. Download = tipo+id, mobile: «Apri»/condividi da blob già scaricato. |
+| Coda caricamenti ingest da rivedere (non di rielaborazione) | `PendingIngestQueue.jsx` (stile `reprocess-banner*`, finestra `IngestReviewDialog`) | Elenca `ingest_staging` pending del modulo, apre la stessa revisione dell'upload batch; montata in Qualifiche sotto `ReprocessQueueBanner` |
 | Cerca azienda nel registro | `CompanyRegistrySearch.jsx` | Lista da spuntare (classi `did-*`); non salva da sola |
 | Conteggio NC/OSS/OM (Sezione 11) | `calculateFindingsMetrics` + `calculateCustomFindingsMetrics` (`metricsCalculator.js`) via `AuditOutcomeSection.jsx` | — |
 | Stato salvato/errore form | `custom-checklist-form-error`, `custom-checklist-saving` | `CustomChecklistAuditView.css` |

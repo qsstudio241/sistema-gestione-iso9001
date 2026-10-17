@@ -14,6 +14,14 @@
  */
 
 jest.mock('../config/database', () => ({ query: jest.fn() }));
+jest.mock('../services/companyAccess.service', () => ({
+  ensureCompanyAccessLoaded: jest.fn(async () => []),
+  hasCompanyAccessRows: jest.fn(() => false),
+  companyAccessSqlFilter: jest.fn(() => ({ clause: '', params: {} })),
+  assertCompanyRead: jest.fn(async () => null),
+  assertMutatingAllowed: jest.fn(async () => null),
+  sendAccessDenied: jest.fn((res, denied) => res.status(denied.status).json(denied.body)),
+}));
 
 jest.mock('../utils/logger', () => ({
   info: jest.fn(),
@@ -155,7 +163,15 @@ describe('updateProject — cliente da anagrafica aziende', () => {
     await ctrl.updateProject(req, res);
 
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
-    // Nessuna query per il cliente: solo SELECT + UPDATE
-    expect(query).toHaveBeenCalledTimes(2);
+    // Nessuna query per il cliente: SELECT + UPDATE + audit del campo notes
+    expect(query).toHaveBeenCalledTimes(3);
+    expect(query.mock.calls[2][0]).toContain('INSERT INTO entity_change_log');
+    expect(query.mock.calls[2][1]).toEqual(expect.objectContaining({
+      action_type: 'updated',
+      entity_table: 'projects',
+      field_name: 'notes',
+      new_value: 'aggiornamento note',
+      organization_id: ORG_ID,
+    }));
   });
 });

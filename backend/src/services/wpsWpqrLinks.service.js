@@ -8,7 +8,8 @@
  * del record. Assente o ambigua → nessun legame, nessuna scelta a caso: l'esito è una segnalazione
  * «da verificare» mostrata in revisione. Ogni query ripete organization_id; gli id dei record non arrivano mai
  * dal client ma dalla ricerca stessa o dall'INSERT appena fatto.
- * Tollera la migrazione 174 non applicata: tabella assente → nessuna scrittura, avviso esplicito.
+ * Migrazione 174 applicata su PROD (2026-10): i legami si scrivono. Se la tabella
+ * manca (TEST non allineato / rollback), nessuna scrittura e avviso esplicito.
  */
 
 const { query } = require('../config/database');

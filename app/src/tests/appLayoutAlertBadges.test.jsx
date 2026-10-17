@@ -77,6 +77,25 @@ describe("AppLayout — badge da /alerts/count", () => {
     expect(within(documentiLink()).queryByText("44")).toBeNull();
   });
 
+  it("Qualifiche: il badge e la somma Scadute + Urgenti 30gg e il tooltip lo dichiara", async () => {
+    await renderWithAlerts({
+      total: 24, documents: 0, nc: 0, qualifications: 24,
+      qualifications_expired: 23, qualifications_expiring: 1,
+    });
+    const badge = await waitFor(() => within(qualificheLink()).getByText("24"));
+    expect(badge).toHaveAttribute(
+      "title",
+      '24 da gestire: 23 scadute (card "Scadute") + 1 in scadenza entro 30 gg (card "Urgenti 30gg")'
+    );
+  });
+
+  it("Qualifiche: payload senza le componenti -> badge invariato, tooltip con zeri", async () => {
+    await renderWithAlerts({ total: 5, documents: 0, nc: 0, qualifications: 5 });
+    const badge = await waitFor(() => within(qualificheLink()).getByText("5"));
+    expect(badge).toHaveClass("sidebar-badge");
+    expect(badge.getAttribute("title")).toMatch(/^5 da gestire: 0 scadute/);
+  });
+
   it("documents 3: badge Documenti = 3", async () => {
     await renderWithAlerts({ total: 3, documents: 3, nc: 0, qualifications: 0 });
     await waitFor(() => {

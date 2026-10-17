@@ -79,6 +79,7 @@ async function searchNonConformities({ organizationId, reqUser, pattern, company
     const conditions = [
         'a.organization_id = @organization_id',
         'a.is_deleted = 0',
+        'nc.deleted_at IS NULL',
         `(
             nc.nc_number LIKE @pattern
             OR nc.description LIKE @pattern

@@ -14,6 +14,7 @@ import { formatDate } from "../utils/dateHelpers";
 import WpqrUploadButton from "../components/WpqrUploadButton";
 import WpsUploadButton from "../components/WpsUploadButton";
 import AskAiButton from "../components/AskAiButton";
+import { getProcessSelectOptions, getProcessLabel, canonicalizeProcessValue } from "../utils/weldingProcessSelect";
 import ReprocessQueueBanner from "../components/ReprocessQueueBanner";
 import {
   saveQualContext,
@@ -21,7 +22,7 @@ import {
   MASON_WPS_GENERATE_DEFAULTS,
 } from "../utils/aiAssistantContext";
 import { exportWpsAnnexADocx } from "../utils/wordExportWps";
-import { resolveBackendUploadUrl } from "../utils/resolveBackendUploadUrl";
+import { ProtectedFileLink } from "../components/ProtectedFile";
 import {
   isIso14555,
   describeQualifiedParentThicknessRange14555,
@@ -33,17 +34,6 @@ const WPQR_STANDARD_OPTIONS = [
   "UNI EN ISO 15614-1:2017",
   "UNI EN ISO 15614-2:2025",
   "UNI EN ISO 14555:2025",
-];
-
-const WELDING_PROCESSES = [
-  { value: "111", label: "111 - SMAW" },
-  { value: "121", label: "121 - SAW" },
-  { value: "131", label: "131 - MIG" },
-  { value: "135", label: "135 - MAG" },
-  { value: "136", label: "136 - FCAW" },
-  { value: "141", label: "141 - TIG" },
-  { value: "311", label: "311 - Ossiacetilenica" },
-  { value: "15",  label: "15x - Plasma" },
 ];
 
 const WPS_STATUSES = [
@@ -174,9 +164,9 @@ function WPSFormModal({ wps, defaultCompanyId, onSave, onClose, onSaved }) {
               </div>
               <div className="wp-form-group">
                 <label className="wp-form-label">Processo di saldatura</label>
-                <select className="wp-form-select" value={form.welding_process || ""} onChange={(e) => set("welding_process", e.target.value)}>
+                <select className="wp-form-select" value={canonicalizeProcessValue(form.welding_process) || ""} onChange={(e) => set("welding_process", e.target.value)}>
                   <option value="">-- Seleziona --</option>
-                  {WELDING_PROCESSES.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
+                  {getProcessSelectOptions(form.welding_process).map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
                 </select>
               </div>
               <div className="wp-form-group">
@@ -395,11 +385,11 @@ export function GenerateWpsModal({
                 <label className="wp-form-label">Processo (opzionale)</label>
                 <select
                   className="wp-form-select"
-                  value={form.welding_process}
+                  value={canonicalizeProcessValue(form.welding_process)}
                   onChange={(e) => set("welding_process", e.target.value)}
                 >
                   <option value="">-- Qualsiasi --</option>
-                  {WELDING_PROCESSES.map((p) => (
+                  {getProcessSelectOptions(form.welding_process).map((p) => (
                     <option key={p.value} value={p.value}>{p.label}</option>
                   ))}
                 </select>
@@ -855,9 +845,9 @@ function WPQRFormModal({ wpqr, wpsList, defaultCompanyId, onSave, onClose, onSav
               </div>
               <div className="wp-form-group">
                 <label className="wp-form-label">Processo saldatura (ISO 4063)</label>
-                <select className="wp-form-select" value={form.welding_process || ""} onChange={(e) => set("welding_process", e.target.value)}>
+                <select className="wp-form-select" value={canonicalizeProcessValue(form.welding_process) || ""} onChange={(e) => set("welding_process", e.target.value)}>
                   <option value="">-- Seleziona --</option>
-                  {WELDING_PROCESSES.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
+                  {getProcessSelectOptions(form.welding_process).map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
                 </select>
               </div>
               <div className="wp-form-group">
@@ -1450,7 +1440,7 @@ function WeldingProceduresPage() {
               onChange={(e) => { setWpsFilters((f) => ({ ...f, welding_process: e.target.value })); setWpsPage(1); }}
             >
               <option value="">Tutti i processi</option>
-              {WELDING_PROCESSES.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
+              {getProcessSelectOptions(wpsFilters.welding_process).map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
             </select>
             <select
               className="wp-select"
@@ -1508,7 +1498,7 @@ function WeldingProceduresPage() {
                     <tr key={w.id} className="wp-row-click" onClick={() => handleEditWps(w)}>
                       <td><strong>{w.wps_code}</strong></td>
                       <td>{w.revision || "-"}</td>
-                      <td>{WELDING_PROCESSES.find((p) => p.value === w.welding_process)?.label || w.welding_process || "-"}</td>
+                      <td>{getProcessLabel(w.welding_process) || "-"}</td>
                       <td>{w.material_group || "-"}</td>
                       <td>{w.joint_type || "-"}</td>
                       <td>{w.position || "-"}</td>
@@ -1530,7 +1520,7 @@ function WeldingProceduresPage() {
                       <td onClick={(e) => e.stopPropagation()}>
                         {deleteWpsId === w.id ? (
                           <div className="wp-confirm">
-                            <span>Eliminare?</span>
+                            <span>Il record va nel cestino. Non è una cancellazione definitiva.</span>
                             <button className="wp-confirm-yes" onClick={() => handleDeleteWps(w.id)}>Si</button>
                             <button className="wp-confirm-no" onClick={() => setDeleteWpsId(null)}>No</button>
                           </div>
@@ -1644,13 +1634,13 @@ function WeldingProceduresPage() {
                       <td><ApprovalBadge approvalStatus={wq.approval_status} /></td>
                       <td onClick={(e) => e.stopPropagation()}>
                         {wq.certificate_file_url
-                          ? <a href={resolveBackendUploadUrl(wq.certificate_file_url, apiService.baseUrl)} target="_blank" rel="noopener noreferrer" title="Apri certificato PDF">{"\uD83D\uDCC4"}</a>
+                          ? <ProtectedFileLink fileUrl={wq.certificate_file_url} kind="wpqr" recordId={wq.id} title="Apri certificato PDF">{"\uD83D\uDCC4"}</ProtectedFileLink>
                           : <span style={{ color: "#9ca3af" }}>-</span>}
                       </td>
                       <td onClick={(e) => e.stopPropagation()}>
                         {deleteWpqrId === wq.id ? (
                           <div className="wp-confirm">
-                            <span>Eliminare?</span>
+                            <span>Il record va nel cestino. Non è una cancellazione definitiva.</span>
                             <button className="wp-confirm-yes" onClick={() => handleDeleteWpqr(wq.id)}>S{"\u00ec"}</button>
                             <button className="wp-confirm-no" onClick={() => setDeleteWpqrId(null)}>No</button>
                           </div>

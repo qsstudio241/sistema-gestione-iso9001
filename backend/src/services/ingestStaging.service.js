@@ -17,6 +17,7 @@ const DOC_TYPE_MODULES = {
     wps: 'saldatura',
     patentino_saldatore: 'qualifiche',
     qualifica_14732: 'qualifiche',
+    cert_ndt: 'qualifiche',
     norma: 'documents',
 };
 

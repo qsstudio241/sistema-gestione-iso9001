@@ -161,6 +161,14 @@ describe('getInputSummary — scope organization_id', () => {
     orgCalls.forEach(([, v]) => expect(v).toBe(ORG_ID));
     // Le query NC e obiettivi devono filtrare per organizzazione
     expect(queryMock.mock.calls[0][0]).toMatch(/organization_id/);
+    const ncSql = queryMock.mock.calls.map((call) => String(call[0])).filter((sql) => /FROM non_conformities/.test(sql));
+    expect(ncSql.length).toBe(2);
+    ncSql.forEach((sql) => expect(sql).toContain('nc.deleted_at IS NULL'));
+    const fs = require('fs');
+    const src = fs.readFileSync(require('path').join(__dirname, 'managementReviews.controller.js'), 'utf8');
+    const blocks = src.split('FROM non_conformities nc').slice(1);
+    expect(blocks).toHaveLength(4);
+    blocks.forEach((block) => expect(block.slice(0, 500)).toContain('nc.deleted_at IS NULL'));
   });
 });
 

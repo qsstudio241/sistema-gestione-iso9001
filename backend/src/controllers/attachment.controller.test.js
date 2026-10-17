@@ -8,6 +8,15 @@ jest.mock('../config/database', () => ({
     query: jest.fn(),
 }));
 
+jest.mock('../services/companyAccess.service', () => ({
+    ensureCompanyAccessLoaded: jest.fn(async () => []),
+    hasCompanyAccessRows: jest.fn(() => false),
+    companyAccessSqlFilter: jest.fn(() => ({ clause: '', params: {} })),
+    assertCompanyRead: jest.fn(async () => null),
+    assertMutatingAllowed: jest.fn(async () => null),
+    sendAccessDenied: jest.fn((res, denied) => res.status(denied.status).json(denied.body)),
+}));
+
 jest.mock('../utils/logger', () => ({
     info: jest.fn(),
     error: jest.fn(),
@@ -209,5 +218,18 @@ describe('uploadAttachment — RBAC studio', () => {
         const auditSql = query.mock.calls[0][0];
         expect(auditSql).toContain('auditor_org_id = @auditor_org_id');
         expect(res.status).toHaveBeenCalledWith(404);
+    });
+
+    it('non allega un file a una NC cestinata', async () => {
+        query.mockResolvedValueOnce({ recordset: [] });
+        const req = mockReq({
+            file: { path: '/tmp/x.jpg', originalname: 'x.jpg', size: 100, mimetype: 'image/jpeg' },
+            body: { nc_id: '5', category: 'photo' },
+        });
+        const res = mockRes();
+        await ctrl.uploadAttachment(req, res);
+        expect(String(query.mock.calls[0][0])).toContain('nc.deleted_at IS NULL');
+        expect(res.status).toHaveBeenCalledWith(404);
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ code: 'NC_NOT_FOUND' }));
     });
 });

@@ -37,17 +37,17 @@ function setupDb({ tables = ['wpqr_test_runs', 'wps_wpqr_links'], headerColumns 
         const m = /^SELECT OBJECT_ID\(N'dbo\.(\w+)'/.exec(text);
         if (m) return { recordset: [{ object_id: tables.includes(m[1]) ? 1 : null }] };
         if (/^SELECT COL_LENGTH/.test(text)) return { recordset: [{ len: headerColumns ? 500 : null }] };
-        if (/^SELECT id, organization_id, company_id FROM wpqr_records/.test(text)) {
+        if (/wps_company_id/.test(text) && /FROM wpqr_records/.test(text) && /@wpqr_id/.test(text)) {
             return { recordset: state.wpqr.filter((w) => w.id === params.wpqr_id && w.organization_id === params.organization_id) };
         }
-        if (/^SELECT id FROM wpqr_records WHERE id = @id AND organization_id/.test(text)) {
+        if (/wps_company_id/.test(text) && /FROM wpqr_records/.test(text) && /@id/.test(text)) {
             return { recordset: state.wpqr.filter((w) => w.id === params.id && w.organization_id === params.organization_id) };
         }
         if (/^SELECT id FROM wpqr_records WHERE wps_id = @id AND organization_id/.test(text)) {
             return { recordset: state.wpqr.filter((w) => w.wps_id === params.id && w.organization_id === params.organization_id).map((w) => ({ id: w.id })) };
         }
-        if (/^SELECT id FROM welding_procedures WHERE id = @id AND organization_id/.test(text)) {
-            return { recordset: params.organization_id === ORG_A && params.id === 7 ? [{ id: 7 }] : [] };
+        if (/^SELECT id, company_id FROM welding_procedures WHERE id = @id AND organization_id/.test(text)) {
+            return { recordset: params.organization_id === ORG_A && params.id === 7 ? [{ id: 7, company_id: 5 }] : [] };
         }
         if (/^SELECT .* FROM wpqr_test_runs/.test(text)) {
             return { recordset: state.runs.filter((r) => r.wpqr_id === params.wpqr_id && r.organization_id === params.organization_id) };
@@ -198,9 +198,9 @@ describe('cancellazioni — passate e link prima delle WPQR/WPS', () => {
         await ctrl.deleteWPQR(req({ params: { id: '10' } }), res);
         expect(res.statusCode).toBe(200);
         const idx = (re) => log.findIndex((s) => re.test(s.text));
-        const runs = idx(/^DELETE FROM wpqr_test_runs/);
-        const links = idx(/^DELETE FROM wps_wpqr_links/);
-        const wpqr = idx(/^DELETE FROM wpqr_records/);
+        const runs = idx(/UPDATE wpqr_test_runs SET deleted_at/);
+        const links = idx(/UPDATE wps_wpqr_links SET deleted_at/);
+        const wpqr = idx(/UPDATE wpqr_records SET deleted_at/);
         expect(runs).toBeGreaterThan(-1);
         expect(links).toBeGreaterThan(-1);
         expect(wpqr).toBeGreaterThan(Math.max(runs, links));
@@ -213,8 +213,8 @@ describe('cancellazioni — passate e link prima delle WPQR/WPS', () => {
         const res = createRes();
         await ctrl.deleteWPQR(req({ params: { id: '10' } }), res);
         expect(res.statusCode).toBe(200);
-        expect(log.some((s) => /wpqr_test_runs|wps_wpqr_links/.test(s.text) && /^DELETE/.test(s.text))).toBe(false);
-        expect(log.some((s) => /^DELETE FROM wpqr_records/.test(s.text))).toBe(true);
+        expect(log.some((s) => /wpqr_test_runs|wps_wpqr_links/.test(s.text) && /SET deleted_at/.test(s.text))).toBe(false);
+        expect(log.some((s) => /UPDATE wpqr_records SET deleted_at/.test(s.text))).toBe(true);
     });
 
     it('deleteWPQR cross-tenant: 404 e nessuna DELETE', async () => {
@@ -222,7 +222,7 @@ describe('cancellazioni — passate e link prima delle WPQR/WPS', () => {
         const res = createRes();
         await ctrl.deleteWPQR(req({ params: { id: '20' } }), res);
         expect(res.statusCode).toBe(404);
-        expect(log.some((s) => /^DELETE/.test(s.text))).toBe(false);
+        expect(log.some((s) => /SET deleted_at/.test(s.text))).toBe(false);
     });
 
     it('deleteWPS: link e passate delle WPQR figlie cancellati prima di WPQR e WPS', async () => {
@@ -231,10 +231,10 @@ describe('cancellazioni — passate e link prima delle WPQR/WPS', () => {
         await ctrl.deleteWPS(req({ params: { id: '7' } }), res);
         expect(res.statusCode).toBe(200);
         const idx = (re) => log.findIndex((s) => re.test(s.text));
-        const runs = idx(/^DELETE FROM wpqr_test_runs/);
-        const links = log.findIndex((s) => /^DELETE FROM wps_wpqr_links/.test(s.text));
-        const wpqr = idx(/^DELETE FROM wpqr_records/);
-        const wps = idx(/^DELETE FROM welding_procedures/);
+        const runs = idx(/UPDATE wpqr_test_runs SET deleted_at/);
+        const links = log.findIndex((s) => /UPDATE wps_wpqr_links SET deleted_at/.test(s.text));
+        const wpqr = idx(/UPDATE wpqr_records SET deleted_at/);
+        const wps = idx(/UPDATE welding_procedures SET deleted_at/);
         expect(runs).toBeGreaterThan(-1);
         expect(links).toBeGreaterThan(-1);
         expect(wpqr).toBeGreaterThan(runs);

@@ -105,9 +105,10 @@ describe('pipeline: nessun nome file nei log', () => {
         await ingest();
         expect(chat).toHaveBeenCalledTimes(1);
         const sent = JSON.stringify(chat.mock.calls[0][0]);
-        for (const leak of ['ZZROSSI', 'ZZMARIO', '99-00000', FILE_NAME, '14732_X', '(file ']) {
+        for (const leak of ['ZZROSSI', 'ZZMARIO', '99-00000', FILE_NAME, '14732_X']) {
             expect(sent).not.toContain(leak);
         }
+        expect(sent).toContain('(file [FILE])');
         expect(sent).toContain('JSON piatto con chiavi');
     });
 
