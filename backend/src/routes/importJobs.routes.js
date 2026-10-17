@@ -76,9 +76,11 @@ const uploadImportMiddleware = (req, res, next) => {
     });
 };
 
-router.use(authenticate);
-router.use(authorize('admin'));
-router.use(requireLicensedModule('ai_import'));
+// Solo le route di import. Un controllo senza percorso, su un router montato
+// su /api/v1, fermerebbe anche le chiamate successive (WPS, WPQR, commesse).
+router.use('/import-jobs', authenticate);
+router.use('/import-jobs', authorize('admin'));
+router.use('/import-jobs', requireLicensedModule('ai_import'));
 
 router.get('/import-jobs', ctrl.listJobs);
 router.post('/import-jobs', ctrl.createJob);
