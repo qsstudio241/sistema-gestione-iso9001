@@ -156,6 +156,7 @@ async function canUserConfirmSemiannual(user, companyId) {
  */
 function isQualificationOperationallyActive(q, todayIso) {
   if (!q) return false;
+  if (q.deleted_at) return false;
   if (['revocata', 'sospesa'].includes(q.status)) return false;
 
   const today = todayIso || new Date().toISOString().slice(0, 10);

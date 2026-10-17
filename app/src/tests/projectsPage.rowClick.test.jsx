@@ -150,7 +150,7 @@ describe("ProjectsPage — riga commessa cliccabile e Azioni", () => {
     await user.click(within(row).getByRole("button", { name: "Elimina commessa" }));
     expect(modalTitle()).toBeNull();
     expect(mockGetProject).not.toHaveBeenCalled();
-    expect(screen.getByText("Eliminare?")).toBeTruthy();
+    expect(screen.getByText("Il record va nel cestino. Non è una cancellazione definitiva.")).toBeTruthy();
     await user.click(screen.getByRole("button", { name: /^S\s*-/ }));
     await waitFor(() => expect(mockDeleteProject).toHaveBeenCalledWith(7));
     expect(modalTitle()).toBeNull();

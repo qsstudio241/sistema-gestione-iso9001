@@ -23,9 +23,11 @@ function daysFromNow(n) {
 
 function createSequentialPool(recordsets) {
   let call = 0;
+  const sqls = [];
   const request = {
     input: jest.fn().mockReturnThis(),
-    query: jest.fn().mockImplementation(() => {
+    query: jest.fn().mockImplementation((sql) => {
+      sqls.push(String(sql));
       const rs = recordsets[call] ?? { recordset: [] };
       call += 1;
       return Promise.resolve(rs);
@@ -33,6 +35,7 @@ function createSequentialPool(recordsets) {
   };
   return {
     request: jest.fn(() => request),
+    sqls,
   };
 }
 
@@ -81,6 +84,10 @@ describe('runNcEscalationForOrg', () => {
     expect(result.recipients).toHaveLength(1);
     expect(result.recipients[0].email).toBe('resp@studio.it');
     expect(result.recipients[0].ncCount).toBe(1);
+    expect(pool.sqls[0]).toContain('nc.deleted_at IS NULL');
+    const actionsSql = pool.sqls.find((sql) => /FROM nc_actions/.test(sql));
+    expect(actionsSql).toContain('na.deleted_at IS NULL');
+    expect(actionsSql).toContain('nc.deleted_at IS NULL');
   });
 
   it('invio reale chiama sendAlertEmail e logga su nc_notification_log', async () => {

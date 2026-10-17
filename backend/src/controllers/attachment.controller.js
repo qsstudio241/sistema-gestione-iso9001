@@ -9,6 +9,7 @@
 
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
+const { logEntityChange, trashedDetailHidden } = require('../services/entityChangeLog.service');
 const { studioScopeClause, appendScopeSql, ncOwnershipScope } = require('../services/auditListRbac.service');
 const {
     ensureCompanyAccessLoaded,
@@ -150,7 +151,7 @@ async function listAttachments(req, res) {
 
         const { joinSql, orgClause, rbacClause, scopeParams } = await attachmentScope(req.user);
 
-        let whereConditions = [orgClause];
+        let whereConditions = [orgClause, 'att.deleted_at IS NULL', '(att.nc_id IS NULL OR nc.deleted_at IS NULL)'];
         let params = { organization_id, limit: parseInt(limit), offset, ...scopeParams };
 
         if (audit_id) {
@@ -272,7 +273,7 @@ async function getAttachmentById(req, res) {
         ${rbacClause}
     `, { id: parseInt(id), organization_id, ...scopeParams });
 
-        if (result.recordset.length === 0) {
+        if (result.recordset.length === 0 || trashedDetailHidden(req.user, result.recordset[0])) {
             return res.status(404).json({
                 error: 'Allegato non trovato',
                 code: 'ATTACHMENT_NOT_FOUND'
@@ -495,7 +496,7 @@ async function uploadAttachment(req, res) {
         SELECT nc.nc_id, nc.company_id
         FROM non_conformities nc
         ${ncScope.joinSql}
-        WHERE nc.nc_id = @nc_id AND ${ncScope.orgSql}
+        WHERE nc.nc_id = @nc_id AND nc.deleted_at IS NULL AND ${ncScope.orgSql}
           ${ncScope.scopeSql}
       `, { nc_id: parseInt(nc_id), organization_id, ...ncScope.params });
 
@@ -573,6 +574,15 @@ async function uploadAttachment(req, res) {
 
         const newAttachment = result.recordset[0];
 
+        await logEntityChange({
+            organizationId: organization_id,
+            entityTable: 'attachments',
+            entityId: newAttachment.attachment_id,
+            actionType: 'created',
+            actorUserId: user_id,
+            after: { file_name: req.file.originalname, category, file_size: req.file.size },
+            fields: ['file_name', 'category', 'file_size'],
+        });
         logger.info('Attachment uploaded', {
             attachment_id: newAttachment.attachment_id,
             audit_id,
@@ -636,7 +646,7 @@ async function downloadAttachment(req, res) {
         ${rbacClause}
     `, { id: parseInt(id), organization_id, ...scopeParams });
 
-        if (result.recordset.length === 0) {
+        if (result.recordset.length === 0 || trashedDetailHidden(req.user, result.recordset[0])) {
             return res.status(404).json({
                 error: 'Allegato non trovato',
                 code: 'ATTACHMENT_NOT_FOUND'
@@ -698,7 +708,7 @@ async function deleteAttachment(req, res) {
         ${rbacClause}
     `, { id: parseInt(id), organization_id, ...scopeParams });
 
-        if (result.recordset.length === 0) {
+        if (result.recordset.length === 0 || result.recordset[0].deleted_at) {
             return res.status(404).json({
                 error: 'Allegato non trovato',
                 code: 'ATTACHMENT_NOT_FOUND'
@@ -707,25 +717,27 @@ async function deleteAttachment(req, res) {
 
         const attachment = result.recordset[0];
 
-        // Delete da DB
         await query(`
-      DELETE FROM attachments WHERE attachment_id = @id
-    `, { id: parseInt(id) });
+      UPDATE att
+      SET deleted_at = SYSUTCDATETIME(), deleted_by = @actor_user_id
+      FROM attachments att
+      ${joinSql}
+      WHERE att.attachment_id = @id
+        AND att.deleted_at IS NULL
+        AND ${orgClause}
+        ${rbacClause}
+    `, { id: parseInt(id), organization_id, actor_user_id: req.user.user_id, ...scopeParams });
+        await logEntityChange({
+            organizationId: organization_id,
+            entityTable: 'attachments',
+            entityId: parseInt(id),
+            actionType: 'soft_deleted',
+            actorUserId: req.user.user_id,
+            before: { file_name: attachment.file_name, category: attachment.category, deleted_at: null },
+            after: { deleted_at: 'cestino' },
+        });
 
-        // Delete file fisico (best effort - non bloccare se fallisce)
-        try {
-            if (fsSync.existsSync(attachment.storage_path)) {
-                await fs.unlink(attachment.storage_path);
-            }
-        } catch (fsError) {
-            logger.warn('Failed to delete file from disk', {
-                attachment_id: id,
-                storage_path: attachment.storage_path,
-                error: fsError.message
-            });
-        }
-
-        logger.info('Attachment deleted', { attachment_id: id, organization_id });
+        logger.info('Attachment moved to trash', { attachment_id: id, organization_id });
 
         res.json({
             success: true,
@@ -766,7 +778,7 @@ async function viewAttachment(req, res) {
         ${rbacClause}
     `, { id: parseInt(id), organization_id, ...scopeParams });
 
-        if (result.recordset.length === 0) {
+        if (result.recordset.length === 0 || trashedDetailHidden(req.user, result.recordset[0])) {
             return res.status(404).json({
                 error: 'Allegato non trovato',
                 code: 'ATTACHMENT_NOT_FOUND'
@@ -912,5 +924,6 @@ module.exports = {
     downloadAttachment,
     viewAttachment,
     deleteAttachment,
-    replaceAttachment
+    replaceAttachment,
+    attachmentScopeSync,
 };

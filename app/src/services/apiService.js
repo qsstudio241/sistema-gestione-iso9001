@@ -1897,9 +1897,18 @@ class ApiService {
         return this.delete(`/qualifications/${id}`);
     }
 
-    /** Cancellazione fisica reale (nessun legame residuo: conferme, import, rinnovi, WPS). */
+    /** Elimina in UI: sposta nel cestino (deleted_at), non cancella il file. */
     async hardDeleteQualification(id) {
         return this.delete(`/qualifications/${id}/permanent`);
+    }
+
+    async listTrash(entity) {
+        const q = entity ? `?entity=${encodeURIComponent(entity)}` : "";
+        return this.get(`/trash${q}`);
+    }
+
+    async restoreTrash(entity, id) {
+        return this.post(`/trash/${encodeURIComponent(entity)}/${id}/restore`, {});
     }
 
     async renewQualification(id, data = {}) {

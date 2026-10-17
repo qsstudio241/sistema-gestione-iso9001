@@ -19,6 +19,7 @@
 
 const { query, getPool } = require('../config/database');
 const logger = require('../utils/logger');
+const { logEntityChange } = require('./entityChangeLog.service');
 const {
     ensureCompanyAccessLoaded,
     hasCompanyAccessRows,
@@ -341,7 +342,8 @@ async function findWpqrInTenant(wpqrId, organizationId) {
          FROM wpqr_records wq
          LEFT JOIN welding_procedures w
            ON w.id = wq.wps_id AND w.organization_id = wq.organization_id
-         WHERE wq.id = @wpqr_id AND wq.organization_id = @organization_id`,
+         WHERE wq.id = @wpqr_id AND wq.organization_id = @organization_id AND wq.deleted_at IS NULL
+           AND (wq.wps_id IS NULL OR w.deleted_at IS NULL)`,
         { wpqr_id: wpqrId, organization_id: organizationId }
     );
     return r.recordset.length ? r.recordset[0] : null;
@@ -380,7 +382,7 @@ async function listTestRuns({ wpqrId, organizationId, user }) {
     const r = await query(
         `SELECT ${READ_COLUMNS.join(', ')}
          FROM wpqr_test_runs
-         WHERE wpqr_id = @wpqr_id AND organization_id = @organization_id
+         WHERE wpqr_id = @wpqr_id AND organization_id = @organization_id AND deleted_at IS NULL
          ORDER BY id`,
         { wpqr_id: wpqrId, organization_id: organizationId }
     );
@@ -388,8 +390,9 @@ async function listTestRuns({ wpqrId, organizationId, user }) {
 }
 
 /**
- * Replace-set in transazione: cancella le passate della WPQR e inserisce quelle ricevute.
- * Tutto o niente: un errore a metà annulla anche la cancellazione.
+ * Replace-set in transazione: sostituisce le passate attive della WPQR.
+ * Non è l'Elimina: le righe sostituite escono dal set e non finiscono nel cestino,
+ * altrimenti un Ripristina le rimetterebbe accanto a quelle nuove.
  */
 async function replaceTestRuns({ wpqrId, organizationId, runs, user }) {
     requireTenant(organizationId);
@@ -409,6 +412,14 @@ async function replaceTestRuns({ wpqrId, organizationId, runs, user }) {
         );
     }
 
+    const previous = await query(
+        `SELECT id FROM wpqr_test_runs
+         WHERE wpqr_id = @wpqr_id AND organization_id = @organization_id AND deleted_at IS NULL`,
+        { wpqr_id: wpqrId, organization_id: organizationId }
+    );
+    const previousIds = (previous.recordset || []).map((row) => row.id);
+    const actorUserId = user && user.user_id ? user.user_id : null;
+
     const pool = await getPool();
     const tx = pool.transaction();
     await tx.begin();
@@ -419,7 +430,8 @@ async function replaceTestRuns({ wpqrId, organizationId, runs, user }) {
             return request.query(sqlText);
         };
         await run(
-            `DELETE FROM wpqr_test_runs WHERE wpqr_id = @wpqr_id AND organization_id = @organization_id`,
+            `DELETE FROM wpqr_test_runs
+             WHERE wpqr_id = @wpqr_id AND organization_id = @organization_id AND deleted_at IS NULL`,
             { wpqr_id: wpqrId, organization_id: organizationId }
         );
         const columns = ['organization_id', 'company_id', 'wpqr_id', ...WRITABLE_COLUMNS, 'created_at', 'updated_at'];
@@ -445,6 +457,19 @@ async function replaceTestRuns({ wpqrId, organizationId, runs, user }) {
         throw new TestRunsError(500, 'WPQR_TEST_RUNS_SAVE_ERROR', "Errore durante il salvataggio delle passate");
     }
 
+    await logEntityChange({
+        organizationId,
+        entityTable: 'wpqr_test_runs',
+        entityId: wpqrId,
+        actionType: 'updated',
+        actorUserId,
+        changes: [{
+            fieldName: 'replace_set',
+            oldValue: { active_ids: previousIds },
+            newValue: { run_count: rows.length },
+        }],
+    });
+
     logger.info('WPQR test runs replaced', { wpqr_id: wpqrId, organization_id: organizationId, count: rows.length });
     return listTestRuns({ wpqrId, organizationId });
 }
@@ -454,34 +479,34 @@ async function replaceTestRuns({ wpqrId, organizationId, runs, user }) {
  * le FK 173/174 non hanno ON DELETE. Tabelle assenti (migrazioni non applicate) → saltate.
  * `wpqrIds` deve provenire da query già filtrate per tenant; ogni DELETE ripete comunque `organization_id`.
  */
-async function deleteWpqrDependents({ organizationId, wpqrIds }) {
+async function deleteWpqrDependents({ organizationId, wpqrIds, actorUserId = null }) {
     const ids = [...new Set((wpqrIds || []).map(Number))].filter((n) => Number.isSafeInteger(n) && n > 0);
     if (ids.length === 0) return;
     requireTenant(organizationId);
     const list = ids.join(',');
     if (await tableExists('wpqr_test_runs')) {
         await query(
-            `DELETE FROM wpqr_test_runs WHERE organization_id = @organization_id AND wpqr_id IN (${list})`,
-            { organization_id: organizationId }
+            `UPDATE wpqr_test_runs SET deleted_at = SYSUTCDATETIME(), deleted_by = @actor_user_id WHERE organization_id = @organization_id AND deleted_at IS NULL AND wpqr_id IN (${list})`,
+            { organization_id: organizationId, actor_user_id: actorUserId }
         );
     }
     if (await tableExists('wps_wpqr_links')) {
         await query(
-            `DELETE FROM wps_wpqr_links WHERE organization_id = @organization_id AND wpqr_id IN (${list})`,
-            { organization_id: organizationId }
+            `UPDATE wps_wpqr_links SET deleted_at = SYSUTCDATETIME(), deleted_by = @actor_user_id WHERE organization_id = @organization_id AND deleted_at IS NULL AND wpqr_id IN (${list})`,
+            { organization_id: organizationId, actor_user_id: actorUserId }
         );
     }
 }
 
 /** Link di una WPS (da cancellare prima della WPS stessa). */
-async function deleteWpsLinks({ organizationId, wpsId }) {
+async function deleteWpsLinks({ organizationId, wpsId, actorUserId = null }) {
     const id = Number(wpsId);
     if (!Number.isSafeInteger(id) || id <= 0) return;
     requireTenant(organizationId);
     if (await tableExists('wps_wpqr_links')) {
         await query(
-            `DELETE FROM wps_wpqr_links WHERE organization_id = @organization_id AND wps_id = @wps_id`,
-            { organization_id: organizationId, wps_id: id }
+            `UPDATE wps_wpqr_links SET deleted_at = SYSUTCDATETIME(), deleted_by = @actor_user_id WHERE organization_id = @organization_id AND wps_id = @wps_id AND deleted_at IS NULL`,
+            { organization_id: organizationId, wps_id: id, actor_user_id: actorUserId }
         );
     }
 }

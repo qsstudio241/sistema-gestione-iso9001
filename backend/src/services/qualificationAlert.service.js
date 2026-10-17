@@ -275,6 +275,7 @@ async function fetchQualificationsForDeadline(pool, orgId) {
       FROM qualifications q
       LEFT JOIN companies c ON c.id = q.company_id
       WHERE q.organization_id = @orgId
+        AND q.deleted_at IS NULL
         AND q.status NOT IN ('revocata', 'sospesa')
         AND (q.expiry_date IS NOT NULL OR q.next_confirmation_due IS NOT NULL)
     `);

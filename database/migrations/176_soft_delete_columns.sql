@@ -323,3 +323,125 @@ BEGIN
     PRINT N'176: indice IX_non_conformities_org_not_deleted creato.';
 END
 GO
+
+-- Una riga nel cestino non deve occupare lo slot del certificato attivo.
+-- L'indice 087 esclude solo status <> 'revocata': si ricrea con deleted_at IS NULL.
+IF OBJECT_ID(N'dbo.qualifications', N'U') IS NOT NULL
+   AND COL_LENGTH(N'dbo.qualifications', N'deleted_at') IS NOT NULL
+   AND EXISTS (
+        SELECT 1 FROM sys.indexes
+        WHERE name = N'UX_qualif_org_company_cert_person_active'
+          AND object_id = OBJECT_ID(N'dbo.qualifications')
+          AND (has_filter = 0 OR filter_definition NOT LIKE N'%deleted_at%')
+   )
+BEGIN
+    DROP INDEX UX_qualif_org_company_cert_person_active ON dbo.qualifications;
+    PRINT N'176: indice unico qualifiche rimosso per riallinearlo al cestino.';
+END
+GO
+
+IF OBJECT_ID(N'dbo.qualifications', N'U') IS NOT NULL
+   AND COL_LENGTH(N'dbo.qualifications', N'deleted_at') IS NOT NULL
+   AND NOT EXISTS (
+        SELECT 1 FROM sys.indexes
+        WHERE name = N'UX_qualif_org_company_cert_person_active'
+          AND object_id = OBJECT_ID(N'dbo.qualifications')
+   )
+BEGIN
+    CREATE UNIQUE INDEX UX_qualif_org_company_cert_person_active
+        ON dbo.qualifications (organization_id, company_id, certificate_number, person_name)
+        WHERE status <> 'revocata'
+          AND deleted_at IS NULL
+          AND certificate_number IS NOT NULL
+          AND certificate_number <> '';
+    PRINT N'176: indice unico qualifiche ricreato (escluse revocate e cestinate).';
+END
+GO
+
+-- Lo UNIQUE 174 (wps_id, wpqr_id) tiene anche i legami cestinati. Diventa indice filtrato.
+IF OBJECT_ID(N'dbo.wps_wpqr_links', N'U') IS NOT NULL
+   AND COL_LENGTH(N'dbo.wps_wpqr_links', N'deleted_at') IS NOT NULL
+   AND EXISTS (
+        SELECT 1 FROM sys.key_constraints
+        WHERE name = N'UQ_wps_wpqr_links_wps_wpqr'
+          AND parent_object_id = OBJECT_ID(N'dbo.wps_wpqr_links')
+   )
+BEGIN
+    ALTER TABLE dbo.wps_wpqr_links DROP CONSTRAINT UQ_wps_wpqr_links_wps_wpqr;
+    PRINT N'176: UNIQUE legami WPS-WPQR rimosso.';
+END
+GO
+
+IF OBJECT_ID(N'dbo.wps_wpqr_links', N'U') IS NOT NULL
+   AND COL_LENGTH(N'dbo.wps_wpqr_links', N'deleted_at') IS NOT NULL
+   AND NOT EXISTS (
+        SELECT 1 FROM sys.indexes
+        WHERE name = N'UX_wps_wpqr_links_pair_active'
+          AND object_id = OBJECT_ID(N'dbo.wps_wpqr_links')
+   )
+BEGIN
+    CREATE UNIQUE INDEX UX_wps_wpqr_links_pair_active
+        ON dbo.wps_wpqr_links (wps_id, wpqr_id)
+        WHERE deleted_at IS NULL;
+    PRINT N'176: indice unico legami WPS-WPQR attivi creato.';
+END
+GO
+
+-- Una NC cestinata non deve bloccare un nuovo push della stessa domanda o voce custom.
+IF OBJECT_ID(N'dbo.non_conformities', N'U') IS NOT NULL
+   AND COL_LENGTH(N'dbo.non_conformities', N'deleted_at') IS NOT NULL
+   AND EXISTS (
+        SELECT 1 FROM sys.indexes
+        WHERE name = N'IX_nc_audit_question_unique'
+          AND object_id = OBJECT_ID(N'dbo.non_conformities')
+          AND (has_filter = 0 OR filter_definition NOT LIKE N'%deleted_at%')
+   )
+BEGIN
+    DROP INDEX IX_nc_audit_question_unique ON dbo.non_conformities;
+    PRINT N'176: indice unico domanda audit rimosso per escludere il cestino.';
+END
+GO
+
+IF OBJECT_ID(N'dbo.non_conformities', N'U') IS NOT NULL
+   AND COL_LENGTH(N'dbo.non_conformities', N'deleted_at') IS NOT NULL
+   AND NOT EXISTS (
+        SELECT 1 FROM sys.indexes
+        WHERE name = N'IX_nc_audit_question_unique'
+          AND object_id = OBJECT_ID(N'dbo.non_conformities')
+   )
+BEGIN
+    CREATE UNIQUE INDEX IX_nc_audit_question_unique
+        ON dbo.non_conformities (audit_id, source_question_id)
+        WHERE source_question_id IS NOT NULL AND deleted_at IS NULL;
+    PRINT N'176: indice unico domanda audit ricreato (escluse le cestinate).';
+END
+GO
+
+IF OBJECT_ID(N'dbo.non_conformities', N'U') IS NOT NULL
+   AND COL_LENGTH(N'dbo.non_conformities', N'deleted_at') IS NOT NULL
+   AND EXISTS (
+        SELECT 1 FROM sys.indexes
+        WHERE name = N'IX_nc_audit_custom_item_unique'
+          AND object_id = OBJECT_ID(N'dbo.non_conformities')
+          AND (has_filter = 0 OR filter_definition NOT LIKE N'%deleted_at%')
+   )
+BEGIN
+    DROP INDEX IX_nc_audit_custom_item_unique ON dbo.non_conformities;
+    PRINT N'176: indice unico voce custom rimosso per escludere il cestino.';
+END
+GO
+
+IF OBJECT_ID(N'dbo.non_conformities', N'U') IS NOT NULL
+   AND COL_LENGTH(N'dbo.non_conformities', N'deleted_at') IS NOT NULL
+   AND NOT EXISTS (
+        SELECT 1 FROM sys.indexes
+        WHERE name = N'IX_nc_audit_custom_item_unique'
+          AND object_id = OBJECT_ID(N'dbo.non_conformities')
+   )
+BEGIN
+    CREATE UNIQUE INDEX IX_nc_audit_custom_item_unique
+        ON dbo.non_conformities (audit_id, source_custom_item_id)
+        WHERE source_custom_item_id IS NOT NULL AND deleted_at IS NULL;
+    PRINT N'176: indice unico voce custom ricreato (escluse le cestinate).';
+END
+GO

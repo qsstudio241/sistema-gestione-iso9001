@@ -219,4 +219,17 @@ describe('uploadAttachment — RBAC studio', () => {
         expect(auditSql).toContain('auditor_org_id = @auditor_org_id');
         expect(res.status).toHaveBeenCalledWith(404);
     });
+
+    it('non allega un file a una NC cestinata', async () => {
+        query.mockResolvedValueOnce({ recordset: [] });
+        const req = mockReq({
+            file: { path: '/tmp/x.jpg', originalname: 'x.jpg', size: 100, mimetype: 'image/jpeg' },
+            body: { nc_id: '5', category: 'photo' },
+        });
+        const res = mockRes();
+        await ctrl.uploadAttachment(req, res);
+        expect(String(query.mock.calls[0][0])).toContain('nc.deleted_at IS NULL');
+        expect(res.status).toHaveBeenCalledWith(404);
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ code: 'NC_NOT_FOUND' }));
+    });
 });
