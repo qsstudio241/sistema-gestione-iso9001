@@ -4,11 +4,11 @@
 const express = require('express');
 const router = express.Router();
 const { authenticate } = require('../middleware/auth.middleware');
-const { requireLicensedModule } = require('../middleware/moduleLicense.middleware');
+const { useModuleLicense } = require('../middleware/moduleLicense.middleware');
 const ctrl = require('../controllers/weldingBooks.controller');
 
 router.use(authenticate);
-router.use(requireLicensedModule('saldatura'));
+useModuleLicense(router, 'saldatura');
 
 router.get('/welding-books/stats', ctrl.getWeldingBookStats);
 

@@ -17,6 +17,20 @@ async function userHasAnyLicensedModule(req, moduleKeys) {
     return moduleKeys.some((k) => effectiveKeys.includes(k));
 }
 
+/**
+ * Il controllo licenza vale solo se questa router ha una rotta per il path.
+ * I router montati su /api/v1 con router.use(licenza) altrimenti fermano
+ * anche i moduli successivi (es. NC assente blocca WPS).
+ */
+function useModuleLicense(router, moduleKey) {
+    const gate = requireLicensedModule(moduleKey);
+    router.use((req, res, next) => {
+        const handled = router.stack.some((layer) => layer.route && layer.match(req.path));
+        if (!handled) return next();
+        return gate(req, res, next);
+    });
+}
+
 function requireLicensedModule(moduleKey) {
     return async (req, res, next) => {
         try {
@@ -86,4 +100,5 @@ module.exports = {
     requireLicensedModule,
     requireLicensedModuleAny,
     requireMaterialComplianceCapability,
+    useModuleLicense,
 };
