@@ -591,7 +591,9 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
             inspector:            report.inspector || currentUserName || "",
             inspector_qualification_id: report.inspector_qualification_id || null,
             client_representative: report.client_representative || "",
-            inspection_phase:     report.inspection_phase || DEFAULT_INSPECTION_PHASE,
+            inspection_phase:     report.inspection_phase === null
+                ? ""
+                : (report.inspection_phase || DEFAULT_INSPECTION_PHASE),
             status:               report.status || "draft",
         };
     });
@@ -1085,9 +1087,12 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
                                     <label htmlFor="ndt-inspection-phase">Fase ispezione</label>
                                     <select
                                         id="ndt-inspection-phase"
-                                        value={form.inspection_phase || DEFAULT_INSPECTION_PHASE}
+                                        value={form.inspection_phase || ""}
                                         onChange={e => set("inspection_phase", e.target.value)}
                                     >
+                                        {!form.inspection_phase && (
+                                            <option value="">Non indicata</option>
+                                        )}
                                         {INSPECTION_PHASES.map(p => (
                                             <option key={p.value} value={p.value}>{p.label}</option>
                                         ))}
