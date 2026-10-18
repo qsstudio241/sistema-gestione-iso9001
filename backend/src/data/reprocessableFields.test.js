@@ -90,6 +90,14 @@ describe('Registro campi rielaborabili — sincronia con le whitelist di scrittu
         }
         expect(mismatches).toEqual([]);
     });
+
+    it('wpqr_test_results: NA è un valore vero, candidato solo se vt_result è NULL', () => {
+        expect(BACKFILL_REGISTRY.wpqr_test_results.candidateWhere).toBe('vt_result IS NULL');
+        expect(WPQR_REPROCESSABLE_FIELDS.wpqr_test_results.writeGuard).toBe('vt_result IS NULL');
+        for (const part of WPQR_REPROCESSABLE_FIELDS.wpqr_test_results.bundleColumns) {
+            expect(part.writeGuard).toBe(`${part.column} IS NULL`);
+        }
+    });
 });
 
 describe('Registro — voci kind:verify (sola lettura, nessuna scrittura)', () => {

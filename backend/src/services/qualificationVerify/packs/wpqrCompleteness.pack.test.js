@@ -362,4 +362,39 @@ describe('arco vs stud', () => {
             own(r, P55).filter((f) => f.code === `${P55}RUN_FIELDS` && f.severity === SEVERITY.WARN),
         );
     });
+
+    test('apporto solo in passata: FILLER di testata non manca', () => {
+        const r = run(complete15614({
+            filler_material: null,
+            test_runs: [arcRun({ filler_designation: 'G 42 4 M21 3Si1', filler_make: 'ESAB' })],
+        }));
+        expect(find(r, `${P1}FILLER`)).toHaveLength(0);
+    });
+
+    test('polarità solo in passata: CURRENT_TYPE di testata non manca', () => {
+        const r = run(complete15614({
+            current_type: null,
+            test_runs: [arcRun({ current_polarity: 'DCEN' })],
+        }));
+        expect(find(r, `${P1}CURRENT_TYPE`)).toHaveLength(0);
+        expect(find(r, `${P1}RUN_FIELDS`).some((f) => f.fields.includes('runs[0].current_polarity'))).toBe(false);
+    });
+
+    test('processo 311: niente FILLER, CURRENT_TYPE, né corrente/tensione in passata', () => {
+        const r = run(complete15614({
+            welding_process: '311',
+            filler_material: null,
+            current_type: null,
+            test_runs: [arcRun({
+                welding_process: '311', current_a: null, voltage_v: null,
+                filler_diameter_mm: null, current_polarity: null,
+            })],
+        }));
+        expect(find(r, `${P1}FILLER`)).toHaveLength(0);
+        expect(find(r, `${P1}CURRENT_TYPE`)).toHaveLength(0);
+        const keys = find(r, `${P1}RUN_FIELDS`).flatMap((f) => f.fields);
+        expect(keys).not.toEqual(expect.arrayContaining([
+            'runs[0].current_a', 'runs[0].voltage_v', 'runs[0].filler_diameter_mm', 'runs[0].current_polarity',
+        ]));
+    });
 });
