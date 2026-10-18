@@ -221,6 +221,7 @@ Non sono regole nuove. Restano nel registro come ipotesi.
 
 - #801: gate NDT e copertura 9712 ignorano `deleted_at`; il generatore WPS include WPQR cestinate; riassegnare un saldatore risponde 409; le NC nate dall'audit non hanno `organization_id` e spariscono dal cestino; l'email di sollecito include NC cestinate.
 - #791: la coda di ingest non filtra azienda né ruolo (isolamento già in checklist, non eseguito); `cert_ndt` non è nel filtro del modulo qualifiche.
+  **Esito 18/10/2026:** coda ingest — corretto in follow-up (lista per azienda, conferma/scarto bloccati per viewer e per altra azienda). `cert_ndt` già risolto.
 - #786: una WPQR creata a mano, con `company_id` vuoto, non si lega.
 - #764: l'OCR di intestazione non parte se nel corpo c'è già una sigla.
 - #760: una data di nascita a due cifre diventa `exam_date`.

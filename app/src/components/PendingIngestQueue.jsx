@@ -11,6 +11,7 @@
  */
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import apiService from "../services/apiService";
+import { useAuth } from "../contexts/AuthContext";
 import IngestReviewDialog from "./IngestReviewDialog";
 import "./ReprocessQueueBanner.css";
 
@@ -28,6 +29,7 @@ function mimeFromName(name) {
 }
 
 export default function PendingIngestQueue({ module = "qualifiche", onChanged, refreshKey = 0 }) {
+  const { user, canWriteModule } = useAuth() || {};
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(false);
@@ -118,6 +120,11 @@ export default function PendingIngestQueue({ module = "qualifiche", onChanged, r
     }
   }, [reviewItem, removeItem, onChanged]);
 
+  const canReviewItem = (item) => {
+    if (typeof canWriteModule === "function") return canWriteModule(item.company_id);
+    return ["admin", "auditor", "superadmin"].includes(user?.role);
+  };
+
   if (!reviewItem && (loading || items.length === 0)) return null;
 
   return (
@@ -148,7 +155,8 @@ export default function PendingIngestQueue({ module = "qualifiche", onChanged, r
                 type="button"
                 className="reprocess-banner__review-btn"
                 onClick={() => handleOpen(item)}
-                disabled={openingId === item.id}
+                disabled={openingId === item.id || !canReviewItem(item)}
+                title={canReviewItem(item) ? undefined : "Sola lettura"}
               >
                 {openingId === item.id ? "Apertura..." : "Rivedi"}
               </button>

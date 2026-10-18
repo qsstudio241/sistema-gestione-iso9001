@@ -24,11 +24,31 @@ jest.mock('../services/ingestStaging.service', () => ({
 }));
 jest.mock('../services/moduleLicense.service', () => ({ getLicensedModuleKeysForOrg: jest.fn() }));
 jest.mock('../services/ingestFeedback.service', () => ({ getLearningStats: jest.fn() }));
+jest.mock('../services/companyAccess.service', () => ({
+    ensureCompanyAccessLoaded: jest.fn(async (u) => u.company_access || []),
+    hasCompanyAccessRows: jest.fn((list) => Array.isArray(list) && list.length > 0),
+    getAllowedCompanyIds: jest.fn((list) => (
+        Array.isArray(list) && list.length ? list.map((a) => a.company_id) : null
+    )),
+    assertMutatingAllowed: jest.fn().mockResolvedValue(null),
+    assertCompanyRead: jest.fn().mockResolvedValue(null),
+}));
 jest.mock('../utils/logger', () => ({ info: jest.fn(), error: jest.fn(), warn: jest.fn() }));
 
-const { listStaging, getModuleForDocType, getStagingById, resolveStagingFilePath, confirmStaging } = require('../services/ingestStaging.service');
+const { listStaging, getModuleForDocType, getStagingById, resolveStagingFilePath, confirmStaging, rejectStaging } = require('../services/ingestStaging.service');
 const { getLicensedModuleKeysForOrg } = require('../services/moduleLicense.service');
-const { listStaging: listStagingHandler, getStaging, getStagingFile, confirmStaging: confirmStagingHandler } = require('./ingestStaging.controller');
+const {
+    getAllowedCompanyIds,
+    assertMutatingAllowed,
+    assertCompanyRead,
+} = require('../services/companyAccess.service');
+const {
+    listStaging: listStagingHandler,
+    getStaging,
+    getStagingFile,
+    confirmStaging: confirmStagingHandler,
+    rejectStaging: rejectStagingHandler,
+} = require('./ingestStaging.controller');
 
 function mockRes() {
     const res = {};
@@ -129,6 +149,43 @@ describe('listStagingHandler — filtro ?module=', () => {
 
         expect(res.status).not.toHaveBeenCalledWith(403);
         expect(listStaging).toHaveBeenCalled();
+    });
+
+    it('cliente azienda: lista solo le proprie aziende', async () => {
+        getModuleForDocType.mockReturnValue('qualifiche');
+        getLicensedModuleKeysForOrg.mockResolvedValue(['qualifiche']);
+        listStaging.mockResolvedValue([]);
+        getAllowedCompanyIds.mockReturnValue([48]);
+
+        const req = {
+            query: { module: 'qualifiche' },
+            user: {
+                organization_id: 1001,
+                role: 'utente',
+                company_access: [{ company_id: 48, permission: 'write' }],
+            },
+        };
+        const res = mockRes();
+        await listStagingHandler(req, res);
+
+        expect(listStaging).toHaveBeenCalledWith(expect.objectContaining({
+            allowedCompanyIds: [48],
+        }));
+    });
+
+    it('utente di studio: lista senza filtro azienda', async () => {
+        getModuleForDocType.mockReturnValue('qualifiche');
+        getLicensedModuleKeysForOrg.mockResolvedValue(['qualifiche']);
+        listStaging.mockResolvedValue([]);
+        getAllowedCompanyIds.mockReturnValue(null);
+
+        const req = { query: { module: 'qualifiche' }, user: { organization_id: 1001, role: 'auditor' } };
+        const res = mockRes();
+        await listStagingHandler(req, res);
+
+        expect(listStaging).toHaveBeenCalledWith(expect.objectContaining({
+            allowedCompanyIds: null,
+        }));
     });
 });
 
@@ -322,5 +379,113 @@ describe('confirmStagingHandler — RBAC company su conferma norma (IA-12)', () 
         expect(res.status).toHaveBeenCalledWith(400);
         expect(res.status).not.toHaveBeenCalledWith(500);
         expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ code: 'DOC_NOT_IN_FOLDER' }));
+    });
+
+    it('viewer di studio: conferma negata 403, confirmStaging non parte', async () => {
+        getStagingById.mockResolvedValue({
+            id: 80, doc_type: 'patentino_saldatore', review_status: 'pending', company_id: 48,
+        });
+        getModuleForDocType.mockReturnValue('qualifiche');
+        getLicensedModuleKeysForOrg.mockResolvedValue(['qualifiche']);
+        assertMutatingAllowed.mockResolvedValueOnce({
+            status: 403,
+            body: { error: 'Permesso negato: sola lettura', code: 'AUTH_FORBIDDEN' },
+        });
+
+        const req = {
+            params: { id: '80' },
+            body: {},
+            user: { organization_id: 1001, user_id: 9, role: 'viewer' },
+        };
+        const res = mockRes();
+        await confirmStagingHandler(req, res);
+
+        expect(confirmStaging).not.toHaveBeenCalled();
+        expect(res.status).toHaveBeenCalledWith(403);
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ code: 'AUTH_FORBIDDEN' }));
+    });
+
+    it('cliente azienda: conferma dello staging di un\'altra azienda 403', async () => {
+        getStagingById.mockResolvedValue({
+            id: 81, doc_type: 'patentino_saldatore', review_status: 'pending', company_id: 99,
+        });
+        getModuleForDocType.mockReturnValue('qualifiche');
+        getLicensedModuleKeysForOrg.mockResolvedValue(['qualifiche']);
+        assertMutatingAllowed.mockResolvedValueOnce({
+            status: 403,
+            body: { error: 'Azienda non accessibile', code: 'FORBIDDEN' },
+        });
+
+        const req = {
+            params: { id: '81' },
+            body: {},
+            user: {
+                organization_id: 1001,
+                user_id: 9,
+                role: 'utente',
+                company_access: [{ company_id: 48, permission: 'write' }],
+            },
+        };
+        const res = mockRes();
+        await confirmStagingHandler(req, res);
+
+        expect(confirmStaging).not.toHaveBeenCalled();
+        expect(res.status).toHaveBeenCalledWith(403);
+    });
+});
+
+describe('rejectStagingHandler — RBAC', () => {
+    afterEach(() => jest.clearAllMocks());
+
+    it('viewer: scarto negato 403', async () => {
+        getStagingById.mockResolvedValue({
+            id: 82, doc_type: 'patentino_saldatore', review_status: 'pending', company_id: 48,
+        });
+        getModuleForDocType.mockReturnValue('qualifiche');
+        getLicensedModuleKeysForOrg.mockResolvedValue(['qualifiche']);
+        assertMutatingAllowed.mockResolvedValueOnce({
+            status: 403,
+            body: { error: 'Permesso negato: sola lettura', code: 'AUTH_FORBIDDEN' },
+        });
+
+        const req = {
+            params: { id: '82' },
+            body: {},
+            user: { organization_id: 1001, user_id: 9, role: 'viewer' },
+        };
+        const res = mockRes();
+        await rejectStagingHandler(req, res);
+
+        expect(rejectStaging).not.toHaveBeenCalled();
+        expect(res.status).toHaveBeenCalledWith(403);
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ code: 'AUTH_FORBIDDEN' }));
+    });
+});
+
+describe('getStaging — isolamento azienda', () => {
+    afterEach(() => jest.clearAllMocks());
+
+    it('cliente azienda: staging senza company_id 403', async () => {
+        getStagingById.mockResolvedValue({
+            id: 83, doc_type: 'patentino_saldatore', review_status: 'pending', company_id: null,
+        });
+        getModuleForDocType.mockReturnValue('qualifiche');
+        getLicensedModuleKeysForOrg.mockResolvedValue(['qualifiche']);
+        const { hasCompanyAccessRows } = require('../services/companyAccess.service');
+        hasCompanyAccessRows.mockReturnValueOnce(true);
+
+        const req = {
+            params: { id: '83' },
+            user: {
+                organization_id: 1001,
+                role: 'utente',
+                company_access: [{ company_id: 48, permission: 'read' }],
+            },
+        };
+        const res = mockRes();
+        await getStaging(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(403);
+        expect(assertCompanyRead).not.toHaveBeenCalled();
     });
 });
