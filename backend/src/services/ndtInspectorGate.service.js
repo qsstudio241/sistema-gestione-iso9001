@@ -19,7 +19,8 @@ const {
   visionFitnessSqlInList,
 } = require('../constants/occupationalQualificationTypes');
 const { normalizePersonName } = require('./visionFitness.service');
-const { visionClockDates } = require('./weldingCoordinatorAuth.service');
+const { toIsoDate, visionPresentDates } = require('./weldingCoordinatorAuth.service');
+const { queryOptionalVisionClocks } = require('./qualificationExpirySql');
 
 const GATE_CODE = 'NDT_INSPECTOR_GATE';
 const NDT_METHODS = new Set(['VT', 'MT', 'PT', 'UT', 'RT', 'ET', 'AE', 'TT', 'ST', 'LT']);
@@ -40,10 +41,19 @@ function startOfDay(value) {
   return d;
 }
 
+/** Giorno di calendario, senza mezzanotte locale che sposta la data in UTC. */
 function formatIsoDate(value) {
-  const d = startOfDay(value);
-  if (!d) return null;
-  return d.toISOString().slice(0, 10);
+  return toIsoDate(value);
+}
+
+/** Giorno locale di un Date già portato a mezzanotte locale (il «oggi» del gate). */
+function localCalendarIso(value) {
+  const d = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(d.getTime())) return null;
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 }
 
 function isNdt9712Qualification(q) {
@@ -93,29 +103,18 @@ function personMatches(row, inspectorName, personnelId) {
 }
 
 function visionGuideDates(row) {
-  const clocks = visionClockDates(row);
-  if (clocks.usesSplit) return [clocks.near, clocks.colour].filter(Boolean);
-  return row && row.expiry_date ? [row.expiry_date] : [];
+  return visionPresentDates(row);
 }
 
-function visionRowOk(row, today) {
+function visionRowOk(row, todayIso) {
   const dates = visionGuideDates(row);
   if (!dates.length) return true;
-  return dates.every((raw) => {
-    const exp = startOfDay(raw);
-    return exp && exp >= today;
-  });
+  return dates.every((raw) => raw >= todayIso);
 }
 
 function visionNearestDate(row) {
   const dates = visionGuideDates(row);
-  let nearest = null;
-  for (const raw of dates) {
-    const exp = startOfDay(raw);
-    if (!exp) continue;
-    if (!nearest || exp < nearest) nearest = exp;
-  }
-  return nearest;
+  return dates.reduce((best, raw) => (best == null || raw < best ? raw : best), null);
 }
 
 function visionStateForPerson(visionRows, inspectorName, personnelId, companyId, today) {
@@ -129,13 +128,17 @@ function visionStateForPerson(visionRows, inspectorName, personnelId, companyId,
     return { state: 'missing', expiry_date: null, vision_id: null };
   }
 
+  const todayIso = typeof today === 'string' && /^\d{4}-\d{2}-\d{2}/.test(today)
+    ? today.slice(0, 10)
+    : localCalendarIso(today);
   const scored = pool.map((v) => {
-    const ok = visionRowOk(v, today);
+    const ok = visionRowOk(v, todayIso);
     const guide = visionNearestDate(v);
+    const stamp = guide ? Date.parse(`${guide}T12:00:00Z`) : 0;
     let score = 0;
-    if (ok && guide) score = 300 + guide.getTime() / 1e12;
+    if (ok && guide) score = 300 + stamp / 1e12;
     else if (ok) score = 200;
-    else score = 100 + (guide ? guide.getTime() / 1e12 : 0);
+    else score = 100 + stamp / 1e12;
     return { v, ok, score, guide };
   });
   scored.sort((a, b) => b.score - a.score);
@@ -364,16 +367,27 @@ async function loadNdtQuals(organizationId, allowedCompanyIds) {
 async function loadVisionRows(organizationId, allowedCompanyIds) {
   const visionIn = visionFitnessSqlInList();
   const { params, clause } = withCompanyScope(organizationId, allowedCompanyIds);
-  const result = await query(`
-    SELECT q.id, q.person_name, q.personnel_id, q.qualification_type,
-           q.expiry_date, q.near_vision_expiry_date, q.colour_vision_expiry_date,
-           q.status, q.company_id
+  const where = `
     FROM qualifications q
     WHERE q.organization_id = @organization_id
       AND q.status NOT IN ('revocata', 'sospesa')
       AND q.qualification_type IN (${visionIn})
       ${clause}
-  `, params);
+  `;
+  const result = await queryOptionalVisionClocks(
+    (sql) => query(sql, params),
+    {
+      withClocks: `
+    SELECT q.id, q.person_name, q.personnel_id, q.qualification_type,
+           q.expiry_date, q.near_vision_expiry_date, q.colour_vision_expiry_date,
+           q.status, q.company_id
+    ${where}`,
+      withoutClocks: `
+    SELECT q.id, q.person_name, q.personnel_id, q.qualification_type,
+           q.expiry_date, q.status, q.company_id
+    ${where}`,
+    },
+  );
   return result.recordset || [];
 }
 
