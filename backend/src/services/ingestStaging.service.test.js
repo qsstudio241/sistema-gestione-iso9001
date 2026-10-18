@@ -34,6 +34,7 @@ const {
     createStagingRecord,
     confirmStaging,
     rejectStaging,
+    listStaging,
     resolveStagingFilePath,
     getModuleForDocType,
 } = require('./ingestStaging.service');
@@ -380,5 +381,37 @@ describe('ingestStaging.service — modalità rielaborazione (migrazione 137)', 
 
         expect(out.status).toBe('rejected');
         expect(fs.unlinkSync).not.toHaveBeenCalled();
+    });
+});
+
+describe('listStaging — filtro azienda', () => {
+    afterEach(() => jest.clearAllMocks());
+
+    it('senza allowedCompanyIds non filtra company_id', async () => {
+        query.mockResolvedValueOnce({ recordset: [] });
+        await listStaging({ organizationId: 1, docType: 'wpqr' });
+        const sql = query.mock.calls[0][0];
+        expect(sql).toContain('organization_id = @organizationId');
+        expect(sql).not.toMatch(/company_id IN/);
+    });
+
+    it('con allowedCompanyIds filtra solo quelle aziende', async () => {
+        query.mockResolvedValueOnce({ recordset: [{
+            id: 1, company_id: 48, doc_type: 'patentino_saldatore', original_name: 'a.pdf',
+            review_status: 'pending', qualification_type: null,
+            target_qualification_id: null, target_wpqr_id: null, field_scope: null,
+            staged_fields_json: '{}', warnings_json: '[]', created_at: new Date(),
+        }] });
+        await listStaging({ organizationId: 1, docTypes: ['patentino_saldatore'], allowedCompanyIds: [48, 49] });
+        const [sql, params] = query.mock.calls[0];
+        expect(sql).toMatch(/company_id IN \(@uca_0,@uca_1\)/);
+        expect(params.uca_0).toBe(48);
+        expect(params.uca_1).toBe(49);
+    });
+
+    it('elenco aziende vuoto non restituisce righe', async () => {
+        query.mockResolvedValueOnce({ recordset: [] });
+        await listStaging({ organizationId: 1, allowedCompanyIds: [] });
+        expect(query.mock.calls[0][0]).toContain('1 = 0');
     });
 });

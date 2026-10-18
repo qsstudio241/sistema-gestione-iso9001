@@ -376,7 +376,15 @@ async function rejectStaging(stagingId, organizationId, userId, deleteFile = tru
  * migrazione 137). `reprocessOnly` filtra solo le proposte di aggiornamento
  * su qualifiche esistenti (target_qualification_id valorizzato).
  */
-async function listStaging({ organizationId, reviewStatus = 'pending', docType = null, docTypes = null, reprocessOnly = false, limit = 100 }) {
+async function listStaging({
+    organizationId,
+    reviewStatus = 'pending',
+    docType = null,
+    docTypes = null,
+    reprocessOnly = false,
+    allowedCompanyIds = null,
+    limit = 100,
+}) {
     const conditions = ['organization_id = @organizationId'];
     const params = { organizationId, limit };
     if (reviewStatus) {
@@ -394,10 +402,19 @@ async function listStaging({ organizationId, reviewStatus = 'pending', docType =
     if (reprocessOnly) {
         conditions.push('(target_qualification_id IS NOT NULL OR target_wpqr_id IS NOT NULL)');
     }
+    if (Array.isArray(allowedCompanyIds)) {
+        if (!allowedCompanyIds.length) {
+            conditions.push('1 = 0');
+        } else {
+            const placeholders = allowedCompanyIds.map((_, i) => `@uca_${i}`).join(',');
+            allowedCompanyIds.forEach((id, i) => { params[`uca_${i}`] = id; });
+            conditions.push(`company_id IN (${placeholders})`);
+        }
+    }
 
     const result = await query(`
         SELECT TOP (@limit)
-            id, doc_type, original_name, review_status, qualification_type,
+            id, company_id, doc_type, original_name, review_status, qualification_type,
             target_qualification_id, target_wpqr_id, field_scope, staged_fields_json,
             warnings_json, created_at
         FROM ingest_staging
@@ -407,6 +424,7 @@ async function listStaging({ organizationId, reviewStatus = 'pending', docType =
 
     return (result.recordset || []).map((row) => ({
         id: row.id,
+        company_id: row.company_id,
         doc_type: row.doc_type,
         original_name: row.original_name,
         review_status: row.review_status,
