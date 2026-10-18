@@ -27,6 +27,24 @@ describe('moduleLicense.service', () => {
     expect(svc.parseLicensedModulesColumn('')).toBeNull();
   });
 
+  it('NULL, stringa vuota e array vuoto significano tutti i moduli', async () => {
+    query.mockResolvedValueOnce({ recordset: [{ licensed_modules: null }] });
+    expect(await svc.getLicensedModuleKeysForOrg(1005)).toEqual(svc.KNOWN_MODULE_KEYS);
+
+    query.mockResolvedValueOnce({ recordset: [{ licensed_modules: '' }] });
+    expect(await svc.getLicensedModuleKeysForOrg(1005)).toEqual(svc.KNOWN_MODULE_KEYS);
+
+    query.mockResolvedValueOnce({ recordset: [{ licensed_modules: '[]' }] });
+    expect(await svc.getLicensedModuleKeysForOrg(1005)).toEqual(svc.KNOWN_MODULE_KEYS);
+  });
+
+  it('elenco scritto restituisce solo le chiavi presenti', async () => {
+    query.mockResolvedValueOnce({
+      recordset: [{ licensed_modules: JSON.stringify(['nc', 'audit']) }],
+    });
+    expect(await svc.getLicensedModuleKeysForOrg(1004)).toEqual(['audit', 'nc']);
+  });
+
   it('appendLicensedModulesForOrg no-op se licensed_modules NULL', async () => {
     query
       .mockResolvedValueOnce({ recordset: [{ licensed_modules: null }] })
@@ -87,10 +105,15 @@ describe('moduleLicense.service', () => {
       expect(svc.SAL_LEGAL_CONFORMITY_MODULE_KEY).toBe('ai_norms');
     });
 
-    it('admin/superadmin hanno sempre la capability senza query DB', async () => {
-      expect(await svc.hasSalLegalConformityCapability(1004, 'admin')).toBe(true);
-      expect(await svc.hasSalLegalConformityCapability(1004, 'SuperAdmin')).toBe(true);
-      expect(query).not.toHaveBeenCalled();
+    it('admin con elenco NULL ha la capability: vuoto significa tutti i moduli', async () => {
+      query.mockResolvedValueOnce({ recordset: [{ licensed_modules: null }] });
+      expect(await svc.hasSalLegalConformityCapability(1005, 'admin')).toBe(true);
+      expect(query).toHaveBeenCalled();
+    });
+
+    it('admin con elenco scritto senza ai_norms non ha la capability', async () => {
+      query.mockResolvedValueOnce({ recordset: [{ licensed_modules: JSON.stringify(['audit', 'sal']) }] });
+      expect(await svc.hasSalLegalConformityCapability(1004, 'admin')).toBe(false);
     });
 
     it('org con ai_norms licenziato -> capability ON', async () => {
@@ -110,10 +133,14 @@ describe('moduleLicense.service', () => {
       expect(svc.KNOWN_MODULE_KEYS).not.toContain('MATERIAL_COMPLIANCE');
     });
 
-    it('admin/superadmin hanno sempre la capability senza query DB', async () => {
-      expect(await svc.hasMaterialComplianceCapability(1004, 'admin')).toBe(true);
-      expect(await svc.hasMaterialComplianceCapability(1004, 'SuperAdmin')).toBe(true);
-      expect(query).not.toHaveBeenCalled();
+    it('superadmin con elenco NULL ha la capability', async () => {
+      query.mockResolvedValueOnce({ recordset: [{ licensed_modules: null }] });
+      expect(await svc.hasMaterialComplianceCapability(1005, 'superadmin')).toBe(true);
+    });
+
+    it('admin con elenco scritto senza saldatura e ai_import non ha la capability', async () => {
+      query.mockResolvedValueOnce({ recordset: [{ licensed_modules: JSON.stringify(['audit', 'nc']) }] });
+      expect(await svc.hasMaterialComplianceCapability(1004, 'admin')).toBe(false);
     });
 
     it('org con solo saldatura -> OFF', async () => {

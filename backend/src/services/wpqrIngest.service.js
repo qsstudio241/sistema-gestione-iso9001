@@ -23,6 +23,9 @@ const {
 } = require('../utils/ingestPlausibilityChecks');
 const { toNumericOrNull } = require('../utils/numericSanitizer');
 const { normalizeJointTypeCode } = require('../utils/textEncodingRepair');
+const { splitRefList, normalizeWpqrRef } = require('../utils/wpqrSupportRefs');
+const wpsWpqrLinks = require('./wpsWpqrLinks.service');
+const wpqrTestRuns = require('./wpqrTestRuns.service');
 
 /**
  * Hint stud/prigioniero (STUD-2). Non usare `\bstud\b` da solo: eviterebbe
@@ -306,8 +309,146 @@ function normalizeWpqrNumber(...candidates) {
     return null;
 }
 
+/** Riferimenti «WPQR di supporto» (campo da regole, non AI) senza il numero della WPQR stessa. */
+function resolveSupportingRefs(raw, ownNumber) {
+    const own = normalizeWpqrRef(ownNumber);
+    return splitRefList(raw).filter((ref) => !own || normalizeWpqrRef(ref) !== own);
+}
+
+const PAGE2_HEADER_RE = /record of weld test|parametri di esecuzione del test|joint details and welding sequences/i;
+const NONE_RE = /^(none|nessuno|niente)$/i;
+const NA_TOKENS = new Set(['n.a.', 'n.a', 'na', 'n/a', 'n.d.', 'n.d', 'nd', '--', '-', '/']);
+const RESULT_FIELDS = [
+    'vt_result', 'pt_result', 'mt_result', 'rt_result', 'ut_result',
+    'tensile_result', 'bend_result', 'impact_result', 'hardness_result', 'macro_result',
+];
+const HEADER_TEXT_FIELDS = [
+    'welding_position_test', 'filler_make', 'filler_size', 'backing_gas',
+    'pwht_details', 'range_standard_reference', 'joint_preparation', 'cleaning_method',
+    'other_test_info', 'heat_input_kind', 'heat_input_range_unit', 'heat_input_range_basis',
+    'bead_technique', 'electrode_count',
+];
+const HEADER_NUMERIC_FIELDS = [
+    'diameter_test_mm', 'deposited_thickness_mm', 'thickness_t2_test_mm',
+    'heat_input_range_min', 'heat_input_range_max',
+    'heat_input_tol_minus_pct', 'heat_input_tol_plus_pct',
+    'preheat_temp_test', 'interpass_temp_test',
+    'shielding_gas_flow_l_min_min', 'shielding_gas_flow_l_min_max',
+    'nozzle_diameter_mm', 'contact_tube_distance_mm_min', 'contact_tube_distance_mm_max',
+    'torch_angle_deg',
+];
+const RUN_NUMERIC = [
+    'filler_diameter_mm', 'current_a', 'voltage_v', 'wire_feed_speed', 'travel_speed',
+    'heat_input_value', 'weld_time_ms', 'protrusion_mm', 'lift_mm',
+    'capacitance_mf', 'charging_voltage_v', 'gap_lift_mm', 'spring_force_n',
+];
+const RUN_TEXT = [
+    'run_label', 'welding_process', 'filler_designation', 'filler_make',
+    'current_polarity', 'wire_feed_unit', 'travel_speed_unit', 'heat_input_unit',
+    'metal_transfer', 'remarks',
+];
+
+function isBlankToken(v) {
+    return v === null || v === undefined || String(v).trim() === '';
+}
+
+function emptyTokenToNull(v) {
+    if (isBlankToken(v)) return null;
+    const s = String(v).trim();
+    if (NA_TOKENS.has(s.toLowerCase())) return null;
+    return s;
+}
+
+function findWpqrPage2Header(text) {
+    if (!text) return null;
+    const m = String(text).match(PAGE2_HEADER_RE);
+    return m ? m[0] : null;
+}
+
+function mapWpqrTestResult(raw) {
+    if (isBlankToken(raw)) return null;
+    const original = String(raw).trim();
+    const n = original.toLowerCase();
+    // Fallimenti prima dei positivi: «unsatisfactory» contiene «satisfactory».
+    // Mai KO in colonna (NVARCHAR(10)): fail → null, non testo grezzo.
+    if (/\b(?:unaccettabile|inaccettabile|unacceptable|unsatisfactory|insoddisfacente)\b/.test(n)
+        || /\bnot\s+(?:acceptable|satisfactory)\b/.test(n)
+        || /\bnon\s+(?:accettabile|conforme|soddisfacente)\b/.test(n)
+        || /\b(?:ko|fail|failed|negativo)\b/.test(n)) {
+        return null;
+    }
+    if (/not required|non richiesto/.test(n) || /^(n\.a\.|n\/a|na|n\.a|none|--|-)$/.test(n)) return 'NA';
+    if (/\b(?:accettabile|satisfactory|acceptable)\b/.test(n) || /^(ok|pass|passed)$/.test(n)) return 'OK';
+    if (/^SENTINEL_/i.test(original)) return original;
+    return null;
+}
+
+function mapBackingGas(raw) {
+    const s = emptyTokenToNull(raw);
+    if (s == null) return null;
+    return NONE_RE.test(s) ? 'none' : s;
+}
+
+function mapPwhtFlag(raw) {
+    if (raw === true || raw === 1 || raw === '1') return true;
+    if (typeof raw === 'string' && NONE_RE.test(raw.trim())) return false;
+    if (raw === false || raw === 0 || raw === '0') return false;
+    return null;
+}
+
+function runNoFromLabel(label) {
+    const m = /\d+/.exec(String(label ?? ''));
+    return m ? Number(m[0]) : null;
+}
+
+function mapTestRun(raw) {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+    const out = {};
+    for (const k of RUN_TEXT) out[k] = emptyTokenToNull(raw[k]);
+    for (const k of RUN_NUMERIC) out[k] = toNumericOrNull(raw[k]);
+    out.run_no = raw.run_no != null && raw.run_no !== '' ? toNumericOrNull(raw.run_no) : runNoFromLabel(out.run_label);
+    out.source = 'ai';
+    const hasData = RUN_TEXT.some((k) => out[k] != null) || RUN_NUMERIC.some((k) => out[k] != null);
+    return hasData ? out : null;
+}
+
+function mapTestRuns(raw) {
+    if (!Array.isArray(raw)) return [];
+    return raw.map(mapTestRun).filter(Boolean);
+}
+
+/** Staging rielaborazione: `test_runs` in cima, oppure nidificato sotto `wpqr_test_runs`. */
+function testRunsFromReprocessFields(fields) {
+    if (!fields || typeof fields !== 'object') return [];
+    if (Array.isArray(fields.test_runs)) return mapTestRuns(fields.test_runs);
+    const wrapped = fields.wpqr_test_runs;
+    if (wrapped && typeof wrapped === 'object' && !Array.isArray(wrapped) && Array.isArray(wrapped.test_runs)) {
+        return mapTestRuns(wrapped.test_runs);
+    }
+    if (Array.isArray(wrapped)) return mapTestRuns(wrapped);
+    return [];
+}
+
+function mapPage2HeaderFields(f) {
+    const out = {};
+    for (const k of HEADER_TEXT_FIELDS) {
+        out[k] = k === 'backing_gas' ? mapBackingGas(f[k]) : emptyTokenToNull(f[k]);
+    }
+    for (const k of HEADER_NUMERIC_FIELDS) out[k] = toNumericOrNull(f[k]);
+    const plusUnl = f.heat_input_plus_unlimited;
+    out.heat_input_plus_unlimited = plusUnl === true || plusUnl === 1 || plusUnl === '1' ? true : null;
+    return out;
+}
+
+function mapResultFields(f) {
+    const out = {};
+    for (const k of RESULT_FIELDS) out[k] = mapWpqrTestResult(f[k]);
+    return out;
+}
+
 function mapPipelineFieldsToReview(f) {
     const referenceNumber = normalizeWpqrNumber(f.wpqr_number, f.reference_number, f.wpqr_code);
+    const supportingRefs = resolveSupportingRefs(f.supporting_wpqr_refs, referenceNumber);
 
     const thicknessRaw = f.thickness_test_mm ?? f.thickness_tested;
     // Sanitizzazione numerica (stesso pattern del bug produzione 27/07/2026 su
@@ -353,6 +494,7 @@ function mapPipelineFieldsToReview(f) {
         certificate_number: f.certificate_number || null,
         pwht: f.pwht === true || f.pwht === 1 || f.pwht === '1',
         wps_ref: f.wps_ref || null,
+        supporting_wpqr_refs: supportingRefs.length ? supportingRefs.join(', ') : null,
         thickness_min: legacyMin,
         thickness_max: legacyMax,
         thickness_max_unlimited: legacyUnlimited,
@@ -384,6 +526,10 @@ function mapPipelineFieldsToReview(f) {
         qualifying_element: normalizeQualifyingElement(f.qualifying_element),
         material_group_2: f.material_group_2 || f.base_material_group_2 || null,
         base_material_spec_2: f.base_material_spec_2 || null,
+        test_date: f.test_date || null,
+        test_runs: mapTestRuns(f.test_runs),
+        ...mapPage2HeaderFields(f),
+        ...mapResultFields(f),
     };
 }
 
@@ -457,6 +603,7 @@ function mapReviewFieldsToDb(f) {
         certificate_number: f.certificate_number || null,
         pwht: f.pwht === true || f.pwht === 1 || f.pwht === '1' ? 1 : 0,
         wps_ref: f.wps_ref || null,
+        supporting_wpqr_refs: resolveSupportingRefs(f.supporting_wpqr_refs, referenceNumber),
         base_material_spec: f.base_material_spec || null,
         shielding_gas: f.shielding_gas || null,
         current_type: f.current_type || null,
@@ -469,7 +616,60 @@ function mapReviewFieldsToDb(f) {
         qualifying_element: normalizeQualifyingElement(f.qualifying_element),
         base_material_group_2: f.material_group_2 || f.base_material_group_2 || null,
         base_material_spec_2: f.base_material_spec_2 || null,
+        test_date: f.test_date || null,
+        test_runs: mapTestRuns(f.test_runs),
+        ...mapPage2HeaderFields(f),
+        ...mapResultFields(f),
     };
+}
+
+/**
+ * Legami previsti dal documento: WPS citata (`wps_ref`) e WPQR di supporto, sempre ristretti al tenant.
+ * Mai bloccante: un errore di ricerca diventa una segnalazione «da verificare».
+ */
+async function previewLinksForWpqr(reviewFields, organizationId, companyId) {
+    const flags = [];
+    let wpsMatch = null;
+    try {
+        const wps = await wpsWpqrLinks.resolveWpsRef({ organizationId, companyId, ref: reviewFields.wps_ref });
+        wpsMatch = wps.match;
+        flags.push(...wps.flags);
+    } catch (err) {
+        logger.warn('WPQR: ricerca WPS non riuscita', { organizationId, error: err.message });
+        const ref = reviewFields.wps_ref && String(reviewFields.wps_ref).trim();
+        flags.push({
+            ref: ref || null,
+            status: 'resolve_error',
+            message: ref
+                ? `WPS ${ref}: verifica non riuscita — da verificare.`
+                : 'Verifica del legame con la WPS non riuscita — da verificare.',
+        });
+    }
+    const supportingRefs = splitRefList(reviewFields.supporting_wpqr_refs);
+    if (supportingRefs.length > 0) {
+        try {
+            const supporting = await wpsWpqrLinks.resolveSupportingWpqrRefs({
+                organizationId, companyId, refs: supportingRefs,
+            });
+            flags.push(...supporting.flags);
+        } catch (err) {
+            logger.warn('WPQR: ricerca WPQR di supporto non riuscita', { organizationId, error: err.message });
+            flags.push(...supportingRefs.map((ref) => ({
+                ref,
+                status: 'resolve_error',
+                message: `WPQR di supporto ${ref}: verifica non riuscita — da verificare.`,
+            })));
+        }
+    }
+    return { wpsMatch, flags };
+}
+
+/** Numero WPQR scelto uguale a una WPQR di supporto, ma il certificato dichiara un numero diverso. */
+function reviewMatchesSupportingRef(reviewFields, pipelineFields) {
+    const own = normalizeWpqrRef(reviewFields.reference_number);
+    const cert = normalizeWpqrRef(pipelineFields && pipelineFields.certificate_number);
+    if (!own || !cert || own === cert) return false;
+    return splitRefList(pipelineFields && pipelineFields.supporting_wpqr_refs).some((r) => normalizeWpqrRef(r) === own);
 }
 
 async function extractWPQRFromPdf(pdfBuffer, fileName, organizationId, companyId) {
@@ -481,6 +681,12 @@ async function extractWPQRFromPdf(pdfBuffer, fileName, organizationId, companyId
     });
     const warnings = [...pipeline.warnings];
     const reviewFields = mapPipelineFieldsToReview(pipeline.fields || {});
+    const page2 = findWpqrPage2Header(pipeline.text);
+    if (page2) reviewFields.page2_header = page2;
+    if (pipeline.ocrUsed) {
+        reviewFields.needs_review = true;
+        warnings.push('PDF scansionato: revisione umana obbligatoria sulle passate');
+    }
     // STUD-2: se l'AI/regole hanno messo FW ma il testo parla di stud/prigioniero,
     // non collassare in FW. BW resta BW (non si sovrascrive un testa a testa).
     reviewFields.joint_type = normalizeWpqrJointType(reviewFields.joint_type, pipeline.text);
@@ -529,6 +735,13 @@ async function extractWPQRFromPdf(pdfBuffer, fileName, organizationId, companyId
 
     warnings.push(...checkWpqrPlausibility(reviewFields));
 
+    const linkReview = await previewLinksForWpqr(reviewFields, organizationId, companyId);
+    warnings.push(...linkReview.flags.map((fl) => fl.message));
+    if (reviewMatchesSupportingRef(reviewFields, pipeline.fields)) {
+        warnings.push('Il numero WPQR coincide con una WPQR di supporto — verificare che non sia il numero della WPS o di un altro certificato');
+    }
+    const linkResult = { wps_match: linkReview.wpsMatch, verification_flags: linkReview.flags };
+
     if (reviewFields.reference_number && await checkDuplicate(reviewFields.reference_number, organizationId, companyId)) {
         return {
             status: 'duplicate',
@@ -536,6 +749,7 @@ async function extractWPQRFromPdf(pdfBuffer, fileName, organizationId, companyId
             warnings,
             fields: reviewFields,
             field_confidence: pipeline.fieldConfidence,
+            ...linkResult,
         };
     }
 
@@ -545,11 +759,37 @@ async function extractWPQRFromPdf(pdfBuffer, fileName, organizationId, companyId
     return {
         status: 'pending_review',
         fields: reviewFields,
+        ...linkResult,
         field_confidence: pipeline.fieldConfidence,
         confidence,
         warnings,
         ai_model: pipeline.aiModel,
     };
+}
+
+/** Dopo l'INSERT: legame `primary` verso la WPS citata solo se univoca nel tenant; il resto resta «da verificare». */
+async function linkWpqrAfterInsert({ wpqrId, organizationId, companyId, userId, wpsRef }) {
+    try {
+        const resolved = await wpsWpqrLinks.resolveWpsRef({ organizationId, companyId, ref: wpsRef });
+        const flags = [...resolved.flags];
+        const linked = await wpsWpqrLinks.linkWpqrToWps({
+            organizationId, companyId, wpqrId, match: resolved.match, userId,
+        });
+        flags.push(...linked.flags);
+        if (linked.linked.length > 0) {
+            logger.info('WPQR: legame con la WPS creato', { wpqrId, organizationId });
+        }
+        return flags;
+    } catch (err) {
+        logger.warn('WPQR: scrittura legame con la WPS non riuscita', { wpqrId, organizationId, error: err.message });
+        return [{
+            ref: wpsRef || null,
+            status: 'resolve_error',
+            message: wpsRef
+                ? `WPS ${wpsRef}: legame non salvato — da verificare.`
+                : 'Legame con la WPS non salvato — da verificare.',
+        }];
+    }
 }
 
 async function commitWPQRFromFields(fields, organizationId, companyId, options = {}) {
@@ -590,7 +830,17 @@ async function commitWPQRFromFields(fields, organizationId, companyId, options =
             mechanization, single_multi_run, heat_input_note,
             preheat_temp, interpass_temp, product_type, rotated_position,
             qualifying_element, base_material_group_2, base_material_spec_2,
-            created_by, created_at, updated_at
+            test_date, vt_result, pt_result, mt_result, rt_result, ut_result,
+            tensile_result, bend_result, impact_result, hardness_result, macro_result,
+            welding_position_test, diameter_test_mm, deposited_thickness_mm, thickness_t2_test_mm,
+            filler_make, filler_size, backing_gas, heat_input_kind,
+            heat_input_range_min, heat_input_range_max, heat_input_range_unit, heat_input_range_basis,
+            heat_input_tol_minus_pct, heat_input_tol_plus_pct, heat_input_plus_unlimited,
+            preheat_temp_test, interpass_temp_test, pwht_details, range_standard_reference,
+            shielding_gas_flow_l_min_min, shielding_gas_flow_l_min_max, nozzle_diameter_mm,
+            contact_tube_distance_mm_min, contact_tube_distance_mm_max, torch_angle_deg,
+            joint_preparation, cleaning_method, bead_technique, electrode_count, other_test_info,
+            notes, created_by, created_at, updated_at
         )
         OUTPUT INSERTED.id
         VALUES (
@@ -610,7 +860,17 @@ async function commitWPQRFromFields(fields, organizationId, companyId, options =
             @mechanization, @single_multi_run, @heat_input_note,
             @preheat_temp, @interpass_temp, @product_type, @rotated_position,
             @qualifying_element, @base_material_group_2, @base_material_spec_2,
-            @created_by, GETDATE(), GETDATE()
+            @test_date, @vt_result, @pt_result, @mt_result, @rt_result, @ut_result,
+            @tensile_result, @bend_result, @impact_result, @hardness_result, @macro_result,
+            @welding_position_test, @diameter_test_mm, @deposited_thickness_mm, @thickness_t2_test_mm,
+            @filler_make, @filler_size, @backing_gas, @heat_input_kind,
+            @heat_input_range_min, @heat_input_range_max, @heat_input_range_unit, @heat_input_range_basis,
+            @heat_input_tol_minus_pct, @heat_input_tol_plus_pct, @heat_input_plus_unlimited,
+            @preheat_temp_test, @interpass_temp_test, @pwht_details, @range_standard_reference,
+            @shielding_gas_flow_l_min_min, @shielding_gas_flow_l_min_max, @nozzle_diameter_mm,
+            @contact_tube_distance_mm_min, @contact_tube_distance_mm_max, @torch_angle_deg,
+            @joint_preparation, @cleaning_method, @bead_technique, @electrode_count, @other_test_info,
+            @notes, @created_by, GETDATE(), GETDATE()
         )
     `, {
         organization_id: organizationId,
@@ -657,11 +917,69 @@ async function commitWPQRFromFields(fields, organizationId, companyId, options =
         qualifying_element: mapped.qualifying_element,
         base_material_group_2: mapped.base_material_group_2,
         base_material_spec_2: mapped.base_material_spec_2,
+        test_date: mapped.test_date,
+        vt_result: mapped.vt_result,
+        pt_result: mapped.pt_result,
+        mt_result: mapped.mt_result,
+        rt_result: mapped.rt_result,
+        ut_result: mapped.ut_result,
+        tensile_result: mapped.tensile_result,
+        bend_result: mapped.bend_result,
+        impact_result: mapped.impact_result,
+        hardness_result: mapped.hardness_result,
+        macro_result: mapped.macro_result,
+        welding_position_test: mapped.welding_position_test,
+        diameter_test_mm: mapped.diameter_test_mm,
+        deposited_thickness_mm: mapped.deposited_thickness_mm,
+        thickness_t2_test_mm: mapped.thickness_t2_test_mm,
+        filler_make: mapped.filler_make,
+        filler_size: mapped.filler_size,
+        backing_gas: mapped.backing_gas,
+        heat_input_kind: mapped.heat_input_kind,
+        heat_input_range_min: mapped.heat_input_range_min,
+        heat_input_range_max: mapped.heat_input_range_max,
+        heat_input_range_unit: mapped.heat_input_range_unit,
+        heat_input_range_basis: mapped.heat_input_range_basis,
+        heat_input_tol_minus_pct: mapped.heat_input_tol_minus_pct,
+        heat_input_tol_plus_pct: mapped.heat_input_tol_plus_pct,
+        heat_input_plus_unlimited: mapped.heat_input_plus_unlimited ? 1 : null,
+        preheat_temp_test: mapped.preheat_temp_test,
+        interpass_temp_test: mapped.interpass_temp_test,
+        pwht_details: mapped.pwht_details,
+        range_standard_reference: mapped.range_standard_reference,
+        shielding_gas_flow_l_min_min: mapped.shielding_gas_flow_l_min_min,
+        shielding_gas_flow_l_min_max: mapped.shielding_gas_flow_l_min_max,
+        nozzle_diameter_mm: mapped.nozzle_diameter_mm,
+        contact_tube_distance_mm_min: mapped.contact_tube_distance_mm_min,
+        contact_tube_distance_mm_max: mapped.contact_tube_distance_mm_max,
+        torch_angle_deg: mapped.torch_angle_deg,
+        joint_preparation: mapped.joint_preparation,
+        cleaning_method: mapped.cleaning_method,
+        bead_technique: mapped.bead_technique,
+        electrode_count: mapped.electrode_count,
+        other_test_info: mapped.other_test_info,
+        notes: mapped.supporting_wpqr_refs.length
+            ? `WPQR di supporto: ${mapped.supporting_wpqr_refs.join(', ')}`
+            : null,
         created_by: userId,
     });
 
     const wpqrId = insertResult.recordset[0].id;
     logger.info('WPQR committed from staging', { wpqrId, organizationId });
+
+    if (mapped.test_runs && mapped.test_runs.length) {
+        await wpqrTestRuns.insertAiTestRunsIfEmpty({
+            wpqrId,
+            organizationId,
+            companyId,
+            runs: mapped.test_runs,
+        });
+    }
+
+    const linkFlags = await linkWpqrAfterInsert({
+        wpqrId, organizationId, companyId, userId, wpsRef: mapped.wps_ref,
+    });
+    warnings.push(...linkFlags.map((fl) => fl.message));
 
     return {
         wpqr_id: wpqrId,
@@ -739,6 +1057,67 @@ const WPQR_REPROCESSABLE_FIELDS = {
     qualifying_element: { column: 'qualifying_element' },
     material_group_2: { column: 'base_material_group_2' },
     base_material_spec_2: { column: 'base_material_spec_2' },
+    wpqr_test_date: { column: 'test_date' },
+    wpqr_welding_position_test: { column: 'welding_position_test' },
+    wpqr_diameter_test_mm: { column: 'diameter_test_mm' },
+    wpqr_deposited_thickness_mm: { column: 'deposited_thickness_mm' },
+    wpqr_thickness_t2_test_mm: { column: 'thickness_t2_test_mm' },
+    wpqr_filler_make: { column: 'filler_make' },
+    wpqr_filler_size: { column: 'filler_size' },
+    wpqr_backing_gas: { column: 'backing_gas' },
+    wpqr_pwht_details: { column: 'pwht_details' },
+    wpqr_heat_input_kind: { column: 'heat_input_kind' },
+    wpqr_range_standard_reference: { column: 'range_standard_reference' },
+    wpqr_heat_input_range: {
+        column: 'heat_input_range_min',
+        writeGuard: 'heat_input_range_min IS NULL',
+        bundleColumns: [
+            { column: 'heat_input_range_min', writeGuard: 'heat_input_range_min IS NULL' },
+            { column: 'heat_input_range_max', writeGuard: 'heat_input_range_max IS NULL' },
+            { column: 'heat_input_range_unit', writeGuard: 'heat_input_range_unit IS NULL' },
+            { column: 'heat_input_range_basis', writeGuard: 'heat_input_range_basis IS NULL' },
+            { column: 'heat_input_tol_minus_pct', writeGuard: 'heat_input_tol_minus_pct IS NULL' },
+            { column: 'heat_input_tol_plus_pct', writeGuard: 'heat_input_tol_plus_pct IS NULL' },
+            { column: 'heat_input_plus_unlimited', writeGuard: 'heat_input_plus_unlimited = 0 OR heat_input_plus_unlimited IS NULL' },
+        ],
+    },
+    wpqr_preheat_interpass_test: {
+        column: 'preheat_temp_test',
+        writeGuard: 'preheat_temp_test IS NULL',
+        bundleColumns: [
+            { column: 'preheat_temp_test', writeGuard: 'preheat_temp_test IS NULL' },
+            { column: 'interpass_temp_test', writeGuard: 'interpass_temp_test IS NULL' },
+        ],
+    },
+    wpqr_process_params: {
+        column: 'nozzle_diameter_mm',
+        writeGuard: 'nozzle_diameter_mm IS NULL',
+        bundleColumns: [
+            { column: 'shielding_gas_flow_l_min_min', writeGuard: 'shielding_gas_flow_l_min_min IS NULL' },
+            { column: 'shielding_gas_flow_l_min_max', writeGuard: 'shielding_gas_flow_l_min_max IS NULL' },
+            { column: 'nozzle_diameter_mm', writeGuard: 'nozzle_diameter_mm IS NULL' },
+            { column: 'contact_tube_distance_mm_min', writeGuard: 'contact_tube_distance_mm_min IS NULL' },
+            { column: 'contact_tube_distance_mm_max', writeGuard: 'contact_tube_distance_mm_max IS NULL' },
+            { column: 'torch_angle_deg', writeGuard: 'torch_angle_deg IS NULL' },
+            { column: 'joint_preparation', writeGuard: 'joint_preparation IS NULL' },
+            { column: 'cleaning_method', writeGuard: 'cleaning_method IS NULL' },
+            { column: 'bead_technique', writeGuard: 'bead_technique IS NULL' },
+            { column: 'electrode_count', writeGuard: 'electrode_count IS NULL' },
+            { column: 'other_test_info', writeGuard: 'other_test_info IS NULL' },
+        ],
+    },
+    wpqr_test_results: {
+        column: 'vt_result',
+        writeGuard: "vt_result IS NULL OR vt_result = 'NA'",
+        bundleColumns: RESULT_FIELDS.map((column) => ({
+            column,
+            writeGuard: `${column} IS NULL OR ${column} = 'NA'`,
+        })),
+    },
+};
+
+const WPQR_TEST_RUNS_REPROCESSABLE_FIELDS = {
+    wpqr_test_runs: { column: 'id', insertIfEmpty: true },
 };
 
 /**
@@ -759,7 +1138,7 @@ async function applyFieldReprocessUpdate(targetWpqrId, organizationId, fieldScop
     }
 
     const check = await query(
-        'SELECT id FROM wpqr_records WHERE id=@id AND organization_id=@orgId',
+        'SELECT id, company_id FROM wpqr_records WHERE id=@id AND organization_id=@orgId',
         { id: targetWpqrId, orgId: organizationId },
     );
     if (!check.recordset.length) {
@@ -767,9 +1146,24 @@ async function applyFieldReprocessUpdate(targetWpqrId, organizationId, fieldScop
         err.code = 'NOT_FOUND';
         throw err;
     }
+    const parentCompanyId = check.recordset[0].company_id;
 
     const updatable = [];
+    const insertedKeys = [];
     for (const key of scopeFields) {
+        if (key === 'wpqr_test_runs') {
+            const runs = testRunsFromReprocessFields(fields);
+            if (runs.length) {
+                const inserted = await wpqrTestRuns.insertAiTestRunsIfEmpty({
+                    wpqrId: targetWpqrId,
+                    organizationId,
+                    companyId: parentCompanyId,
+                    runs,
+                });
+                if (inserted > 0) insertedKeys.push(key);
+            }
+            continue;
+        }
         const def = WPQR_REPROCESSABLE_FIELDS[key];
         if (!def) continue;
         if (Array.isArray(def.bundleColumns) && def.bundleColumns.length) {
@@ -784,17 +1178,17 @@ async function applyFieldReprocessUpdate(targetWpqrId, organizationId, fieldScop
                 }
                 if (value === undefined || value === null || value === '') continue;
                 // Flag BIT: in conferma scrivere solo true (false = default già ok).
-                if (/_max_unlimited$/.test(column) && value !== true && value !== 1 && value !== '1') continue;
+                if (/unlimited$/.test(column) && value !== true && value !== 1 && value !== '1') continue;
                 updatable.push({ key: `${key}:${column}`, column, value, writeGuard });
             }
             continue;
         }
-        const value = fields ? fields[key] : undefined;
+        const value = fields ? (fields[key] !== undefined ? fields[key] : fields[def.column]) : undefined;
         if (value === undefined || value === null || value === '') continue;
         updatable.push({ key, column: def.column, value, writeGuard: def.writeGuard || `${def.column} IS NULL` });
     }
 
-    if (!updatable.length) {
+    if (!updatable.length && !insertedKeys.length) {
         return { wpqr_id: targetWpqrId, updated_fields: [] };
     }
 
@@ -812,6 +1206,7 @@ async function applyFieldReprocessUpdate(targetWpqrId, organizationId, fieldScop
         const affected = result?.rowsAffected?.[0] ?? result?.rowsAffected ?? 0;
         if (affected > 0) updatedFields.push(key);
     }
+    updatedFields.push(...insertedKeys);
 
     logger.info(`[WpqrReprocess] Rielaborazione applicata id=${targetWpqrId} campi=${updatedFields.join(',')}`);
     return { wpqr_id: targetWpqrId, updated_fields: updatedFields };
@@ -828,6 +1223,11 @@ module.exports = {
     checkWpqrPlausibility,
     applyFieldReprocessUpdate,
     WPQR_REPROCESSABLE_FIELDS,
+    WPQR_TEST_RUNS_REPROCESSABLE_FIELDS,
+    findWpqrPage2Header,
+    mapWpqrTestResult,
+    mapTestRuns,
+    emptyTokenToNull,
     calcThicknessRange,
     normalizeWpqrJointType,
     normalizeWpqrProductType,

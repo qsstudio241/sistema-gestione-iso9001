@@ -27,6 +27,7 @@ const {
 const { resolvePersonnelForQualification } = require('../services/personnelQualificationLink.service');
 const { parseCompanyId, companyBelongsToOrg } = require('../services/qualificationCompany.service');
 const { buildWelderQualificationDesignation } = require('../utils/weldingDesignation');
+const { expectedQualificationUrl } = require('../services/certificateFileUrl.service');
 const {
     basenameImportRelativePath,
     resolveImportOriginalName,
@@ -1252,7 +1253,7 @@ async function commitToQualification(req, res) {
         // Collega PDF import al certificato qualifica (certificate_file_url)
         let certificate_file_url = null;
         if (file.storage_path) {
-            certificate_file_url = buildCertificateFileUrl(file.storage_path);
+            certificate_file_url = expectedQualificationUrl(buildCertificateFileUrl(file.storage_path), organization_id);
             if (certificate_file_url) {
                 await query(
                     `UPDATE qualifications

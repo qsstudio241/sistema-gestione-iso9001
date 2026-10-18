@@ -133,10 +133,12 @@ function groupOf(field) {
   return pair ? pair[0] : field;
 }
 
-const NUMERIC_GROUPS = new Set([...ARC_NUMERIC, ...STUD_NUMERIC, ...Object.keys(UNIT_PAIRS)]);
+function isNumericGroup(group) {
+  return Boolean(UNIT_PAIRS[group]) || ARC_NUMERIC.includes(group) || STUD_NUMERIC.includes(group);
+}
 
 function validateGroup(draft, group) {
-  if (!NUMERIC_GROUPS.has(group)) return null;
+  if (!isNumericGroup(group)) return null;
   const pair = UNIT_PAIRS[group];
   const raw = draft[group];
   if (!isBlank(raw) && parseDecimal(raw) === null) return MSG_NUMBER;

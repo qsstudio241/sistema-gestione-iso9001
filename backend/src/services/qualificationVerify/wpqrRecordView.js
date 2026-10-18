@@ -469,6 +469,7 @@ function toWpqrView(input, { source = SOURCE.REVIEW, runs } = {}) {
         current_type,
         current_type_canonical,
         heat_input_kind: canonicalHeatInputKind(f.heat_input_kind),
+        heat_input_kind_read: toText(f.heat_input_kind),
         preheat_test: testTemperature(f.preheat_temp_test, f.preheat_temp),
         interpass_test: testTemperature(f.interpass_temp_test, f.interpass_temp),
         results: Object.fromEntries(RESULT_FIELDS.map((k) => [k, canonicalResult(f[k])])),

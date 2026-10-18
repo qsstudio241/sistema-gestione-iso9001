@@ -14,6 +14,7 @@ const {
   visionFitnessSqlInList,
   isVisionFitnessType,
 } = require('../constants/occupationalQualificationTypes');
+const { visionClockDates } = require('./weldingCoordinatorAuth.service');
 
 /**
  * Tipi qualifica che richiedono idoneità visiva in corso di validità.
@@ -43,17 +44,31 @@ function normalizePersonName(name) {
  * @param {{ companyId?: number|null }} [opts]
  * @returns {Promise<{ gaps: object[], summary: object }>}
  */
+function bindCompanyScope(request, { companyId, companyIds }) {
+  if (companyId && !Number.isNaN(companyId)) {
+    request.input('companyId', companyId);
+    return ' AND q.company_id = @companyId';
+  }
+  const ids = Array.isArray(companyIds)
+    ? companyIds.map((id) => parseInt(id, 10)).filter((id) => Number.isFinite(id))
+    : [];
+  if (!ids.length) return '';
+  const parts = ids.map((id, i) => {
+    const key = `visionCo_${i}`;
+    request.input(key, id);
+    return `@${key}`;
+  });
+  return ` AND q.company_id IN (${parts.join(', ')})`;
+}
+
 async function findVisionFitnessGaps(organizationId, opts = {}) {
   const companyId = opts.companyId != null ? parseInt(opts.companyId, 10) : null;
+  const companyIds = opts.companyIds || null;
   const pool = await getPool();
   const visionIn = visionFitnessSqlInList();
 
   const req = pool.request().input('orgId', organizationId);
-  let companyClause = '';
-  if (companyId && !Number.isNaN(companyId)) {
-    req.input('companyId', companyId);
-    companyClause = ' AND q.company_id = @companyId';
-  }
+  const companyClause = bindCompanyScope(req, { companyId, companyIds });
 
   const qualsRes = await req.query(`
     SELECT q.id, q.person_name, q.personnel_id, q.qualification_type,
@@ -62,6 +77,7 @@ async function findVisionFitnessGaps(organizationId, opts = {}) {
     FROM qualifications q
     LEFT JOIN companies c ON c.id = q.company_id
     WHERE q.organization_id = @orgId
+      AND q.deleted_at IS NULL
       AND q.status NOT IN ('revocata', 'sospesa')
       ${companyClause}
     ORDER BY q.person_name, q.id
@@ -78,16 +94,14 @@ async function findVisionFitnessGaps(organizationId, opts = {}) {
   }
 
   const visionReq = pool.request().input('orgId', organizationId);
-  let visionCompany = '';
-  if (companyId && !Number.isNaN(companyId)) {
-    visionReq.input('companyId', companyId);
-    visionCompany = ' AND q.company_id = @companyId';
-  }
+  const visionCompany = bindCompanyScope(visionReq, { companyId, companyIds });
   const visionRes = await visionReq.query(`
     SELECT q.id, q.person_name, q.personnel_id, q.qualification_type,
-           q.expiry_date, q.status, q.company_id
+           q.expiry_date, q.near_vision_expiry_date, q.colour_vision_expiry_date,
+           q.status, q.company_id
     FROM qualifications q
     WHERE q.organization_id = @orgId
+      AND q.deleted_at IS NULL
       AND q.status NOT IN ('revocata', 'sospesa')
       AND q.qualification_type IN (${visionIn})
       ${visionCompany}
@@ -98,15 +112,26 @@ async function findVisionFitnessGaps(organizationId, opts = {}) {
 
   function visionStatus(row) {
     if (!row) return { state: 'missing', expiry_date: null, vision_id: null };
-    if (!row.expiry_date) {
+    const clocks = visionClockDates(row);
+    const dates = clocks.usesSplit
+      ? [clocks.near, clocks.colour].filter(Boolean)
+      : (row.expiry_date ? [row.expiry_date] : []);
+    if (!dates.length) {
       return { state: 'ok', expiry_date: null, vision_id: row.id, note: 'senza_scadenza' };
     }
-    const exp = new Date(row.expiry_date);
-    exp.setHours(0, 0, 0, 0);
-    if (exp < today) {
-      return { state: 'expired', expiry_date: row.expiry_date, vision_id: row.id };
+    let nearest = null;
+    let anyExpired = false;
+    for (const raw of dates) {
+      const exp = new Date(raw);
+      exp.setHours(0, 0, 0, 0);
+      if (exp < today) anyExpired = true;
+      if (!nearest || exp < nearest) nearest = exp;
     }
-    return { state: 'ok', expiry_date: row.expiry_date, vision_id: row.id };
+    const expiryDate = nearest ? nearest.toISOString().slice(0, 10) : null;
+    if (anyExpired) {
+      return { state: 'expired', expiry_date: expiryDate, vision_id: row.id };
+    }
+    return { state: 'ok', expiry_date: expiryDate, vision_id: row.id };
   }
 
   function pickBestVision(candidates) {
@@ -114,10 +139,11 @@ async function findVisionFitnessGaps(organizationId, opts = {}) {
     // Preferisci non scaduto con scadenza più lontana; poi senza scadenza; poi scaduto più recente
     const scored = candidates.map((v) => {
       const st = visionStatus(v);
+      const guide = st.expiry_date || v.expiry_date;
       let score = 0;
-      if (st.state === 'ok' && v.expiry_date) score = 300 + new Date(v.expiry_date).getTime() / 1e12;
+      if (st.state === 'ok' && guide) score = 300 + new Date(guide).getTime() / 1e12;
       else if (st.state === 'ok') score = 200;
-      else score = 100 + (v.expiry_date ? new Date(v.expiry_date).getTime() / 1e12 : 0);
+      else score = 100 + (guide ? new Date(guide).getTime() / 1e12 : 0);
       return { v, st, score };
     });
     scored.sort((a, b) => b.score - a.score);

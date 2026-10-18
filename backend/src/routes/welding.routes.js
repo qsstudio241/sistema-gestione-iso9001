@@ -7,7 +7,7 @@ const multer   = require('multer');
 const path     = require('path');
 const fs       = require('fs');
 const { authenticate } = require('../middleware/auth.middleware');
-const { requireLicensedModule } = require('../middleware/moduleLicense.middleware');
+const { useModuleLicense } = require('../middleware/moduleLicense.middleware');
 const ctrl = require('../controllers/welding.controller');
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
@@ -59,7 +59,7 @@ const uploadWps = multer({
 });
 
 router.use(authenticate);
-router.use(requireLicensedModule('saldatura'));
+useModuleLicense(router, 'saldatura');
 
 // WPS — path statici (generate/coverage/upload) PRIMA di /:id
 router.post  ('/welding/wps/upload-batch',   uploadWps.array('files', 20), ctrl.uploadWPSBatch);
@@ -84,6 +84,8 @@ router.get   ('/welding/wpqr/:id',            ctrl.getWPQR);
 router.post  ('/welding/wpqr',                ctrl.createWPQR);
 router.put   ('/welding/wpqr/:id',            ctrl.updateWPQR);
 router.delete('/welding/wpqr/:id',            ctrl.deleteWPQR);
+router.get   ('/welding/wpqr/:id/test-runs',  ctrl.listWpqrTestRuns);
+router.put   ('/welding/wpqr/:id/test-runs',  ctrl.saveWpqrTestRuns);
 router.post  ('/welding/wpqr/:id/approve',    ctrl.approveWPQR);
 router.post  ('/welding/wpqr/:id/reject',     ctrl.rejectWPQR);
 

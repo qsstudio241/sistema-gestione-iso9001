@@ -108,7 +108,9 @@ Istruzioni per le date di conferma semestrale (ISO 9606-1 §9.2):
     label: 'WPS (Procedura di saldatura)',
     aiPrompt: `Stai analizzando una WPS (Welding Procedure Specification) secondo EN ISO 15609-1 (arco) o 15609-2 (gas), spesso qualificata via ISO 15614.
 Estrai nell'oggetto "type_specific_data":
-- wps_number, wpqr_ref, welding_process (codice ISO 4063),
+- wps_number (numero della WPS stessa, riga "WPS n."), welding_process (codice ISO 4063),
+- wpqr_ref: numero/i della WPQR di supporto, riga "Supporting WPQR n. / WPQR di supporto n." (la data della WPS
+  puo' precedere il numero: ignorarla; piu' numeri separati da virgola). NON e' il numero della WPS e NON e' una norma,
 - base_material (designazione), material_group (ISO/TR 15608),
 - thickness_min_mm, thickness_max_mm, pipe_outside_diameter_mm (null se solo piastra),
 - joint_type (BW|FW o descrizione), welding_positions (array ISO 6947),
@@ -148,6 +150,8 @@ Estrai TUTTI i seguenti campi in "type_specific_data". Se un campo non e present
 
 Campi di copertura (pag.1 RANGE OF QUALIFICATION, priorita alta):
 - wpqr_number: numero certificato/WPQR, accetta suffisso rivisione (es. "24-03390-01")
+  E' il numero del certificato di QUESTO documento ("Certificate No." / "Certificato No."), mai quello della
+  "WPQR di supporto n." riportata nella pagina WPS incorporata
 - qualification_level: "1" o "2" solo se dichiarato esplicitamente (Level 1/2) - non dedurre
 - standard_reference: norma di riferimento (es. "UNI EN ISO 15614-1:2017" oppure "UNI EN ISO 15614-2:2025" per alluminio)
 - welding_process: codice ISO 4063 - preferire un codice numerico esplicito nel testo (es. "Welding process: 135") a un alias generico
@@ -208,8 +212,33 @@ Parametri prova (pag.2, priorita media):
 - preheat_temp: temperatura preriscaldo (Tp, ISO 13916), es. "min 100 C"
 - interpass_temp: temperatura interpass (Ti, ISO 13916), es. "max 250 C"
 
+Seconda pagina e dati di prova (riconoscere la pagina dall'intestazione, non dal numero:
+"Record of weld test" / "Parametri di esecuzione del test" / "Joint details and welding sequences"):
+- test_date: data di SALDATURA ("Date of welding"), YYYY-MM-DD. MAI copiare la data di emissione/approvazione
+- test_runs: array delle passate (tabella pag. 2). Ogni elemento: run_label (testo, es. "2 +n"),
+  welding_process, filler_diameter_mm, filler_designation, filler_make, current_a, voltage_v
+  (valori singoli), current_polarity, wire_feed_speed, wire_feed_unit, travel_speed, travel_speed_unit,
+  heat_input_value, heat_input_unit, metal_transfer, remarks. Unita come scritte (kJ/mm, J/mm, kJ/cm,
+  mm/s, cm/min). "N.A." / "n.a." → null. Per stud (14555): current_a, weld_time_ms, protrusion_mm, lift_mm
+  e se c'e scarica capacitiva capacitance_mf, charging_voltage_v, gap_lift_mm, spring_force_n
+- welding_position_test, diameter_test_mm, deposited_thickness_mm, thickness_t2_test_mm
+- filler_make, filler_size, backing_gas ("none" SOLO se il certificato scrive None/Nessuno)
+- heat_input_kind ("heat_input" o "arc_energy" solo se dichiarato), heat_input_range_min/max,
+  heat_input_range_unit, heat_input_range_basis ("absolute"|"relative"),
+  heat_input_tol_minus_pct, heat_input_tol_plus_pct, heat_input_plus_unlimited
+- preheat_temp_test, interpass_temp_test (valori numerici di prova in C)
+- pwht_details, range_standard_reference (se il range e secondo una norma diversa dalla qualifica)
+- shielding_gas_flow_l_min_min/max, nozzle_diameter_mm, contact_tube_distance_mm_min/max,
+  torch_angle_deg, joint_preparation, cleaning_method, bead_technique (stringer|weave|both),
+  electrode_count (single|multiple), other_test_info
+- Esiti (pagina esiti, a volte pag. 3 o 4): vt_result, pt_result, mt_result, rt_result, ut_result,
+  tensile_result, bend_result, impact_result, hardness_result, macro_result.
+  Accettabile/Satisfactory/Acceptable → "OK"; Not required / -- / N.A. → "NA".
+  Mai dedurre "KO". Se assente, null.
+
 IMPORTANTE: non ricalcolare i range con formule - estrarre solo i valori dichiarati sul verbale.
-Vietato inventare soglie o range ISO 14555 (stud): se il verbale non scrive il numero, il campo resta null.`,
+Vietato inventare soglie o range ISO 14555 (stud): se il verbale non scrive il numero, il campo resta null.
+pwht: true solo se PWHT applicato; false solo se il certificato scrive None/Nessuno; altrimenti null.`,
     aiExpectedSchema: {
       wpqr_number: 'string|null',
       qualification_level: '1|2|null',
@@ -251,6 +280,48 @@ Vietato inventare soglie o range ISO 14555 (stud): se il verbale non scrive il n
       heat_input_note: 'string|null',
       preheat_temp: 'string|null',
       interpass_temp: 'string|null',
+      test_date: 'YYYY-MM-DD|null',
+      test_runs: 'object[]|null',
+      vt_result: 'OK|KO|NA|null',
+      pt_result: 'OK|KO|NA|null',
+      mt_result: 'OK|KO|NA|null',
+      rt_result: 'OK|KO|NA|null',
+      ut_result: 'OK|KO|NA|null',
+      tensile_result: 'OK|KO|NA|null',
+      bend_result: 'OK|KO|NA|null',
+      impact_result: 'OK|KO|NA|null',
+      hardness_result: 'OK|KO|NA|null',
+      macro_result: 'OK|KO|NA|null',
+      welding_position_test: 'string|null',
+      diameter_test_mm: 'number|null',
+      deposited_thickness_mm: 'number|null',
+      thickness_t2_test_mm: 'number|null',
+      filler_make: 'string|null',
+      filler_size: 'string|null',
+      backing_gas: 'string|null',
+      heat_input_kind: 'heat_input|arc_energy|null',
+      heat_input_range_min: 'number|null',
+      heat_input_range_max: 'number|null',
+      heat_input_range_unit: 'string|null',
+      heat_input_range_basis: 'absolute|relative|null',
+      heat_input_tol_minus_pct: 'number|null',
+      heat_input_tol_plus_pct: 'number|null',
+      heat_input_plus_unlimited: 'boolean|null',
+      preheat_temp_test: 'number|null',
+      interpass_temp_test: 'number|null',
+      pwht_details: 'string|null',
+      range_standard_reference: 'string|null',
+      shielding_gas_flow_l_min_min: 'number|null',
+      shielding_gas_flow_l_min_max: 'number|null',
+      nozzle_diameter_mm: 'number|null',
+      contact_tube_distance_mm_min: 'number|null',
+      contact_tube_distance_mm_max: 'number|null',
+      torch_angle_deg: 'number|null',
+      joint_preparation: 'string|null',
+      cleaning_method: 'string|null',
+      bead_technique: 'stringer|weave|both|null',
+      electrode_count: 'single|multiple|null',
+      other_test_info: 'string|null',
     },
   },
 

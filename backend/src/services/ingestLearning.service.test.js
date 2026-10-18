@@ -45,7 +45,8 @@ describe('ingestLearning.service (IG-5)', () => {
             field_diffs: { welding_process: { ai: null, human: '135' } },
         }]);
         expect(section).toContain('Esempi dalla tua organizzazione');
-        expect(section).toContain('test.pdf');
+        expect(section).not.toContain('test.pdf');
+        expect(section).toContain('(file: [FILE])');
     });
 
     it('buildFewShotExamples filtra per org', async () => {

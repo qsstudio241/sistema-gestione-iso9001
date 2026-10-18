@@ -1,6 +1,6 @@
 # DEPUTYTASK_VERIFICA_WPQR_CORE — WV-1: dominio `wpqr` nell'engine di verifica + vista record WPQR + stub dei pack (modulo puro, non agganciato)
 
-**Stato:** CHIUSO — TEST OK (11/10/2026, [PR #773](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/773): `npx jest src/services/qualificationVerify` 16 suite / 569 test verdi; harness e encoding verdi). Resta il gate di merge (CI + Bugbot una volta + Security Review) prima di «pronta»  
+**Stato:** CHIUSO — TEST OK (11/10/2026, mergiata [#773](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/773))  
 **Aperto:** 07/10/2026  
 **Piano:** [`PLAN_VERIFICA_WPQR_SLICES.md`](PLAN_VERIFICA_WPQR_SLICES.md) § 1 (architettura) · § 6.3 WV-1  
 **Dipende da:** nessuna (onda 1; il contratto `Finding` è già su `main`)  

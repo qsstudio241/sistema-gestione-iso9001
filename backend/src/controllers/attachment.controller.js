@@ -9,14 +9,22 @@
 
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
+const { logEntityChange, trashedDetailHidden } = require('../services/entityChangeLog.service');
 const { studioScopeClause, appendScopeSql, ncOwnershipScope } = require('../services/auditListRbac.service');
+const {
+    ensureCompanyAccessLoaded,
+    hasCompanyAccessRows,
+    assertCompanyRead,
+    assertMutatingAllowed,
+    sendAccessDenied,
+} = require('../services/companyAccess.service');
 // assertWriteAllowed rimosso in T5 (lock solo UX)
 const path = require('path');
 const fs = require('fs').promises;
 const fsSync = require('fs');
 
 /** Join contesto audit/NC, verbale CND, rapporto RDP o riga Welding Book + predicato scope studio. */
-function attachmentScope(reqUser) {
+function attachmentScopeSync(reqUser) {
     const auditScope = studioScopeClause(reqUser, 'a');
     const ndtScope = studioScopeClause(reqUser, 'ndt_r');
     const rdpScope = studioScopeClause(reqUser, 'rdp_r');
@@ -68,9 +76,47 @@ function attachmentScope(reqUser) {
     };
 }
 
+/** Scope studio + aziende consentite (user_company_access). Senza righe: solo lo scope studio. */
+async function attachmentScope(reqUser) {
+    const base = attachmentScopeSync(reqUser);
+    const accessList = await ensureCompanyAccessLoaded(reqUser);
+    if (!hasCompanyAccessRows(accessList)) return base;
+    const params = {};
+    const parts = accessList.map((row, i) => {
+        const key = `att_co_${i}`;
+        params[key] = row.company_id;
+        return `@${key}`;
+    });
+    const companyClause = ` AND COALESCE(a.company_id, nc.company_id, ndt_r.company_id, rdp_r.company_id, wb.company_id) IN (${parts.join(', ')})`;
+    return {
+        ...base,
+        rbacClause: `${base.rbacClause}${companyClause}`,
+        scopeParams: { ...base.scopeParams, ...params },
+    };
+}
+
+/** Utente con user_company_access: 403 fuori dalle aziende consentite. Studio: nessun vincolo extra. */
+async function denyOutsideCompany(res, user, companyId, level = 'read') {
+    const accessList = await ensureCompanyAccessLoaded(user);
+    if (!hasCompanyAccessRows(accessList)) return false;
+    let denied;
+    if (companyId == null || companyId === '') {
+        denied = { status: 403, body: { error: 'Accesso non consentito', code: 'FORBIDDEN' } };
+    } else if (level === 'write') {
+        denied = await assertMutatingAllowed(user, { companyId });
+    } else {
+        denied = await assertCompanyRead(user, companyId);
+    }
+    if (denied) {
+        sendAccessDenied(res, denied);
+        return true;
+    }
+    return false;
+}
+
 /** @deprecated alias — usare attachmentScope */
-function attachmentAuditScope(reqUser) {
-    const scope = attachmentScope(reqUser);
+async function attachmentAuditScope(reqUser) {
+    const scope = await attachmentScope(reqUser);
     return {
         joinSql: scope.joinSql,
         scopeSql: scope.rbacClause,
@@ -103,9 +149,9 @@ async function listAttachments(req, res) {
 
         const offset = (parseInt(page) - 1) * parseInt(limit);
 
-        const { joinSql, orgClause, rbacClause, scopeParams } = attachmentScope(req.user);
+        const { joinSql, orgClause, rbacClause, scopeParams } = await attachmentScope(req.user);
 
-        let whereConditions = [orgClause];
+        let whereConditions = [orgClause, 'att.deleted_at IS NULL', '(att.nc_id IS NULL OR nc.deleted_at IS NULL)'];
         let params = { organization_id, limit: parseInt(limit), offset, ...scopeParams };
 
         if (audit_id) {
@@ -210,7 +256,7 @@ async function getAttachmentById(req, res) {
         const { id } = req.params;
         const { organization_id } = req.user;
 
-        const { joinSql, orgClause, rbacClause, scopeParams } = attachmentScope(req.user);
+        const { joinSql, orgClause, rbacClause, scopeParams } = await attachmentScope(req.user);
 
         const result = await query(`
       SELECT 
@@ -227,7 +273,7 @@ async function getAttachmentById(req, res) {
         ${rbacClause}
     `, { id: parseInt(id), organization_id, ...scopeParams });
 
-        if (result.recordset.length === 0) {
+        if (result.recordset.length === 0 || trashedDetailHidden(req.user, result.recordset[0])) {
             return res.status(404).json({
                 error: 'Allegato non trovato',
                 code: 'ATTACHMENT_NOT_FOUND'
@@ -291,7 +337,7 @@ async function uploadAttachment(req, res) {
         if (ndt_report_item_id) {
             // Verifica che l'item esista e appartenga all'org tramite il report padre
             const itemCheck = await query(`
-                SELECT i.id FROM ndt_report_items i
+                SELECT i.id, r.company_id FROM ndt_report_items i
                 JOIN ndt_reports r ON r.id = i.report_id
                 WHERE i.id = @item_id AND r.organization_id = @organization_id AND r.is_deleted = 0
             `, { item_id: parseInt(ndt_report_item_id), organization_id });
@@ -299,10 +345,14 @@ async function uploadAttachment(req, res) {
                 await fs.unlink(req.file.path).catch(() => { });
                 return res.status(404).json({ error: 'Componente verbale CND non trovato', code: 'NDT_ITEM_NOT_FOUND' });
             }
+            if (await denyOutsideCompany(res, req.user, itemCheck.recordset[0].company_id, 'write')) {
+                await fs.unlink(req.file.path).catch(() => { });
+                return;
+            }
         } else if (rdp_test_id) {
             // Allegato RDP (rdp_test_id): non richiede audit_id — verifica ownership tramite report padre
             const testCheck = await query(`
-                SELECT t.id FROM rdp_tests t
+                SELECT t.id, r.company_id FROM rdp_tests t
                 JOIN rdp_sections s ON s.id = t.section_id
                 JOIN rdp_reports r ON r.id = s.report_id
                 WHERE t.id = @test_id AND r.organization_id = @organization_id AND r.is_deleted = 0
@@ -311,16 +361,24 @@ async function uploadAttachment(req, res) {
                 await fs.unlink(req.file.path).catch(() => { });
                 return res.status(404).json({ error: 'Prova RDP non trovata', code: 'RDP_TEST_NOT_FOUND' });
             }
+            if (await denyOutsideCompany(res, req.user, testCheck.recordset[0].company_id, 'write')) {
+                await fs.unlink(req.file.path).catch(() => { });
+                return;
+            }
         } else if (welding_book_weld_id) {
             // Foto cordone Welding Book (ISO-5b): ownership via testata welding_books
             const weldCheck = await query(`
-                SELECT w.id FROM welding_book_welds w
+                SELECT w.id, b.company_id FROM welding_book_welds w
                 JOIN welding_books b ON b.id = w.book_id
                 WHERE w.id = @weld_id AND b.organization_id = @organization_id AND b.is_deleted = 0
             `, { weld_id: parseInt(welding_book_weld_id), organization_id });
             if (weldCheck.recordset.length === 0) {
                 await fs.unlink(req.file.path).catch(() => { });
                 return res.status(404).json({ error: 'Riga Welding Book non trovata', code: 'WB_WELD_NOT_FOUND' });
+            }
+            if (await denyOutsideCompany(res, req.user, weldCheck.recordset[0].company_id, 'write')) {
+                await fs.unlink(req.file.path).catch(() => { });
+                return;
             }
         } else if ((!audit_id && !nc_id) || (audit_id && nc_id)) {
             // Validazione standard: deve avere audit_id o nc_id (ma non entrambi)
@@ -367,7 +425,7 @@ async function uploadAttachment(req, res) {
 
             if (!isNaN(numericAuditId)) {
                 const auditCheck = await query(`
-        SELECT a.audit_id, a.custom_checklist_id FROM audits a
+        SELECT a.audit_id, a.custom_checklist_id, a.company_id FROM audits a
         WHERE a.audit_id = @audit_id AND a.organization_id = @organization_id AND a.is_deleted = 0
           ${uploadScopeSql}
       `, { audit_id: numericAuditId, organization_id, ...uploadScopeParams });
@@ -376,12 +434,16 @@ async function uploadAttachment(req, res) {
                     logger.warn('Upload: audit non trovato (INT)', { audit_id: numericAuditId, organization_id });
                     return res.status(404).json({ error: 'Audit non trovato', code: 'AUDIT_NOT_FOUND' });
                 }
+                if (await denyOutsideCompany(res, req.user, auditCheck.recordset[0].company_id, 'write')) {
+                    await fs.unlink(req.file.path).catch(() => { });
+                    return;
+                }
                 resolvedAuditId = numericAuditId;
                 auditCustomChecklistId = auditCheck.recordset[0].custom_checklist_id;
             } else {
                 // UUID: risolvi a numeric audit_id
                 const auditCheck = await query(`
-        SELECT a.audit_id, a.custom_checklist_id FROM audits a
+        SELECT a.audit_id, a.custom_checklist_id, a.company_id FROM audits a
         WHERE a.audit_uuid = @audit_uuid AND a.organization_id = @organization_id AND a.is_deleted = 0
           ${uploadScopeSql}
       `, { audit_uuid: audit_id, organization_id, ...uploadScopeParams });
@@ -389,6 +451,10 @@ async function uploadAttachment(req, res) {
                     await fs.unlink(req.file.path).catch(() => { });
                     logger.warn('Upload: audit non trovato (UUID)', { audit_uuid: audit_id, organization_id });
                     return res.status(404).json({ error: 'Audit non trovato', code: 'AUDIT_NOT_FOUND' });
+                }
+                if (await denyOutsideCompany(res, req.user, auditCheck.recordset[0].company_id, 'write')) {
+                    await fs.unlink(req.file.path).catch(() => { });
+                    return;
                 }
                 resolvedAuditId = auditCheck.recordset[0].audit_id;
                 auditCustomChecklistId = auditCheck.recordset[0].custom_checklist_id;
@@ -427,10 +493,10 @@ async function uploadAttachment(req, res) {
             // su audits rifiuterebbe con 404 gli allegati di NC manuali/reclamo/rischi.
             const ncScope = ncOwnershipScope(req.user);
             const ncCheck = await query(`
-        SELECT nc.nc_id
+        SELECT nc.nc_id, nc.company_id
         FROM non_conformities nc
         ${ncScope.joinSql}
-        WHERE nc.nc_id = @nc_id AND ${ncScope.orgSql}
+        WHERE nc.nc_id = @nc_id AND nc.deleted_at IS NULL AND ${ncScope.orgSql}
           ${ncScope.scopeSql}
       `, { nc_id: parseInt(nc_id), organization_id, ...ncScope.params });
 
@@ -442,6 +508,10 @@ async function uploadAttachment(req, res) {
                     error: 'Non conformità non trovata',
                     code: 'NC_NOT_FOUND'
                 });
+            }
+            if (await denyOutsideCompany(res, req.user, ncCheck.recordset[0].company_id, 'write')) {
+                await fs.unlink(req.file.path).catch(() => { });
+                return;
             }
         }
 
@@ -504,6 +574,15 @@ async function uploadAttachment(req, res) {
 
         const newAttachment = result.recordset[0];
 
+        await logEntityChange({
+            organizationId: organization_id,
+            entityTable: 'attachments',
+            entityId: newAttachment.attachment_id,
+            actionType: 'created',
+            actorUserId: user_id,
+            after: { file_name: req.file.originalname, category, file_size: req.file.size },
+            fields: ['file_name', 'category', 'file_size'],
+        });
         logger.info('Attachment uploaded', {
             attachment_id: newAttachment.attachment_id,
             audit_id,
@@ -556,7 +635,7 @@ async function downloadAttachment(req, res) {
         const { organization_id } = req.user;
 
         // Recupera metadati con verifica ownership
-        const { joinSql, orgClause, rbacClause, scopeParams } = attachmentScope(req.user);
+        const { joinSql, orgClause, rbacClause, scopeParams } = await attachmentScope(req.user);
 
         const result = await query(`
       SELECT att.*, COALESCE(a.organization_id, ndt_r.organization_id, rdp_r.organization_id, wb.organization_id) AS audit_org_id
@@ -567,7 +646,7 @@ async function downloadAttachment(req, res) {
         ${rbacClause}
     `, { id: parseInt(id), organization_id, ...scopeParams });
 
-        if (result.recordset.length === 0) {
+        if (result.recordset.length === 0 || trashedDetailHidden(req.user, result.recordset[0])) {
             return res.status(404).json({
                 error: 'Allegato non trovato',
                 code: 'ATTACHMENT_NOT_FOUND'
@@ -618,7 +697,7 @@ async function deleteAttachment(req, res) {
         const { organization_id } = req.user;
 
         // Recupera metadati con verifica ownership
-        const { joinSql, orgClause, rbacClause, scopeParams } = attachmentScope(req.user);
+        const { joinSql, orgClause, rbacClause, scopeParams } = await attachmentScope(req.user);
 
         const result = await query(`
       SELECT att.*, COALESCE(a.organization_id, ndt_r.organization_id, rdp_r.organization_id, wb.organization_id) AS audit_org_id
@@ -629,7 +708,7 @@ async function deleteAttachment(req, res) {
         ${rbacClause}
     `, { id: parseInt(id), organization_id, ...scopeParams });
 
-        if (result.recordset.length === 0) {
+        if (result.recordset.length === 0 || result.recordset[0].deleted_at) {
             return res.status(404).json({
                 error: 'Allegato non trovato',
                 code: 'ATTACHMENT_NOT_FOUND'
@@ -638,25 +717,27 @@ async function deleteAttachment(req, res) {
 
         const attachment = result.recordset[0];
 
-        // Delete da DB
         await query(`
-      DELETE FROM attachments WHERE attachment_id = @id
-    `, { id: parseInt(id) });
+      UPDATE att
+      SET deleted_at = SYSUTCDATETIME(), deleted_by = @actor_user_id
+      FROM attachments att
+      ${joinSql}
+      WHERE att.attachment_id = @id
+        AND att.deleted_at IS NULL
+        AND ${orgClause}
+        ${rbacClause}
+    `, { id: parseInt(id), organization_id, actor_user_id: req.user.user_id, ...scopeParams });
+        await logEntityChange({
+            organizationId: organization_id,
+            entityTable: 'attachments',
+            entityId: parseInt(id),
+            actionType: 'soft_deleted',
+            actorUserId: req.user.user_id,
+            before: { file_name: attachment.file_name, category: attachment.category, deleted_at: null },
+            after: { deleted_at: 'cestino' },
+        });
 
-        // Delete file fisico (best effort - non bloccare se fallisce)
-        try {
-            if (fsSync.existsSync(attachment.storage_path)) {
-                await fs.unlink(attachment.storage_path);
-            }
-        } catch (fsError) {
-            logger.warn('Failed to delete file from disk', {
-                attachment_id: id,
-                storage_path: attachment.storage_path,
-                error: fsError.message
-            });
-        }
-
-        logger.info('Attachment deleted', { attachment_id: id, organization_id });
+        logger.info('Attachment moved to trash', { attachment_id: id, organization_id });
 
         res.json({
             success: true,
@@ -686,7 +767,7 @@ async function viewAttachment(req, res) {
         const { id } = req.params;
         const { organization_id } = req.user;
 
-        const { joinSql, orgClause, rbacClause, scopeParams } = attachmentScope(req.user);
+        const { joinSql, orgClause, rbacClause, scopeParams } = await attachmentScope(req.user);
 
         const result = await query(`
       SELECT att.*, COALESCE(a.organization_id, ndt_r.organization_id, rdp_r.organization_id, wb.organization_id) AS audit_org_id
@@ -697,7 +778,7 @@ async function viewAttachment(req, res) {
         ${rbacClause}
     `, { id: parseInt(id), organization_id, ...scopeParams });
 
-        if (result.recordset.length === 0) {
+        if (result.recordset.length === 0 || trashedDetailHidden(req.user, result.recordset[0])) {
             return res.status(404).json({
                 error: 'Allegato non trovato',
                 code: 'ATTACHMENT_NOT_FOUND'
@@ -770,7 +851,7 @@ async function replaceAttachment(req, res) {
 
     try {
         // 1. Verifica ownership: allegato appartiene all'org (audit, NC o verbale CND)
-        const { joinSql, orgClause, rbacClause, scopeParams } = attachmentScope(req.user);
+        const { joinSql, orgClause, rbacClause, scopeParams } = await attachmentScope(req.user);
 
         const existing = await query(`
             SELECT att.attachment_id, att.storage_path, att.file_name
@@ -843,5 +924,6 @@ module.exports = {
     downloadAttachment,
     viewAttachment,
     deleteAttachment,
-    replaceAttachment
+    replaceAttachment,
+    attachmentScopeSync,
 };

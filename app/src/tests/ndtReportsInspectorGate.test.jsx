@@ -68,6 +68,7 @@ vi.mock("../services/apiService", () => ({
 }));
 
 import NdtReportsPage from "../pages/NdtReportsPage.jsx";
+import apiService from "../services/apiService";
 
 async function openNewReport(user) {
   render(<NdtReportsPage />);
@@ -104,8 +105,9 @@ describe("NdtReportsPage — gate ispettore CND-2", () => {
     expect(completa).toBeDisabled();
     expect(completa).toHaveAttribute("title", expect.stringContaining("9712"));
 
-    const inspector = screen.getByPlaceholderText(/Nome ispettore/);
+    const inspector = screen.getByRole("combobox", { name: /Ispettore/ });
     expect(inspector).toBeVisible();
+    expect(screen.getByRole("option", { name: /Mario Rossi/ })).toBeTruthy();
     expect(screen.getAllByText(/Nessun patentino ISO 9712/).length).toBeGreaterThanOrEqual(1);
 
     const evalA = screen.getAllByRole("button", { name: /A — Accettabile/ })[0];
@@ -170,5 +172,37 @@ describe("NdtReportsPage — gate ispettore CND-2", () => {
     }, { timeout: 2000 });
     expect(screen.getByRole("button", { name: "Completa verbale" })).not.toBeDisabled();
     expect(eligibilityMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("la tendina salva il nome scelto tra i patentini 9712", async () => {
+    eligibilityMock.mockResolvedValue({
+      data: {
+        ok: true,
+        reasons: [],
+        candidates: [
+          { person_name: "Mario Rossi", ndt_method: "VT", ndt_level: 2 },
+          { person_name: "Ada Bianchi", ndt_method: "VT", ndt_level: 1 },
+        ],
+        qualification: { ndt_method: "VT", ndt_level: 2, person_name: "Mario Rossi" },
+        vision: { state: "ok" },
+      },
+    });
+    const user = userEvent.setup();
+    await openNewReport(user);
+    apiService.createNdtReport.mockClear();
+
+    const select = await screen.findByRole("combobox", { name: /Ispettore/ });
+    const mario = await screen.findByRole("option", { name: /Mario Rossi/ });
+    expect(mario).toHaveTextContent(/VT liv\.2/);
+    expect(screen.getByRole("option", { name: /Ada Bianchi/ })).toHaveTextContent(/VT liv\.1/);
+    expect(screen.getByRole("option", { name: /PS_Admin/ })).toHaveTextContent(/nome gi\u00e0 sul verbale/);
+
+    await user.selectOptions(select, "Mario Rossi");
+    await user.click(screen.getByRole("button", { name: "Salva bozza" }));
+
+    await waitFor(() => {
+      expect(apiService.createNdtReport).toHaveBeenCalled();
+    });
+    expect(apiService.createNdtReport.mock.calls.at(-1)[0].inspector).toBe("Mario Rossi");
   });
 });

@@ -1,6 +1,6 @@
 # DEPUTYTASK_VERIFICA_WPQR_EDITOR_FE — WV-6a: `WpqrTestRunsEditor` (FE presentazionale, tabella passate) + `apiService` (3 metodi WPQR)
 
-**Stato:** CHIUSO — TEST OK (08/10/2026) — PR draft `cursor/wv-6a-editor-passate-wpqr-064b`; componente non montato (montaggio in WV-6b); rotte `test-runs`/`verify` nascono in WV-4a/WV-5c
+**Stato:** CHIUSO — TEST OK (08/10/2026) — PR [#753](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/753); componente non montato (montaggio in WV-6b); `GET/PUT test-runs` già su `main` (#785); `POST verify` resta WV-5c
 **Aperto:** 07/10/2026  
 **Piano:** [`PLAN_VERIFICA_WPQR_SLICES.md`](PLAN_VERIFICA_WPQR_SLICES.md) § 2.2 (colonne) · § 2.3 · § 6.3 WV-6a  
 **Dipende da:** il **contratto API nel piano** (non da WV-3/WV-4: l'editor lavora su fixture; i metodi `apiService` precedono le rotte, come VQ-2 rispetto a `POST /qualifications/verify`)  

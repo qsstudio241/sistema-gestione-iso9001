@@ -9,30 +9,9 @@ const { query } = require('../config/database');
 const { RELEASED_STATUS_SQL_IN } = require('../constants/documentStatus');
 const logger = require('../utils/logger');
 const { getSalSummary } = require('./gapAnalysis.service');
+const { EFFECTIVE_EXPIRY_SQL: QUAL_EFFECTIVE_EXPIRY_SQL } = require('./qualificationExpirySql');
 
 const TOP_COMPANIES_LIMIT = 5;
-
-/** Stessa regola di qualifications.controller EFFECTIVE_EXPIRY_SQL (semaforo card). */
-const QUAL_SEMIANNUAL_SQL = `(
-    LOWER(q.qualification_type) LIKE '%9606%'
-    OR LOWER(q.qualification_type) LIKE '%patentino_saldatore%'
-    OR LOWER(q.qualification_type) = '9606_1'
-    OR LOWER(q.qualification_type) LIKE '%14732%'
-    OR LOWER(q.qualification_type) LIKE '%qualifica_14732%'
-)`;
-
-const QUAL_EFFECTIVE_EXPIRY_SQL = `
-    CASE
-        WHEN ${QUAL_SEMIANNUAL_SQL} THEN
-            CASE
-                WHEN q.expiry_date IS NULL THEN q.next_confirmation_due
-                WHEN q.next_confirmation_due IS NULL THEN q.expiry_date
-                WHEN q.next_confirmation_due < q.expiry_date THEN q.next_confirmation_due
-                ELSE q.expiry_date
-            END
-        ELSE q.expiry_date
-    END
-`;
 
 function emptyNotReady() {
   return {
@@ -92,6 +71,7 @@ async function loadStudioAggregates(user) {
        FROM non_conformities nc
        LEFT JOIN audits a ON nc.audit_id = a.audit_id
        WHERE COALESCE(a.organization_id, nc.organization_id) = @organizationId
+         AND nc.deleted_at IS NULL
          ${audFilterNc}`,
       params
     ),
@@ -105,6 +85,7 @@ async function loadStudioAggregates(user) {
        FROM qualifications q
        INNER JOIN companies c ON c.id = q.company_id
        WHERE q.organization_id = @organizationId
+         AND q.deleted_at IS NULL
          ${audFilterQual}`,
       params
     ),
@@ -131,6 +112,7 @@ async function loadStudioAggregates(user) {
        LEFT JOIN audits a ON nc.audit_id = a.audit_id
        LEFT JOIN companies c ON c.id = COALESCE(a.company_id, nc.company_id)
        WHERE COALESCE(a.organization_id, nc.organization_id) = @organizationId
+         AND nc.deleted_at IS NULL
          AND COALESCE(a.company_id, nc.company_id) IS NOT NULL
          ${audFilterNc}
        GROUP BY COALESCE(a.company_id, nc.company_id)
@@ -151,6 +133,7 @@ async function loadStudioAggregates(user) {
        FROM qualifications q
        INNER JOIN companies c ON c.id = q.company_id
        WHERE q.organization_id = @organizationId
+         AND q.deleted_at IS NULL
          ${audFilterQual}
        GROUP BY q.company_id
        HAVING SUM(CASE
@@ -291,6 +274,7 @@ async function loadAmbitoFacts(user, companyId) {
        FROM non_conformities nc
        LEFT JOIN audits a ON nc.audit_id = a.audit_id
        WHERE COALESCE(a.organization_id, nc.organization_id) = @organizationId
+         AND nc.deleted_at IS NULL
          AND COALESCE(a.company_id, nc.company_id) = @companyId`,
       params
     ),
@@ -303,6 +287,7 @@ async function loadAmbitoFacts(user, companyId) {
             THEN 1 ELSE 0 END) AS quals_expiring_30
        FROM qualifications q
        WHERE q.organization_id = @organizationId
+         AND q.deleted_at IS NULL
          AND q.company_id = @companyId`,
       params
     ),

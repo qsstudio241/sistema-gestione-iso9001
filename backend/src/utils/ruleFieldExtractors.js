@@ -22,6 +22,7 @@ const {
     parseWelderQualificationDesignation,
     designationFieldsToIngest,
 } = require('./weldingDesignation');
+const { extractSupportingWpqrRefs } = require('./wpqrSupportRefs');
 
 const DATE_PATTERNS = [
     { re: /\b(\d{4})-(\d{2})-(\d{2})\b/g, fmt: (m) => `${m[1]}-${m[2]}-${m[3]}` },
@@ -546,9 +547,11 @@ function extractWpqrFields(text) {
     const { diameter_min, diameter_max } = extractDiameterRangeMm(text);
     const issuedLabeled = extractIssueDateLabeled(text);
     const wpqrNumber = extractWpqrNumberFromText(text);
+    const supportingRefs = extractSupportingWpqrRefs(text, { ownNumber: wpqrNumber });
     return {
         wpqr_number: wpqrNumber,
         reference_number: wpqrNumber,
+        supporting_wpqr_refs: supportingRefs.length ? supportingRefs.join(', ') : null,
         qualification_level: extractQualificationLevel(text),
         welding_process: extractWeldingProcess(text),
         material_group: extractMaterialGroup(text),
@@ -1064,6 +1067,13 @@ function extractNormFields(text, fileName) {
     };
 }
 
+/** «WPQR di supporto n.» della WPS (anche con la data in mezzo); fallback sul vecchio formato «WPQR 24-03390». */
+function extractWpsSupportingRef(text) {
+    const refs = extractSupportingWpqrRefs(text);
+    if (refs.length) return refs.join(', ');
+    return firstMatch(/\bWPQR\s*[:.]?\s*(\d{2}-\d{4,6})\b/i, text);
+}
+
 const EXTRACTORS_BY_DOC_TYPE = {
     wpqr: extractWpqrFields,
     patentino_saldatore: extractPatentinoFields,
@@ -1073,7 +1083,7 @@ const EXTRACTORS_BY_DOC_TYPE = {
         wps_number: extractWpqrReference(text, fileName),
         welding_process: extractWeldingProcess(text),
         base_material: extractMaterialGroup(text),
-        wpqr_ref: firstMatch(/\bWPQR\s*[:.]?\s*(\d{2}-\d{4,6})\b/i, text),
+        wpqr_ref: extractWpsSupportingRef(text),
     }),
     norma: extractNormFields,
 };

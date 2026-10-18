@@ -4,7 +4,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import apiService from "../services/apiService";
-import { OCCUPATIONAL_QUALIFICATION_TYPES } from "../data/occupationalQualificationTypes";
+import { OCCUPATIONAL_QUALIFICATION_TYPES, isVisionFitnessType } from "../data/occupationalQualificationTypes";
 import { buildWelderDesignation, parseWelderQualificationDesignation, resolvePrintedDesignation } from "../utils/weldingDesignation";
 import { getApplicableWelderFields } from "../data/weldingQualificationRules9606";
 import {
@@ -15,8 +15,9 @@ import {
   nullNotApplicableFields,
   uses9606DimensionalBlock,
 } from "../data/jointTypeProfiles";
+import { getProcessSelectOptions, canonicalizeProcessValue } from "../utils/weldingProcessSelect";
 import { NDT_SECTOR_OPTIONS } from "../data/documentTypeSchemas";
-import { resolveBackendUploadUrl } from "../utils/resolveBackendUploadUrl";
+import { ProtectedFileLink } from "../components/ProtectedFile";
 import SemiannualConfirmationSection from "../components/SemiannualConfirmationSection";
 import FileDropzone from "../components/FileDropzone";
 import QualificationVerifyPanel from "../components/QualificationVerifyPanel";
@@ -57,6 +58,7 @@ const EMPTY = {
   company_id: "", qualification_type: "", standard_ref: "",
   scope_detail: "", certificate_number: "", issuing_body: "",
   issue_date: "", expiry_date: "", last_renewal_date: "",
+  near_vision_expiry_date: "", colour_vision_expiry_date: "",
   status: "valida", notes: "",
   welding_process: "", material_group: "", position_range: "",
   ndt_method: "", ndt_level: "", ndt_sector: "",
@@ -203,6 +205,7 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
       const d = { ...EMPTY, ...qualification };
       // Normalizza date a YYYY-MM-DD
       ["issue_date","expiry_date","last_renewal_date","cpd_valid_until",
+       "near_vision_expiry_date","colour_vision_expiry_date",
        "exam_date","last_confirmation_date","next_confirmation_due","revalidation_date"].forEach(k => {
         if (d[k]) d[k] = String(d[k]).slice(0, 10);
       });
@@ -231,6 +234,8 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
         && d.pipe_diameter_mm != null && d.pipe_diameter_mm !== "") {
         d.pipe_diameter_min_mm = d.pipe_diameter_mm;
       }
+      d.welding_process = canonicalizeProcessValue(d.welding_process);
+      d.welding_process_test = canonicalizeProcessValue(d.welding_process_test);
       setForm(d);
       if (d.qualification_type && !QUAL_TYPES.includes(d.qualification_type)) {
         setCustomType(true);
@@ -291,11 +296,14 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
       setAutoSaveStatus('saving');
       setError(null);
       try {
+        const { fields: payloadFields } = nullNotApplicableFields(form, {
+          qualificationType: form.qualification_type,
+          standardReference: form.standard_ref,
+        });
         const payload = {
-          ...nullNotApplicableFields(form, {
-            qualificationType: form.qualification_type,
-            standardReference: form.standard_ref,
-          }).fields,
+          ...payloadFields,
+          welding_process: canonicalizeProcessValue(payloadFields.welding_process),
+          welding_process_test: canonicalizeProcessValue(payloadFields.welding_process_test),
           company_id: parseInt(form.company_id, 10),
           personnel_id: form.personnel_id ? parseInt(form.personnel_id, 10) : null,
         };
@@ -518,17 +526,9 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
                     onBlur={handleBlur("welding_process")}
                   >
                     <option value="">-- seleziona --</option>
-                    <option value="111">111 — Elettrodo rivestito (MMA)</option>
-                    <option value="121">121 — Arco sommerso (SAW)</option>
-                    <option value="131">131 — MIG</option>
-                    <option value="135">135 — MAG</option>
-                    <option value="136">136 — Filo animato (FCAW)</option>
-                    <option value="138">138 — Filo animato metallo (MCAW)</option>
-                    <option value="141">141 — TIG</option>
-                    <option value="145">145 — TIG + filo freddo</option>
-                    <option value="15">15 — Plasma (PAW)</option>
-                    <option value="311">311 — Ossiacetilenica</option>
-                    <option value="altro">Altro</option>
+                    {getProcessSelectOptions(form.welding_process_test, { includeAltro: true }).map((p) => (
+                      <option key={p.value} value={p.value}>{p.label}</option>
+                    ))}
                   </select>
                   {fieldErrors.welding_process && <span className="qf-field-err">{fieldErrors.welding_process}</span>}
                 </div>
@@ -944,6 +944,33 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
               <input type="date" value={form.last_renewal_date} onChange={handle("last_renewal_date")} />
             </div>
           </div>
+          {isVisionFitnessType(form.qualification_type) && (
+            <div data-testid="qf-vision-clocks">
+              <div className="qf-row">
+                <div className="qf-field">
+                  <label htmlFor="qf-near-vision-expiry">Scadenza visita acuit{"\u00e0"}</label>
+                  <input
+                    id="qf-near-vision-expiry"
+                    type="date"
+                    value={form.near_vision_expiry_date || ""}
+                    onChange={handle("near_vision_expiry_date")}
+                  />
+                </div>
+                <div className="qf-field">
+                  <label htmlFor="qf-colour-vision-expiry">Scadenza test dei colori</label>
+                  <input
+                    id="qf-colour-vision-expiry"
+                    type="date"
+                    value={form.colour_vision_expiry_date || ""}
+                    onChange={handle("colour_vision_expiry_date")}
+                  />
+                </div>
+              </div>
+              <p className="qf-locked-hint">
+                {"Per ISO 9712 l\u2019acuit\u00e0 da vicino si rinnova ogni anno; i colori ogni 5. Qui si registrano le due date del certificato: la pi\u00f9 vicina fa il colore in elenco e in Scadenzari compaiono entrambe. Se le lasci vuote resta la data di scadenza unica."}
+              </p>
+            </div>
+          )}
           {requiresConfirmation && (
             <div className="qf-row">
               {!isApproved && (
@@ -1017,13 +1044,13 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
               <div className="qf-section-title">Certificato PDF</div>
               {form.certificate_file_url && (
                 <div style={{marginBottom: 6, fontSize: 13}}>
-                  <a
-                    href={resolveBackendUploadUrl(form.certificate_file_url, apiService.baseUrl)}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <ProtectedFileLink
+                    fileUrl={form.certificate_file_url}
+                    kind="qualifica"
+                    recordId={savedIdRef.current || qualification?.id}
                   >
                     {"\uD83D\uDCC4"} Visualizza certificato allegato
-                  </a>
+                  </ProtectedFileLink>
                 </div>
               )}
               <div className="qf-field">

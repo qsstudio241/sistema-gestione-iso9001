@@ -266,6 +266,7 @@ async function match(req, ctx) {
     const qReq = pool.request().input('orgId', orgId);
     let where = `
         q.organization_id = @orgId
+        AND q.deleted_at IS NULL
         AND q.status NOT IN ('revocata','sospesa')
         AND (q.qualification_type LIKE '%9606%' OR q.qualification_type LIKE '%14732%')
     `;

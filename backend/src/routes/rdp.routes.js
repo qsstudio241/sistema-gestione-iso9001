@@ -5,11 +5,11 @@
 const express = require('express');
 const router  = express.Router();
 const { authenticate } = require('../middleware/auth.middleware');
-const { requireLicensedModule } = require('../middleware/moduleLicense.middleware');
+const { useModuleLicense } = require('../middleware/moduleLicense.middleware');
 const ctrl = require('../controllers/rdp.controller');
 
 router.use(authenticate);
-router.use(requireLicensedModule('saldatura'));
+useModuleLicense(router, 'saldatura');
 
 // Stats PRIMA di /:id
 router.get('/rdp-reports/stats', ctrl.getRdpStats);

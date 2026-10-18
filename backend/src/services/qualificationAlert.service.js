@@ -14,7 +14,7 @@ const {
   parseRecipientList,
   uniqueEmails,
 } = require('./alertSchedulerHelpers');
-const { requiresSemiannualConfirmation } = require('./weldingCoordinatorAuth.service');
+const { requiresSemiannualConfirmation, visionClockDates, earlierIso } = require('./weldingCoordinatorAuth.service');
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/i;
 
@@ -28,6 +28,11 @@ function validEmail(email) {
  * @returns {{ date: string|null, kind: 'expiry'|'confirmation'|null }}
  */
 function effectiveAlertDue(q) {
+  const clocks = visionClockDates(q);
+  if (clocks.usesSplit) {
+    const date = earlierIso(clocks.near, clocks.colour);
+    return { date, kind: date ? 'expiry' : null };
+  }
   const expiry = q.expiry_date || null;
   if (!requiresSemiannualConfirmation(q.qualification_type)) {
     return { date: expiry, kind: expiry ? 'expiry' : null };
@@ -270,13 +275,20 @@ async function fetchQualificationsForDeadline(pool, orgId) {
         q.id, q.organization_id, q.company_id, q.person_name,
         q.qualification_type, q.certificate_number,
         q.expiry_date, q.next_confirmation_due,
+        q.near_vision_expiry_date, q.colour_vision_expiry_date,
         q.status, q.approval_status,
         c.name AS company_name
       FROM qualifications q
       LEFT JOIN companies c ON c.id = q.company_id
       WHERE q.organization_id = @orgId
+        AND q.deleted_at IS NULL
         AND q.status NOT IN ('revocata', 'sospesa')
-        AND (q.expiry_date IS NOT NULL OR q.next_confirmation_due IS NOT NULL)
+        AND (
+          q.expiry_date IS NOT NULL
+          OR q.next_confirmation_due IS NOT NULL
+          OR q.near_vision_expiry_date IS NOT NULL
+          OR q.colour_vision_expiry_date IS NOT NULL
+        )
     `);
   return result.recordset || [];
 }
@@ -373,36 +385,69 @@ async function runQualifEscalationForOrg(pool, org) {
   return { sent: sentCount };
 }
 
+function pushDeadlineRow(out, q, date, { kind, kindLabel, idSuffix, title, daysWindow, ignoreUpperBound }) {
+  const daysLeft = daysUntilDue(date);
+  if (daysLeft === null) return;
+  if (!ignoreUpperBound && daysLeft > daysWindow) return;
+  out.push({
+    id: idSuffix ? `qual-${q.id}-${idSuffix}` : `qual-${q.id}`,
+    item_type: 'qualification',
+    qualification_id: q.id,
+    title,
+    due_date: date,
+    days_until_due: daysLeft,
+    category: 'qualifica',
+    reference_code: q.certificate_number || null,
+    source_document_id: null,
+    source_document_title: `Registro qualifiche — ${kindLabel}`,
+    company_id: q.company_id,
+    company_name: q.company_name || null,
+    status: 'active',
+    alert_kind: kind,
+    vision_clock: idSuffix || null,
+  });
+}
+
 /** Righe virtuali per scadenzario unificato (ADR-013 estensione). */
 function mapQualificationDeadlineRows(rows, daysWindow = 365) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
   const out = [];
 
   for (const q of rows) {
     if (['revocata', 'sospesa'].includes(q.status)) continue;
+    const clocks = visionClockDates(q);
+    if (clocks.usesSplit) {
+      if (clocks.near) {
+        pushDeadlineRow(out, q, clocks.near, {
+          kind: 'near_vision',
+          kindLabel: 'Scadenza visita acuit\u00e0',
+          idSuffix: 'near',
+          title: `Visita acuit\u00e0: ${q.person_name}`,
+          daysWindow,
+          ignoreUpperBound: true,
+        });
+      }
+      if (clocks.colour) {
+        pushDeadlineRow(out, q, clocks.colour, {
+          kind: 'colour_vision',
+          kindLabel: 'Scadenza test dei colori',
+          idSuffix: 'colour',
+          title: `Test dei colori: ${q.person_name}`,
+          daysWindow,
+          ignoreUpperBound: true,
+        });
+      }
+      continue;
+    }
     const { date, kind } = effectiveAlertDue(q);
     if (!date) continue;
-
-    const daysLeft = daysUntilDue(date);
-    if (daysLeft === null || daysLeft > daysWindow) continue;
-
     const kindLabel = kind === 'confirmation' ? 'Conferma semestrale' : 'Scadenza certificato';
-    out.push({
-      id: `qual-${q.id}`,
-      item_type: 'qualification',
-      qualification_id: q.id,
+    pushDeadlineRow(out, q, date, {
+      kind,
+      kindLabel,
+      idSuffix: null,
       title: `Qualifica: ${q.person_name} (${q.qualification_type || 'n/d'})`,
-      due_date: date,
-      days_until_due: daysLeft,
-      category: 'qualifica',
-      reference_code: q.certificate_number || null,
-      source_document_id: null,
-      source_document_title: `Registro qualifiche — ${kindLabel}`,
-      company_id: q.company_id,
-      company_name: q.company_name || null,
-      status: 'active',
-      alert_kind: kind,
+      daysWindow,
+      ignoreUpperBound: false,
     });
   }
 

@@ -28,6 +28,7 @@ vi.mock("../services/apiService", () => ({
     updateWPS: vi.fn(),
     getWpqrTestRuns: vi.fn(),
     saveWpqrTestRuns: vi.fn(),
+    fetchProtectedFileBlob: vi.fn(),
     baseUrl: "",
   },
 }));
@@ -160,11 +161,14 @@ describe("WeldingProceduresPage — tab WPQR: riga cliccabile e Azioni", () => {
     expect(screen.queryByText("Modifica WPQR")).toBeNull();
   });
 
-  it("il link certificato PDF non apre il modal", async () => {
+  it("il link certificato PDF non apre il modal e scarica il file con fetch autenticato (nessun href pubblico)", async () => {
+    apiService.fetchProtectedFileBlob.mockResolvedValue(new Blob(["%PDF"], { type: "application/pdf" }));
     const user = await renderOnTab("wpqr");
     const link = within(rowOf("WPQR-BOZ")).getByTitle("Apri certificato PDF");
-    link.addEventListener("click", (e) => e.preventDefault());
+    expect(link.tagName).toBe("BUTTON");
+    expect(link.getAttribute("href")).toBeNull();
     await user.click(link);
+    await waitFor(() => expect(apiService.fetchProtectedFileBlob).toHaveBeenCalledWith("/uploads/wpqr/c.pdf"));
     expect(screen.queryByText("Modifica WPQR")).toBeNull();
   });
 });

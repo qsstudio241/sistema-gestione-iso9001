@@ -29,7 +29,7 @@ const logger = require('../utils/logger');
 const { query } = require('../config/database');
 const { runDocumentIngest } = require('./documentIngestPipeline.service');
 const { REPROCESSABLE_FIELDS: QUALIFICATION_WRITE_FIELDS } = require('./qualificationIngest.service');
-const { WPQR_REPROCESSABLE_FIELDS } = require('./wpqrIngest.service');
+const { WPQR_REPROCESSABLE_FIELDS, WPQR_TEST_RUNS_REPROCESSABLE_FIELDS } = require('./wpqrIngest.service');
 const { createStagingRecord } = require('./ingestStaging.service');
 const { getReprocessableField } = require('../data/reprocessableFields');
 const { getTableAdapter } = require('../data/reprocessTableAdapters');
@@ -39,6 +39,7 @@ const { countVerifyCandidates, runVerifyReport } = require('./qualificationVerif
 const WRITE_WHITELISTS = {
     qualifications: QUALIFICATION_WRITE_FIELDS,
     wpqr_records: WPQR_REPROCESSABLE_FIELDS,
+    wpqr_test_runs: WPQR_TEST_RUNS_REPROCESSABLE_FIELDS,
 };
 
 /** Limite di sicurezza per un singolo lancio sincrono via API (evita richieste troppo lunghe). */
@@ -79,7 +80,7 @@ function resolveExtractedReprocessValue(fieldKey, reviewFields = {}, config = {}
             const out = {};
             for (const col of config.bundleColumns) {
                 const name = typeof col === 'string' ? col : col;
-                if (/_max_unlimited$/.test(name)) {
+                if (/unlimited$/.test(name)) {
                     if (reviewFields[name] === true) out[name] = true;
                     continue;
                 }
@@ -87,14 +88,21 @@ function resolveExtractedReprocessValue(fieldKey, reviewFields = {}, config = {}
                 if (v == null || v === '') continue;
                 out[name] = v;
             }
-            const hasSide = ['thickness_t1_min', 'thickness_t2_min'].some((k) => out[k] != null);
-            return hasSide ? out : null;
+            if (fieldKey === 'wpqr_thickness_t1_t2') {
+                const hasSide = ['thickness_t1_min', 'thickness_t2_min'].some((k) => out[k] != null);
+                return hasSide ? out : null;
+            }
+            return Object.keys(out).length ? out : null;
         }
         if (column === 'thickness_max_unlimited' || column === 'rotated_position') {
             return reviewFields[column] === true ? true : null;
         }
         const v = reviewFields[column];
         return v == null || v === '' ? null : v;
+    }
+    if (config.table === 'wpqr_test_runs') {
+        const runs = reviewFields.test_runs;
+        return Array.isArray(runs) && runs.length ? { test_runs: runs } : null;
     }
 
     // --- Comportamento storico per `qualifications` (invariato) ---
@@ -126,6 +134,7 @@ async function selectReprocessCandidates(field, config, { orgId = null } = {}) {
         throw new Error(`Campo non rielaborabile: ${field} (aggiungilo alla whitelist di scrittura di "${table}")`);
     }
     const adapter = getTableAdapter(table);
+    const fromTable = adapter.candidateFrom || table;
     const column = config.column || field;
 
     const conditions = [
@@ -152,7 +161,7 @@ async function selectReprocessCandidates(field, config, { orgId = null } = {}) {
 
     const result = await query(`
         SELECT ${adapter.candidateSelectColumns}
-        FROM ${table}
+        FROM ${fromTable}
         WHERE ${conditions.join(' AND ')}
         ORDER BY id
     `, params);
@@ -323,6 +332,10 @@ async function runReprocessForField(fieldKey, { orgId = null, limit = DEFAULT_RU
             const bundleSummary = isBundle
                 ? Object.entries(extractedValue).map(([k, v]) => `${k}=${v}`).join('; ')
                 : null;
+            const nestedRuns = extractedValue && typeof extractedValue === 'object' && !Array.isArray(extractedValue)
+                && Array.isArray(extractedValue.test_runs)
+                ? extractedValue.test_runs
+                : null;
 
             await createStagingRecord({
                 organizationId: row.organization_id,
@@ -335,6 +348,7 @@ async function runReprocessForField(fieldKey, { orgId = null, limit = DEFAULT_RU
                 fields: {
                     [fieldKey]: isBundle ? bundleSummary : extractedValue,
                     ...(isBundle ? extractedValue : {}),
+                    ...(nestedRuns ? { test_runs: nestedRuns } : {}),
                     ...adapter.buildStagingDisplayFields(reviewFields),
                 },
                 fieldConfidence: { [fieldKey]: pipeline.fieldConfidence?.[fieldKey] || (pipeline.aiModel ? 'ai' : 'rule_based') },
@@ -342,9 +356,9 @@ async function runReprocessForField(fieldKey, { orgId = null, limit = DEFAULT_RU
                 qualificationType: row.qualification_type || null,
                 userId: null,
                 aiModel: pipeline.aiModel || null,
-                // Solo UNA delle due colonne target è valorizzata, secondo la tabella.
-                targetQualificationId: table === 'qualifications' ? row.id : null,
-                targetWpqrId: table === 'wpqr_records' ? row.id : null,
+                // Target dalla colonna dell'adapter (wpqr_test_runs punta a target_wpqr_id sul parent).
+                targetQualificationId: adapter.targetIdColumn === 'target_qualification_id' ? row.id : null,
+                targetWpqrId: adapter.targetIdColumn === 'target_wpqr_id' ? row.id : null,
                 fieldScope: fieldKey,
             });
 
