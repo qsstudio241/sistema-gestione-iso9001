@@ -698,9 +698,8 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
         let cancelled = false;
         const timer = setTimeout(() => {
             setInspectorGate((g) => ({ ...g, loading: true, error: null }));
-            const fetchEligibility = apiService.getNdtInspectorEligibility;
-            const pending = typeof fetchEligibility === "function"
-                ? fetchEligibility({
+            const pending = typeof apiService.getNdtInspectorEligibility === "function"
+                ? apiService.getNdtInspectorEligibility({
                     inspector: form.inspector || "",
                     inspector_qualification_id: form.inspector_qualification_id || "",
                     report_type: form.report_type,

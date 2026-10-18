@@ -8,6 +8,16 @@ Per ogni caso: data, PR, area, gravità, cosa è successo, regola generale.
 
 ## 18/10/2026
 
+### La tendina patentini chiama il metodo senza this
+
+- **Data:** 18/10/2026
+- **PR:** [#839](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/839)
+- **Area:** verbali CND, patentini ISO 9712
+- **Gravità:** media
+- **Cosa è successo:** la pagina copia `getNdtInspectorEligibility` e lo chiama da solo. Il metodo usa `this.get`. Senza `this` la promise rifiuta prima della richiesta. Admin e auditor vedono «Impossibile caricare i patentini». L'API, chiamata a parte, risponde 200.
+- **Regola:** un metodo del servizio si chiama sull'oggetto. Un test che sostituisce il metodo con una funzione libera non vede il guasto.
+- **Confronto:** la skill non ha visto questo errore. La checklist non parlava di `this` sulle chiamate del browser.
+
 ### Due casi, stesso codice, due commesse
 
 - **Data:** 18/10/2026

@@ -63,7 +63,14 @@ vi.mock("../services/apiService", () => ({
     createNdtReport: vi.fn().mockResolvedValue({ data: {} }),
     updateNdtReport: vi.fn(),
     deleteNdtReport: vi.fn(),
-    getNdtInspectorEligibility: (...args) => eligibilityMock(...args),
+    // Stessa forma del servizio vero: metodo async che usa this.get.
+    // Se la pagina stacca il metodo, this è perso e la promise rifiuta.
+    async getNdtInspectorEligibility(params) {
+      return this.get(params);
+    },
+    get(params) {
+      return eligibilityMock(params);
+    },
   },
 }));
 

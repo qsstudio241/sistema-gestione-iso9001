@@ -213,6 +213,13 @@ Controllare solo ciò che il diff tocca.
 - Simboli di posizione fuori tabella non fanno sembrare assente ogni colonna
   qualificata. Il finding «manca il dato» resta; il «più stretto» no.
 
+**Chiamate dal browser**
+
+- Un metodo di `apiService` che usa `this` si invoca sull'oggetto
+  (`apiService.metodo(...)`). Copiarlo in una variabile e chiamarlo perde
+  `this`: la pagina mostra un errore di rete e la richiesta non parte.
+  Un test che sostituisce il metodo con una funzione libera non se ne accorge.
+
 **Stato dopo un errore o un cambio ambito**
 
 - Upload di più file: se uno fallisce, ricaricare il job prima di riprovare.
