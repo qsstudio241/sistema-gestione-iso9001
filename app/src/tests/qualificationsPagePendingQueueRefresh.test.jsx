@@ -23,6 +23,9 @@ const scopeState = {
 vi.mock("../contexts/CompanyScopeContext", () => ({
   useCompanyScope: () => scopeState,
 }));
+vi.mock("../contexts/AuthContext", () => ({
+  useAuth: () => ({ user: { role: "auditor" }, canWriteModule: () => true }),
+}));
 vi.mock("../components/QualificationUploadButton", () => ({
   default: ({ onUploadComplete }) => (
     <button type="button" data-testid="simula-fine-batch" onClick={() => onUploadComplete?.()}>

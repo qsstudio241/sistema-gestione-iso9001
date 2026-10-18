@@ -5,6 +5,14 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import React from "react";
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 
+const authState = {
+  user: { role: "auditor" },
+  canWriteModule: () => true,
+};
+vi.mock("../contexts/AuthContext", () => ({
+  useAuth: () => authState,
+}));
+
 vi.mock("../services/apiService", () => ({
   default: {
     listIngestStaging: vi.fn(),
@@ -36,6 +44,8 @@ const REPROCESS = { id: 6, doc_type: "patentino_saldatore", original_name: "ZZ_b
 
 beforeEach(() => {
   vi.clearAllMocks();
+  authState.user = { role: "auditor" };
+  authState.canWriteModule = () => true;
   apiService.listIngestStaging.mockResolvedValue({ items: [PENDING, REPROCESS] });
   apiService.getIngestStaging.mockResolvedValue({
     id: 5, doc_type: "patentino_saldatore", original_name: "ZZ_a.pdf", fields: { person_name: "ZZ_Persona" },
@@ -176,5 +186,15 @@ describe("PendingIngestQueue", () => {
     await waitFor(() => expect(apiService.rejectIngestStaging).toHaveBeenCalledWith(5));
     await waitFor(() => expect(screen.queryByTestId("pending-ingest-queue")).toBeNull());
     expect(onChanged).toHaveBeenCalled();
+  });
+
+  it("viewer: Rivedi resta visibile ma disabilitato (sola lettura)", async () => {
+    authState.user = { role: "viewer" };
+    authState.canWriteModule = () => false;
+    render(<PendingIngestQueue />);
+    fireEvent.click(await screen.findByText("Vedi elenco"));
+    const btn = screen.getByRole("button", { name: "Rivedi" });
+    expect(btn).toBeDisabled();
+    expect(btn).toHaveAttribute("title", "Sola lettura");
   });
 });
