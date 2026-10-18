@@ -252,6 +252,11 @@ describe('CORR.THK_BW — Tab. 3 (spessore del materiale t)', () => {
         expectWarnOver(one(bw(4, 2, null, { thickness_max_unlimited: true }), `${R}.THK_BW`), '§5.7 Tab. 3');
     });
 
+    test('massimo numerico insieme al flag illimitato: si confronta il massimo', () => {
+        none(bw(4, 2, 8, { thickness_max_unlimited: true }), `${R}.THK_BW`);
+        expectWarnOver(one(bw(4, 2, 10, { thickness_max_unlimited: true }), `${R}.THK_BW`), '§5.7 Tab. 3');
+    });
+
     test('certificato più stretto → info under_claim', () => {
         expectInfoUnder(one(bw(4, 2.5, 8), `${R}.THK_BW`));
         expectInfoUnder(one(bw(4, 2, 6), `${R}.THK_BW`));
