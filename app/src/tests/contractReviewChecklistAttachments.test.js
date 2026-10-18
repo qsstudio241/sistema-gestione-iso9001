@@ -89,4 +89,19 @@ describe('contractReviewChecklistAttachments', () => {
     expect(off.attachment_required).toBe(0);
     expect(off.linked_attachments).toEqual([]);
   });
+
+  it('normalizeChecklistRow tiene autore e data della risposta', () => {
+    const normalized = normalizeChecklistRow({
+      id: 3,
+      item_ref: 'P1',
+      answered_by: 9,
+      answered_by_name: 'Luca Neri',
+      answered_at: '2026-10-16T15:00:00.000Z',
+    });
+    expect(normalized).toMatchObject({
+      answered_by: 9,
+      answered_by_name: 'Luca Neri',
+      answered_at: '2026-10-16T15:00:00.000Z',
+    });
+  });
 });
