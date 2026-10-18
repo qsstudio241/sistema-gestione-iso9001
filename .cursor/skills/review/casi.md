@@ -225,7 +225,7 @@ Non sono regole nuove. Erano ipotesi sullo SHA revisionato, non un commento di B
   **Esito 18/10/2026:** coda ingest — corretto in [#826](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/826) (lista per azienda, conferma/scarto bloccati per viewer e per altra azienda). `cert_ndt` già risolto.
 - #786: una WPQR creata a mano, con `company_id` vuoto, non si lega.
 - #764: l'OCR di intestazione non parte se nel corpo c'è già una sigla.
-  **Esito 18/10/2026:** corretto in questa slice — con ente AI vuoto/`altro` l'OCR parte se nel testo non c'è un ente della lista chiusa. IIS (fuori lista) non blocca più.
+  **Esito 18/10/2026:** corretto in [#832](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/832) — con ente AI vuoto/`altro` l'OCR parte se nel testo non c'è un ente della lista chiusa. IIS (fuori lista) non blocca più.
 - #760: una data di nascita a due cifre diventa `exam_date`.
 - #733: il form di una 9606-2 BW usa ancora il profilo 9606-1; piastra→tubo con più posizioni usa sempre la soglia 150 mm (Bugbot lo scrive su un commit successivo).
 - #727: per la 9606-2, `t` del materiale finisce in `s`.
@@ -246,7 +246,7 @@ Rilettura in sola lettura dopo il merge della [#824](https://github.com/qsstudio
 | Corretto in [#826](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/826) | alta | #791 | `PendingIngestQueue.jsx`, `ingestStaging.controller.js`, `ingestStaging.service.js` | Lista per azienda; conferma/scarto bloccati per viewer e per altra azienda. |
 | Già risolto | media | #791 | `ingestStaging.controller.js` (`MODULE_DOC_TYPES.qualifiche`) | Il filtro include `cert_ndt`. |
 | Ancora presente | media | #786 | `wpsWpqrLinks.service.js` (`companyClause`) | Il match esige `company_id` uguale. La WPQR creata a mano, con azienda vuota, non si lega alla WPS della stessa azienda. |
-| Ancora presente | media | #764 | `documentIngestPipeline.service.js` (`applyHeaderIssuingBodyFallback`) | Se l'ente AI è vuoto o `altro` e `extractIssuingBody` trova una sigla nel testo (IIS è in lista), l'OCR dell'intestazione non parte. |
+| Corretto in [#832](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/832) | media | #764 | `documentIngestPipeline.service.js` (`applyHeaderIssuingBodyFallback`) | Ente AI vuoto/`altro`: OCR se manca un ente della lista chiusa. IIS non blocca. |
 | Già risolto | media | #760 | `ruleFieldExtractors.js` (`allDates`, `extractQualificationDates`) | L'anno a due cifre non entra nell'elenco date di default. La nascita è esclusa dai candidati dell'esame. `12.05.75` non diventa `exam_date`. |
 | Ancora presente | media | #733 | `QualificationForm.jsx` | `getJointTypeProfile` è chiamato senza la norma. Per un BW di ISO 9606-2 l'input resta `thickness_s_test_mm` (profilo 9606-1). `getVisibleFieldKeys` conosce già il profilo `9606-2`, il form non lo usa. |
 | Già risolto | bassa | #733 | `weldingQualificationRules9606Part2.js` (`computePlateToPipeMinDiameter`) | Più posizioni prendono la soglia più alta: PF insieme a un'altra posizione è 500 mm, non il pavimento 150. |
