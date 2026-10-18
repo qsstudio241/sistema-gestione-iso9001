@@ -16,6 +16,7 @@ const {
     loadWelderQualificationsForProject,
 } = require('./capabilityCoverage/wpsWelderCoverage');
 const { buildCaseCoverageAdvisory } = require('./caseCoverageAdvisory.service');
+const { normalizeApplicableWpsIds } = require('../utils/applicableWpsIds');
 
 function semaforoExpiry(expiryDate, status) {
     if (status === 'revocata' || status === 'sospesa') return 'rosso';
@@ -94,12 +95,7 @@ async function computeCaseProjectCoverage({ caseId, projectId, organizationId })
     const requirements = await loadExtractedRequirements(caseId, organizationId);
     const extractedProfile = buildTechnicalProfile(requirements);
 
-    let wpsIds = [];
-    try {
-        wpsIds = JSON.parse(project.applicable_wps_ids || '[]');
-    } catch {
-        wpsIds = [];
-    }
+    const wpsIds = normalizeApplicableWpsIds(project.applicable_wps_ids);
 
     if (!wpsIds.length) {
         const advisory = await buildCaseCoverageAdvisory({

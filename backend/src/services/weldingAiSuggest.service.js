@@ -34,6 +34,7 @@ const logger = require('../utils/logger');
 const { chat, getActiveProvider } = require('./aiProviderAdapter');
 const { extractDocumentText } = require('./documentTextExtractor.service');
 const { normalizeConfidence, normalizeCoverage } = require('./salAiSuggest.service');
+const { normalizeApplicableWpsIds } = require('../utils/applicableWpsIds');
 
 /** Standard ISO 3834-3 di riferimento (unico gia' importato in norm_requirements). */
 const DEFAULT_STANDARD_CODE = 'ISO_3834_3_2021';
@@ -73,14 +74,7 @@ async function loadProjectForOrg(organizationId, projectId) {
 
 /** Risolve le WPS applicabili (dettagli minimi: codice, processo, materiale). */
 async function loadApplicableWps(organizationId, project) {
-  if (!project.applicable_wps_ids) return [];
-  let ids = [];
-  try {
-    const parsed = JSON.parse(project.applicable_wps_ids);
-    ids = Array.isArray(parsed) ? parsed.map((n) => parseInt(n, 10)).filter((n) => Number.isFinite(n)) : [];
-  } catch (_) {
-    return [];
-  }
+  const ids = normalizeApplicableWpsIds(project.applicable_wps_ids);
   if (!ids.length) return [];
 
   const placeholders = ids.map((_, i) => `@id${i}`).join(', ');

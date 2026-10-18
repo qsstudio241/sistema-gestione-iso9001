@@ -7,6 +7,7 @@
 
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
+const { normalizeApplicableWpsIds } = require('../utils/applicableWpsIds');
 const { logEntityChange, trashedDetailHidden, softDeleteSql } = require('../services/entityChangeLog.service');
 const {
     ensureCompanyAccessLoaded,
@@ -92,6 +93,7 @@ async function pushWpqrCompanyScope(user, conditions, params, prefix) {
     conditions.push(`(${onWpqr.clause} OR (wq.company_id IS NULL AND ${onWps.clause}))`);
     Object.assign(params, onWpqr.params, onWps.params);
 }
+
 const { describeIngestFileError, redactFileNameForLog } = require('../utils/ingestErrorMessage');
 const wpqrTestRuns = require('../services/wpqrTestRuns.service');
 
@@ -1513,8 +1515,7 @@ async function getWpsCoverage(req, res) {
         if (await denyOutsideCompany(res, req.user, project.company_id, 'read')) return;
         const companyId = project.company_id;
 
-        let wpsIds = [];
-        try { wpsIds = JSON.parse(project.applicable_wps_ids || '[]'); } catch (_) {}
+        const wpsIds = normalizeApplicableWpsIds(project.applicable_wps_ids);
 
         // WPS attive+approvate per l'azienda della commessa
         const baseConditions = [
@@ -1533,8 +1534,7 @@ async function getWpsCoverage(req, res) {
         // Se ci sono WPS specifiche assegnate, usa quelle; altrimenti tutte dell'azienda
         let wpsWhere = baseConditions.join(' AND ');
         if (wpsIds.length > 0) {
-            const ids = wpsIds.map(Number).filter(Boolean).join(',');
-            wpsWhere += ` AND w.id IN (${ids})`;
+            wpsWhere += ` AND w.id IN (${wpsIds.join(',')})`;
         }
 
         const wpsResult = await query(`
