@@ -255,7 +255,7 @@ Rilettura in sola lettura dopo il merge della [#824](https://github.com/qsstudio
 | Già risolto | bassa | #733 | `weldingQualificationRules9606Part2.js` (`computePlateToPipeMinDiameter`) | Più posizioni prendono la soglia più alta: PF insieme a un'altra posizione è 500 mm, non il pavimento 150. |
 | Corretto in [#831](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/831) | media | #727 | `weldingDesignation.js`, `qualificationIngest.service.js` | 9606-2: `t` resta `t`. 9606-1 invariato. |
 | Corretto in [#831](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/831) | bassa | #725 | `welder9606Correctness.pack.js`, `welder9606Part2.pack.js` | Massimo numerico confrontato anche con flag illimitato. |
-| Rimandato | media | #702 | `welder9606.adapter.js` | Inclusione 14732 intenzionale dopo COV-4 (stessa copertura WPS). Escluderla cambierebbe i semafori. Serve dominio dedicato, non filtro silenzioso. |
+| Rimandato (vedi [#831](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/831)) | media | #702 | `welder9606.adapter.js` | Inclusione 14732 intenzionale dopo COV-4 (stessa copertura WPS). Escluderla cambierebbe i semafori. Serve dominio dedicato, non filtro silenzioso. |
 
 ### Quanto prende la checklist aggiornata
 
