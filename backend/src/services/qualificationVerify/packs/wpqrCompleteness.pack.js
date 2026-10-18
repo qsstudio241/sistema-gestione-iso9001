@@ -47,8 +47,10 @@ const isBlank = (v) => v == null || (typeof v === 'string' && v.trim() === '');
 const isNum = (v) => typeof v === 'number' && Number.isFinite(v);
 const isNone = (v) => !isBlank(v) && NONE_RE.test(String(v).trim());
 const isStud = (view) => view.standard && view.standard.family === STANDARD_FAMILY.WPQR_14555;
-const isArc = (view) => !isStud(view) && !STUD_PROCESS_CODES.has(view.welding_process_code);
 const isAutogenous = (code) => code && NO_FILLER_PROCESSES.has(code);
+const isArc = (view) => !isStud(view)
+    && !STUD_PROCESS_CODES.has(view.welding_process_code)
+    && !isAutogenous(view.welding_process_code);
 
 function processCodesOn(view) {
     const out = [];
@@ -62,6 +64,16 @@ function processCodesOn(view) {
 function fillerNotRequired(view) {
     const codes = processCodesOn(view);
     return codes.length > 0 && codes.every(isAutogenous);
+}
+
+function fillerPresentOnCertificate(view) {
+    if (!isBlank(view.filler_material) || !isBlank(view.filler_material_key)) return true;
+    return (view.runs || []).some((r) => !isBlank(r.filler_designation) || !isBlank(r.filler_make));
+}
+
+function currentTypePresentOnCertificate(view) {
+    if (!isBlank(view.current_type) || !isBlank(view.current_type_canonical)) return true;
+    return (view.runs || []).some((r) => !isBlank(r.polarity_effective));
 }
 
 function diameterIsEssential(view) {
@@ -188,7 +200,7 @@ const RULES = [
 
     rule('FILLER', (view) => {
         if (isStud(view) || !isArc(view) || fillerNotRequired(view)) return [];
-        if (!isBlank(view.filler_material) || !isBlank(view.filler_material_key)) return [];
+        if (fillerPresentOnCertificate(view)) return [];
         return [missingFinding(view, {
             suffix: 'FILLER',
             field: 'filler_material',
@@ -257,8 +269,8 @@ const RULES = [
     }),
 
     rule('CURRENT_TYPE', (view) => {
-        if (!isArc(view)) return [];
-        if (!isBlank(view.current_type) || !isBlank(view.current_type_canonical)) return [];
+        if (!isArc(view) || fillerNotRequired(view)) return [];
+        if (currentTypePresentOnCertificate(view)) return [];
         return [missingFinding(view, {
             suffix: 'CURRENT_TYPE',
             field: 'current_type',
@@ -422,14 +434,16 @@ const RULES = [
             if (isBlank(run.welding_process) && isBlank(run.welding_process_code)) {
                 pushMissing(run, index, 'welding_process', SEVERITY.WARN, 'processo della passata');
             }
-            if (!isNum(run.current_a)) pushMissing(run, index, 'current_a', SEVERITY.WARN, 'corrente');
-            if (!isNum(run.voltage_v)) pushMissing(run, index, 'voltage_v', SEVERITY.WARN, 'tensione');
             const runCode = run.welding_process_code || view.welding_process_code;
-            if (!isAutogenous(runCode) && !isNum(run.filler_diameter_mm)) {
-                pushMissing(run, index, 'filler_diameter_mm', SEVERITY.WARN, 'diametro del materiale d\'apporto');
-            }
-            if (isBlank(run.polarity_effective)) {
-                pushMissing(run, index, 'current_polarity', SEVERITY.WARN, 'polarità (né in riga né in testata)');
+            if (!isAutogenous(runCode)) {
+                if (!isNum(run.current_a)) pushMissing(run, index, 'current_a', SEVERITY.WARN, 'corrente');
+                if (!isNum(run.voltage_v)) pushMissing(run, index, 'voltage_v', SEVERITY.WARN, 'tensione');
+                if (!isNum(run.filler_diameter_mm)) {
+                    pushMissing(run, index, 'filler_diameter_mm', SEVERITY.WARN, 'diametro del materiale d\'apporto');
+                }
+                if (isBlank(run.polarity_effective)) {
+                    pushMissing(run, index, 'current_polarity', SEVERITY.WARN, 'polarità (né in riga né in testata)');
+                }
             }
             if (!isNum(run.travel_speed)) {
                 pushMissing(run, index, 'travel_speed', SEVERITY.INFO, 'velocità di avanzamento');

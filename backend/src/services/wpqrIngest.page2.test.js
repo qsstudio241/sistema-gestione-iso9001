@@ -10,9 +10,26 @@ const path = require('path');
 jest.mock('./documentIngestPipeline.service', () => ({
     runDocumentIngest: jest.fn(),
 }));
-jest.mock('../config/database', () => ({
-    query: jest.fn(),
-}));
+jest.mock('../config/database', () => {
+    const query = jest.fn();
+    return {
+        query,
+        getPool: jest.fn(async () => ({
+            transaction: () => ({
+                begin: jest.fn().mockResolvedValue(undefined),
+                commit: jest.fn().mockResolvedValue(undefined),
+                rollback: jest.fn().mockResolvedValue(undefined),
+                request() {
+                    const params = {};
+                    return {
+                        input(k, v) { params[k] = v; },
+                        query: (sql) => query(sql, params),
+                    };
+                },
+            }),
+        })),
+    };
+});
 
 const { query } = require('../config/database');
 const { runDocumentIngest } = require('./documentIngestPipeline.service');
@@ -26,6 +43,8 @@ const {
     mapWpqrTestResult,
     mapTestRuns,
     emptyTokenToNull,
+    mapTestDate,
+    WPQR_REPROCESSABLE_FIELDS,
 } = require('./wpqrIngest.service');
 
 const FIX = (name) => fs.readFileSync(
@@ -63,6 +82,17 @@ describe('normalizzazione token', () => {
         expect(mapWpqrTestResult('Not acceptable / unsatisfactory')).toBeNull();
         expect(mapWpqrTestResult('SENTINEL_vt_result_1')).toBe('SENTINEL_vt_result_1');
         expect(mapWpqrTestResult('esito troppo lungo per la colonna')).toBeNull();
+        expect(mapTestDate('N.A.')).toBeNull();
+        expect(mapTestDate('--')).toBeNull();
+        expect(mapTestDate('n/a')).toBeNull();
+        expect(mapTestDate('2024-03-12')).toBe('2024-03-12');
+        expect(mapTestDate('SENTINEL_test_date_1')).toBe('SENTINEL_test_date_1');
+        expect(mapTestDate('non una data')).toBeNull();
+        const mapped = mapPipelineFieldsToReview({ test_date: 'N.A.' });
+        expect(mapped.test_date).toBeNull();
+        expect(mapReviewFieldsToDb({ test_date: '--' }).test_date).toBeNull();
+        expect(WPQR_REPROCESSABLE_FIELDS.wpqr_test_results.writeGuard).toBe('vt_result IS NULL');
+        expect(WPQR_REPROCESSABLE_FIELDS.wpqr_test_results.bundleColumns.every((c) => c.writeGuard === `${c.column} IS NULL`)).toBe(true);
     });
 });
 
