@@ -25,6 +25,7 @@ import {
 } from "../utils/technicalReviewChecklist";
 import { exportTechnicalReviewDocx } from "../utils/wordExportTechnicalReview";
 import { normalizeApplicableWpsIds } from "../utils/applicableWpsIds";
+import { STATUS_LABELS } from "../utils/contractReviewLabels";
 import "./ProjectsPage.css";
 
 const AI_COVERAGE_LABELS = {
@@ -72,9 +73,13 @@ function ProjectFormModal({ project, companies, defaultCompanyId, wpsList, quali
     ...(project || {}),
     // Normalizzato nello stato iniziale (non in un effect: cambiare `form` all'apertura farebbe partire l'auto-save).
     applicable_wps_ids: normalizeApplicableWpsIds(project?.applicable_wps_ids),
+    commercial_case_id: project?.commercial_case_id ? String(project.commercial_case_id) : "",
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+  // Il passaggio all'approvazione scrive la commessa da solo. L'auto-save della
+  // commessa manda il caso solo se l'utente ha toccato il selettore.
+  const caseTouchedRef = useRef(false);
 
   // Cliente: elenco controparti (anagrafica aziende) per l'azienda selezionata,
   // stesso pattern usato dal Riesame Contratti (company_counterparties, ruolo end_customer).
@@ -95,6 +100,28 @@ function ProjectFormModal({ project, companies, defaultCompanyId, wpsList, quali
       .finally(() => { if (!cancelled) setCustomersLoading(false); });
     return () => { cancelled = true; };
   }, [form.company_id]);
+
+  const [reviewCases, setReviewCases] = useState([]);
+  const [reviewCasesLoading, setReviewCasesLoading] = useState(false);
+  useEffect(() => {
+    if (!form.company_id) { setReviewCases([]); return; }
+    let cancelled = false;
+    setReviewCasesLoading(true);
+    const load = typeof apiService.getContractReviews === "function"
+      ? apiService.getContractReviews()
+      : Promise.resolve([]);
+    load
+      .then((res) => {
+        if (cancelled) return;
+        const list = Array.isArray(res) ? res : (res?.data || []);
+        const companyId = String(form.company_id);
+        setReviewCases(list.filter((row) => String(row.company_id) === companyId));
+      })
+      .catch(() => { if (!cancelled) setReviewCases([]); })
+      .finally(() => { if (!cancelled) setReviewCasesLoading(false); });
+    return () => { cancelled = true; };
+  }, [form.company_id]);
+
   const { user } = useAuth();
   const [technicalReviewChecklist, setTechnicalReviewChecklist] = useState(() =>
     parseTechnicalReviewChecklist(project?.technical_review_checklist)
@@ -139,6 +166,22 @@ function ProjectFormModal({ project, companies, defaultCompanyId, wpsList, quali
 
   const set = (key, val) => setForm((f) => ({ ...f, [key]: val }));
 
+  function projectPayload() {
+    const payload = {
+      ...form,
+      applicable_wps_ids: normalizeApplicableWpsIds(form.applicable_wps_ids),
+      technical_review_checklist: JSON.stringify(
+        applyTechnicalReviewCompletionStamp(technicalReviewChecklist || {}, user)
+      ),
+    };
+    if (caseTouchedRef.current) {
+      payload.commercial_case_id = form.commercial_case_id ? Number(form.commercial_case_id) : null;
+    } else {
+      delete payload.commercial_case_id;
+    }
+    return payload;
+  }
+
   // Auto-save con debounce 800ms (salva progetto + sync welders)
   useEffect(() => {
     if (isFirstRender.current) { isFirstRender.current = false; return; }
@@ -149,13 +192,7 @@ function ProjectFormModal({ project, companies, defaultCompanyId, wpsList, quali
       setAutoSaveStatus('saving');
       setError(null);
       try {
-        const payload = {
-          ...form,
-          applicable_wps_ids: normalizeApplicableWpsIds(form.applicable_wps_ids),
-          technical_review_checklist: JSON.stringify(
-            applyTechnicalReviewCompletionStamp(technicalReviewChecklist || {}, user)
-          ),
-        };
+        const payload = projectPayload();
         let savedProjectId = savedIdRef.current;
         if (savedIdRef.current) {
           await apiService.updateProject(savedIdRef.current, payload);
@@ -204,13 +241,7 @@ function ProjectFormModal({ project, companies, defaultCompanyId, wpsList, quali
     setSaving(true);
     setError(null);
     try {
-      const payload = {
-        ...form,
-        applicable_wps_ids: normalizeApplicableWpsIds(form.applicable_wps_ids),
-        technical_review_checklist: JSON.stringify(
-          applyTechnicalReviewCompletionStamp(technicalReviewChecklist || {}, user)
-        ),
-      };
+      const payload = projectPayload();
       let savedProjectId;
       if (project?.id) {
         await apiService.updateProject(project.id, payload);
@@ -268,8 +299,9 @@ function ProjectFormModal({ project, companies, defaultCompanyId, wpsList, quali
                   value={form.company_id || ""}
                   onChange={(e) => {
                     const val = e.target.value;
-                    // Cambiando azienda la controparte selezionata potrebbe non appartenerle più.
-                    setForm((f) => ({ ...f, company_id: val, end_customer_id: "" }));
+                    // Cambiando azienda la controparte e il caso di riesame potrebbero non appartenerle più.
+                    caseTouchedRef.current = true;
+                    setForm((f) => ({ ...f, company_id: val, end_customer_id: "", commercial_case_id: "" }));
                   }}
                 >
                   <option value="">- Nessuna -</option>
@@ -277,6 +309,45 @@ function ProjectFormModal({ project, companies, defaultCompanyId, wpsList, quali
                     <option key={c.id} value={c.id}>{c.name}</option>
                   ))}
                 </select>
+              </div>
+              <div className="pj-form-group">
+                <label className="pj-form-label" htmlFor="project-commercial-case">Caso Riesame Requisiti</label>
+                <select
+                  id="project-commercial-case"
+                  className="pj-form-select"
+                  value={form.commercial_case_id || ""}
+                  disabled={!form.company_id}
+                  title={form.company_id ? "Caso della stessa azienda" : "Seleziona un'azienda per scegliere il caso"}
+                  onChange={(e) => {
+                    caseTouchedRef.current = true;
+                    set("commercial_case_id", e.target.value);
+                  }}
+                >
+                  <option value="">{"\u2014 Nessuno \u2014"}</option>
+                  {reviewCases.map((row) => {
+                    const status = STATUS_LABELS[row.status] || row.status || "";
+                    const title = row.title || row.external_ref || `Caso ${row.id}`;
+                    return (
+                      <option key={row.id} value={row.id}>
+                        {status ? `${title} (${status})` : title}
+                      </option>
+                    );
+                  })}
+                  {form.commercial_case_id
+                    && !reviewCases.some((row) => String(row.id) === String(form.commercial_case_id))
+                    && !reviewCasesLoading && (
+                    <option value={form.commercial_case_id}>{`Caso ${form.commercial_case_id}`}</option>
+                  )}
+                </select>
+                {!form.company_id && (
+                  <p className="pj-hint" style={{ margin: "4px 0" }}>Seleziona un&apos;azienda per vedere i casi di Riesame Requisiti.</p>
+                )}
+                {form.company_id && reviewCasesLoading && (
+                  <span className="pj-hint">Caricamento casi...</span>
+                )}
+                {form.company_id && !reviewCasesLoading && reviewCases.length === 0 && !form.commercial_case_id && (
+                  <p className="pj-hint" style={{ margin: "4px 0" }}>Nessun caso di Riesame Requisiti per questa azienda.</p>
+                )}
               </div>
               <div className="pj-form-group">
                 <label className="pj-form-label">Cliente</label>

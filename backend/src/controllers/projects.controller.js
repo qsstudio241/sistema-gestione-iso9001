@@ -136,6 +136,71 @@ async function writableWpsIdsJson(res, user, organizationId, raw) {
     return { ok: true, json: JSON.stringify(ids) };
 }
 
+/**
+ * Selettore «Caso Riesame Requisiti» sulla commessa.
+ * La colonna c'è già: niente migrazione. Il caso deve essere della stessa
+ * azienda e non già collegato a un'altra commessa viva.
+ * Campo assente nel body: non si tocca (il passaggio all'approvazione resta).
+ * @returns {Promise<{ ok: boolean, skip?: boolean, id?: number|null }>}
+ */
+async function resolveCommercialCaseId(res, user, organizationId, raw, projectCompanyId, projectId) {
+    if (raw === undefined) return { ok: true, skip: true };
+    if (raw === null || raw === '') return { ok: true, id: null };
+
+    const caseId = strictPositiveInt(raw);
+    if (caseId == null) {
+        res.status(400).json({ error: 'Caso di riesame non valido', code: 'VALIDATION_ERROR' });
+        return { ok: false };
+    }
+
+    const found = await query(`
+        SELECT id, company_id
+        FROM commercial_cases
+        WHERE id = @caseId AND organization_id = @organization_id
+    `, { caseId, organization_id: organizationId });
+    if (found.recordset.length === 0) {
+        res.status(404).json({ error: 'Caso di riesame non trovato', code: 'CASE_NOT_FOUND' });
+        return { ok: false };
+    }
+
+    const caseCompany = found.recordset[0].company_id != null
+        ? Number(found.recordset[0].company_id)
+        : null;
+    const projectCompany = projectCompanyId != null && projectCompanyId !== ''
+        ? Number(projectCompanyId)
+        : null;
+    if (!Number.isInteger(caseCompany) || !Number.isInteger(projectCompany) || caseCompany !== projectCompany) {
+        res.status(409).json({
+            error: 'Il caso di riesame deve essere della stessa azienda della commessa.',
+            code: 'CASE_COMPANY_MISMATCH',
+        });
+        return { ok: false };
+    }
+    if (await denyOutsideCompany(res, user, caseCompany, 'write')) return { ok: false };
+
+    const other = await query(`
+        SELECT id
+        FROM projects
+        WHERE organization_id = @organization_id
+          AND commercial_case_id = @caseId
+          AND deleted_at IS NULL
+          AND id <> ISNULL(@projectId, 0)
+    `, {
+        organization_id: organizationId,
+        caseId,
+        projectId: projectId || null,
+    });
+    if (other.recordset.length > 0) {
+        res.status(409).json({
+            error: 'Questo caso di riesame è già collegato a un\'altra commessa.',
+            code: 'CASE_ALREADY_LINKED',
+        });
+        return { ok: false };
+    }
+
+    return { ok: true, id: caseId };
+}
+
 const {
     resolveCommercialCustomerFields,
 } = require('../services/commercialCustomerCounterparty.service');
@@ -378,19 +443,27 @@ async function createProject(req, res) {
             )
             : null;
 
+        const caseLink = await resolveCommercialCaseId(
+            res, req.user, organization_id, req.body.commercial_case_id, companyIdVal, null,
+        );
+        if (!caseLink.ok) return;
+        const commercialCaseId = caseLink.skip ? null : caseLink.id;
+
         const result = await query(`
             INSERT INTO projects (
                 organization_id, company_id, project_code, client_name,
                 end_customer_id, description, start_date, end_date,
                 applicable_wps_ids, status, requirements_review_date,
-                technical_review_date, technical_review_checklist, notes, created_by, created_at, updated_at
+                technical_review_date, technical_review_checklist, notes,
+                commercial_case_id, created_by, created_at, updated_at
             )
             OUTPUT INSERTED.id
             VALUES (
                 @organization_id, @company_id, @project_code, @client_name,
                 @end_customer_id, @description, @start_date, @end_date,
                 @applicable_wps_ids, @status, @requirements_review_date,
-                @technical_review_date, @technical_review_checklist, @notes, @created_by, GETDATE(), GETDATE()
+                @technical_review_date, @technical_review_checklist, @notes,
+                @commercial_case_id, @created_by, GETDATE(), GETDATE()
             )
         `, {
             organization_id,
@@ -407,6 +480,7 @@ async function createProject(req, res) {
             technical_review_date:   technical_review_date || null,
             technical_review_checklist: technicalReviewChecklistJson,
             notes:                   notes || null,
+            commercial_case_id:      commercialCaseId,
             created_by:              user_id,
         });
 
@@ -417,8 +491,15 @@ async function createProject(req, res) {
             entityId: newId,
             actionType: 'created',
             actorUserId: user_id,
-            after: { project_code, status, company_id: companyIdVal, description: description || null, notes: notes || null },
-            fields: ['project_code', 'status', 'company_id', 'description', 'notes'],
+            after: {
+                project_code,
+                status,
+                company_id: companyIdVal,
+                description: description || null,
+                notes: notes || null,
+                commercial_case_id: commercialCaseId,
+            },
+            fields: ['project_code', 'status', 'company_id', 'description', 'notes', 'commercial_case_id'],
         });
         logger.info('Project created', { id: newId, organization_id, project_code });
 
@@ -437,7 +518,7 @@ async function updateProject(req, res) {
 
         const existing = await query(`
             SELECT id, company_id, end_customer_id, client_name, technical_review_checklist,
-                   project_code, description, status, notes, deleted_at
+                   project_code, description, status, notes, commercial_case_id, deleted_at
             FROM projects
             WHERE id = @id AND organization_id = @organization_id AND deleted_at IS NULL
         `, { id: parseInt(id), organization_id });
@@ -494,6 +575,20 @@ async function updateProject(req, res) {
 
         // Cliente: se end_customer_id o client_name sono presenti nel body, risincronizza
         // il nome dall'anagrafica aziende (company_counterparties) quando è impostata la FK.
+        const caseLink = await resolveCommercialCaseId(
+            res,
+            req.user,
+            organization_id,
+            req.body.commercial_case_id,
+            companyIdNext,
+            parseInt(id),
+        );
+        if (!caseLink.ok) return;
+        if (!caseLink.skip) {
+            updates.push('commercial_case_id = @commercial_case_id');
+            params.commercial_case_id = caseLink.id;
+        }
+
         if (req.body.end_customer_id !== undefined || req.body.client_name !== undefined) {
             const customerFields = await resolveCommercialCustomerFields({
                 organizationId: organization_id,
@@ -525,6 +620,12 @@ async function updateProject(req, res) {
             WHERE id = @id
         `, params);
 
+        const after = { ...req.body };
+        const logFields = [...allowed];
+        if (!caseLink.skip) {
+            after.commercial_case_id = caseLink.id;
+            logFields.push('commercial_case_id');
+        }
         await logEntityChange({
             organizationId: organization_id,
             entityTable: 'projects',
@@ -532,8 +633,8 @@ async function updateProject(req, res) {
             actionType: 'updated',
             actorUserId: req.user.user_id,
             before: existingProject,
-            after: req.body,
-            fields: allowed,
+            after,
+            fields: logFields,
         });
         logger.info('Project updated', { id, organization_id });
         res.json({ success: true, message: 'Progetto aggiornato con successo' });
