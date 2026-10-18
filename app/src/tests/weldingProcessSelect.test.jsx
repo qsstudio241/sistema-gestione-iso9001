@@ -20,6 +20,8 @@ vi.mock("../services/apiService", () => ({
     getWPQRStats: vi.fn(),
     updateWPQR: vi.fn(),
     updateWPS: vi.fn(),
+    getWpqrTestRuns: vi.fn(),
+    saveWpqrTestRuns: vi.fn(),
     baseUrl: "",
   },
 }));
@@ -94,6 +96,7 @@ describe("WeldingProceduresPage — select processo da catalogo", () => {
       pagination: { total: 2 },
     });
     apiService.getWPQRStats.mockResolvedValue({ data: { totale: 1, da_approvare: 1, rifiutate: 0, approvate: 0 } });
+    apiService.getWpqrTestRuns.mockResolvedValue({ runs: [], available: true });
   });
 
   it("WPS: filtro processo, tabella e modal «Nuova WPS» usano il catalogo", async () => {
@@ -135,6 +138,7 @@ describe("WeldingProceduresPage — WPQR con «783-STUD WELDING» legacy", () =>
       pagination: { total: 1 },
     });
     apiService.getWPQRStats.mockResolvedValue({ data: { totale: 1, da_approvare: 1, rifiutate: 0, approvate: 0 } });
+    apiService.getWpqrTestRuns.mockResolvedValue({ runs: [], available: true });
     const user = userEvent.setup();
     render(<WeldingProceduresPage />);
     await waitFor(() => expect(apiService.getWPQRStats).toHaveBeenCalled());

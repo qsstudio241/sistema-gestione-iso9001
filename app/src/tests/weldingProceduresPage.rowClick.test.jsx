@@ -26,6 +26,8 @@ vi.mock("../services/apiService", () => ({
     deleteWPS: vi.fn(),
     updateWPQR: vi.fn(),
     updateWPS: vi.fn(),
+    getWpqrTestRuns: vi.fn(),
+    saveWpqrTestRuns: vi.fn(),
     fetchProtectedFileBlob: vi.fn(),
     baseUrl: "",
   },
@@ -100,6 +102,7 @@ describe("WeldingProceduresPage — tab WPQR: riga cliccabile e Azioni", () => {
     apiService.approveWPQR.mockResolvedValue({});
     apiService.rejectWPQR.mockResolvedValue({});
     apiService.deleteWPQR.mockResolvedValue({});
+    apiService.getWpqrTestRuns.mockResolvedValue({ runs: [], available: true });
   });
 
   it("«Azioni» è l'ultima colonna e ogni riga ha il bottone Modifica nell'ultima cella", async () => {
@@ -119,6 +122,14 @@ describe("WeldingProceduresPage — tab WPQR: riga cliccabile e Azioni", () => {
     expect(screen.queryByText("Modifica WPQR")).toBeNull();
     await user.click(rowOf("WPQR-BOZ"));
     expect(screen.getAllByText("Modifica WPQR")).toHaveLength(1);
+  });
+
+  it("il modal Modifica WPQR monta la sezione passate e carica quelle della WPQR", async () => {
+    const user = await renderOnTab("wpqr");
+    await user.click(rowOf("WPQR-BOZ"));
+    expect(screen.getByText(/Passate di prova/)).toBeTruthy();
+    await waitFor(() => expect(apiService.getWpqrTestRuns).toHaveBeenCalledWith(1));
+    expect(screen.getByTestId("wtr-editor")).toBeTruthy();
   });
 
   it("il click su Modifica apre il modal una sola volta", async () => {
