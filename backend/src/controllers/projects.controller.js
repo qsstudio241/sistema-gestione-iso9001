@@ -5,7 +5,7 @@
  * Tenant-isolated: ogni query filtra per organization_id dal JWT.
  */
 
-const { query } = require('../config/database');
+const { query, getPool, sql } = require('../config/database');
 const { logEntityChange, trashedDetailHidden, softDeleteSql } = require('../services/entityChangeLog.service');
 const logger = require('../utils/logger');
 const {
@@ -199,6 +199,79 @@ async function resolveCommercialCaseId(res, user, organizationId, raw, projectCo
     }
 
     return { ok: true, id: caseId };
+}
+
+async function txQuery(transaction, text, params) {
+    const req = new sql.Request(transaction);
+    Object.entries(params || {}).forEach(([key, value]) => {
+        req.input(key, value === undefined ? null : value);
+    });
+    return req.query(text);
+}
+
+/**
+ * Stesso lucchetto del passaggio all'approvazione (sgq-handoff-studio-caso):
+ * due salvataggi dello stesso caso non collegano due commesse vive.
+ */
+async function beginCaseLink(organizationId, caseId, projectId) {
+    const pool = await getPool();
+    const transaction = new sql.Transaction(pool);
+    await transaction.begin();
+    try {
+        const lock = await txQuery(
+            transaction,
+            `
+            DECLARE @lockResult INT;
+            EXEC @lockResult = sp_getapplock
+                @Resource = @lockResource,
+                @LockMode = 'Exclusive',
+                @LockOwner = 'Transaction',
+                @LockTimeout = 10000;
+            SELECT @lockResult AS lock_result;
+            `,
+            { lockResource: `sgq-handoff-${organizationId}-${caseId}` },
+        );
+        const lockResult = Number(lock.recordset[0] && lock.recordset[0].lock_result);
+        if (!Number.isFinite(lockResult) || lockResult < 0) {
+            await transaction.rollback();
+            return {
+                ok: false,
+                status: 409,
+                error: 'Il caso di riesame è in uso. Riprovare.',
+                code: 'CASE_LINK_BUSY',
+            };
+        }
+        const other = await txQuery(
+            transaction,
+            `
+            SELECT id
+            FROM projects
+            WHERE organization_id = @organization_id
+              AND commercial_case_id = @caseId
+              AND deleted_at IS NULL
+              AND id <> ISNULL(@projectId, 0)
+            `,
+            { organization_id: organizationId, caseId, projectId: projectId || null },
+        );
+        if (other.recordset.length > 0) {
+            await transaction.rollback();
+            return {
+                ok: false,
+                status: 409,
+                error: 'Questo caso di riesame è già collegato a un\'altra commessa.',
+                code: 'CASE_ALREADY_LINKED',
+            };
+        }
+        return {
+            ok: true,
+            run: (text, params) => txQuery(transaction, text, params),
+            commit: () => transaction.commit(),
+            rollback: () => transaction.rollback(),
+        };
+    } catch (err) {
+        try { await transaction.rollback(); } catch (_) { /* già chiusa */ }
+        throw err;
+    }
 }
 
 const {
@@ -449,7 +522,22 @@ async function createProject(req, res) {
         if (!caseLink.ok) return;
         const commercialCaseId = caseLink.skip ? null : caseLink.id;
 
-        const result = await query(`
+        let run = query;
+        let commitLink = async () => {};
+        let rollbackLink = async () => {};
+        if (commercialCaseId) {
+            const locked = await beginCaseLink(organization_id, commercialCaseId, null);
+            if (!locked.ok) {
+                return res.status(locked.status).json({ error: locked.error, code: locked.code });
+            }
+            run = locked.run;
+            commitLink = locked.commit;
+            rollbackLink = locked.rollback;
+        }
+
+        let result;
+        try {
+            result = await run(`
             INSERT INTO projects (
                 organization_id, company_id, project_code, client_name,
                 end_customer_id, description, start_date, end_date,
@@ -483,6 +571,11 @@ async function createProject(req, res) {
             commercial_case_id:      commercialCaseId,
             created_by:              user_id,
         });
+            await commitLink();
+        } catch (err) {
+            try { await rollbackLink(); } catch (_) { /* già chiusa */ }
+            throw err;
+        }
 
         const newId = result.recordset[0].id;
         await logEntityChange({
@@ -614,11 +707,30 @@ async function updateProject(req, res) {
 
         updates.push('updated_at = GETDATE()');
 
-        await query(`
-            UPDATE projects
-            SET ${updates.join(', ')}
-            WHERE id = @id
-        `, params);
+        let run = query;
+        let commitLink = async () => {};
+        let rollbackLink = async () => {};
+        if (caseLink.id) {
+            const locked = await beginCaseLink(organization_id, caseLink.id, parseInt(id));
+            if (!locked.ok) {
+                return res.status(locked.status).json({ error: locked.error, code: locked.code });
+            }
+            run = locked.run;
+            commitLink = locked.commit;
+            rollbackLink = locked.rollback;
+        }
+
+        try {
+            await run(`
+                UPDATE projects
+                SET ${updates.join(', ')}
+                WHERE id = @id
+            `, params);
+            await commitLink();
+        } catch (err) {
+            try { await rollbackLink(); } catch (_) { /* già chiusa */ }
+            throw err;
+        }
 
         const after = { ...req.body };
         const logFields = [...allowed];

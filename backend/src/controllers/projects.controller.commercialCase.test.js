@@ -5,12 +5,16 @@
  * Stessa azienda, caso esistente nello studio, una sola commessa viva per caso.
  */
 
-jest.mock('../config/database', () => ({ query: jest.fn() }));
+jest.mock('../config/database', () => ({
+  query: jest.fn(),
+  getPool: jest.fn(),
+  sql: { Transaction: jest.fn(), Request: jest.fn() },
+}));
 jest.mock('../utils/logger', () => ({
   info: jest.fn(), error: jest.fn(), warn: jest.fn(), debug: jest.fn(),
 }));
 
-const { query } = require('../config/database');
+const { query, getPool, sql } = require('../config/database');
 const { createProject, updateProject } = require('./projects.controller');
 
 function mockRes() {
@@ -39,6 +43,22 @@ function updateParams() {
   return call ? call[1] : null;
 }
 
+function useLock() {
+  getPool.mockResolvedValue({});
+  sql.Transaction.mockImplementation(() => ({
+    begin: jest.fn(async () => {}),
+    commit: jest.fn(async () => {}),
+    rollback: jest.fn(async () => {}),
+  }));
+  sql.Request.mockImplementation(() => {
+    const params = {};
+    return {
+      input(key, value) { params[key] = value; return this; },
+      query: (text) => query(text, params),
+    };
+  });
+}
+
 afterEach(() => jest.resetAllMocks());
 
 describe('createProject — commercial_case_id', () => {
@@ -54,9 +74,11 @@ describe('createProject — commercial_case_id', () => {
     expect(insertParams().commercial_case_id).toBeNull();
   });
 
-  it('caso della stessa azienda: salva l\'id', async () => {
+  it('caso della stessa azienda: salva l\'id sotto il lucchetto del passaggio', async () => {
+    useLock();
     query.mockImplementation(async (sql) => {
       const text = String(sql);
+      if (text.includes('sp_getapplock')) return { recordset: [{ lock_result: 0 }] };
       if (text.includes('FROM commercial_cases')) return { recordset: [{ id: 12, company_id: 49 }] };
       if (text.includes('commercial_case_id = @caseId')) return { recordset: [] };
       if (text.includes('INSERT INTO projects')) return { recordset: [{ id: 70 }] };
@@ -69,6 +91,7 @@ describe('createProject — commercial_case_id', () => {
     }, res);
     expect(res.status).toHaveBeenCalledWith(201);
     expect(insertParams().commercial_case_id).toBe(12);
+    expect(sqls().some((sql) => sql.includes('sgq-handoff-') || sql.includes('sp_getapplock'))).toBe(true);
   });
 
   it('altra azienda, caso assente o già collegato: niente INSERT', async () => {
@@ -114,8 +137,10 @@ describe('createProject — commercial_case_id', () => {
 
 describe('updateProject — commercial_case_id', () => {
   function arm(caseRow, other = []) {
+    useLock();
     query.mockImplementation(async (sql) => {
       const text = String(sql);
+      if (text.includes('sp_getapplock')) return { recordset: [{ lock_result: 0 }] };
       if (text.includes('FROM commercial_cases')) {
         return { recordset: caseRow ? [caseRow] : [] };
       }
