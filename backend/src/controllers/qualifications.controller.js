@@ -113,7 +113,7 @@ const {
 } = require('../services/qualificationExpirySql');
 const { toNumericOrNull } = require('../utils/numericSanitizer');
 const { FIELD_STATE, getFieldState, nullNotApplicableFields } = require('../data/jointTypeProfiles');
-const { occupationalQualificationSqlInList } = require('../constants/occupationalQualificationTypes');
+const { occupationalQualificationSqlInList, isVisionFitnessType } = require('../constants/occupationalQualificationTypes');
 const { findVisionFitnessGaps } = require('../services/visionFitness.service');
 const {
     computeWpsWelderCoverage,
@@ -140,6 +140,7 @@ const QUALIFICATION_MANUAL_EDITABLE_FIELDS = [
     'company_id', 'person_name', 'person_code', 'personnel_id', 'department',
     'qualification_type', 'standard_ref', 'scope_detail', 'certificate_number', 'issuing_body',
     'issue_date', 'exam_date', 'expiry_date', 'last_renewal_date',
+    'near_vision_expiry_date', 'colour_vision_expiry_date',
     'last_confirmation_date', 'next_confirmation_due', 'revalidation_date',
     'status', 'notes',
     'welding_process', 'material_group', 'position_range', 'ndt_method', 'ndt_level',
@@ -184,6 +185,12 @@ function toNum(v) {
 }
 
 /** Converte in intero finito o null (per colonne INT: ndt_level, training_hours). */
+/** Le due date oculistiche si salvano solo sul certificato visivo. Altri tipi: NULL. */
+function persistedVisionClocks(qualificationType, near, colour) {
+    if (!isVisionFitnessType(qualificationType)) return { near: null, colour: null };
+    return { near: near || null, colour: colour || null };
+}
+
 function toIntOrNull(v) {
     const n = toNumericOrNull(v);
     return n != null ? Math.trunc(n) : null;
@@ -633,6 +640,7 @@ async function createQualification(req, res) {
             qualification_type, standard_ref, scope_detail,
             certificate_number, issuing_body,
             issue_date, expiry_date, last_renewal_date,
+            near_vision_expiry_date, colour_vision_expiry_date,
             status = 'valida', notes,
             // v1 fields
             welding_process, material_group, position_range, ndt_method, ndt_level,
@@ -719,6 +727,11 @@ async function createQualification(req, res) {
             }
         }
 
+        const visionClocks = persistedVisionClocks(
+            qualification_type,
+            near_vision_expiry_date,
+            colour_vision_expiry_date,
+        );
         const r = await pool.request()
             .input('orgId',     orgId)
             .input('compId',    company_id   || null)
@@ -733,6 +746,8 @@ async function createQualification(req, res) {
             .input('issuer',    issuing_body || null)
             .input('issueDate', issue_date   || null)
             .input('expiryDate',expiry_date  || null)
+            .input('nearVision', visionClocks.near)
+            .input('colourVision', visionClocks.colour)
             .input('renewalDate',last_renewal_date || null)
             .input('status',    status)
             .input('notes',     notes        || null)
@@ -791,7 +806,7 @@ async function createQualification(req, res) {
                 INSERT INTO qualifications
                     (organization_id, company_id, person_name, person_code, personnel_id, department,
                      qualification_type, standard_ref, scope_detail, certificate_number, issuing_body,
-                     issue_date, exam_date, expiry_date, last_renewal_date,
+                     issue_date, exam_date, expiry_date, near_vision_expiry_date, colour_vision_expiry_date, last_renewal_date,
                      last_confirmation_date, next_confirmation_due, revalidation_date,
                      status, notes, created_by,
                      welding_process, material_group, position_range, ndt_method, ndt_level,
@@ -810,7 +825,7 @@ async function createQualification(req, res) {
                 VALUES
                     (@orgId, @compId, @personName, @personCode, @personnelId, @dept,
                      @qualType, @stdRef, @scope, @certNum, @issuer,
-                     @issueDate, @examDate, @expiryDate, @renewalDate,
+                     @issueDate, @examDate, @expiryDate, @nearVision, @colourVision, @renewalDate,
                      @lastConfDate, @nextConfDue, @revalDate,
                      @status, @notes, @userId,
                      @weldProc, @matGroup, @posRange, @ndtMethod, @ndtLevel,
@@ -867,6 +882,7 @@ async function updateQualification(req, res) {
             qualification_type, standard_ref, scope_detail,
             certificate_number, issuing_body,
             issue_date, expiry_date, last_renewal_date,
+            near_vision_expiry_date, colour_vision_expiry_date,
             status, notes,
             welding_process, material_group, position_range, ndt_method, ndt_level,
             joint_type, thickness_range, pipe_diameter, filler_material, shielding_gas, equipment_type,
@@ -922,6 +938,11 @@ async function updateQualification(req, res) {
             return res.status(personnelResult.status || 400).json({ error: personnelResult.error, code: personnelResult.code });
         }
 
+        const visionClocks = persistedVisionClocks(
+            qualification_type,
+            near_vision_expiry_date,
+            colour_vision_expiry_date,
+        );
         await pool.request()
             .input('id',        id)
             .input('orgId',     orgId)
@@ -937,6 +958,8 @@ async function updateQualification(req, res) {
             .input('issuer',    issuing_body || null)
             .input('issueDate', issue_date   || null)
             .input('expiryDate',expiry_date  || null)
+            .input('nearVision', visionClocks.near)
+            .input('colourVision', visionClocks.colour)
             .input('renewalDate',last_renewal_date || null)
             .input('status',    status || 'valida')
             .input('notes',     notes        || null)
@@ -993,7 +1016,9 @@ async function updateQualification(req, res) {
                     personnel_id=@personnelId,
                     department=@dept, qualification_type=@qualType, standard_ref=@stdRef,
                     scope_detail=@scope, certificate_number=@certNum, issuing_body=@issuer,
-                    issue_date=@issueDate, exam_date=@examDate, expiry_date=@expiryDate, last_renewal_date=@renewalDate,
+                    issue_date=@issueDate, exam_date=@examDate, expiry_date=@expiryDate,
+                    near_vision_expiry_date=@nearVision, colour_vision_expiry_date=@colourVision,
+                    last_renewal_date=@renewalDate,
                     last_confirmation_date=@lastConfDate, next_confirmation_due=@nextConfDue, revalidation_date=@revalDate,
                     status=@status, notes=@notes, updated_at=GETDATE(),
                     welding_process=@weldProc, material_group=@matGroup, position_range=@posRange,
@@ -1144,6 +1169,7 @@ async function renewQualification(req, res) {
         // Sovrascritture dal body (es. nuove date, nuovo certificato)
         const {
             issue_date, expiry_date, last_renewal_date,
+            near_vision_expiry_date, colour_vision_expiry_date,
             certificate_number, certificate_file_url,
             notes,
         } = req.body || {};
@@ -1151,6 +1177,15 @@ async function renewQualification(req, res) {
         const certUrlCheck = await validateCertificateFileUrl(certificate_file_url, { organizationId: orgId });
         if (!certUrlCheck.ok) return res.status(CERTIFICATE_FILE_URL_ERROR.status).json(CERTIFICATE_FILE_URL_ERROR.body);
 
+        const visionClocks = persistedVisionClocks(
+            q.qualification_type,
+            near_vision_expiry_date != null && near_vision_expiry_date !== ''
+                ? near_vision_expiry_date
+                : q.near_vision_expiry_date,
+            colour_vision_expiry_date != null && colour_vision_expiry_date !== ''
+                ? colour_vision_expiry_date
+                : q.colour_vision_expiry_date,
+        );
         const r = await pool.request()
             .input('orgId',       orgId)
             .input('prevId',      id)
@@ -1165,6 +1200,8 @@ async function renewQualification(req, res) {
             .input('issuer',      q.issuing_body)
             .input('issueDate',   issue_date || null)
             .input('expiryDate',  expiry_date || null)
+            .input('nearVision',  visionClocks.near)
+            .input('colourVision', visionClocks.colour)
             .input('renewalDate', last_renewal_date || null)
             .input('notes',       notes || q.notes)
             .input('userId',      userId)
@@ -1194,7 +1231,8 @@ async function renewQualification(req, res) {
                 INSERT INTO qualifications
                     (organization_id, company_id, person_name, person_code, department,
                      qualification_type, standard_ref, scope_detail, certificate_number, issuing_body,
-                     issue_date, expiry_date, last_renewal_date, status, notes, created_by,
+                     issue_date, expiry_date, near_vision_expiry_date, colour_vision_expiry_date,
+                     last_renewal_date, status, notes, created_by,
                      previous_qualification_id, approval_status, personnel_id,
                      welding_process, material_group, position_range, ndt_method, ndt_level,
                      joint_type, thickness_range, pipe_diameter, filler_material, shielding_gas, equipment_type,
@@ -1205,7 +1243,7 @@ async function renewQualification(req, res) {
                 VALUES
                     (@orgId, @compId, @personName, @personCode, @dept,
                      @qualType, @stdRef, @scope, @certNum, @issuer,
-                     @issueDate, @expiryDate, @renewalDate, 'valida', @notes, @userId,
+                     @issueDate, @expiryDate, @nearVision, @colourVision, @renewalDate, 'valida', @notes, @userId,
                      @prevId, 'approvata', @personnelId,
                      @weldProc, @matGroup, @posRange, @ndtMethod, @ndtLevel,
                      @jointType, @thickRange, @pipeDiam, @filler, @shieldGas, @equipType,
