@@ -26,8 +26,13 @@ function makeDb({ wpqr = [], wps = [], links = [], linksTable = true } = {}) {
         const tenantOk = (row) => {
             if (!/organization_id = @organization_id/.test(text)) return true;
             if (row.organization_id !== params.organization_id) return false;
-            if (/company_id IS NULL/.test(text)) return row.company_id == null;
-            if (/company_id = @company_id/.test(text)) return row.company_id === params.company_id;
+            const allowsNullCompany = /company_id IS NULL/.test(text);
+            const allowsSameCompany = /company_id = @company_id/.test(text);
+            if (allowsNullCompany && allowsSameCompany) {
+                return row.company_id == null || row.company_id === params.company_id;
+            }
+            if (allowsNullCompany) return row.company_id == null;
+            if (allowsSameCompany) return row.company_id === params.company_id;
             return true;
         };
         if (/FROM wpqr_records WHERE/.test(text) && /^SELECT/.test(text)) {
@@ -39,8 +44,12 @@ function makeDb({ wpqr = [], wps = [], links = [], linksTable = true } = {}) {
         if (/^INSERT INTO wps_wpqr_links/.test(text)) {
             const w = db.wps.find((x) => x.id === params.wps_id && x.organization_id === params.organization_id);
             const q = db.wpqr.find((x) => x.id === params.wpqr_id && x.organization_id === params.organization_id);
-            const sameCompany = w && q && (w.company_id ?? null) === (q.company_id ?? null);
-            const companyOk = params.company_id === undefined ? (w && w.company_id == null) : (w && w.company_id === params.company_id);
+            const wCo = w ? w.company_id ?? null : null;
+            const qCo = q ? q.company_id ?? null : null;
+            const sameCompany = w && q && (wCo === qCo || wCo == null || qCo == null);
+            const companyOk = params.company_id === undefined
+                ? (w && w.company_id == null)
+                : (w && (w.company_id === params.company_id || w.company_id == null));
             const dup = db.links.some((l) => l.wps_id === params.wps_id && l.wpqr_id === params.wpqr_id);
             if (!w || !q || !sameCompany || !companyOk || dup) return { recordset: [] };
             const row = {
@@ -54,7 +63,9 @@ function makeDb({ wpqr = [], wps = [], links = [], linksTable = true } = {}) {
             const q = db.wpqr.find((x) => x.id === params.wpqr_id && x.organization_id === params.organization_id);
             const row = db.links.find((l) => l.wps_id === params.wps_id && l.wpqr_id === params.wpqr_id
                 && l.organization_id === params.organization_id);
-            const companyOk = params.company_id === undefined ? (w && w.company_id == null) : (w && w.company_id === params.company_id);
+            const companyOk = params.company_id === undefined
+                ? (w && w.company_id == null)
+                : (w && (w.company_id === params.company_id || w.company_id == null));
             if (!w || !q || !row || !companyOk || row.role === params.role) return { recordset: [] };
             row.role = params.role;
             return { recordset: [{ id: row.id }] };
@@ -87,10 +98,10 @@ describe('findWpqrByRef', () => {
         expect((await svc.findWpqrByRef({ organizationId: ORG_A, companyId: 5, ref: 'XX0001/99' })).status).toBe('not_found');
     });
 
-    it('company assente su entrambi i lati: ammesso; company assente solo su un lato: no', async () => {
+    it('company assente su entrambi i lati: ammesso; WPQR senza azienda si lega alla WPS della stessa azienda', async () => {
         makeDb({ wpqr: [{ ...WPQR_A, company_id: null }] });
         expect((await svc.findWpqrByRef({ organizationId: ORG_A, companyId: null, ref: 'XX0001/99' })).status).toBe('matched');
-        expect((await svc.findWpqrByRef({ organizationId: ORG_A, companyId: 5, ref: 'XX0001/99' })).status).toBe('not_found');
+        expect((await svc.findWpqrByRef({ organizationId: ORG_A, companyId: 5, ref: 'XX0001/99' })).status).toBe('matched');
     });
 
     it('ambiguo: due WPQR con lo stesso numero normalizzato → ambiguous, nessun id scelto', async () => {
@@ -115,6 +126,7 @@ describe('findWpqrByRef', () => {
         await svc.findWpqrByRef({ organizationId: ORG_A, companyId: 5, ref: "XX0001/99'; DROP TABLE x;--" });
         const sel = db.statements.find((s) => /FROM wpqr_records/.test(s.text));
         expect(sel.text).toContain('organization_id = @organization_id');
+        expect(sel.text).toMatch(/company_id = @company_id OR company_id IS NULL/);
         expect(sel.text).not.toMatch(/DROP|XX0001/);
     });
 
@@ -214,6 +226,13 @@ describe('insertLink / linkWpsToSupportingWpqr / linkWpqrToWps', () => {
         const db = makeDb({ wpqr: [{ ...WPQR_A, company_id: 8 }], wps: [WPS] });
         expect((await svc.insertLink({ organizationId: ORG_A, companyId: 5, wpsId: 3, wpqrId: 10, role: 'supporting' })).created).toBe(false);
         expect(db.links).toEqual([]);
+    });
+
+    it('WPQR creata a mano senza azienda: si lega alla WPS della stessa azienda', async () => {
+        const db = makeDb({ wpqr: [{ ...WPQR_A, company_id: null }], wps: [WPS] });
+        const r = await svc.insertLink({ organizationId: ORG_A, companyId: 5, wpsId: 3, wpqrId: 10, role: 'supporting' });
+        expect(r.created).toBe(true);
+        expect(db.links).toEqual([{ id: 1, organization_id: ORG_A, wps_id: 3, wpqr_id: 10, role: 'supporting' }]);
     });
 
     it("l'INSERT parte dai genitori filtrati per tenant (nessun id fidato)", async () => {

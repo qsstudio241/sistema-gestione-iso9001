@@ -4,7 +4,7 @@
  * wpsWpqrLinks.service.js — legame WPS↔WPQR scritto dall'ingest (D9, tabella `wps_wpqr_links`, migrazione 174).
  *
  * Regola di sicurezza: un legame nasce SOLO da una corrispondenza univoca nello stesso tenant
- * (organization_id e company_id identici) tra il numero dichiarato nel documento e il numero normalizzato
+ * (organization_id uguale; company_id uguale oppure assente sul record creato a mano) tra il numero dichiarato nel documento e il numero normalizzato
  * del record. Assente o ambigua → nessun legame, nessuna scelta a caso: l'esito è una segnalazione
  * «da verificare» mostrata in revisione. Ogni query ripete organization_id; gli id dei record non arrivano mai
  * dal client ma dalla ricerca stessa o dall'INSERT appena fatto.
@@ -41,10 +41,16 @@ function digitCore(ref) {
     return runs.reduce((best, cur) => (cur.length > best.length ? cur : best), '');
 }
 
-function companyClause(companyId, params) {
-    if (companyId == null || companyId === '') return 'company_id IS NULL';
+/**
+ * Filtro azienda: stessa company, oppure record creato a mano senza company
+ * (stesso tenant). Non prende mai il record di un'altra azienda.
+ * @param {string} [alias] prefisso colonna (`w`, `q`) — replace singolo non basta se c'è OR.
+ */
+function companyClause(companyId, params, alias = '') {
+    const col = alias ? `${alias}.company_id` : 'company_id';
+    if (companyId == null || companyId === '') return `${col} IS NULL`;
     params.company_id = Number(companyId);
-    return 'company_id = @company_id';
+    return `(${col} = @company_id OR ${col} IS NULL)`;
 }
 
 async function tableExists(name) {
@@ -171,8 +177,8 @@ async function insertLink({ organizationId, companyId, wpsId, wpqrId, role, user
     if (!(await tableExists('wps_wpqr_links'))) return { created: false, available: false };
 
     const params = { organization_id: org, wps_id: wps, wpqr_id: wpqr, role, created_by: userId };
-    const wpsCompany = companyClause(companyId, params).replace('company_id', 'w.company_id');
-    const wpqrCompany = wpsCompany.replace('w.company_id', 'q.company_id');
+    const wpsCompany = companyClause(companyId, params, 'w');
+    const wpqrCompany = companyClause(companyId, params, 'q');
     const r = await query(
         `INSERT INTO wps_wpqr_links (organization_id, wps_id, wpqr_id, role, created_by)
          OUTPUT INSERTED.id
