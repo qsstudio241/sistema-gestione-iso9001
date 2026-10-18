@@ -13,6 +13,7 @@ import { useCompanyScope } from "../contexts/CompanyScopeContext";
 import { formatDate } from "../utils/dateHelpers";
 import WpqrUploadButton from "../components/WpqrUploadButton";
 import WpsUploadButton from "../components/WpsUploadButton";
+import WpqrTestRunsSection from "../components/WpqrTestRunsSection";
 import AskAiButton from "../components/AskAiButton";
 import { getProcessSelectOptions, getProcessLabel, canonicalizeProcessValue } from "../utils/weldingProcessSelect";
 import ReprocessQueueBanner from "../components/ReprocessQueueBanner";
@@ -1040,6 +1041,12 @@ function WPQRFormModal({ wpqr, wpsList, defaultCompanyId, onSave, onClose, onSav
                 </label>
               </div>
             </div>
+
+            <div className="wp-form-section-title">Passate di prova (pag.2 verbale)</div>
+            <WpqrTestRunsSection
+              wpqrId={savedIdRef.current}
+              standardReference={form.standard_reference}
+            />
 
             <div className="wp-form-section-title">Prove e controlli</div>
             <div className="wp-form-grid">
