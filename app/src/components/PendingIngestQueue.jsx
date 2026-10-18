@@ -29,7 +29,13 @@ function mimeFromName(name) {
 }
 
 export default function PendingIngestQueue({ module = "qualifiche", onChanged, refreshKey = 0 }) {
-  const { user, canWriteModule } = useAuth() || {};
+  let auth = {};
+  try {
+    auth = useAuth();
+  } catch {
+    auth = {};
+  }
+  const { user, canWriteModule } = auth;
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(false);
