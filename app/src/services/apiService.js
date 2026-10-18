@@ -2943,6 +2943,10 @@ class ApiService {
     async getProjectStats()          { return this.get('/projects/stats'); }
     async addProjectWelder(projectId, data) { return this.post(`/projects/${projectId}/welders`, data); }
     async removeProjectWelder(projectId, qualificationId) { return this.delete(`/projects/${projectId}/welders/${qualificationId}`); }
+    async getProjectInspectionItems(projectId) { return this.get(`/projects/${projectId}/inspection-items`); }
+    async createProjectInspectionItem(projectId, data) { return this.post(`/projects/${projectId}/inspection-items`, data); }
+    async deleteProjectInspectionItem(projectId, itemId) { return this.delete(`/projects/${projectId}/inspection-items/${itemId}`); }
+    async generateProjectInspectionDrafts(projectId) { return this.post(`/projects/${projectId}/inspection-items/generate-drafts`, {}); }
 
     /**
      * Verifica stato validit\u00e0 norma su catalogo pubblico ente (BSI / ISO / UNI).

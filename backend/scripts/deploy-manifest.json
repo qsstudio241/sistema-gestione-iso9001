@@ -326,6 +326,7 @@
         "src/controllers/files.controller.js",
         "src/controllers/qualificationVerify.controller.js",
         "src/controllers/projects.controller.js",
+        "src/controllers/projectInspectionItems.controller.js",
         "src/controllers/risks.controller.js",
         "src/controllers/contextFactors.controller.js",
         "src/controllers/interestedParties.controller.js",

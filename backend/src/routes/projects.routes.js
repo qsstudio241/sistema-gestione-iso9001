@@ -7,6 +7,7 @@ const { authenticate } = require('../middleware/auth.middleware');
 const { requireLicensedModule, useModuleLicense } = require('../middleware/moduleLicense.middleware');
 const { logAiInteraction } = require('../middleware/aiAuditTrail.middleware');
 const ctrl = require('../controllers/projects.controller');
+const inspectionCtrl = require('../controllers/projectInspectionItems.controller');
 const aiSuggestCtrl = require('../controllers/weldingAiSuggest.controller');
 
 router.use(authenticate);
@@ -18,6 +19,15 @@ router.get   ('/projects/:id',                         ctrl.getProject);
 router.post  ('/projects',                             ctrl.createProject);
 router.put   ('/projects/:id',                         ctrl.updateProject);
 router.delete('/projects/:id',                         ctrl.deleteProject);
+
+router.get   ('/projects/:id/inspection-items', inspectionCtrl.listItems);
+router.post  ('/projects/:id/inspection-items', inspectionCtrl.createItem);
+router.delete('/projects/:id/inspection-items/:itemId', inspectionCtrl.deleteItem);
+router.post(
+  '/projects/:id/inspection-items/generate-drafts',
+  requireLicensedModule('cnd'),
+  inspectionCtrl.generateDrafts,
+);
 
 // Welders
 router.post  ('/projects/:id/welders',                 ctrl.addProjectWelder);
