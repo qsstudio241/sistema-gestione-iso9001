@@ -93,6 +93,12 @@ describe('parseWelderQualificationDesignation (FE)', () => {
     expect(fw.thickness_s_test_mm).toBeNull();
   });
 
+  it('ISO 9606-2 BW con token t: t resta t', () => {
+    const parsed = parseWelderQualificationDesignation('ISO 9606-2: 141 T BW FM1 t03 PA');
+    expect(parsed.thickness_t_test_mm).toBe(3);
+    expect(parsed.thickness_s_test_mm).toBeNull();
+  });
+
   it('certificato con ENTRAMBI s e t: salva entrambi', () => {
     const bw = parseWelderQualificationDesignation('ISO 9606-1: 141 P BW FM1 s10 t12 PA ss nb');
     expect(bw.thickness_s_test_mm).toBe(10);
@@ -103,6 +109,7 @@ describe('parseWelderQualificationDesignation (FE)', () => {
     expect(resolveTestThicknessByJoint({ joint_type: 'BW', t: 10 })).toEqual({ s: 10, t: null });
     expect(resolveTestThicknessByJoint({ joint_type: 'FW', s: 8 })).toEqual({ s: null, t: 8 });
     expect(resolveTestThicknessByJoint({ joint_type: null, t: 10 })).toEqual({ s: null, t: 10 });
+    expect(resolveTestThicknessByJoint({ joint_type: 'BW', t: 3, standard: 'ISO 9606-2' })).toEqual({ s: null, t: 3 });
   });
 
   it('resolvePrintedDesignation conserva la riga certificato', () => {

@@ -120,16 +120,15 @@ function compareRange(declared, expected) {
         if (c < 0) over.push('minimo');
         else if (c > 0) under.push('minimo');
     }
-    const declaredUnlimited = declared.max == null && declared.unlimited;
-    if (declared.max != null && !declared.unlimited) {
+    if (declared.unlimited) {
+        if (expected.maxMm != null) over.push('massimo');
+    } else if (declared.max != null) {
         if (expected.maxMm == null) under.push('massimo');
         else {
             const c = cmp(declared.max, expected.maxMm);
             if (c > 0) over.push('massimo');
             else if (c < 0) under.push('massimo');
         }
-    } else if (declaredUnlimited && expected.maxMm != null) {
-        over.push('massimo');
     }
     return { over, under };
 }

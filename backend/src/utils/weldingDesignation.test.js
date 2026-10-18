@@ -284,4 +284,19 @@ describe('resolveTestThicknessByJoint', () => {
         expect(resolveTestThicknessByJoint({ joint_type: 'FW', s: '10,5' })).toEqual({ s: null, t: 10.5 });
         expect(resolveTestThicknessByJoint({ joint_type: 'FW', s: '10 mm' })).toEqual({ s: null, t: 10 });
     });
+
+    it('ISO 9606-2 BW: t resta t, non diventa s', () => {
+        expect(resolveTestThicknessByJoint({
+            joint_type: 'BW', t: 3, standard: 'ISO 9606-2',
+        })).toEqual({ s: null, t: 3 });
+    });
+});
+
+describe('parseWelderQualificationDesignation ISO 9606-2', () => {
+    it('BW con token t03: thickness_t_test_mm = 3, s resta vuoto', () => {
+        const parsed = parseWelderQualificationDesignation('ISO 9606-2: 141 T BW FM1 t03 PA');
+        expect(parsed.joint_type).toBe('BW');
+        expect(parsed.thickness_t_test_mm).toBe(3);
+        expect(parsed.thickness_s_test_mm).toBeNull();
+    });
 });
