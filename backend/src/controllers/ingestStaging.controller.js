@@ -15,6 +15,39 @@ const {
 } = require('../services/ingestStaging.service');
 const { getLicensedModuleKeysForOrg } = require('../services/moduleLicense.service');
 const { getLearningStats } = require('../services/ingestFeedback.service');
+const {
+    ensureCompanyAccessLoaded,
+    hasCompanyAccessRows,
+    getAllowedCompanyIds,
+    assertMutatingAllowed,
+    assertCompanyRead,
+} = require('../services/companyAccess.service');
+
+function throwDenied(denied) {
+    const err = new Error(denied.body.error);
+    err.status = denied.status;
+    err.code = denied.body.code;
+    throw err;
+}
+
+/** Lettura: cliente azienda solo le proprie; scrittura: niente viewer, niente altra azienda. */
+async function assertStagingAccess(user, row, level) {
+    if (level === 'write') {
+        const denied = await assertMutatingAllowed(user, { companyId: row.company_id });
+        if (denied) throwDenied(denied);
+        return;
+    }
+    const accessList = await ensureCompanyAccessLoaded(user);
+    if (!hasCompanyAccessRows(accessList)) return;
+    if (row.company_id == null || row.company_id === '') {
+        const err = new Error('Accesso non consentito');
+        err.status = 403;
+        err.code = 'FORBIDDEN';
+        throw err;
+    }
+    const denied = await assertCompanyRead(user, row.company_id);
+    if (denied) throwDenied(denied);
+}
 
 async function assertModuleAccess(req, docType) {
     const moduleKey = getModuleForDocType(docType);
@@ -43,9 +76,11 @@ async function getStaging(req, res) {
         }
 
         await assertModuleAccess(req, row.doc_type);
+        await assertStagingAccess(req.user, row, 'read');
 
         res.json({
             id: row.id,
+            company_id: row.company_id,
             doc_type: row.doc_type,
             original_name: row.original_name,
             review_status: row.review_status,
@@ -90,12 +125,14 @@ async function listStagingHandler(req, res) {
         }
         await assertModuleAccess(req, docType || docTypes[0]);
 
+        const accessList = await ensureCompanyAccessLoaded(req.user);
         const items = await listStaging({
             organizationId: req.user.organization_id,
             reviewStatus: reviewStatus || 'pending',
             docType: docType || null,
             docTypes,
             reprocessOnly: reprocessOnly === 'true' || reprocessOnly === '1',
+            allowedCompanyIds: getAllowedCompanyIds(accessList),
             limit: 200,
         });
 
@@ -114,6 +151,7 @@ async function confirmStagingHandler(req, res) {
             return res.status(404).json({ error: 'Staging non trovato', code: 'NOT_FOUND' });
         }
         await assertModuleAccess(req, row.doc_type);
+        await assertStagingAccess(req.user, row, 'write');
 
         const result = await confirmStaging(
             stagingId,
@@ -152,6 +190,7 @@ async function rejectStagingHandler(req, res) {
             return res.status(404).json({ error: 'Staging non trovato', code: 'NOT_FOUND' });
         }
         await assertModuleAccess(req, row.doc_type);
+        await assertStagingAccess(req.user, row, 'write');
 
         const result = await rejectStaging(
             stagingId,
@@ -162,7 +201,10 @@ async function rejectStagingHandler(req, res) {
         res.json({ success: true, ...result });
     } catch (error) {
         logger.error('rejectStaging', { error: error.message });
-        const status = error.code === 'INVALID_STATUS' ? 409 : 500;
+        const status = error.status
+            || (error.code === 'INVALID_STATUS' ? 409
+                : (error.code === 'AUTH_FORBIDDEN' || error.code === 'FORBIDDEN') ? 403
+                    : 500);
         res.status(status).json({ error: error.message, code: error.code || 'STAGING_REJECT_ERROR' });
     }
 }
@@ -176,6 +218,7 @@ async function getStagingFile(req, res) {
         }
 
         await assertModuleAccess(req, row.doc_type);
+        await assertStagingAccess(req.user, row, 'read');
 
         const filePath = resolveStagingFilePath(row.storage_path);
         const mime = row.mime_type || 'application/octet-stream';
@@ -187,9 +230,10 @@ async function getStagingFile(req, res) {
         fs.createReadStream(filePath).pipe(res);
     } catch (error) {
         logger.error('getStagingFile', { error: error.message });
-        const status = error.code === 'FILE_NOT_FOUND' ? 404
-            : error.code === 'FILE_FORBIDDEN' ? 403
-                : 500;
+        const status = error.status
+            || (error.code === 'FILE_NOT_FOUND' ? 404
+                : (error.code === 'FILE_FORBIDDEN' || error.code === 'AUTH_FORBIDDEN' || error.code === 'FORBIDDEN') ? 403
+                    : 500);
         res.status(status).json({ error: error.message, code: error.code || 'STAGING_FILE_ERROR' });
     }
 }
