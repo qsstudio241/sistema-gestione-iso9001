@@ -358,6 +358,7 @@ async function loadNdtQuals(organizationId, allowedCompanyIds) {
            q.certificate_number
     FROM qualifications q
     WHERE q.organization_id = @organization_id
+      AND q.deleted_at IS NULL
       AND q.status NOT IN ('revocata', 'sospesa')
       ${clause}
   `, params);
@@ -370,6 +371,7 @@ async function loadVisionRows(organizationId, allowedCompanyIds) {
   const where = `
     FROM qualifications q
     WHERE q.organization_id = @organization_id
+      AND q.deleted_at IS NULL
       AND q.status NOT IN ('revocata', 'sospesa')
       AND q.qualification_type IN (${visionIn})
       ${clause}

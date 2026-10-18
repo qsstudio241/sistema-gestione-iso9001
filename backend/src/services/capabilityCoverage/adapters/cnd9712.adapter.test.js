@@ -301,6 +301,15 @@ describe('cnd_9712 adapter (COV-3)', () => {
             expect(adapter.emptyMessage).toMatch(/Nessuna qualifica NDT/);
         });
 
+        it('esclude le qualifiche nel cestino (deleted_at) da patentino e idoneità visiva', async () => {
+            const pool = makePool({ quals: [baseQual], visions: [visionOk] });
+            await adapter.match({ domain: 'cnd_9712', criteria: { ndt_method: 'UT' } }, ctx(pool));
+            expect(pool.calls.length).toBe(2);
+            pool.calls.forEach((c) => {
+                expect(c.sql).toMatch(/q\.deleted_at IS NULL/);
+            });
+        });
+
         it('il certificato visivo non compare tra le capacita', async () => {
             const pool = makePool({
                 quals: [
