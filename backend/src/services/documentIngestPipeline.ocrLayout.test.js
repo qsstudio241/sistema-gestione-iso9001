@@ -72,6 +72,15 @@ describe('runDocumentIngest: layout OCR per qualifica_14732', () => {
         expect(extractTextWithOCR).toHaveBeenCalledWith(expect.any(Buffer), { maxPages: 3, lang: 'ita+eng' });
     });
 
+    it('wpqr: OCR legge almeno 4 pagine (esiti a pag. 4 nei layout C)', async () => {
+        extractTextWithOCR.mockResolvedValue('WPQR Record of weld test pagina 2 esiti Acceptable pagina 4 testo abbastanza lungo');
+        await runDocumentIngest({ pdfBuffer: Buffer.from('%PDF'), docType: 'wpqr', fileName: 'syn-ocr.pdf' });
+        expect(extractTextWithOCR).toHaveBeenCalledWith(
+            expect.any(Buffer),
+            { maxPages: 4, lang: 'ita+eng' },
+        );
+    });
+
     it('integrazione #764+#765: scansione 14732 con layout -> metodo da posizione, OCR intestazione NON richiamato (gia OCR completo)', async () => {
         extractTextWithOCR.mockImplementation(async (_buf, opts) => {
             opts.layoutSink.push(LAYOUT_PAGE);
