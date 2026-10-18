@@ -156,6 +156,15 @@ Per ogni caso: data, PR, area, gravità, cosa è successo, regola generale.
 - **Regola:** un `SUM` o un `COUNT` non contiene un altro aggregato né una subquery. La data più restrittiva fra più colonne, se serve alle card, si scrive con un `CASE` scalare. Il risultato resta il minimo fra le date presenti.
 - **Confronto:** la skill non ha visto questo 500. La checklist guardava quale data vince, non se l'espressione sta dentro un aggregato.
 
+### L'admin senza auditor_org non vede le aziende
+
+- **Data:** 18/10/2026
+- **PR:** [#838](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/838)
+- **Area:** Ambito, coda di ingest
+- **Gravità:** media
+- **Cosa è successo:** l'admin di studio senza `auditor_org_id` è trattato come superadmin. `GET /companies` risponde 403 e la tendina Ambito non ha l'azienda cliente. L'auditor, che ha l'auditor_org, la vede.
+- **Regola:** l'admin del proprio studio elenca le aziende di quello studio. Il viewer senza auditor_org resta fuori. Un `auditor_org_id` passato in query resta il filtro.
+
 ## Confronto con Bugbot
 
 Confronto del 18/10/2026 sulle PR [#803](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/803), [#806](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/806), [#807](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/807), [#808](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/808), [#809](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/809), [#810](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/810), [#812](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/812), [#804](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/804), [#805](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/805).

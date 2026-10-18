@@ -88,7 +88,9 @@ Controllare solo ciò che il diff tocca.
 **Ruoli**
 
 - `superadmin`: attiva i moduli dello studio. Non salta i controlli di licenza.
-- Owner / admin di studio: gestisce il proprio studio.
+- Owner / admin di studio: gestisce il proprio studio. Se non ha
+  `auditor_org_id`, vede comunque le aziende del proprio studio: un 403
+  svuota la tendina Ambito. Il viewer senza auditor_org non le vede.
 - Auditor: può creare, modificare, cancellare e aprire il cestino del proprio studio.
 - Viewer: sola lettura.
 - Cliente senza licenza: sola consultazione.
