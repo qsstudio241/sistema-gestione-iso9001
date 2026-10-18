@@ -177,10 +177,10 @@ Comportamento: log `[AlertMail] email soppressa (ambiente TEST/DISABLE_EMAIL)` (
 **Regola permanente (18/10/2026).** Dopo ogni deploy su TEST, di un agente o di un sotto-agente:
 
 - Smoke mirato sulle pagine toccate da quel deploy e sulle pagine principali: Qualifiche, Commesse, Verbali CND, Scadenzari, coda di ingest.
-- Sul frontend TEST vero. Mai su una deploy-preview Netlify. Mai sul sito di produzione (`https://systemgest.netlify.app`, sezione Endpoint API produzione). Questo documento non indica l'URL del frontend TEST: non inventarne uno.
+- Non esiste un frontend TEST pubblicato fuori dalle preview Netlify. Lo smoke usa la build locale di `main` collegata all'API TEST (`https://sistemi.fr-busato.it:8443/test-api/api/v1`). Non si usa una deploy-preview Netlify e non si usa il sito di produzione `https://systemgest.netlify.app`.
 - L'esito OK o KO va nel report del merge (descrizione della PR o commento di chiusura).
 - Un KO blocca il passo successivo finché non è risolto.
-- Ogni sera alle 19 (ora di Roma) c'è anche uno smoke completo sullo stesso frontend TEST. È un impegno: non creare cron, workflow o automazioni.
+- Ogni sera alle 19 (ora di Roma) c'è anche uno smoke completo sullo stesso bersaglio (build locale di `main` e API TEST). È un impegno: non creare cron, workflow o automazioni.
 
 ---
 
