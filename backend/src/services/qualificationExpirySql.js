@@ -7,6 +7,8 @@
 
 'use strict';
 
+const { visionFitnessSqlInList } = require('../constants/occupationalQualificationTypes');
+
 // Soglie semaforo (giorni)
 const DAYS_WARNING = 60;
 const DAYS_URGENT  = 30;
@@ -30,10 +32,15 @@ const SEMIANNUAL_TYPE_SQL_MATCH = `(
  * Data di scadenza "effettiva" calcolata in SQL — stessa regola di
  * effectiveExpiryDate() (weldingCoordinatorAuth.service, usata per il semaforo per-riga): per i tipi
  * a conferma semestrale vale la data più imminente tra expiry_date e
- * next_confirmation_due (per i coordinatori 14731: expiry_date e cpd_valid_until). Usata sia nelle statistiche (getStats) sia nel filtro
+ * next_confirmation_due (per i coordinatori 14731: expiry_date e cpd_valid_until).
+ * Per il certificato oculistico, se è compilata almeno una delle due date
+ * (visita acuità / test dei colori), vale la più vicina; se sono entrambe
+ * NULL resta expiry_date. Usata sia nelle statistiche (getStats) sia nel filtro
  * ?situazione= di listQualifications, così i conteggi delle card e il colore
  * mostrato riga per riga restano sempre coerenti tra loro.
  */
+const VISION_TYPE_SQL_MATCH = `q.qualification_type IN (${visionFitnessSqlInList()})`;
+
 const EFFECTIVE_EXPIRY_SQL = `
     CASE
         WHEN ${SEMIANNUAL_TYPE_SQL_MATCH} THEN
@@ -49,6 +56,14 @@ const EFFECTIVE_EXPIRY_SQL = `
                 WHEN q.cpd_valid_until IS NULL THEN q.expiry_date
                 WHEN q.cpd_valid_until < q.expiry_date THEN q.cpd_valid_until
                 ELSE q.expiry_date
+            END
+        WHEN ${VISION_TYPE_SQL_MATCH}
+             AND (q.near_vision_expiry_date IS NOT NULL OR q.colour_vision_expiry_date IS NOT NULL) THEN
+            CASE
+                WHEN q.near_vision_expiry_date IS NULL THEN q.colour_vision_expiry_date
+                WHEN q.colour_vision_expiry_date IS NULL THEN q.near_vision_expiry_date
+                WHEN q.near_vision_expiry_date < q.colour_vision_expiry_date THEN q.near_vision_expiry_date
+                ELSE q.colour_vision_expiry_date
             END
         ELSE q.expiry_date
     END
@@ -110,6 +125,7 @@ module.exports = {
     DAYS_WARNING,
     DAYS_URGENT,
     SEMIANNUAL_TYPE_SQL_MATCH,
+    VISION_TYPE_SQL_MATCH,
     EFFECTIVE_EXPIRY_SQL,
     EFFECTIVE_SQL,
     ACTIVE_STATUS_SQL,

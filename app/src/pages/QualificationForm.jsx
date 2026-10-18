@@ -4,7 +4,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import apiService from "../services/apiService";
-import { OCCUPATIONAL_QUALIFICATION_TYPES } from "../data/occupationalQualificationTypes";
+import { OCCUPATIONAL_QUALIFICATION_TYPES, isVisionFitnessType } from "../data/occupationalQualificationTypes";
 import { buildWelderDesignation, parseWelderQualificationDesignation, resolvePrintedDesignation } from "../utils/weldingDesignation";
 import { getApplicableWelderFields } from "../data/weldingQualificationRules9606";
 import {
@@ -58,6 +58,7 @@ const EMPTY = {
   company_id: "", qualification_type: "", standard_ref: "",
   scope_detail: "", certificate_number: "", issuing_body: "",
   issue_date: "", expiry_date: "", last_renewal_date: "",
+  near_vision_expiry_date: "", colour_vision_expiry_date: "",
   status: "valida", notes: "",
   welding_process: "", material_group: "", position_range: "",
   ndt_method: "", ndt_level: "", ndt_sector: "",
@@ -204,6 +205,7 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
       const d = { ...EMPTY, ...qualification };
       // Normalizza date a YYYY-MM-DD
       ["issue_date","expiry_date","last_renewal_date","cpd_valid_until",
+       "near_vision_expiry_date","colour_vision_expiry_date",
        "exam_date","last_confirmation_date","next_confirmation_due","revalidation_date"].forEach(k => {
         if (d[k]) d[k] = String(d[k]).slice(0, 10);
       });
@@ -942,6 +944,33 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
               <input type="date" value={form.last_renewal_date} onChange={handle("last_renewal_date")} />
             </div>
           </div>
+          {isVisionFitnessType(form.qualification_type) && (
+            <div data-testid="qf-vision-clocks">
+              <div className="qf-row">
+                <div className="qf-field">
+                  <label htmlFor="qf-near-vision-expiry">Scadenza visita acuit{"\u00e0"}</label>
+                  <input
+                    id="qf-near-vision-expiry"
+                    type="date"
+                    value={form.near_vision_expiry_date || ""}
+                    onChange={handle("near_vision_expiry_date")}
+                  />
+                </div>
+                <div className="qf-field">
+                  <label htmlFor="qf-colour-vision-expiry">Scadenza test dei colori</label>
+                  <input
+                    id="qf-colour-vision-expiry"
+                    type="date"
+                    value={form.colour_vision_expiry_date || ""}
+                    onChange={handle("colour_vision_expiry_date")}
+                  />
+                </div>
+              </div>
+              <p className="qf-locked-hint">
+                {"Per ISO 9712 l\u2019acuit\u00e0 da vicino si rinnova ogni anno; i colori ogni 5. Qui si registrano le due date del certificato: la pi\u00f9 vicina fa il colore in elenco e in Scadenzari compaiono entrambe. Se le lasci vuote resta la data di scadenza unica."}
+              </p>
+            </div>
+          )}
           {requiresConfirmation && (
             <div className="qf-row">
               {!isApproved && (

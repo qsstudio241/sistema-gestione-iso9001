@@ -16,6 +16,7 @@ import { ProtectedFileLink } from "../components/ProtectedFile";
 import AskAiButton from "../components/AskAiButton";
 import { saveQualContext } from "../utils/aiAssistantContext";
 import { requiresSemiannualConfirmation } from "../utils/weldingConfirmationRules";
+import { isVisionFitnessType } from "../data/occupationalQualificationTypes";
 import {
     QUALIFICATION_SITUAZIONI,
     STATS_TO_SITUAZIONE,
@@ -212,12 +213,35 @@ export function QualRow({ q, tabKey, onEdit, onHardDelete, onRenew, onHistory, h
     // mostrare entrambe le date, uno stato "Scaduta"/"In scadenza" con
     // certificato ancora lontano nel tempo risulta incomprensibile: rendiamo
     // sempre visibile quale delle due date sta determinando il colore.
+    const nearIso = q.near_vision_expiry_date ? String(q.near_vision_expiry_date).slice(0, 10) : "";
+    const colourIso = q.colour_vision_expiry_date ? String(q.colour_vision_expiry_date).slice(0, 10) : "";
+    const hasVisionClocks = isVisionFitnessType(q.qualification_type) && (nearIso || colourIso);
+    const effectiveIso = q.effective_expiry_date ? String(q.effective_expiry_date).slice(0, 10) : "";
     const hasDualExpiry = requiresSemiannualConfirmation(q.qualification_type) && q.next_confirmation_due;
     const confirmationIsBinding = hasDualExpiry && q.effective_expiry_date
         ? String(q.effective_expiry_date).slice(0, 10) === String(q.next_confirmation_due).slice(0, 10)
         : false;
 
-    const expiryCell = hasDualExpiry ? (
+    const expiryCell = hasVisionClocks ? (
+        <td className="sq-col-expiry sq-col-expiry--dual">
+            {nearIso && (
+                <span
+                    className={`sq-expiry-date sq-expiry-line${effectiveIso === nearIso ? ` sq-expiry-${q.semaforo}` : ""}`}
+                    title="Scadenza della visita di acuit\u00e0"
+                >
+                    {"Visita acuit\u00e0: "}{formatDate(nearIso)}
+                </span>
+            )}
+            {colourIso && (
+                <span
+                    className={`sq-expiry-date sq-expiry-line${effectiveIso === colourIso ? ` sq-expiry-${q.semaforo}` : ""}`}
+                    title="Scadenza del test dei colori"
+                >
+                    {"Test dei colori: "}{formatDate(colourIso)}
+                </span>
+            )}
+        </td>
+    ) : hasDualExpiry ? (
         <td className="sq-col-expiry sq-col-expiry--dual">
             <span
                 className={`sq-expiry-date sq-expiry-line${confirmationIsBinding ? "" : ` sq-expiry-${q.semaforo}`}`}

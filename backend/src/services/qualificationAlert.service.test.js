@@ -3,6 +3,7 @@
  * Copre: effectiveAlertDue per ISO 9606-1 e ISO 14732 (entrambe con conferma semestrale).
  */
 
+jest.mock('../config/database', () => ({ query: jest.fn(), getPool: jest.fn() }));
 jest.mock('./alertMail.service', () => ({ sendAlertEmail: jest.fn() }));
 jest.mock('../utils/logger', () => ({
   info: jest.fn(),
@@ -158,5 +159,27 @@ describe('qualificationAlert.service — mapQualificationDeadlineRows con date n
     // Date.toString() (che inizia dal nome del giorno della settimana).
     expect(rows[0].qualification_id).toBe(1);
     expect(rows[1].qualification_id).toBe(2);
+  });
+
+  it('certificato oculistico: due righe distinte in Scadenzari, anche oltre i 365 giorni', () => {
+    const rows = mapQualificationDeadlineRows([
+      {
+        id: 9,
+        person_name: 'ZZ Ispettore Prova',
+        qualification_type: 'Certificato idoneità visiva (acuità + Ishihara)',
+        status: 'valida',
+        expiry_date: '2035-01-01',
+        near_vision_expiry_date: '2027-03-01',
+        colour_vision_expiry_date: '2031-03-01',
+        certificate_number: 'OCCHIO-ZZ',
+      },
+    ], 365);
+
+    expect(rows).toHaveLength(2);
+    expect(rows.map((r) => r.vision_clock).sort()).toEqual(['colour', 'near']);
+    expect(rows.find((r) => r.vision_clock === 'near').title).toMatch(/Visita acuit/);
+    expect(rows.find((r) => r.vision_clock === 'colour').title).toMatch(/Test dei colori/);
+    expect(rows.find((r) => r.vision_clock === 'near').id).toBe('qual-9-near');
+    expect(rows.every((r) => r.qualification_id === 9)).toBe(true);
   });
 });
