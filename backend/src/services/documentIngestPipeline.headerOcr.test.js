@@ -80,6 +80,15 @@ describe('OCR intestazione: aggancio alla pipeline', () => {
         expect(out.fieldSources.issuing_body).not.toBe('ocr_header');
     });
 
+    it('IIS nel corpo con ente AI vuoto: l OCR intestazione parte (IIS e\' fuori lista chiusa)', async () => {
+        mockAi(null);
+        extractHeaderTextWithOCR.mockResolvedValue('TEC-Eurolab\nCERTIFICATION BODY');
+        const out = await ingest('patentino_saldatore', `${TEXT_SENZA_ENTE}\nIIS Progress`);
+        expect(extractHeaderTextWithOCR).toHaveBeenCalledTimes(1);
+        expect(out.fields.issuing_body).toBe('tec_eurolab');
+        expect(out.fieldSources.issuing_body).toBe('ocr_header');
+    });
+
     it('(iii) OCR vuoto -> ente invariato, nessuna eccezione', async () => {
         mockAi('altro');
         extractHeaderTextWithOCR.mockResolvedValue('');

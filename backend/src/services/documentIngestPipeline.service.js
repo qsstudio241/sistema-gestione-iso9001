@@ -372,7 +372,8 @@ function markIssuingBodyUnverified({ fieldConfidence, fieldSources, warnings }) 
  *
  * Riscontro nel testo: il codice dell'ente (lista chiusa) e' riconosciuto nel testo estratto dai matcher ancorati
  * (`extractAllIssuingBodies`). Con riscontro non succede nulla (nessun OCR, nessun avviso).
- * Senza riscontro (ente AI diverso da vuoto/`altro`) o con ente vuoto/`altro` e nessun ente nel testo:
+ * Senza riscontro (ente AI diverso da vuoto/`altro`) o con ente vuoto/`altro` e nessun ente
+ * della lista chiusa nel testo (IIS non conta: e' fuori lista, spesso e' l'esaminatore):
  * OCR della sola fascia alta della prima pagina (`extractHeaderTextWithOCR`), mai bloccante.
  *  - OCR riconosce un ente della lista: prevale sull'AI. Stesso ente => fonte `ai+ocr_header`, confidence `high`,
  *    nessun avviso. Ente diverso => fonte `ocr_header`, confidence `medium`, avviso di discrepanza.
@@ -393,7 +394,8 @@ async function applyHeaderIssuingBodyFallback({
     if (!HEADER_OCR_DOC_TYPES.has(docType)) return false;
     const current = fields.issuing_body;
     const aiBody = current && current !== 'altro' ? current : null;
-    if (aiBody ? issuingBodyCodesInText(text).has(aiBody) : extractIssuingBody(text)) return false;
+    const closedCodesInText = issuingBodyCodesInText(text);
+    if (aiBody ? closedCodesInText.has(aiBody) : closedCodesInText.size > 0) return false;
 
     const ctx = { fieldConfidence, fieldSources, warnings };
     const disabled = String(process.env.INGEST_HEADER_OCR || '').trim() === '0';

@@ -225,6 +225,7 @@ Non sono regole nuove. Erano ipotesi sullo SHA revisionato, non un commento di B
   **Esito 18/10/2026:** coda ingest — corretto in [#826](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/826) (lista per azienda, conferma/scarto bloccati per viewer e per altra azienda). `cert_ndt` già risolto.
 - #786: una WPQR creata a mano, con `company_id` vuoto, non si lega.
 - #764: l'OCR di intestazione non parte se nel corpo c'è già una sigla.
+  **Esito 18/10/2026:** corretto in questa slice — con ente AI vuoto/`altro` l'OCR parte se nel testo non c'è un ente della lista chiusa. IIS (fuori lista) non blocca più.
 - #760: una data di nascita a due cifre diventa `exam_date`.
 - #733: il form di una 9606-2 BW usa ancora il profilo 9606-1; piastra→tubo con più posizioni usa sempre la soglia 150 mm (Bugbot lo scrive su un commit successivo).
 - #727: per la 9606-2, `t` del materiale finisce in `s`.
