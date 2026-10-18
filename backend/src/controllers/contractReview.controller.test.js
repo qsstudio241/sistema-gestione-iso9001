@@ -83,6 +83,10 @@ jest.mock('../services/commercialChecklistTemplate.service', () => ({
 const { query, getPool, sql } = require('../config/database');
 const { chat, getActiveProvider } = require('../services/aiProviderAdapter');
 const caseCapabilityGapReportService = require('../services/caseCapabilityGapReport.service');
+jest.mock('../services/commercialCaseHandoffProject.service', () => ({
+  linkApprovedCaseToProject: jest.fn(),
+}));
+const handoffProject = require('../services/commercialCaseHandoffProject.service');
 const ctrl = require('./contractReview.controller');
 
 const ORG_ID = 42;
@@ -524,7 +528,15 @@ describe('linkDocument', () => {
 describe('registerHandoff', () => {
   const CASE_ID = 10;
 
-  it('registra handoff su caso APPROVED (200)', async () => {
+  beforeEach(() => {
+    handoffProject.linkApprovedCaseToProject.mockResolvedValue({
+      ok: true,
+      action: 'created',
+      project: { id: 77, project_code: 'COMM-2026-042', commercial_case_id: CASE_ID },
+    });
+  });
+
+  it('registra handoff su caso APPROVED e restituisce la commessa collegata', async () => {
     const approved = { id: CASE_ID, status: 'APPROVED', organization_id: ORG_ID };
     const updated = {
       ...approved,
@@ -543,13 +555,43 @@ describe('registerHandoff', () => {
     const res = mockRes();
     await ctrl.registerHandoff(req, res);
 
-    expect(res.json).toHaveBeenCalledWith(updated);
+    expect(handoffProject.linkApprovedCaseToProject).toHaveBeenCalledWith(expect.objectContaining({
+      organizationId: ORG_ID,
+      caseRow: approved,
+      handoffRef: 'COMM-2026-042',
+    }));
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      handoff_ref: 'COMM-2026-042',
+      project_id: 77,
+      project_link: 'created',
+      project_code: 'COMM-2026-042',
+    }));
     expect(query.mock.calls[1][1]).toMatchObject({
       handoffRef: 'COMM-2026-042',
       caseId: CASE_ID,
       organizationId: ORG_ID,
       userId: USER_ID,
     });
+  });
+
+  it('se il collegamento della commessa fallisce non salva il passaggio', async () => {
+    query.mockResolvedValueOnce({
+      recordset: [{ id: CASE_ID, status: 'APPROVED', organization_id: ORG_ID }],
+    });
+    handoffProject.linkApprovedCaseToProject.mockResolvedValueOnce({
+      ok: false,
+      status: 409,
+      error: 'Esiste già una commessa con questo riferimento collegata a un altro caso di riesame.',
+      code: 'PROJECT_ALREADY_LINKED',
+    });
+    const req = mockReq({
+      params: { id: String(CASE_ID) },
+      body: { handoff_ref: 'COMM-1' },
+    });
+    const res = mockRes();
+    await ctrl.registerHandoff(req, res);
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(query).toHaveBeenCalledTimes(1);
   });
 
   it('rifiuta se status non APPROVED (409)', async () => {
