@@ -182,8 +182,8 @@ describe("NdtReportsPage — gate ispettore CND-2", () => {
         ok: true,
         reasons: [],
         candidates: [
-          { person_name: "Mario Rossi", ndt_method: "VT", ndt_level: 2 },
-          { person_name: "Ada Bianchi", ndt_method: "VT", ndt_level: 1 },
+          { qualification_id: 41, person_name: "Mario Rossi", ndt_method: "VT", ndt_level: 2, certificate_number: "VT-99" },
+          { qualification_id: 42, person_name: "Ada Bianchi", ndt_method: "VT", ndt_level: 1 },
         ],
         qualification: { ndt_method: "VT", ndt_level: 2, person_name: "Mario Rossi" },
         vision: { state: "ok" },
@@ -199,13 +199,15 @@ describe("NdtReportsPage — gate ispettore CND-2", () => {
     expect(screen.getByRole("option", { name: /Ada Bianchi/ })).toHaveTextContent(/VT liv\.1/);
     expect(screen.getByRole("option", { name: /PS_Admin/ })).toHaveTextContent(/nome gi\u00e0 sul verbale/);
 
-    await user.selectOptions(select, "Mario Rossi");
+    await user.selectOptions(select, "q:41");
     await user.click(screen.getByRole("button", { name: "Salva bozza" }));
 
     await waitFor(() => {
       expect(apiService.createNdtReport).toHaveBeenCalled();
     });
-    expect(apiService.createNdtReport.mock.calls.at(-1)[0].inspector).toBe("Mario Rossi");
+    const saved = apiService.createNdtReport.mock.calls.at(-1)[0];
+    expect(saved.inspector).toBe("Mario Rossi");
+    expect(saved.inspector_qualification_id).toBe(41);
   });
 
   it("errore rete: non dice che mancano i patentini; Riprova e nome già sul verbale", async () => {
@@ -231,7 +233,7 @@ describe("NdtReportsPage — gate ispettore CND-2", () => {
     expect(screen.queryByText(/Aggiungilo in Qualifiche/)).toBeNull();
     expect(screen.queryByText(/Nessun ispettore con patentino 9712/)).toBeNull();
     expect(screen.getByRole("option", { name: /PS_Admin/ })).toHaveTextContent(/nome gi\u00e0 sul verbale/);
-    expect(screen.getByRole("combobox", { name: /Ispettore/ })).toHaveValue("PS_Admin");
+    expect(screen.getByRole("combobox", { name: /Ispettore/ })).toHaveValue("name:PS_Admin");
 
     await user.click(screen.getByRole("button", { name: "Riprova" }));
 

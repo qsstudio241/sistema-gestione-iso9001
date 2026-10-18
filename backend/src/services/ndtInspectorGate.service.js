@@ -177,22 +177,46 @@ function evaluateInspectorFromRows(opts = {}) {
   const covering = ndtQuals.filter((q) => qualCoversMethod(q, reportType) && isQualNotExpired(q, today));
   const candidatesMap = new Map();
   for (const q of covering) {
-    const key = normalizePersonName(q.person_name);
-    if (!key) continue;
+    const key = q.id != null ? `id:${q.id}` : `name:${normalizePersonName(q.person_name)}`;
+    if (!key || key === 'name:') continue;
     if (!candidatesMap.has(key)) {
       candidatesMap.set(key, {
+        qualification_id: q.id != null ? Number(q.id) : null,
         person_name: q.person_name,
+        certificate_number: q.certificate_number || null,
         ndt_method: reportType,
         ndt_level: ndtLevelNumber(q),
         expiry_date: q.expiry_date || null,
       });
     }
   }
-  const candidates = [...candidatesMap.values()].sort((a, b) =>
-    String(a.person_name).localeCompare(String(b.person_name), 'it')
-  );
+  const candidates = [...candidatesMap.values()].sort((a, b) => {
+    const byName = String(a.person_name).localeCompare(String(b.person_name), 'it');
+    if (byName !== 0) return byName;
+    return (Number(a.qualification_id) || 0) - (Number(b.qualification_id) || 0);
+  });
 
-  if (!inspectorName) {
+  const linkedRaw = opts.qualificationId;
+  const linkedId = linkedRaw != null && linkedRaw !== '' ? Number(linkedRaw) : null;
+  let personQuals;
+  let nameForMessages = inspectorName;
+  let visionPersonnelId = opts.personnelId;
+
+  if (linkedId != null && Number.isFinite(linkedId)) {
+    const linked = ndtQuals.find((q) => Number(q.id) === linkedId);
+    if (!linked) {
+      return {
+        ok: false,
+        reasons: ['Il patentino collegato al verbale non è più in anagrafica.'],
+        qualification: null,
+        vision: { state: 'unknown', expiry_date: null, vision_id: null },
+        candidates,
+      };
+    }
+    personQuals = [linked];
+    nameForMessages = linked.person_name || inspectorName;
+    visionPersonnelId = linked.personnel_id;
+  } else if (!inspectorName) {
     return {
       ok: false,
       reasons: ['Indicare il nome dell\'ispettore.'],
@@ -200,7 +224,18 @@ function evaluateInspectorFromRows(opts = {}) {
       vision: { state: 'unknown', expiry_date: null, vision_id: null },
       candidates,
     };
+  } else if (!reportType) {
+    return {
+      ok: false,
+      reasons: ['Indicare il metodo del verbale (VT, MT, PT, UT, \u2026).'],
+      qualification: null,
+      vision: { state: 'unknown', expiry_date: null, vision_id: null },
+      candidates,
+    };
+  } else {
+    personQuals = ndtQuals.filter((q) => personMatches(q, inspectorName, opts.personnelId));
   }
+
   if (!reportType) {
     return {
       ok: false,
@@ -211,13 +246,12 @@ function evaluateInspectorFromRows(opts = {}) {
     };
   }
 
-  const personQuals = ndtQuals.filter((q) => personMatches(q, inspectorName, opts.personnelId));
   if (personQuals.length === 0) {
     return {
       ok: false,
-      reasons: [`Nessun patentino ISO 9712 in anagrafica per ${inspectorName}.`],
+      reasons: [`Nessun patentino ISO 9712 in anagrafica per ${nameForMessages}.`],
       qualification: null,
-      vision: visionStateForPerson(visionRows, inspectorName, opts.personnelId, companyId, today),
+      vision: visionStateForPerson(visionRows, nameForMessages, visionPersonnelId, companyId, today),
       candidates,
     };
   }
@@ -227,9 +261,9 @@ function evaluateInspectorFromRows(opts = {}) {
     const have = [...new Set(personQuals.map((q) => normalizeMethod(q.ndt_method) || 'non indicato'))].join(', ');
     return {
       ok: false,
-      reasons: [`Patentino ISO 9712 di ${inspectorName} non copre il metodo ${reportType} (metodi in anagrafica: ${have}).`],
+      reasons: [`Patentino ISO 9712 di ${nameForMessages} non copre il metodo ${reportType} (metodi in anagrafica: ${have}).`],
       qualification: summarizeQual(personQuals[0]),
-      vision: visionStateForPerson(visionRows, inspectorName, personQuals[0].personnel_id, companyId, today),
+      vision: visionStateForPerson(visionRows, nameForMessages, personQuals[0].personnel_id, companyId, today),
       candidates,
     };
   }
@@ -245,7 +279,7 @@ function evaluateInspectorFromRows(opts = {}) {
       ok: false,
       reasons: [`Patentino ISO 9712 ${reportType} scaduto il ${formatIsoDate(latest.expiry_date) || 'data sconosciuta'}.`],
       qualification: summarizeQual(latest),
-      vision: visionStateForPerson(visionRows, inspectorName, latest.personnel_id, companyId, today),
+      vision: visionStateForPerson(visionRows, nameForMessages, latest.personnel_id, companyId, today),
       candidates,
     };
   }
@@ -259,7 +293,7 @@ function evaluateInspectorFromRows(opts = {}) {
       ok: false,
       reasons: [`Serve livello 2 o 3 per il giudizio autonomo (ISO 9712 \u00a75.3.2). Livello sul patentino: ${levelTxt}.`],
       qualification: summarizeQual(best),
-      vision: visionStateForPerson(visionRows, inspectorName, best.personnel_id, companyId, today),
+      vision: visionStateForPerson(visionRows, nameForMessages, best.personnel_id, companyId, today),
       candidates,
     };
   }
@@ -279,8 +313,8 @@ function evaluateInspectorFromRows(opts = {}) {
   const chosen = pool[0];
   const vision = visionStateForPerson(
     visionRows,
-    inspectorName,
-    chosen.personnel_id || opts.personnelId,
+    nameForMessages,
+    chosen.personnel_id || visionPersonnelId,
     companyId,
     today,
   );
@@ -380,6 +414,7 @@ async function evaluateNdtInspectorGate(opts = {}) {
   ]);
   return evaluateInspectorFromRows({
     inspectorName: opts.inspectorName,
+    qualificationId: opts.qualificationId,
     reportType: opts.reportType,
     companyId: opts.companyId,
     personnelId: opts.personnelId,

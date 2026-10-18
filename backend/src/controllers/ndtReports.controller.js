@@ -19,6 +19,7 @@ const {
 const {
     GATE_CODE,
     isJudgmentStatus,
+    isNdt9712Qualification,
     evaluateNdtInspectorGate,
 } = require('../services/ndtInspectorGate.service');
 const { poseNdtReportInRegistry } = require('../services/ndtReportRegistryPose.service');
@@ -90,7 +91,7 @@ function sendInspectorGateDenied(res, gate) {
     });
 }
 
-async function assertInspectorGate({ organizationId, companyId, inspector, reportType, status, user }) {
+async function assertInspectorGate({ organizationId, companyId, inspector, reportType, status, user, qualificationId }) {
     if (!isJudgmentStatus(status)) return null;
     const accessList = await ensureCompanyAccessLoaded(user);
     const allowedCompanyIds = hasCompanyAccessRows(accessList)
@@ -100,10 +101,69 @@ async function assertInspectorGate({ organizationId, companyId, inspector, repor
         organizationId,
         companyId,
         inspectorName: inspector,
+        qualificationId: qualificationId || null,
         reportType,
         allowedCompanyIds,
     });
     return gate.ok ? null : gate;
+}
+
+/**
+ * Id patentino sul verbale. Campo assente = non toccare il valore già salvato.
+ * Il nome in `inspector` resta lo snapshot per i Word già emessi.
+ */
+function parseInspectorQualificationId(raw) {
+    if (raw === undefined) return { absent: true };
+    if (raw === null || raw === '') return { id: null };
+    const id = parseInt(raw, 10);
+    if (!Number.isFinite(id) || id <= 0 || String(raw).trim() !== String(id)) {
+        return {
+            error: 'Identificativo del patentino non valido.',
+            code: 'NDT_INSPECTOR_QUALIFICATION_INVALID',
+        };
+    }
+    return { id };
+}
+
+async function loadInspectorQualification({ organizationId, qualificationId, user }) {
+    const accessList = await ensureCompanyAccessLoaded(user);
+    const allowedCompanyIds = hasCompanyAccessRows(accessList)
+        ? accessList.map((a) => a.company_id)
+        : null;
+    const result = await query(`
+        SELECT q.id, q.person_name, q.certificate_number, q.qualification_type,
+               q.ndt_method, q.ndt_level, q.company_id, q.status, q.deleted_at
+        FROM qualifications q
+        WHERE q.id = @id AND q.organization_id = @organization_id
+    `, { id: qualificationId, organization_id: organizationId });
+    const row = result.recordset && result.recordset[0];
+    if (!row || row.deleted_at) {
+        return {
+            status: 400,
+            error: 'Il patentino collegato non è in anagrafica di questo studio.',
+            code: 'NDT_INSPECTOR_QUALIFICATION_NOT_FOUND',
+        };
+    }
+    const blocked = row.status === 'revocata' || row.status === 'sospesa';
+    if (blocked || !isNdt9712Qualification(row)) {
+        return {
+            status: 400,
+            error: 'Il collegamento deve puntare a un patentino ISO 9712.',
+            code: 'NDT_INSPECTOR_QUALIFICATION_NOT_9712',
+        };
+    }
+    if (allowedCompanyIds && row.company_id != null && !allowedCompanyIds.map(Number).includes(Number(row.company_id))) {
+        return {
+            status: 403,
+            error: 'Il patentino non appartiene a un\'azienda che puoi modificare.',
+            code: 'FORBIDDEN',
+        };
+    }
+    return {
+        id: row.id,
+        personName: row.person_name,
+        certificateNumber: row.certificate_number || null,
+    };
 }
 
 // ── Numerazione automatica ───────────────────────────────────────────────────
@@ -197,7 +257,7 @@ async function listNdtReports(req, res) {
         const [dataResult, countResult] = await Promise.all([
             query(`
                 SELECT r.id, r.uuid, r.report_number, r.report_type, r.report_year,
-                       r.client, r.job_order, r.inspector, r.inspection_phase, r.status,
+                       r.client, r.job_order, r.inspector, r.inspector_qualification_id, r.inspection_phase, r.status,
                        r.inspection_date, r.certificate_date,
                        r.created_at, r.updated_at,
                        c.name AS company_name,
@@ -322,10 +382,30 @@ async function createNdtReport(req, res) {
         }
         const project_id = projectResolved.skip ? null : projectResolved.value;
 
+        const parsedLink = parseInspectorQualificationId(req.body.inspector_qualification_id);
+        if (parsedLink.error) {
+            return res.status(400).json({ error: parsedLink.error, code: parsedLink.code });
+        }
+        let linkId = parsedLink.absent ? null : parsedLink.id;
+        let inspectorName = inspector || req.user.full_name || null;
+        if (linkId) {
+            const loaded = await loadInspectorQualification({
+                organizationId: organization_id,
+                qualificationId: linkId,
+                user: req.user,
+            });
+            if (loaded.error) {
+                return res.status(loaded.status).json({ error: loaded.error, code: loaded.code });
+            }
+            linkId = loaded.id;
+            inspectorName = loaded.personName || inspectorName;
+        }
+
         const gateDenied = await assertInspectorGate({
             organizationId: organization_id,
             companyId: companyIdVal,
-            inspector: inspector || req.user.full_name || null,
+            inspector: inspectorName,
+            qualificationId: linkId,
             reportType: report_type,
             status,
             user: req.user,
@@ -343,7 +423,7 @@ async function createNdtReport(req, res) {
                 base_material, material_standard, joint_type, quality_level,
                 method_params, notes,
                 inspection_date, certificate_date,
-                responsible, inspector, client_representative, inspection_phase,
+                responsible, inspector, inspector_qualification_id, client_representative, inspection_phase,
                 status, created_by, project_id
             )
             OUTPUT INSERTED.*
@@ -353,7 +433,7 @@ async function createNdtReport(req, res) {
                 @base_material, @material_standard, @joint_type, @quality_level,
                 @method_params, @notes,
                 @inspection_date, @certificate_date,
-                @responsible, @inspector, @client_representative, @inspection_phase,
+                @responsible, @inspector, @inspector_qualification_id, @client_representative, @inspection_phase,
                 @status, @created_by, @project_id
             )
         `, {
@@ -377,7 +457,8 @@ async function createNdtReport(req, res) {
             certificate_date: certificate_date || null,
             responsible: responsible || null,
             // Auto-fill ispettore: usa nome utente loggato se non fornito
-            inspector: inspector || req.user.full_name || null,
+            inspector: inspectorName,
+            inspector_qualification_id: linkId,
             client_representative: client_representative || null,
             inspection_phase: parsedPhase.value,
             status,
@@ -449,7 +530,7 @@ async function updateNdtReport(req, res) {
         const id = parseInt(req.params.id);
 
         const existing = await query(
-            `SELECT id, company_id, project_id, report_type, inspector, inspection_phase FROM ndt_reports WHERE id = @id AND organization_id = @organization_id AND is_deleted = 0`,
+            `SELECT id, company_id, project_id, report_type, inspector, inspector_qualification_id, inspection_phase FROM ndt_reports WHERE id = @id AND organization_id = @organization_id AND is_deleted = 0`,
             { id, organization_id }
         );
         if (existing.recordset.length === 0) {
@@ -506,12 +587,33 @@ async function updateNdtReport(req, res) {
         }
 
         const nextStatus = status || 'draft';
-        const nextInspector = inspector !== undefined ? inspector : existing.recordset[0].inspector;
-        const nextReportType = existing.recordset[0].report_type;
+        const existingRow = existing.recordset[0];
+        const parsedLink = parseInspectorQualificationId(req.body.inspector_qualification_id);
+        if (parsedLink.error) {
+            return res.status(400).json({ error: parsedLink.error, code: parsedLink.code });
+        }
+        let nextLinkId = parsedLink.absent
+            ? (existingRow.inspector_qualification_id || null)
+            : parsedLink.id;
+        let nextInspector = inspector !== undefined ? inspector : existingRow.inspector;
+        if (nextLinkId && !parsedLink.absent) {
+            const loaded = await loadInspectorQualification({
+                organizationId: organization_id,
+                qualificationId: nextLinkId,
+                user: req.user,
+            });
+            if (loaded.error) {
+                return res.status(loaded.status).json({ error: loaded.error, code: loaded.code });
+            }
+            nextLinkId = loaded.id;
+            nextInspector = loaded.personName || nextInspector;
+        }
+        const nextReportType = existingRow.report_type;
         const gateDenied = await assertInspectorGate({
             organizationId: organization_id,
             companyId: nextCompanyId,
             inspector: nextInspector,
+            qualificationId: nextLinkId,
             reportType: nextReportType,
             status: nextStatus,
             user: req.user,
@@ -527,6 +629,7 @@ async function updateNdtReport(req, res) {
                 method_params = @method_params, notes = @notes,
                 inspection_date = @inspection_date, certificate_date = @certificate_date,
                 responsible = @responsible, inspector = @inspector,
+                inspector_qualification_id = @inspector_qualification_id,
                 client_representative = @client_representative,
                 inspection_phase = @inspection_phase,
                 status = @status, project_id = @project_id,
@@ -549,7 +652,8 @@ async function updateNdtReport(req, res) {
             inspection_date: inspection_date || null,
             certificate_date: certificate_date || null,
             responsible: responsible || null,
-            inspector: inspector || null,
+            inspector: nextInspector || null,
+            inspector_qualification_id: nextLinkId || null,
             client_representative: client_representative || null,
             inspection_phase: nextPhase,
             status: status || 'draft',
@@ -672,6 +776,7 @@ async function getInspectorEligibility(req, res) {
             organizationId: organization_id,
             companyId: requestedCompanyId,
             inspectorName: inspector,
+            qualificationId: req.query.inspector_qualification_id || null,
             reportType,
             allowedCompanyIds,
         });

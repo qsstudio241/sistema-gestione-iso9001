@@ -560,6 +560,7 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
         certificate_date: "",
         responsible: "",
         inspector: currentUserName,   // auto-fill nome utente loggato
+        inspector_qualification_id: null,
         client_representative: "",
         inspection_phase: DEFAULT_INSPECTION_PHASE,
         status: "draft",
@@ -588,6 +589,7 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
             certificate_date:     report.certificate_date ? String(report.certificate_date).substring(0, 10) : "",
             responsible:          report.responsible || "",
             inspector:            report.inspector || currentUserName || "",
+            inspector_qualification_id: report.inspector_qualification_id || null,
             client_representative: report.client_representative || "",
             inspection_phase:     report.inspection_phase || DEFAULT_INSPECTION_PHASE,
             status:               report.status || "draft",
@@ -696,6 +698,7 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
             setInspectorGate((g) => ({ ...g, loading: true, error: null }));
             apiService.getNdtInspectorEligibility({
                 inspector: form.inspector || "",
+                inspector_qualification_id: form.inspector_qualification_id || "",
                 report_type: form.report_type,
                 company_id: form.company_id || "",
             }).then((res) => {
@@ -722,13 +725,53 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
             });
         }, 300);
         return () => { cancelled = true; clearTimeout(timer); };
-    }, [form.inspector, form.report_type, form.company_id, eligibilityNonce]);
+    }, [form.inspector, form.inspector_qualification_id, form.report_type, form.company_id, eligibilityNonce]);
 
     const gateReasonsText = (inspectorGate.reasons || []).filter(Boolean).join(" ");
     const inspectorCandidates = inspectorGate.candidates || [];
     const inspectorLoadFailed = inspectorGate.error === "network";
-    const inspectorListed = inspectorCandidates.some((c) => c.person_name === form.inspector);
     const retryInspectorGate = () => setEligibilityNonce((n) => n + 1);
+    const inspectorOptionValue = (c) => (
+        c.qualification_id != null ? `q:${c.qualification_id}` : `name:${c.person_name}`
+    );
+    const linkedCandidate = inspectorCandidates.find((c) =>
+        form.inspector_qualification_id != null
+        && String(c.qualification_id) === String(form.inspector_qualification_id)
+    );
+    const nameOnlyMatch = !form.inspector_qualification_id
+        ? inspectorCandidates.find((c) => c.qualification_id == null && c.person_name === form.inspector)
+        : null;
+    const inspectorSelectValue = linkedCandidate
+        ? inspectorOptionValue(linkedCandidate)
+        : (nameOnlyMatch
+            ? inspectorOptionValue(nameOnlyMatch)
+            : (form.inspector ? `name:${form.inspector}` : ""));
+    const showLegacyInspector = Boolean(form.inspector) && !linkedCandidate && !nameOnlyMatch;
+    const onInspectorPick = (raw) => {
+        if (!raw) {
+            setForm((f) => ({ ...f, inspector: "", inspector_qualification_id: null }));
+            return;
+        }
+        if (raw.startsWith("q:")) {
+            const picked = inspectorCandidates.find((row) => String(row.qualification_id) === raw.slice(2));
+            setForm((f) => ({
+                ...f,
+                inspector: picked ? picked.person_name : f.inspector,
+                inspector_qualification_id: picked ? picked.qualification_id : null,
+            }));
+            return;
+        }
+        if (raw.startsWith("name:")) {
+            setForm((f) => ({ ...f, inspector: raw.slice(5), inspector_qualification_id: null }));
+        }
+    };
+    const inspectorOptionLabel = (c) => {
+        const method = c.ndt_method
+            ? ` \u2014 ${c.ndt_method}${c.ndt_level != null ? ` liv.${c.ndt_level}` : ""}`
+            : "";
+        const cert = c.certificate_number ? ` \u2014 n. ${c.certificate_number}` : "";
+        return `${c.person_name}${method}${cert}`;
+    };
     const canComplete = !inspectorGate.loading && inspectorGate.ok;
     const completeTitle = inspectorGate.loading
         ? "Verifica patentino ISO 9712 in corso\u2026"
@@ -1539,8 +1582,8 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
                                     </label>
                                     <select
                                         id="ndt-inspector"
-                                        value={form.inspector || ""}
-                                        onChange={e => set("inspector", e.target.value)}
+                                        value={inspectorSelectValue}
+                                        onChange={e => onInspectorPick(e.target.value)}
                                     >
                                         <option value="">
                                             {inspectorLoadFailed
@@ -1549,17 +1592,14 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
                                                     ? "Nessun ispettore con patentino 9712 per questo metodo"
                                                     : "\u2014 scegli un ispettore con patentino 9712 \u2014"}
                                         </option>
-                                        {form.inspector && !inspectorListed && (
-                                            <option value={form.inspector}>
+                                        {showLegacyInspector && (
+                                            <option value={`name:${form.inspector}`}>
                                                 {`${form.inspector} (nome gi\u00e0 sul verbale)`}
                                             </option>
                                         )}
                                         {inspectorCandidates.map((c) => (
-                                            <option key={c.person_name} value={c.person_name}>
-                                                {c.person_name
-                                                    + (c.ndt_method
-                                                        ? ` \u2014 ${c.ndt_method}${c.ndt_level != null ? ` liv.${c.ndt_level}` : ""}`
-                                                        : "")}
+                                            <option key={inspectorOptionValue(c)} value={inspectorOptionValue(c)}>
+                                                {inspectorOptionLabel(c)}
                                             </option>
                                         ))}
                                     </select>
