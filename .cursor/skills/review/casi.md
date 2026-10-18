@@ -233,7 +233,7 @@ Non sono regole nuove. Erano ipotesi sullo SHA revisionato, non un commento di B
 - #727: per la 9606-2, `t` del materiale finisce in `s`.
   **Esito 18/10/2026:** corretto in [#833](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/833) — `resolveTestThicknessByJoint` non sposta t→s su ISO 9606-2.
 - #725: massimo numerico insieme al flag «illimitato»: il confronto non parte.
-  **Esito 18/10/2026:** corretto in [#833](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/833) — `compareRange` tratta il flag illimitato anche se c'è un massimo numerico.
+  **Esito 18/10/2026:** pack 9606-1 corretto in [#833](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/833). Pack 9606-2 (`welder9606Part2.pack.js`) ancora aperto: stesso buco, residuo in [#831](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/831).
 - #702: una qualifica 14732 entra nel dominio saldatori 9606.
   **Esito 18/10/2026:** corretto in [#833](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/833) — `welder_9606` filtra solo `%9606%`. Il ponte commessa `wpsWelderCoverage` resta con 14732 (COV-4).
 
@@ -256,7 +256,7 @@ Rilettura in sola lettura dopo il merge della [#824](https://github.com/qsstudio
 | Corretto in [#833](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/833) | media | #733 | `QualificationForm.jsx` | `getJointTypeProfile` riceve la norma. BW 9606-2 usa `thickness_t_test_mm` (`testThicknessKey`). |
 | Già risolto | bassa | #733 | `weldingQualificationRules9606Part2.js` (`computePlateToPipeMinDiameter`) | Più posizioni prendono la soglia più alta: PF insieme a un'altra posizione è 500 mm, non il pavimento 150. |
 | Corretto in [#833](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/833) | media | #727 | `weldingDesignation.js` (`resolveTestThicknessByJoint`, `parseWelderQualificationDesignation`), `qualificationIngest.service.js` | ISO 9606-2: `t` resta `t` anche su BW. |
-| Corretto in [#833](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/833) | bassa | #725 | `welder9606Correctness.pack.js` (`compareRange`) | Flag illimitato confrontato anche se c'è un massimo numerico. |
+| Corretto in [#833](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/833) (9606-1); residuo [#831](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/831) (9606-2) | bassa | #725 | `welder9606Correctness.pack.js`, `welder9606Part2.pack.js` | 9606-1: flag illimitato confrontato anche con massimo numerico. 9606-2: `compareRange` salta ancora il massimo se c'è il flag. |
 | Corretto in [#833](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/833) | media | #702 | `welder9606.adapter.js` | Dominio `welder_9606` filtra solo `%9606%`. Il ponte commessa resta con 14732. |
 
 ### Quanto prende la checklist aggiornata
