@@ -110,14 +110,20 @@ async function listCompanies(req, res) {
             whereConditions.push(`id IN (${idParams.join(', ')})`);
         } else {
             const auditorOrgId = resolveAuditorOrgId(req);
-            if (!auditorOrgId) {
+            if (auditorOrgId) {
+                whereConditions.push('auditor_org_id = @auditor_org_id');
+                params.auditor_org_id = auditorOrgId;
+            } else if (req.user.role === 'admin' && req.user.organization_id) {
+                // Admin di studio senza auditor_org_id: le aziende del proprio studio.
+                // Il query param, se c'è, è già stato preso da resolveAuditorOrgId.
+                whereConditions.push('auditor_org_id IN (SELECT id FROM auditor_orgs WHERE organization_id = @organization_id)');
+                params.organization_id = req.user.organization_id;
+            } else {
                 return res.status(403).json({
                     error: 'Specificare auditor_org_id (superadmin) o appartenere a un auditor_org',
                     code: 'AUDITOR_ORG_REQUIRED'
                 });
             }
-            whereConditions.push('auditor_org_id = @auditor_org_id');
-            params.auditor_org_id = auditorOrgId;
         }
 
         if (search) {
