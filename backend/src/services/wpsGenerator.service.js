@@ -43,6 +43,7 @@ async function loadWpqrRecords(organizationId, companyId = null) {
         FROM wpqr_records wq
         LEFT JOIN welding_procedures w ON w.id = wq.wps_id
         WHERE wq.organization_id = @organization_id
+          AND wq.deleted_at IS NULL
     `;
     if (companyId != null && companyId !== '') {
         sql += ` AND (wq.company_id = @company_id OR (wq.company_id IS NULL AND w.company_id = @company_id))`;

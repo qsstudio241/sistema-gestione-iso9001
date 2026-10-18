@@ -220,7 +220,7 @@ Le altre 38 sono tipi che la checklist non nominava. Raggruppati, senza una voce
 Non sono regole nuove. Erano ipotesi sullo SHA revisionato, non un commento di Bugbot su quello SHA.
 
 - #801: gate NDT e copertura 9712 ignorano `deleted_at`; il generatore WPS include WPQR cestinate; riassegnare un saldatore risponde 409; le NC nate dall'audit non hanno `organization_id` e spariscono dal cestino; l'email di sollecito include NC cestinate.
-  **Esito 18/10/2026:** gate NDT e copertura 9712 — corretto in [#828](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/828) (`deleted_at IS NULL`). Generatore WPS ancora aperto.
+  **Esito 18/10/2026:** gate NDT e copertura 9712 — corretto in [#828](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/828) (`deleted_at IS NULL`). Generatore WPS — corretto in [#829](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/829) (`loadWpqrRecords` con `deleted_at IS NULL`).
 - #791: la coda di ingest non filtra azienda né ruolo (isolamento già in checklist, non eseguito); `cert_ndt` non è nel filtro del modulo qualifiche.
   **Esito 18/10/2026:** coda ingest — corretto in [#826](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/826) (lista per azienda, conferma/scarto bloccati per viewer e per altra azienda). `cert_ndt` già risolto.
 - #786: una WPQR creata a mano, con `company_id` vuoto, non si lega.
@@ -238,7 +238,7 @@ Rilettura in sola lettura dopo il merge della [#824](https://github.com/qsstudio
 | Esito | Gravità | PR | File | Cosa resta |
 |---|---|---|---|---|
 | Corretto in [#828](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/828) | alta | #801 | `ndtInspectorGate.service.js`, `cnd9712.adapter.js` | SELECT con `deleted_at IS NULL` su patentino e idoneità visiva (gate e copertura 9712). |
-| Ancora presente | alta | #801 | `wpsGenerator.service.js` (`loadWpqrRecords`) | La query non ha `deleted_at IS NULL`. Una WPQR cestinata entra ancora tra le basi di una WPS. |
+| Corretto in [#829](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/829) | alta | #801 | `wpsGenerator.service.js` (`loadWpqrRecords`) | SELECT con `deleted_at IS NULL`. Una WPQR cestinata non entra più tra le basi di una WPS. |
 | Già risolto | media | #801 | `welding.controller.js` (`assignWpsWelder`), `projects.controller.js` (`addProjectWelder`) | Il controllo «già assegnato» esclude `deleted_at`. Riassegnare dopo il cestino non risponde più 409. |
 | Già risolto | media | #801 | `trash.service.js` (`listTrashedNonConformities`, `loadTrashRow`) | Elenco e ripristino usano `COALESCE(organization_id della NC, organization_id dell'audit)`. La NC nata dall'audit compare nel cestino. |
 | Già risolto | media | #801 | `ncAlertEscalation.service.js` | NC e azioni in sollecito hanno `deleted_at IS NULL`. |
