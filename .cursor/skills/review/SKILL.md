@@ -40,6 +40,23 @@ Prima di aprire il diff, leggere sempre il registro
    review, non modificare il codice, non fare push, merge, né toccare server,
    database, TEST o PROD.
 
+## Quando Bugbot è disponibile
+
+Revisione doppia. Il confronto si registra in [`casi.md`](casi.md).
+
+1. Fare prima la revisione con questa skill **senza** aprire i commenti né il
+   check di Bugbot. Salvare l'elenco (file, righe, gravità, percorso).
+2. Solo dopo, leggere i commenti e il check di Bugbot **su quello stesso SHA**.
+3. Classificare ogni problema: trovato da entrambi, solo Bugbot, solo noi,
+   falso allarme (nostro o di Bugbot). Un commento di un giro precedente, se
+   il codice di questo SHA non fa più quella cosa, è un falso allarme: non è
+   un problema ancora aperto.
+4. Per ogni problema visto solo da Bugbot, scrivere perché la skill non lo
+   ha visto (controllo mancante, migrazione o default non letti, regola vicina
+   non riesaminata).
+5. Aggiornare `casi.md` (sezione «Confronto con Bugbot» e, se serve, un caso)
+   e la checklist, se la regola vale per le PR successive.
+
 ## Gravità
 
 | Livello | Quando usarlo |
@@ -96,6 +113,9 @@ Controllare solo ciò che il diff tocca.
 
 - Una data pura (`AAAA-MM-GG`) non va riletta con l'ora locale e riconvertita
   in UTC: il giorno slitta. Usare la data già normalizzata.
+- Prima di scrivere una data, i token vuoti già usati negli altri campi
+  (`N.A.`, `--`, trattino) diventano null. Non legare quel testo a una colonna
+  `DATE`: fallisce l'inserimento del certificato.
 - Due scritture che devono restare insieme stanno nella stessa transazione.
 - Un codice che deve essere unico ha un vincolo sul database, non solo un
   controllo letto-poi-scritto. Il lucchetto deve coprire la stessa chiave su
@@ -106,6 +126,23 @@ Controllare solo ciò che il diff tocca.
 - La scadenza efficace è la più restrittiva tra i dati presenti. Compilare un
   campo nuovo non deve spegnere una data più vecchia già scaduta, né dare per
   buona una scadenza lasciata vuota.
+
+**Valori già in tabella**
+
+- Un default di colonna (`NA`, `0`) non è «campo vuoto» se lo stesso token è
+  anche un valore vero. Il candidato alla rielaborazione non deve restare per
+  sempre, e una conferma successiva non deve coprire quel valore.
+
+**Regole sullo stesso certificato**
+
+- Se un processo è escluso da un controllo (niente materiale d'apporto, niente
+  corrente), le regole vicine non devono chiedere quei campi. Il processo 311
+  (ossiacetilenica) non è un arco.
+- Un dato già presente su una passata non va segnalato come assente sul
+  certificato solo perché la testata è vuota. Vale anche il contrario: la
+  testata copre la riga.
+- Aprire un record vecchio e salvarlo non deve scrivere un default al posto di
+  un campo ancora vuoto (es. fase ispezione NULL che diventa «dopo»).
 
 **Documenti generati**
 
