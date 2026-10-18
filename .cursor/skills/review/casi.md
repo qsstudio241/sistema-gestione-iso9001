@@ -227,13 +227,13 @@ Non sono regole nuove. Erano ipotesi sullo SHA revisionato, non un commento di B
 - #764: l'OCR di intestazione non parte se nel corpo c'è già una sigla.
 - #760: una data di nascita a due cifre diventa `exam_date`.
 - #733: il form di una 9606-2 BW usa ancora il profilo 9606-1; piastra→tubo con più posizioni usa sempre la soglia 150 mm (Bugbot lo scrive su un commit successivo).
-  **Esito 18/10/2026:** form 9606-2 — corretto in questa slice (`getJointTypeProfile` con la norma; input sul `testThicknessKey`). Piastra→tubo già risolto.
+  **Esito 18/10/2026:** form 9606-2 — corretto in [#831](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/831) (`getJointTypeProfile` con la norma; input sul `testThicknessKey`). Piastra→tubo già risolto.
 - #727: per la 9606-2, `t` del materiale finisce in `s`.
-  **Esito 18/10/2026:** corretto in questa slice — `resolveTestThicknessByJoint` non sposta t→s se la norma è 9606-2.
+  **Esito 18/10/2026:** corretto in [#831](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/831) — `resolveTestThicknessByJoint` non sposta t→s se la norma è 9606-2.
 - #725: massimo numerico insieme al flag «illimitato»: il confronto non parte.
-  **Esito 18/10/2026:** corretto in questa slice — `compareRange` confronta il massimo numerico anche se c'è il flag.
+  **Esito 18/10/2026:** corretto in [#831](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/831) — `compareRange` confronta il massimo numerico anche se c'è il flag.
 - #702: una qualifica 14732 entra nel dominio saldatori 9606.
-  **Esito 18/10/2026:** rimandato — dopo COV-4 l'inclusione è intenzionale (operatori sulla stessa copertura WPS). Toglierla cambierebbe i semafori. Serve un dominio `operator_14732` dedicato, non un filtro silenzioso.
+  **Esito 18/10/2026:** rimandato (documentato in [#831](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/831)) — dopo COV-4 l'inclusione è intenzionale (operatori sulla stessa copertura WPS). Toglierla cambierebbe i semafori. Serve un dominio `operator_14732` dedicato, non un filtro silenzioso.
 
 ### Esito su main (18/10/2026)
 
@@ -251,10 +251,10 @@ Rilettura in sola lettura dopo il merge della [#824](https://github.com/qsstudio
 | Ancora presente | media | #786 | `wpsWpqrLinks.service.js` (`companyClause`) | Il match esige `company_id` uguale. La WPQR creata a mano, con azienda vuota, non si lega alla WPS della stessa azienda. |
 | Ancora presente | media | #764 | `documentIngestPipeline.service.js` (`applyHeaderIssuingBodyFallback`) | Se l'ente AI è vuoto o `altro` e `extractIssuingBody` trova una sigla nel testo (IIS è in lista), l'OCR dell'intestazione non parte. |
 | Già risolto | media | #760 | `ruleFieldExtractors.js` (`allDates`, `extractQualificationDates`) | L'anno a due cifre non entra nell'elenco date di default. La nascita è esclusa dai candidati dell'esame. `12.05.75` non diventa `exam_date`. |
-| Corretto in questa slice | media | #733 | `QualificationForm.jsx` | Profilo 9606-2 e input su `testThicknessKey` (`t` per BW 9606-2). |
+| Corretto in [#831](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/831) | media | #733 | `QualificationForm.jsx` | Profilo 9606-2 e input su `testThicknessKey` (`t` per BW 9606-2). |
 | Già risolto | bassa | #733 | `weldingQualificationRules9606Part2.js` (`computePlateToPipeMinDiameter`) | Più posizioni prendono la soglia più alta: PF insieme a un'altra posizione è 500 mm, non il pavimento 150. |
-| Corretto in questa slice | media | #727 | `weldingDesignation.js`, `qualificationIngest.service.js` | 9606-2: `t` resta `t`. 9606-1 invariato. |
-| Corretto in questa slice | bassa | #725 | `welder9606Correctness.pack.js`, `welder9606Part2.pack.js` | Massimo numerico confrontato anche con flag illimitato. |
+| Corretto in [#831](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/831) | media | #727 | `weldingDesignation.js`, `qualificationIngest.service.js` | 9606-2: `t` resta `t`. 9606-1 invariato. |
+| Corretto in [#831](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/831) | bassa | #725 | `welder9606Correctness.pack.js`, `welder9606Part2.pack.js` | Massimo numerico confrontato anche con flag illimitato. |
 | Rimandato | media | #702 | `welder9606.adapter.js` | Inclusione 14732 intenzionale dopo COV-4 (stessa copertura WPS). Escluderla cambierebbe i semafori. Serve dominio dedicato, non filtro silenzioso. |
 
 ### Quanto prende la checklist aggiornata
