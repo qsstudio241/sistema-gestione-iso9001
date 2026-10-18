@@ -533,20 +533,20 @@ describe('registerHandoff', () => {
       ok: true,
       action: 'created',
       project: { id: 77, project_code: 'COMM-2026-042', commercial_case_id: CASE_ID },
+      case: {
+        id: CASE_ID,
+        status: 'APPROVED',
+        organization_id: ORG_ID,
+        handoff_ref: 'COMM-2026-042',
+        handoff_at: '2026-06-02T10:00:00Z',
+        handoff_by: USER_ID,
+      },
     });
   });
 
   it('registra handoff su caso APPROVED e restituisce la commessa collegata', async () => {
     const approved = { id: CASE_ID, status: 'APPROVED', organization_id: ORG_ID };
-    const updated = {
-      ...approved,
-      handoff_ref: 'COMM-2026-042',
-      handoff_at: '2026-06-02T10:00:00Z',
-      handoff_by: USER_ID,
-    };
-    query
-      .mockResolvedValueOnce({ recordset: [approved] })
-      .mockResolvedValueOnce({ recordset: [updated] });
+    query.mockResolvedValueOnce({ recordset: [approved] });
 
     const req = mockReq({
       params: { id: String(CASE_ID) },
@@ -559,6 +559,7 @@ describe('registerHandoff', () => {
       organizationId: ORG_ID,
       caseRow: approved,
       handoffRef: 'COMM-2026-042',
+      notes: 'Note test',
     }));
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
       handoff_ref: 'COMM-2026-042',
@@ -566,12 +567,7 @@ describe('registerHandoff', () => {
       project_link: 'created',
       project_code: 'COMM-2026-042',
     }));
-    expect(query.mock.calls[1][1]).toMatchObject({
-      handoffRef: 'COMM-2026-042',
-      caseId: CASE_ID,
-      organizationId: ORG_ID,
-      userId: USER_ID,
-    });
+    expect(query).toHaveBeenCalledTimes(1);
   });
 
   it('se il collegamento della commessa fallisce non salva il passaggio', async () => {
@@ -939,6 +935,40 @@ describe('getCase — text_analysis', () => {
 
     const body = res.json.mock.calls[0][0];
     expect(body.text_analysis).toBeNull();
+  });
+
+  it('la checklist unisce il nome di chi ha risposto, non solo l\'id', async () => {
+    let checklistSql = '';
+    query.mockImplementation((sqlText) => {
+      if (/WHERE cc\.id = @caseId/.test(sqlText)) {
+        return Promise.resolve({ recordset: [{ id: CASE_ID, organization_id: ORG_ID }] });
+      }
+      if (/answered_by_name/.test(sqlText)) {
+        checklistSql = sqlText;
+        return Promise.resolve({
+          recordset: [{
+            id: 4,
+            answered_by: 9,
+            answered_by_name: 'Luca Neri',
+            answered_at: '2026-10-16T15:00:00.000Z',
+          }],
+        });
+      }
+      return Promise.resolve({ recordset: [] });
+    });
+
+    const req = mockReq({ params: { id: String(CASE_ID) } });
+    const res = mockRes();
+    await ctrl.getCase(req, res);
+
+    expect(checklistSql).toMatch(/LEFT JOIN users/i);
+    expect(checklistSql).toMatch(/answered_by_name/);
+    expect(checklistSql).toMatch(/organization_id = @organizationId/);
+    const body = res.json.mock.calls[0][0];
+    expect(body.checklist[0]).toMatchObject({
+      answered_by: 9,
+      answered_by_name: 'Luca Neri',
+    });
   });
 });
 
