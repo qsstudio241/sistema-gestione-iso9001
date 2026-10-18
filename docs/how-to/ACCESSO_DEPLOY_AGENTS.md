@@ -1,6 +1,6 @@
 # Accesso VPS, API produzione e deploy autonomo (Cursor / agenti)
 
-> **Aggiornato:** 2026-07-18.  
+> **Aggiornato:** 2026-10-18.  
 > Obiettivo: stessa informazione operativa per umano e assistente AI, **senza segreti in repository**.
 
 ---
@@ -169,6 +169,18 @@ Tutti gli invii mail del backend (alert NC/qualifiche/scadenze, inviti, reset pa
 Comportamento: log `[AlertMail] email soppressa (ambiente TEST/DISABLE_EMAIL)` (senza destinatari né contenuto); `sendAlertEmail` restituisce `false`, quindi `emailed=false`. `POST /library/source-requests` aggiunge `suppressed: true` solo quando la mail è soppressa; `POST /notifications-config/test` risponde `success: true, suppressed: true` senza inviare.
 
 **Passo operativo su TEST (dopo deploy del backend, solo con sì esplicito del committente):** il guard `NODE_ENV=test` è attivo da solo al deploy su `sgq-backend-test`. Per renderlo esplicito e indipendente da `NODE_ENV` aggiungere `DISABLE_EMAIL=1` in `/var/www/sgq-backend/.env.test` (o `Environment=DISABLE_EMAIL=1` nell'unit systemd di TEST) e riavviare **solo** `sgq-backend-test` (verifica MainPID prima/dopo). Non toccare `.env` né `sgq-backend` di produzione.
+
+---
+
+## Smoke dopo ogni deploy su TEST
+
+**Regola permanente (18/10/2026).** Dopo ogni deploy su TEST, di un agente o di un sotto-agente:
+
+- Smoke mirato sulle pagine toccate da quel deploy e sulle pagine principali: Qualifiche, Commesse, Verbali CND, Scadenzari, coda di ingest.
+- Non esiste un frontend TEST pubblicato fuori dalle preview Netlify. Lo smoke usa la build locale di `main` collegata all'API TEST (`https://sistemi.fr-busato.it:8443/test-api/api/v1`). Non si usa una deploy-preview Netlify e non si usa il sito di produzione `https://systemgest.netlify.app`.
+- L'esito OK o KO va nel report del merge (descrizione della PR o commento di chiusura).
+- Un KO blocca il passo successivo finché non è risolto.
+- Ogni sera alle 19 (ora di Roma) c'è anche uno smoke completo sullo stesso bersaglio (build locale di `main` e API TEST). È un impegno: non creare cron, workflow o automazioni.
 
 ---
 
