@@ -88,7 +88,9 @@ Controllare solo ciò che il diff tocca.
 **Ruoli**
 
 - `superadmin`: attiva i moduli dello studio. Non salta i controlli di licenza.
-- Owner / admin di studio: gestisce il proprio studio.
+- Owner / admin di studio: gestisce il proprio studio. Se non ha
+  `auditor_org_id`, vede comunque le aziende del proprio studio: un 403
+  svuota la tendina Ambito. Il viewer senza auditor_org non le vede.
 - Auditor: può creare, modificare, cancellare e aprire il cestino del proprio studio.
 - Viewer: sola lettura.
 - Cliente senza licenza: sola consultazione.
@@ -138,6 +140,11 @@ Controllare solo ciò che il diff tocca.
 - La scadenza efficace è la più restrittiva tra i dati presenti. Compilare un
   campo nuovo non deve spegnere una data più vecchia già scaduta, né dare per
   buona una scadenza lasciata vuota.
+- Quella data, se entra in `SUM` o `COUNT` (card, badge), è un'espressione
+  scalare. `MIN` dentro `SELECT` è un aggregato su una subquery: SQL Server
+  risponde «Cannot perform an aggregate function on an expression containing
+  an aggregate or a subquery» e la pagina resta vuota. Il `WHERE` della lista
+  può tenere la subquery; le card no.
 
 **Valori già in tabella**
 
@@ -205,6 +212,13 @@ Controllare solo ciò che il diff tocca.
 - Una WPQR stud (ISO 14555) non eredita il diametro piastra→tubo della 15614.
 - Simboli di posizione fuori tabella non fanno sembrare assente ogni colonna
   qualificata. Il finding «manca il dato» resta; il «più stretto» no.
+
+**Chiamate dal browser**
+
+- Un metodo di `apiService` che usa `this` si invoca sull'oggetto
+  (`apiService.metodo(...)`). Copiarlo in una variabile e chiamarlo perde
+  `this`: la pagina mostra un errore di rete e la richiesta non parte.
+  Un test che sostituisce il metodo con una funzione libera non se ne accorge.
 
 **Stato dopo un errore o un cambio ambito**
 

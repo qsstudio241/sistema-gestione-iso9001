@@ -93,7 +93,7 @@ describe('effectiveStatusFilterSql — mappa stati', () => {
     const win = expiringDaysFilterSql(30);
     expect(win).toContain('@expDays');
     expect(win).toContain('q.next_confirmation_due');
-    expect(win).not.toMatch(/q\.expiry_date <=/);
+    expect(win).not.toMatch(/q\.expiry_date\s*<=\s*(DATEADD|@)/);
   });
 });
 

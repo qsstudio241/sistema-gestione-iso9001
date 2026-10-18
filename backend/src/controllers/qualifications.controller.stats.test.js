@@ -214,6 +214,69 @@ describe('getStats / lista — input anomali', () => {
   });
 });
 
+const SQL_SERVER_AGGREGATE_ON_SUBQUERY =
+  'Cannot perform an aggregate function on an expression containing an aggregate or a subquery';
+
+/** Stessa regola di SQL Server: SUM/COUNT/MIN/MAX/AVG non possono contenere un'altra aggregazione o una subquery. */
+function aggregateBodies(sql) {
+  const bodies = [];
+  const re = /\b(SUM|COUNT|AVG|MIN|MAX)\s*\(/gi;
+  let match = re.exec(sql);
+  while (match) {
+    let i = match.index + match[0].length;
+    let depth = 1;
+    const start = i;
+    while (i < sql.length && depth > 0) {
+      if (sql[i] === '(') depth += 1;
+      else if (sql[i] === ')') depth -= 1;
+      i += 1;
+    }
+    bodies.push(sql.slice(start, i - 1));
+    re.lastIndex = i;
+    match = re.exec(sql);
+  }
+  return bodies;
+}
+
+function aggregateWrapsSubqueryOrAggregate(sql) {
+  return aggregateBodies(sql).some((body) =>
+    /\bSELECT\b/i.test(body) || /\b(SUM|COUNT|AVG|MIN|MAX)\s*\(/i.test(body)
+  );
+}
+
+describe('getStats — SQL Server rifiuta aggregato su subquery', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it('le card non avvolgono la scadenza effettiva in SUM se quella è una subquery (cestino escluso, date 9712 presenti)', async () => {
+    const { pool, queryMock } = makePool();
+    queryMock.mockImplementation((sql) => {
+      if (aggregateWrapsSubqueryOrAggregate(sql)) {
+        return Promise.reject(new Error(SQL_SERVER_AGGREGATE_ON_SUBQUERY));
+      }
+      return Promise.resolve({
+        recordset: [{ total: 2, valide: 1, in_scadenza_60: 0, in_scadenza_30: 0, scadute: 1, non_attive: 0 }],
+      });
+    });
+    getPool.mockResolvedValue(pool);
+
+    const res = await run(getStats, { company_id: '49' });
+    const sql = statsSql(queryMock);
+
+    expect(res.status).not.toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      total: 2,
+      valide: 1,
+      scadute: 1,
+      urgent: 1,
+    }));
+    expect(sql).toContain('q.deleted_at IS NULL');
+    expect(sql).toContain('q.near_vision_expiry_date');
+    expect(sql).toContain('q.colour_vision_expiry_date');
+    expect(sql).not.toMatch(/SELECT\s+MIN\s*\(/i);
+    expect(aggregateWrapsSubqueryOrAggregate(sql)).toBe(false);
+  });
+});
+
 describe('Bucket situazione — fonte unica lista/card', () => {
   beforeEach(() => jest.clearAllMocks());
 

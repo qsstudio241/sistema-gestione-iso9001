@@ -41,6 +41,33 @@ const SEMIANNUAL_TYPE_SQL_MATCH = `(
  */
 const VISION_TYPE_SQL_MATCH = `q.qualification_type IN (${visionFitnessSqlInList()})`;
 
+/**
+ * Data più restrittiva fra tre colonne nullable, senza subquery e senza MIN().
+ * Stesso risultato di MIN(VALUES ...): i NULL non contano; se sono tutti NULL, NULL.
+ * SQL Server rifiuta SUM/COUNT su un'espressione che contiene un aggregato o una
+ * subquery («Cannot perform an aggregate function on an expression containing
+ * an aggregate or a subquery»): le card di getStats avvolgono questa data in SUM.
+ */
+function leastNullableDateSql(a, b, c) {
+    return `CASE
+                WHEN ${a} IS NULL AND ${b} IS NULL THEN ${c}
+                WHEN ${a} IS NULL AND ${c} IS NULL THEN ${b}
+                WHEN ${b} IS NULL AND ${c} IS NULL THEN ${a}
+                WHEN ${a} IS NULL THEN CASE WHEN ${b} <= ${c} THEN ${b} ELSE ${c} END
+                WHEN ${b} IS NULL THEN CASE WHEN ${a} <= ${c} THEN ${a} ELSE ${c} END
+                WHEN ${c} IS NULL THEN CASE WHEN ${a} <= ${b} THEN ${a} ELSE ${b} END
+                WHEN ${a} <= ${b} AND ${a} <= ${c} THEN ${a}
+                WHEN ${b} <= ${c} THEN ${b}
+                ELSE ${c}
+            END`;
+}
+
+const VISION_LEAST_DATE_SQL = leastNullableDateSql(
+    'q.expiry_date',
+    'q.near_vision_expiry_date',
+    'q.colour_vision_expiry_date',
+);
+
 const EFFECTIVE_EXPIRY_SQL = `
     CASE
         WHEN ${SEMIANNUAL_TYPE_SQL_MATCH} THEN
@@ -58,11 +85,7 @@ const EFFECTIVE_EXPIRY_SQL = `
                 ELSE q.expiry_date
             END
         WHEN ${VISION_TYPE_SQL_MATCH} THEN
-            (SELECT MIN(v.d) FROM (VALUES
-                (q.expiry_date),
-                (q.near_vision_expiry_date),
-                (q.colour_vision_expiry_date)
-            ) AS v(d))
+            ${VISION_LEAST_DATE_SQL}
         ELSE q.expiry_date
     END
 `;
@@ -72,15 +95,8 @@ const EFFECTIVE_EXPIRY_SQL = `
  * Si usa solo se quelle colonne non esistono: resta la scadenza unica.
  */
 const EFFECTIVE_EXPIRY_SQL_WITHOUT_VISION_CLOCKS = EFFECTIVE_EXPIRY_SQL
-  .replace(
-    `WHEN ${VISION_TYPE_SQL_MATCH} THEN
-            (SELECT MIN(v.d) FROM (VALUES
-                (q.expiry_date),
-                (q.near_vision_expiry_date),
-                (q.colour_vision_expiry_date)
-            ) AS v(d))`,
-    `WHEN ${VISION_TYPE_SQL_MATCH} THEN q.expiry_date`,
-  );
+  .split(VISION_LEAST_DATE_SQL)
+  .join('q.expiry_date');
 
 let visionClocksAbsent = false;
 

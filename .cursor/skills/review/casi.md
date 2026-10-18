@@ -8,6 +8,16 @@ Per ogni caso: data, PR, area, gravità, cosa è successo, regola generale.
 
 ## 18/10/2026
 
+### La tendina patentini chiama il metodo senza this
+
+- **Data:** 18/10/2026
+- **PR:** [#839](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/839)
+- **Area:** verbali CND, patentini ISO 9712
+- **Gravità:** media
+- **Cosa è successo:** la pagina copia `getNdtInspectorEligibility` e lo chiama da solo. Il metodo usa `this.get`. Senza `this` la promise rifiuta prima della richiesta. Admin e auditor vedono «Impossibile caricare i patentini». L'API, chiamata a parte, risponde 200.
+- **Regola:** un metodo del servizio si chiama sull'oggetto. Un test che sostituisce il metodo con una funzione libera non vede il guasto.
+- **Confronto:** la skill non ha visto questo errore. La checklist non parlava di `this` sulle chiamate del browser.
+
 ### Due casi, stesso codice, due commesse
 
 - **Data:** 18/10/2026
@@ -145,6 +155,25 @@ Per ogni caso: data, PR, area, gravità, cosa è successo, regola generale.
 - **Cosa è successo:** la lista e l'aggiornamento del verbale nominano `inspection_phase`. Se il backend arriva prima della migrazione 177, l'elenco va in errore.
 - **Regola:** già nel caso #813. Stesso tipo, altro modulo.
 - **Confronto:** solo la skill.
+
+### Le card Qualifiche mettono un aggregato dentro un altro
+
+- **Data:** 18/10/2026
+- **PR:** [#819](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/819) (visto sullo smoke TEST, non da Bugbot)
+- **Area:** qualifiche, statistiche, scadenza oculistica 9712
+- **Gravità:** media
+- **Cosa è successo:** la data più restrittiva del certificato oculistico è un `SELECT MIN(...)`. Le card la mettono dentro `SUM(CASE WHEN ...)`. SQL Server rifiuta: «Cannot perform an aggregate function on an expression containing an aggregate or a subquery». `GET /qualifications/stats` risponde 500 e la pagina Qualifiche non mostra righe. La lista, che usa la stessa data nel `WHERE`, resta valida. Il cestino (`deleted_at`) non c'entra.
+- **Regola:** un `SUM` o un `COUNT` non contiene un altro aggregato né una subquery. La data più restrittiva fra più colonne, se serve alle card, si scrive con un `CASE` scalare. Il risultato resta il minimo fra le date presenti.
+- **Confronto:** la skill non ha visto questo 500. La checklist guardava quale data vince, non se l'espressione sta dentro un aggregato.
+
+### L'admin senza auditor_org non vede le aziende
+
+- **Data:** 18/10/2026
+- **PR:** [#838](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/838)
+- **Area:** Ambito, coda di ingest
+- **Gravità:** media
+- **Cosa è successo:** l'admin di studio senza `auditor_org_id` è trattato come superadmin. `GET /companies` risponde 403 e la tendina Ambito non ha l'azienda cliente. L'auditor, che ha l'auditor_org, la vede.
+- **Regola:** l'admin del proprio studio elenca le aziende di quello studio. Il viewer senza auditor_org resta fuori. Un `auditor_org_id` passato in query resta il filtro.
 
 ## Confronto con Bugbot
 

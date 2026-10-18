@@ -228,7 +228,8 @@ describe('qualificationAlert.service — colonne visione assenti', () => {
   });
 
   it('la SQL senza colonne 178 non le nomina e resta sulla scadenza unica', () => {
-    expect(EFFECTIVE_EXPIRY_SQL).toMatch(/MIN\(v\.d\)/);
+    expect(EFFECTIVE_EXPIRY_SQL).not.toMatch(/\bSELECT\b/);
+    expect(EFFECTIVE_EXPIRY_SQL).toMatch(/q\.near_vision_expiry_date <= q\.colour_vision_expiry_date/);
     expect(EFFECTIVE_EXPIRY_SQL).toMatch(/near_vision_expiry_date/);
     expect(EFFECTIVE_EXPIRY_SQL_WITHOUT_VISION_CLOCKS).not.toMatch(/near_vision_expiry_date/);
     expect(EFFECTIVE_EXPIRY_SQL_WITHOUT_VISION_CLOCKS).not.toMatch(/colour_vision_expiry_date/);
