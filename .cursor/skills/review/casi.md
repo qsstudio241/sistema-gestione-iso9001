@@ -146,6 +146,16 @@ Per ogni caso: data, PR, area, gravità, cosa è successo, regola generale.
 - **Regola:** già nel caso #813. Stesso tipo, altro modulo.
 - **Confronto:** solo la skill.
 
+### Le card Qualifiche mettono un aggregato dentro un altro
+
+- **Data:** 18/10/2026
+- **PR:** [#819](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/819) (visto sullo smoke TEST, non da Bugbot)
+- **Area:** qualifiche, statistiche, scadenza oculistica 9712
+- **Gravità:** media
+- **Cosa è successo:** la data più restrittiva del certificato oculistico è un `SELECT MIN(...)`. Le card la mettono dentro `SUM(CASE WHEN ...)`. SQL Server rifiuta: «Cannot perform an aggregate function on an expression containing an aggregate or a subquery». `GET /qualifications/stats` risponde 500 e la pagina Qualifiche non mostra righe. La lista, che usa la stessa data nel `WHERE`, resta valida. Il cestino (`deleted_at`) non c'entra.
+- **Regola:** un `SUM` o un `COUNT` non contiene un altro aggregato né una subquery. La data più restrittiva fra più colonne, se serve alle card, si scrive con un `CASE` scalare. Il risultato resta il minimo fra le date presenti.
+- **Confronto:** la skill non ha visto questo 500. La checklist guardava quale data vince, non se l'espressione sta dentro un aggregato.
+
 ## Confronto con Bugbot
 
 Confronto del 18/10/2026 sulle PR [#803](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/803), [#806](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/806), [#807](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/807), [#808](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/808), [#809](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/809), [#810](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/810), [#812](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/812), [#804](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/804), [#805](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/805).
