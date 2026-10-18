@@ -2,10 +2,10 @@ const express = require('express');
 const router = express.Router();
 const suppliersController = require('../controllers/suppliers.controller');
 const { authenticate } = require('../middleware/auth.middleware');
-const { requireLicensedModule } = require('../middleware/moduleLicense.middleware');
+const { useModuleLicense } = require('../middleware/moduleLicense.middleware');
 
 router.use(authenticate);
-router.use(requireLicensedModule('reclami'));
+useModuleLicense(router, 'reclami');
 
 // CRUD Suppliers
 router.get('/', suppliersController.listSuppliers);

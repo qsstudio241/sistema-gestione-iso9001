@@ -97,10 +97,8 @@ async function isClaimedByOtherOrg(url, organizationId) {
 }
 
 async function moduleAllowed(req, owner) {
-    const role = String(req.user.role || '').trim().toLowerCase();
-    if (role === 'superadmin' || role === 'admin') return true;
     if (owner.kind === 'materiale') {
-        return hasMaterialComplianceCapability(req.user.organization_id, role);
+        return hasMaterialComplianceCapability(req.user.organization_id, req.user.role);
     }
     const keys = expandWithImpliedModuleKeys(await getLicensedModuleKeysForOrg(req.user.organization_id));
     return keys.includes(owner.moduleKey);

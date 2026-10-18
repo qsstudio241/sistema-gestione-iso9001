@@ -11,12 +11,24 @@ const {
 } = require('../services/moduleLicense.service');
 
 async function userHasAnyLicensedModule(req, moduleKeys) {
-    const role = req.user?.role ? String(req.user.role).trim().toLowerCase() : '';
-    if (role === 'superadmin' || role === 'admin') return true;
     const keys = await getLicensedModuleKeysForOrg(req.user.organization_id);
     // Bridge ISO 3834 P0: 'saldatura' implica accesso a 'cnd' (vedi moduleLicense.service).
     const effectiveKeys = expandWithImpliedModuleKeys(keys);
     return moduleKeys.some((k) => effectiveKeys.includes(k));
+}
+
+/**
+ * Il controllo licenza vale solo se questa router ha una rotta per il path.
+ * I router montati su /api/v1 con router.use(licenza) altrimenti fermano
+ * anche i moduli successivi (es. NC assente blocca WPS).
+ */
+function useModuleLicense(router, moduleKey) {
+    const gate = requireLicensedModule(moduleKey);
+    router.use((req, res, next) => {
+        const handled = router.stack.some((layer) => layer.route && layer.match(req.path));
+        if (!handled) return next();
+        return gate(req, res, next);
+    });
 }
 
 function requireLicensedModule(moduleKey) {
@@ -88,4 +100,5 @@ module.exports = {
     requireLicensedModule,
     requireLicensedModuleAny,
     requireMaterialComplianceCapability,
+    useModuleLicense,
 };

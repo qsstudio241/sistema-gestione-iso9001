@@ -7,7 +7,7 @@ const multer   = require('multer');
 const path     = require('path');
 const fs       = require('fs');
 const { authenticate } = require('../middleware/auth.middleware');
-const { requireLicensedModule } = require('../middleware/moduleLicense.middleware');
+const { useModuleLicense } = require('../middleware/moduleLicense.middleware');
 const ctrl     = require('../controllers/qualifications.controller');
 const verifyCtrl = require('../controllers/qualificationVerify.controller');
 
@@ -77,7 +77,7 @@ const batchUploadMiddleware = (req, res, next) => {
 
 // ── Routes ────────────────────────────────────────────────────────────────────
 router.use(authenticate);
-router.use(requireLicensedModule('qualifiche'));
+useModuleLicense(router, 'qualifiche');
 
 // Stats, batch e coverage prima di /:id per evitare conflitti di routing
 router.get ('/qualifications/stats',               ctrl.getStats);

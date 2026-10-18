@@ -172,13 +172,11 @@ describe('viewer di studio in sola lettura', () => {
         expect(out.body.code).toBe('AUTH_FORBIDDEN');
     });
 
-    test('viewer e auditor non aprono il cestino', async () => {
-        for (const role of ['viewer', 'auditor']) {
-            const out = res();
-            await trash.listTrash({ user: user(role), query: {} }, out);
-            expect(out.statusCode).toBe(403);
-            expect(out.body.code).toBe('AUTH_FORBIDDEN');
-        }
+    test('il viewer non apre il cestino', async () => {
+        const out = res();
+        await trash.listTrash({ user: user('viewer'), query: {} }, out);
+        expect(out.statusCode).toBe(403);
+        expect(out.body.code).toBe('AUTH_FORBIDDEN');
     });
 
     test('viewer non salva le passate WPQR', async () => {

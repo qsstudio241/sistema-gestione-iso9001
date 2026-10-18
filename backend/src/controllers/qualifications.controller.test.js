@@ -94,6 +94,26 @@ describe('qualifications.controller — effectiveExpiryDate', () => {
     };
     expect(effectiveExpiryDate(q)).toBe('2026-08-01');
   });
+
+  it('certificato oculistico: la data effettiva è la più vicina tra visita e colori', () => {
+    const q = {
+      qualification_type: 'Certificato idoneità visiva (acuità + Ishihara)',
+      expiry_date: '2032-01-01',
+      near_vision_expiry_date: '2027-04-01',
+      colour_vision_expiry_date: '2030-06-01',
+    };
+    expect(effectiveExpiryDate(q)).toBe('2027-04-01');
+  });
+
+  it('certificato oculistico senza le due date resta su expiry_date', () => {
+    const q = {
+      qualification_type: 'Certificato idoneità visiva (acuità + Ishihara)',
+      expiry_date: '2028-02-02',
+      near_vision_expiry_date: null,
+      colour_vision_expiry_date: null,
+    };
+    expect(effectiveExpiryDate(q)).toBe('2028-02-02');
+  });
 });
 
 describe('qualifications.controller — semaforoForRow', () => {
