@@ -168,3 +168,81 @@ Bugbot è più forte in tre controlli che la checklist non aveva:
 3. Una regola vicina, dopo che un processo è stato escluso da un'altra.
 
 La skill è più forte sul default scritto al salvataggio di un record vecchio, sulla colonna letta prima della migrazione, e sulla corsa tra due conferme (già vista sul passaggio a commessa).
+
+## Storico
+
+Addestramento del 18/10/2026. Trenta PR unite prima della [#803](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/803), le più recenti in cui Bugbot ha lasciato un rilievo e un commit successivo della stessa PR l'ha corretto: [#801](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/801), [#800](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/800), [#799](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/799), [#791](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/791), [#789](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/789), [#786](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/786), [#782](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/782), [#781](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/781), [#778](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/778), [#773](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/773), [#772](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/772), [#769](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/769), [#764](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/764), [#763](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/763), [#761](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/761), [#760](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/760), [#758](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/758), [#753](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/753), [#743](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/743), [#742](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/742), [#738](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/738), [#734](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/734), [#733](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/733), [#727](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/727), [#725](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/725), [#718](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/718), [#711](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/711), [#704](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/704), [#702](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/702), [#701](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/701).
+
+La skill ha chiuso il proprio elenco prima di leggere i commenti. Lo SHA giudicato è il primo commit che Bugbot ha revisionato e che non è la testa della PR (quello prima della correzione). Un titolo conta una volta. Un rilievo di Bugbot su quello SHA è vero perché nella stessa PR c'è un commit dopo: non è stata ricontrollata riga per riga la testa finale di tutte e 47 le voci.
+
+I giri successivi di Bugbot (stessa PR, SHA più avanti) non entrano in questa tabella: non sono stati revisionati alla cieca. Sono 45 titoli, di cui 2 ripetono un bug già contato («verify senza azienda» e «spessore vuoto = 0» sulla #702). Restano 43 rilievi ulteriori.
+
+| Esito | Conteggio | Note |
+|---|---|---|
+| Trovato da entrambi | 7 | indice unico che tiene il cestino (#801); ambito WPQR che ignora l'azienda della WPS (#799); «illimitato» che tiene il minimo dell'AI (#769); intestazione «validity» che copre la scadenza (#761); guardia prod che non riconosce il database di test vero (#738); upload a pezzi che al retry duplica i file (#711); estremo di spessore vuoto che diventa 0 (#702) |
+| Solo Bugbot | 40 | elenco raggruppato sotto. Due erano già nella checklist di isolamento e non sono stati eseguiti |
+| Solo la skill | 15 | ipotesi sullo stesso SHA, non confermate da un commento di Bugbot su quello SHA. Non diventano regole a sé |
+| Falso allarme Bugbot | 0 | sullo SHA giudicato. Il campione è definito dai commit successivi |
+| Falso allarme della skill | 0 | le PR segnate pulite e poi trovate da Bugbot sono mancanze, non allarmi falsi |
+
+### Perché li abbiamo mancati
+
+Due mancanze sono di esecuzione, non di regola nuova. La checklist diceva già che ogni query filtra lo studio e l'azienda. Non l'abbiamo applicata agli `UPDATE` del cestino (#801, scrittura senza `organization_id`) né alla rotta nuova di verifica copertura (#702, nessun filtro azienda, a differenza di `list` e `getOne` nello stesso controller).
+
+Le altre 38 sono tipi che la checklist non nominava. Raggruppati, senza una voce per PR.
+
+**Cestino a metà.** Abbiamo seguito il controllo duplicati e lo `status`, non il `COUNT(*)` degli allegati. Un file cestinato alzava ancora il badge (#801).
+
+**Catena di record.** Ci siamo fermati al filtro della riga corrente. La storia della qualifica, già ammessa, rifaceva il controllo sull'antenato e rispondeva 403 se il rinnovo precedente era di un'altra azienda o senza azienda (#799).
+
+**Numeri tecnici letti come telefoni.** Non abbiamo percorso la regex dello scrubber sui pochi esempi del prompt (certificato `24-03390-01`, processi `135-138-141`) (#789).
+
+**La prima etichetta non è il campo.** Sulla #761 abbiamo visto «validity» e non le sorelle nello stesso file: «Nato a» preso come data, «data di prova» non riconosciuto (#761), la conferma a due cifre che diventa scadenza (#760), il valore dell'esaminatore sulla stessa riga scartato, `Valentina` scartato perché inizia con `valid` (#763), il normalizzatore di una sigla corta applicato a tutto l'OCR (#764), il secondo ente in intestazione ignorato (#772).
+
+**Normalizzare butta via l'altro valore.** Non abbiamo chiesto cosa resta della stringa. Salvare tiene solo il primo codice di processo (#778); WPS e WPQR non canonizzano il testo storico e il filtro non lo ritrova (#778); `num` al posto di `toNumericOrNull` azzera i decimali italiani (#727); manca l'alias di `base_material_group_2` (#773); il pack legge solo `welding_process_test` e ignora `welding_process` (#733, #725).
+
+**La copertura mente sul numero.** Abbiamo visto lo zero sull'estremo vuoto e non il resto: fuori tabella segnato «parziale» (#704), una WPQR stud che eredita il diametro piastra→tubo della 15614 (#704), simboli di posizione sconosciuti che fanno sembrare assente ogni colonna (#733).
+
+**Lo schermo dopo l'errore o il cambio.** Abbiamo visto il retry che duplica e non il flag «occupato» letto come caricamento a lotti (#711), la conferma che rimette la verifica di prima della modifica (#734), l'override fallito che cancella la riga, la select già sul tipo giusto che non si può confermare (#781), la coda la cui chiave di ricarica non è mai aggiornata (#791), l'ambito cambiato che lascia in tabella i risultati dell'altra azienda (#702), `2 +n` e `DC-EP` segnati come numeri invalidi (#753).
+
+**Runner e guardie.** Abbiamo letto il nome del database e non il resto del percorso: mancano `run-migration-175` e `176` (#800) e il brief che annuncia le migrazioni non li elenca (#743); `DB_*` copiato sulla sezione test e su una production clonata fa fallire il runner anche sul test vero (#742); il test di CI legge `database/migrations/` vivo e si rompe al file 169 (#701).
+
+**Classificazione.** Il nome del file contava come prova e saltava l'OCR dell'intestazione (#781). `standard_ref` con `14732` azzerava in salvataggio i campi 9606 ancora visibili (#782).
+
+**Confine di parola.** `EN287-1` non combaciava con `\b` prima di `287`, perché `N` e `2` sono entrambi caratteri di parola (#718).
+
+**Legami WPS/WPQR.** Abbiamo visto il `company_id` vuoto e non il parser: `10/08` diventa un riferimento (#786), il ruolo del legame resta quello del primo caricamento (#786), un errore di lookup con `ref` null non scrive i numeri già estratti (#786).
+
+**Encoding.** La procedura diceva «niente stile». `e'` e `piu'` nel testo mostrato all'operatore sono encoding (#758, #781).
+
+### Solo la skill, sullo stesso SHA
+
+Non sono regole nuove. Restano nel registro come ipotesi.
+
+- #801: gate NDT e copertura 9712 ignorano `deleted_at`; il generatore WPS include WPQR cestinate; riassegnare un saldatore risponde 409; le NC nate dall'audit non hanno `organization_id` e spariscono dal cestino; l'email di sollecito include NC cestinate.
+- #791: la coda di ingest non filtra azienda né ruolo (isolamento già in checklist, non eseguito); `cert_ndt` non è nel filtro del modulo qualifiche.
+- #786: una WPQR creata a mano, con `company_id` vuoto, non si lega.
+- #764: l'OCR di intestazione non parte se nel corpo c'è già una sigla.
+- #760: una data di nascita a due cifre diventa `exam_date`.
+- #733: il form di una 9606-2 BW usa ancora il profilo 9606-1; piastra→tubo con più posizioni usa sempre la soglia 150 mm (Bugbot lo scrive su un commit successivo).
+- #727: per la 9606-2, `t` del materiale finisce in `s`.
+- #725: massimo numerico insieme al flag «illimitato»: il confronto non parte.
+- #702: una qualifica 14732 entra nel dominio saldatori 9606.
+
+### Quanto prende la checklist aggiornata
+
+Metodo. Denominatore del confronto alla cieca: i 47 titoli del primo SHA. Presi prima di questa checklist: 7, cioè il 15%. Due dei 40 mancati (scrittura del cestino senza studio, verifica copertura senza azienda) erano già scritti sotto Isolamento: eseguirli porta il 15% al 19% (9/47), senza regole nuove.
+
+Le righe aggiunte oggi nominano gli altri 38. Sullo stesso elenco la copertura diventa 47/47. È il soffitto del campione, non una misura: le righe sono state scritte da quegli errori.
+
+Misura non circolare: i 43 rilievi dei giri successivi, esclusi dal numeratore quando la riga è stata allargata proprio per loro. Una riga nata dal primo giro ne copre 6, cioè il 14%: l'aggiornamento WPQR che sposta la WPS di azienda (#799), il filtro WPS che non ritrova il testo storico (#778), tre varianti «identificativo tecnico letto come telefono» (#789), la scadenza etichettata scartata perché la prima data non è il campo (#760). Il resto (ripristino del cestino, regex del telefono che poi non vede un telefono vero, test rotti, posizione piastra→tubo) non è nominato.
+
+Stima per il prossimo pacchetto: i tipi già in questa checklist sì; una variante dello stesso modulo, o un tipo nuovo, no. Nel confronto sulle nove PR dalla #803 il rapporto, con una checklist già arricchita, era 1 su 4. Non si promette un salto dal 15% al 90%.
+
+### Cinque regole che contano di più
+
+1. La prima etichetta trovata non è il campo (scadenza, esame, nascita, conferma).
+2. Normalizzare non cancella gli altri valori (codici di processo, decimali italiani, alias della seconda colonna, campo legacy).
+3. Ogni migrazione ha lo script VPS, anche nel brief; la guardia riconosce `2026-06-18_SGQ_ISO9001`; `DB_*` non si clona sulla sezione production; il test di CI usa una fixture.
+4. In copertura, fuori tabella non è «parziale», l'estremo vuoto non è 0, e una norma non eredita la tabella di un'altra.
+5. Un numero di certificato, un processo o un riferimento WPQR non è un telefono.
