@@ -26,6 +26,7 @@ import {
 import { exportTechnicalReviewDocx } from "../utils/wordExportTechnicalReview";
 import { normalizeApplicableWpsIds } from "../utils/applicableWpsIds";
 import { STATUS_LABELS } from "../utils/contractReviewLabels";
+import { INSPECTION_PHASES } from "../utils/ndtInspectionPhase";
 import "./ProjectsPage.css";
 
 const AI_COVERAGE_LABELS = {
@@ -43,6 +44,7 @@ const PROJECT_STATUSES = [
 
 // Stati di commessa che richiedono il riesame tecnico §5.3 completato (gate soft).
 const STATUSES_REQUIRING_TECHNICAL_REVIEW = ["aperta"];
+const INSPECTION_METHODS = ["VT", "MT", "PT", "UT", "RT", "ET"];
 
 //  Form modale commessa 
 
@@ -53,6 +55,16 @@ function ProjectFormModal({ project, companies, defaultCompanyId, wpsList, quali
     : [];
   const [autoSaveStatus, setAutoSaveStatus] = useState(null); // null | 'saving' | 'saved' | 'error'
   const savedIdRef          = useRef(project?.id || null);
+  const [savedProjectId, setSavedProjectId] = useState(project?.id || null);
+  const [inspectionItems, setInspectionItems] = useState([]);
+  const [inspectionDraft, setInspectionDraft] = useState({
+    inspection_phase: "",
+    method: "",
+    coverage_percent: "",
+    acceptance_standard: "",
+  });
+  const [inspectionMessage, setInspectionMessage] = useState(null);
+  const [inspectionBusy, setInspectionBusy] = useState(false);
   const isFirstRender       = useRef(true);
   const autoSaveTimer       = useRef(null);
   const lastSyncedWelderIds = useRef([...existingWelderIds]);
@@ -210,6 +222,7 @@ function ProjectFormModal({ project, companies, defaultCompanyId, wpsList, quali
           const res = await apiService.createProject(payload);
           savedProjectId = res?.data?.id || res?.id;
           savedIdRef.current = savedProjectId;
+          if (savedProjectId) setSavedProjectId(savedProjectId);
         }
         acceptCaseWrite(built);
         // Sincronizza welders diff dall'ultima sincronizzazione
@@ -247,6 +260,87 @@ function ProjectFormModal({ project, companies, defaultCompanyId, wpsList, quali
     });
   }
 
+  useEffect(() => {
+    if (!savedProjectId) {
+      setInspectionItems([]);
+      return;
+    }
+    if (typeof apiService.getProjectInspectionItems !== "function") return;
+    let cancelled = false;
+    apiService.getProjectInspectionItems(savedProjectId)
+      .then((res) => {
+        if (cancelled) return;
+        const list = Array.isArray(res) ? res : (res?.data || []);
+        setInspectionItems(list);
+      })
+      .catch(() => { if (!cancelled) setInspectionItems([]); });
+    return () => { cancelled = true; };
+  }, [savedProjectId]);
+
+  async function addInspectionItem() {
+    if (!savedProjectId || inspectionBusy) return;
+    if (typeof apiService.createProjectInspectionItem !== "function") return;
+    setInspectionBusy(true);
+    setInspectionMessage(null);
+    try {
+      const res = await apiService.createProjectInspectionItem(savedProjectId, {
+        inspection_phase: inspectionDraft.inspection_phase || null,
+        method: inspectionDraft.method || null,
+        coverage_percent: inspectionDraft.coverage_percent,
+        acceptance_standard: inspectionDraft.acceptance_standard,
+      });
+      const row = res?.data || res;
+      if (row && row.id != null) setInspectionItems((items) => [...items, row]);
+      setInspectionDraft({
+        inspection_phase: "",
+        method: "",
+        coverage_percent: "",
+        acceptance_standard: "",
+      });
+    } catch (err) {
+      setInspectionMessage(err?.message || "Controllo non salvato.");
+    } finally {
+      setInspectionBusy(false);
+    }
+  }
+
+  async function removeInspectionItem(itemId) {
+    if (!savedProjectId || inspectionBusy) return;
+    if (typeof apiService.deleteProjectInspectionItem !== "function") return;
+    setInspectionBusy(true);
+    setInspectionMessage(null);
+    try {
+      await apiService.deleteProjectInspectionItem(savedProjectId, itemId);
+      setInspectionItems((items) => items.filter((item) => item.id !== itemId));
+    } catch (err) {
+      setInspectionMessage(err?.message || "Controllo non rimosso.");
+    } finally {
+      setInspectionBusy(false);
+    }
+  }
+
+  async function createInspectionDrafts() {
+    if (!savedProjectId || inspectionBusy) return;
+    if (typeof apiService.generateProjectInspectionDrafts !== "function") return;
+    setInspectionBusy(true);
+    setInspectionMessage(null);
+    try {
+      const res = await apiService.generateProjectInspectionDrafts(savedProjectId);
+      const data = res?.data || {};
+      const created = Array.isArray(data.created) ? data.created.length : 0;
+      const already = Array.isArray(data.already) ? data.already.length : 0;
+      const skipped = Array.isArray(data.skipped) ? data.skipped.length : 0;
+      const parts = [`Bozze create: ${created}`];
+      if (already) parts.push(`già presenti: ${already}`);
+      if (skipped) parts.push(`senza metodo: ${skipped}`);
+      setInspectionMessage(`${parts.join(". ")}.`);
+    } catch (err) {
+      setInspectionMessage(err?.message || "Bozze non create.");
+    } finally {
+      setInspectionBusy(false);
+    }
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     setSaving(true);
@@ -261,6 +355,7 @@ function ProjectFormModal({ project, companies, defaultCompanyId, wpsList, quali
       } else {
         const res = await apiService.createProject(payload);
         savedProjectId = res?.data?.id || res?.id;
+        if (savedProjectId) setSavedProjectId(savedProjectId);
       }
       acceptCaseWrite(built);
 
@@ -562,6 +657,111 @@ function ProjectFormModal({ project, companies, defaultCompanyId, wpsList, quali
                 )}
               </div>
             )}
+
+            <div className="pj-wps-section">
+              <h4 className="pj-section-label">Controlli previsti</h4>
+              <div className="pj-form-grid">
+                <div className="pj-form-group">
+                  <label className="pj-form-label" htmlFor="inspection-phase">Fase</label>
+                  <select
+                    id="inspection-phase"
+                    className="pj-form-select"
+                    value={inspectionDraft.inspection_phase}
+                    disabled={!savedProjectId}
+                    onChange={(e) => setInspectionDraft((d) => ({ ...d, inspection_phase: e.target.value }))}
+                  >
+                    <option value="">{"\u2014"}</option>
+                    {INSPECTION_PHASES.map((phase) => (
+                      <option key={phase.value} value={phase.value}>{phase.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="pj-form-group">
+                  <label className="pj-form-label" htmlFor="inspection-method">Metodo</label>
+                  <select
+                    id="inspection-method"
+                    className="pj-form-select"
+                    value={inspectionDraft.method}
+                    disabled={!savedProjectId}
+                    onChange={(e) => setInspectionDraft((d) => ({ ...d, method: e.target.value }))}
+                  >
+                    <option value="">{"\u2014"}</option>
+                    {INSPECTION_METHODS.map((method) => (
+                      <option key={method} value={method}>{method}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="pj-form-group">
+                  <label className="pj-form-label" htmlFor="inspection-percent">Percentuale</label>
+                  <input
+                    id="inspection-percent"
+                    className="pj-form-input"
+                    inputMode="decimal"
+                    value={inspectionDraft.coverage_percent}
+                    disabled={!savedProjectId}
+                    onChange={(e) => setInspectionDraft((d) => ({ ...d, coverage_percent: e.target.value }))}
+                  />
+                </div>
+                <div className="pj-form-group">
+                  <label className="pj-form-label" htmlFor="inspection-standard">Norma di accettazione</label>
+                  <input
+                    id="inspection-standard"
+                    className="pj-form-input"
+                    value={inspectionDraft.acceptance_standard}
+                    disabled={!savedProjectId}
+                    onChange={(e) => setInspectionDraft((d) => ({ ...d, acceptance_standard: e.target.value }))}
+                  />
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
+                <button
+                  type="button"
+                  className="pj-btn-save"
+                  disabled={!savedProjectId || inspectionBusy}
+                  title={savedProjectId ? "Aggiunge il controllo alla commessa" : "Salva la commessa per aggiungere i controlli previsti"}
+                  onClick={addInspectionItem}
+                >
+                  Aggiungi
+                </button>
+                <button
+                  type="button"
+                  className="pj-btn-save"
+                  disabled={!savedProjectId || inspectionBusy}
+                  title={savedProjectId ? "Crea una bozza di verbale per ogni controllo con un metodo" : "Salva la commessa per creare le bozze"}
+                  onClick={createInspectionDrafts}
+                >
+                  Crea bozze verbali
+                </button>
+              </div>
+              {!savedProjectId && (
+                <p className="pj-hint">Salva la commessa per aggiungere i controlli previsti.</p>
+              )}
+              {inspectionMessage && <p className="pj-hint">{inspectionMessage}</p>}
+              {inspectionItems.length > 0 && (
+                <ul className="pj-checkbox-list">
+                  {inspectionItems.map((item) => {
+                    const phase = INSPECTION_PHASES.find((p) => p.value === item.inspection_phase);
+                    const percent = item.coverage_percent == null || item.coverage_percent === ""
+                      ? ""
+                      : `${item.coverage_percent}%`;
+                    const bits = [phase ? phase.label : "", item.method || "", percent, item.acceptance_standard || ""].filter(Boolean);
+                    return (
+                      <li key={item.id} className="pj-checkbox-item">
+                        <span>{bits.join(" \u00b7 ") || "Controllo senza dettagli"}</span>
+                        <button
+                          type="button"
+                          className="pj-btn-cancel"
+                          disabled={inspectionBusy}
+                          onClick={() => removeInspectionItem(item.id)}
+                        >
+                          Rimuovi
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
 
             {/* WPS applicabili */}
             {wpsList.length > 0 && (
