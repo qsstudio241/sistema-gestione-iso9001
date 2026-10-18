@@ -698,12 +698,17 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
         let cancelled = false;
         const timer = setTimeout(() => {
             setInspectorGate((g) => ({ ...g, loading: true, error: null }));
-            apiService.getNdtInspectorEligibility({
-                inspector: form.inspector || "",
-                inspector_qualification_id: form.inspector_qualification_id || "",
-                report_type: form.report_type,
-                company_id: form.company_id || "",
-            }).then((res) => {
+            const fetchEligibility = apiService.getNdtInspectorEligibility;
+            const pending = typeof fetchEligibility === "function"
+                ? fetchEligibility({
+                    inspector: form.inspector || "",
+                    inspector_qualification_id: form.inspector_qualification_id || "",
+                    report_type: form.report_type,
+                    company_id: form.company_id || "",
+                })
+                : undefined;
+            // Promise.resolve: se il mock del test è già stato azzerato, non è un thenable.
+            Promise.resolve(pending).then((res) => {
                 if (cancelled) return;
                 const data = res?.data || {};
                 setInspectorGate({

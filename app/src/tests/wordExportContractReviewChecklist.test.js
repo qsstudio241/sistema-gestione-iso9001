@@ -4,6 +4,7 @@ import {
   buildContractReviewChecklistFileName,
   generateContractReviewChecklistBlob,
 } from '../utils/wordExportContractReviewChecklist';
+import { normalizeChecklistRow } from '../utils/contractReviewChecklistAttachments';
 
 vi.mock('file-saver', () => ({ saveAs: vi.fn(), default: { saveAs: vi.fn() } }));
 
@@ -159,6 +160,30 @@ describe('wordExportContractReviewChecklist', () => {
     expect(xml).toContain('Anna Verdi');
     expect(xml).not.toContain('Approvato');
     expect(xml).not.toContain('>99<');
+  });
+
+  it('chi scarica il file non sostituisce chi ha compilato la checklist', async () => {
+    const checklist = [
+      normalizeChecklistRow({
+        ...SAMPLE_CHECKLIST[0],
+        answered_by: 9,
+        answered_by_name: 'Luca Neri',
+        answered_at: '2026-10-16T15:00:00.000Z',
+      }),
+    ];
+    const blob = await generateContractReviewChecklistBlob({
+      caseMeta: {
+        id: 5,
+        title: 'Due utenti',
+        status: 'INTAKE_REVIEW',
+        compiler_name: 'Anna Verdi',
+      },
+      checklist,
+    });
+    const zip = new PizZip(await blobToArrayBuffer(blob));
+    const xml = zip.files['word/document.xml'].asText();
+    expect(xml).toContain('Luca Neri');
+    expect(xml).not.toContain('Anna Verdi');
   });
 
   it('nome file sanitizzato', () => {

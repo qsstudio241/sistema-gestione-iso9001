@@ -26,6 +26,9 @@ export function normalizeChecklistRow(row = {}) {
     item_text: row.item_text ?? row.itemText,
     answer: row.answer,
     notes: row.notes ?? '',
+    answered_by: row.answered_by ?? row.answeredBy ?? null,
+    answered_by_name: row.answered_by_name ?? row.answeredByName ?? '',
+    answered_at: row.answered_at ?? row.answeredAt ?? null,
     attachment_required: requiredRaw === true || requiredRaw === 1 || requiredRaw === '1' ? 1 : 0,
     linked_attachments: Array.isArray(linksRaw) ? linksRaw : [],
   };

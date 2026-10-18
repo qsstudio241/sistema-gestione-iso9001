@@ -359,6 +359,15 @@ function emptyTokenToNull(v) {
     return s;
 }
 
+/** Data di saldatura: stessi token vuoti degli altri campi; solo AAAA-MM-GG entra in colonna DATE. */
+function mapTestDate(raw) {
+    const s = emptyTokenToNull(raw);
+    if (s == null) return null;
+    if (/^SENTINEL_/i.test(s)) return s;
+    const iso = String(s).match(/^(\d{4}-\d{2}-\d{2})/);
+    return iso ? iso[1] : null;
+}
+
 function findWpqrPage2Header(text) {
     if (!text) return null;
     const m = String(text).match(PAGE2_HEADER_RE);
@@ -526,7 +535,7 @@ function mapPipelineFieldsToReview(f) {
         qualifying_element: normalizeQualifyingElement(f.qualifying_element),
         material_group_2: f.material_group_2 || f.base_material_group_2 || null,
         base_material_spec_2: f.base_material_spec_2 || null,
-        test_date: f.test_date || null,
+        test_date: mapTestDate(f.test_date),
         test_runs: mapTestRuns(f.test_runs),
         ...mapPage2HeaderFields(f),
         ...mapResultFields(f),
@@ -616,7 +625,7 @@ function mapReviewFieldsToDb(f) {
         qualifying_element: normalizeQualifyingElement(f.qualifying_element),
         base_material_group_2: f.material_group_2 || f.base_material_group_2 || null,
         base_material_spec_2: f.base_material_spec_2 || null,
-        test_date: f.test_date || null,
+        test_date: mapTestDate(f.test_date),
         test_runs: mapTestRuns(f.test_runs),
         ...mapPage2HeaderFields(f),
         ...mapResultFields(f),
@@ -1108,10 +1117,10 @@ const WPQR_REPROCESSABLE_FIELDS = {
     },
     wpqr_test_results: {
         column: 'vt_result',
-        writeGuard: "vt_result IS NULL OR vt_result = 'NA'",
+        writeGuard: 'vt_result IS NULL',
         bundleColumns: RESULT_FIELDS.map((column) => ({
             column,
-            writeGuard: `${column} IS NULL OR ${column} = 'NA'`,
+            writeGuard: `${column} IS NULL`,
         })),
     },
 };
@@ -1228,6 +1237,7 @@ module.exports = {
     mapWpqrTestResult,
     mapTestRuns,
     emptyTokenToNull,
+    mapTestDate,
     calcThicknessRange,
     normalizeWpqrJointType,
     normalizeWpqrProductType,

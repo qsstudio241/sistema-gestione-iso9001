@@ -17,7 +17,7 @@ const svc = require('./wpqrTestRuns.service');
 const ORG_A = 1001;
 const ORG_B = 2002;
 
-function makeDb({ tables = ['wpqr_test_runs', 'wps_wpqr_links'], failOnInsert = false, columns = true } = {}) {
+function makeDb({ tables = ['wpqr_test_runs', 'wps_wpqr_links'], failOnInsert = false, failOnNthInsert = null, columns = true } = {}) {
     const db = {
         wpqr: [
             { id: 10, organization_id: ORG_A, company_id: 5 },
@@ -69,6 +69,8 @@ function makeDb({ tables = ['wpqr_test_runs', 'wps_wpqr_links'], failOnInsert = 
         }
         if (/^INSERT INTO wpqr_test_runs/.test(text)) {
             if (failOnInsert) throw new Error('boom');
+            const insertN = db.statements.filter((s) => /^INSERT INTO wpqr_test_runs/.test(s.text)).length;
+            if (failOnNthInsert != null && insertN === failOnNthInsert) throw new Error('boom');
             db.runs.push({ id: db.nextId++, ...params });
             return { recordset: [] };
         }
@@ -409,5 +411,42 @@ describe('normalizeTestHeader — condizioni di prova su wpqr_records', () => {
         const path = require('path');
         const sql = fs.readFileSync(path.resolve(__dirname, '../../../database/migrations/173_wpqr_test_data.sql'), 'utf8');
         svc.WRITABLE_COLUMNS.forEach((c) => expect(sql).toMatch(new RegExp(`\\n\\s+${c}\\s+`)));
+    });
+});
+
+describe('insertAiTestRunsIfEmpty — transazione e lucchetto', () => {
+    it('non inserisce se una passata c\'è già', async () => {
+        const { db } = makeDb();
+        const n = await svc.insertAiTestRunsIfEmpty({
+            wpqrId: 10, organizationId: ORG_A, companyId: 5,
+            runs: [{ run_label: 'X', current_a: 1 }],
+        });
+        expect(n).toBe(0);
+        expect(db.statements.some((s) => /^INSERT INTO wpqr_test_runs/.test(s.text))).toBe(false);
+    });
+
+    it('inserisce il gruppo in transazione con lucchetto sulla WPQR', async () => {
+        const { db, tx } = makeDb();
+        db.wpqr.push({ id: 11, organization_id: ORG_A, company_id: 5 });
+        const n = await svc.insertAiTestRunsIfEmpty({
+            wpqrId: 11, organizationId: ORG_A, companyId: 5,
+            runs: [{ run_label: '1', current_a: 10 }, { run_label: '2', current_a: 20 }],
+        });
+        expect(n).toBe(2);
+        expect(tx.begin).toHaveBeenCalled();
+        expect(tx.commit).toHaveBeenCalled();
+        expect(db.runs.filter((r) => r.wpqr_id === 11)).toHaveLength(2);
+        expect(db.statements.some((s) => /UPDLOCK/.test(s.text) && /wpqr_records/.test(s.text))).toBe(true);
+    });
+
+    it('se una riga fallisce, le precedenti non restano', async () => {
+        const { db, tx } = makeDb({ failOnNthInsert: 2 });
+        db.wpqr.push({ id: 11, organization_id: ORG_A, company_id: 5 });
+        await expect(svc.insertAiTestRunsIfEmpty({
+            wpqrId: 11, organizationId: ORG_A, companyId: 5,
+            runs: [{ run_label: '1', current_a: 10 }, { run_label: '2', current_a: 20 }],
+        })).rejects.toThrow('boom');
+        expect(tx.rollback).toHaveBeenCalled();
+        expect(db.runs.filter((r) => r.wpqr_id === 11)).toHaveLength(0);
     });
 });

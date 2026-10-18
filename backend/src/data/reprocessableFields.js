@@ -467,7 +467,8 @@ const REPROCESSABLE_FIELD_REGISTRY = {
         module: 'saldatura',
         table: 'wpqr_records',
         processWhitelist: null,
-        candidateWhere: "vt_result IS NULL OR vt_result = 'NA'",
+        // NA è un valore vero («non richiesto»), non «mai letto». Candidato solo se NULL.
+        candidateWhere: 'vt_result IS NULL',
         bundleColumns: [
             'vt_result', 'pt_result', 'mt_result', 'rt_result', 'ut_result',
             'tensile_result', 'bend_result', 'impact_result', 'hardness_result', 'macro_result',
