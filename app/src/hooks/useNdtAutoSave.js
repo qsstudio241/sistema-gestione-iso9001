@@ -261,6 +261,7 @@ export function buildEmptyNdtDraftForm({
         responsible: '',
         inspector: inspector || '',
         client_representative: '',
+        inspection_phase: 'after',
         status: 'draft',
     };
 }
