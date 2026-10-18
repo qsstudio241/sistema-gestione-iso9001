@@ -7,10 +7,10 @@ const express    = require('express');
 const router     = express.Router();
 const docCtrl    = require('../controllers/document.controller');
 const { authenticate } = require('../middleware/auth.middleware');
-const { requireLicensedModule } = require('../middleware/moduleLicense.middleware');
+const { useModuleLicense } = require('../middleware/moduleLicense.middleware');
 
 router.use(authenticate);
-router.use(requireLicensedModule('documents'));
+useModuleLicense(router, 'documents');
 
 // Statistiche (prima del :id per evitare conflitti di routing)
 router.get('/documents/stats', docCtrl.getDocumentStats);

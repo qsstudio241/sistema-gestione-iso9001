@@ -283,6 +283,13 @@ describe('scope organizzazione e azienda', () => {
         expect(res.body.code).toBe('MODULE_NOT_LICENSED');
     });
 
+    it('admin con elenco scritto senza il modulo: 403 sul file', async () => {
+        moduleLicense.getLicensedModuleKeysForOrg.mockResolvedValue(['nc']);
+        const res = await get(QUAL_URL, token({ role: 'admin' }));
+        expect(res.status).toBe(403);
+        expect(res.body.code).toBe('MODULE_NOT_LICENSED');
+    });
+
     it('file presente su disco ma non associato a nessun record: 404', async () => {
         const res = await get(ORPHAN_URL);
         expect(res.status).toBe(404);

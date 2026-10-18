@@ -4,11 +4,11 @@
 const express = require('express');
 const router  = express.Router();
 const { authenticate } = require('../middleware/auth.middleware');
-const { requireLicensedModule } = require('../middleware/moduleLicense.middleware');
+const { useModuleLicense } = require('../middleware/moduleLicense.middleware');
 const ctrl = require('../controllers/ndtReports.controller');
 
 router.use(authenticate);
-router.use(requireLicensedModule('cnd'));
+useModuleLicense(router, 'cnd');
 
 // Stats / eligibility PRIMA di /:id
 router.get('/ndt-reports/stats', ctrl.getNdtStats);

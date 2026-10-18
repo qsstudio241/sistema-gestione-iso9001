@@ -65,7 +65,7 @@ const SAL_LEGAL_CONFORMITY_MODULE_KEY = 'ai_norms';
 
 // --- Capability seam: Material Compliance (MC-4, ADR-020) -------------------
 // Oggi ON solo se l'org ha SIA 'saldatura' SIA 'ai_import' (AND, non OR).
-// Admin/superadmin bypass come requireLicensedModule.
+// Il ruolo non esenta: vale l'elenco dell'organizzazione (NULL/vuoto = tutti).
 // Scorporo futuro: aggiungere una chiave in KNOWN_MODULE_KEYS e ripuntare
 // MATERIAL_COMPLIANCE_MODULE_KEYS senza riscrivere le route.
 const MATERIAL_COMPLIANCE_MODULE_KEYS = ['saldatura', 'ai_import'];
@@ -152,29 +152,27 @@ async function setLicensedModulesForOrg(organizationId, modules) {
 /**
  * Capability seam SAL_LEGAL_CONFORMITY: indica se l'organizzazione puo' usare
  * l'asse "conformita' legislativa" del suggeritore AI del SAL.
- * Oggi mappa su SAL_LEGAL_CONFORMITY_MODULE_KEY ('ai_norms'); admin/superadmin
- * hanno sempre la capability (coerente con requireLicensedModule).
+ * Oggi mappa su SAL_LEGAL_CONFORMITY_MODULE_KEY ('ai_norms').
+ * Il ruolo non esenta: NULL/vuoto = tutti i moduli, elenco scritto = solo quelle chiavi.
  * @param {number} organizationId
- * @param {string} [role]
+ * @param {string} [role] tenuto per i chiamanti; non apre moduli assenti dall'elenco
  * @returns {Promise<boolean>}
  */
 async function hasSalLegalConformityCapability(organizationId, role) {
-    const r = role ? String(role).trim().toLowerCase() : '';
-    if (r === 'superadmin' || r === 'admin') return true;
+    void role;
     const keys = await getLicensedModuleKeysForOrg(organizationId);
     return keys.includes(SAL_LEGAL_CONFORMITY_MODULE_KEY);
 }
 
 /**
  * Capability seam MATERIAL_COMPLIANCE: certificati EN 10204 (MC-4).
- * ON se saldatura AND ai_import (o admin/superadmin).
+ * ON se saldatura AND ai_import sono nell'elenco effettivo dell'organizzazione.
  * @param {number} organizationId
- * @param {string} [role]
+ * @param {string} [role] tenuto per i chiamanti; non apre moduli assenti dall'elenco
  * @returns {Promise<boolean>}
  */
 async function hasMaterialComplianceCapability(organizationId, role) {
-    const r = role ? String(role).trim().toLowerCase() : '';
-    if (r === 'superadmin' || r === 'admin') return true;
+    void role;
     const keys = await getLicensedModuleKeysForOrg(organizationId);
     return MATERIAL_COMPLIANCE_MODULE_KEYS.every((k) => keys.includes(k));
 }

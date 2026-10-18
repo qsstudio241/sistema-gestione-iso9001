@@ -5,12 +5,12 @@
 const express  = require('express');
 const router   = express.Router();
 const { authenticate, authorize } = require('../middleware/auth.middleware');
-const { requireLicensedModule } = require('../middleware/moduleLicense.middleware');
+const { useModuleLicense } = require('../middleware/moduleLicense.middleware');
 const notifCtrl = require('../controllers/notifications.controller');
 const contactsCtrl = require('../controllers/notificationContacts.controller');
 
 router.use(authenticate);
-router.use(requireLicensedModule('notifications'));
+useModuleLicense(router, 'notifications');
 
 router.get ('/notifications-config',       notifCtrl.getConfig);
 router.put ('/notifications-config',       notifCtrl.saveConfig);

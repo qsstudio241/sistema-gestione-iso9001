@@ -14,6 +14,7 @@ import {
     repairDocxtemplaterFragmentedTags,
 } from './wordExport.js';
 import apiService from '../services/apiService.js';
+import { wordNotesWithInspectionPhase, inspectionPhaseLabel } from './ndtInspectionPhase.js';
 import {
     PT_ACC_OPTIONS,
     PT_SURFACE_OPTIONS,
@@ -242,7 +243,8 @@ export function buildVtTemplateData(report) {
         wavelength:           nd(params.wavelength),
         items:                items,
         itemsCount:           String(items.length),
-        notes:                nd(report.notes),
+        notes:                wordNotesWithInspectionPhase(report),
+        inspectionPhase:      inspectionPhaseLabel(report.inspection_phase) || 'N/D',
         inspectionDate:       fmtDate(report.inspection_date),
         certificateDate:      fmtDate(report.certificate_date),
         responsible:          nd(report.responsible),

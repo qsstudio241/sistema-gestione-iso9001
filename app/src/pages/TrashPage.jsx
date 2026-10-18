@@ -1,6 +1,6 @@
 /**
  * Cestino — elenco dei record soft-deleted e ripristino.
- * Stessa struttura dell'elenco Qualifiche (sq-page, tab, griglia). Solo admin e superadmin.
+ * Stessa struttura dell'elenco Qualifiche (sq-page, tab, griglia). Admin, auditor e superadmin.
  */
 import React, { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
@@ -29,7 +29,7 @@ function formatWhen(value) {
 
 export default function TrashPage() {
     const { user } = useAuth();
-    const isAdmin = user?.role === "admin" || user?.role === "superadmin";
+    const canOpenTrash = user?.role === "admin" || user?.role === "auditor" || user?.role === "superadmin";
     const [entity, setEntity] = useState("");
     const [rows, setRows] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -37,7 +37,7 @@ export default function TrashPage() {
     const [busyId, setBusyId] = useState(null);
 
     const load = useCallback(async () => {
-        if (!isAdmin) return;
+        if (!canOpenTrash) return;
         setLoading(true);
         setError("");
         try {
@@ -49,7 +49,7 @@ export default function TrashPage() {
         } finally {
             setLoading(false);
         }
-    }, [entity, isAdmin]);
+    }, [entity, canOpenTrash]);
 
     useEffect(() => {
         load();
@@ -68,13 +68,13 @@ export default function TrashPage() {
         }
     }
 
-    if (!isAdmin) {
+    if (!canOpenTrash) {
         return (
             <div className="sq-page">
                 <div className="sq-header">
                     <div>
                         <h2 className="sq-title">Cestino</h2>
-                        <p className="sq-subtitle">Solo admin e superadmin della propria organizzazione.</p>
+                        <p className="sq-subtitle">Solo admin, auditor e superadmin della propria organizzazione.</p>
                     </div>
                 </div>
             </div>

@@ -13,6 +13,7 @@
  */
 
 const { query } = require('../config/database');
+const { isVisionFitnessType } = require('../constants/occupationalQualificationTypes');
 
 const STUDIO_ADMIN_ROLES = new Set(['admin', 'superadmin']);
 
@@ -46,22 +47,59 @@ function isCoordinator14731Type(qualificationType) {
   return String(qualificationType || '').toLowerCase().includes('14731');
 }
 
+/** YYYY-MM-DD oppure null. Le Date mssql si leggono in UTC per non spostare il giorno. */
+function toIsoDate(value) {
+  if (value == null || value === '') return null;
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) return null;
+    const y = value.getUTCFullYear();
+    const m = String(value.getUTCMonth() + 1).padStart(2, '0');
+    const d = String(value.getUTCDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+  const match = String(value).match(/^(\d{4}-\d{2}-\d{2})/);
+  return match ? match[1] : null;
+}
+
+function earlierIso(a, b) {
+  if (!a) return b || null;
+  if (!b) return a;
+  return b < a ? b : a;
+}
+
+/**
+ * Due orologi del certificato oculistico. Se entrambe le colonne sono vuote,
+ * usesSplit è false e resta expiry_date (record già presenti).
+ * @returns {{ near: string|null, colour: string|null, usesSplit: boolean }}
+ */
+function visionClockDates(q) {
+  if (!q || !isVisionFitnessType(q.qualification_type)) {
+    return { near: null, colour: null, usesSplit: false };
+  }
+  const near = toIsoDate(q.near_vision_expiry_date);
+  const colour = toIsoDate(q.colour_vision_expiry_date);
+  return { near, colour, usesSplit: Boolean(near || colour) };
+}
+
 /**
  * Data di scadenza "effettiva" di una qualifica (fonte unica: semaforo, GET /qualifications/:id,
  * stato salvato in ingest). Per i tipi a conferma semestrale (ISO 9606-1, ISO 14732) vale la data
  * PIU' IMMINENTE tra expiry_date e next_confirmation_due (ISO 9606-1 §9.2, ISO 14732 §6.2: senza
  * conferma entro 6 mesi la qualifica diventa non valida). Per i coordinatori ISO 14731 vale la data
- * piu' imminente tra expiry_date e cpd_valid_until. Difensivo: se una manca usa l'altra;
- * per gli altri tipi resta solo expiry_date.
+ * piu' imminente tra expiry_date e cpd_valid_until. Per il certificato oculistico, se sono
+ * compilate le due date (visita acuità / test dei colori), vale la più vicina; se sono entrambe
+ * vuote resta expiry_date. Difensivo: se una manca usa l'altra.
  */
 function effectiveExpiryDate(q) {
-  const expiry = q.expiry_date || null;
-  const earlier = (a, b) => (!a ? b : !b ? a : (new Date(b) < new Date(a) ? b : a));
-  if (requiresSemiannualConfirmation(q.qualification_type)) {
-    return earlier(expiry, q.next_confirmation_due || null);
+  const row = q || {};
+  const expiry = toIsoDate(row.expiry_date);
+  const clocks = visionClockDates(row);
+  if (clocks.usesSplit) return earlierIso(clocks.near, clocks.colour);
+  if (requiresSemiannualConfirmation(row.qualification_type)) {
+    return earlierIso(expiry, toIsoDate(row.next_confirmation_due));
   }
-  if (isCoordinator14731Type(q.qualification_type)) {
-    return earlier(expiry, q.cpd_valid_until || null);
+  if (isCoordinator14731Type(row.qualification_type)) {
+    return earlierIso(expiry, toIsoDate(row.cpd_valid_until));
   }
   return expiry;
 }
@@ -161,8 +199,14 @@ function isQualificationOperationallyActive(q, todayIso) {
 
   const today = todayIso || new Date().toISOString().slice(0, 10);
 
+  const clocks = visionClockDates(q);
+  if (clocks.usesSplit) {
+    if (clocks.near && clocks.near < today) return false;
+    if (clocks.colour && clocks.colour < today) return false;
+  }
+
   const expiry = q.expiry_date ? String(q.expiry_date).slice(0, 10) : null;
-  if (expiry && expiry < today) return false;
+  if (!clocks.usesSplit && expiry && expiry < today) return false;
 
   if (requiresSemiannualConfirmation(q.qualification_type)) {
     const nextConf = q.next_confirmation_due ? String(q.next_confirmation_due).slice(0, 10) : null;
@@ -179,6 +223,9 @@ module.exports = {
   isOperator14732Type,
   requiresSemiannualConfirmation,
   isCoordinator14731Type,
+  toIsoDate,
+  earlierIso,
+  visionClockDates,
   effectiveExpiryDate,
   deriveQualificationStatus,
   addMonthsIso,
