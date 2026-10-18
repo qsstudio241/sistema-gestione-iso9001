@@ -48,6 +48,17 @@ function sendPhaseInvalid(res, parsed) {
     return res.status(400).json({ error: parsed.error, code: parsed.code });
 }
 
+/** Colonna della 177 assente: l'elenco non deve andare in errore SQL. */
+let inspectionPhaseColumnAbsent = false;
+
+function isMissingInspectionPhaseColumn(err) {
+    return /Invalid column name 'inspection_phase'/i.test(String(err && err.message || ''));
+}
+
+function resetInspectionPhaseColumnCache() {
+    inspectionPhaseColumnAbsent = false;
+}
+
 /**
  * CND-7 — posa nel Registro dopo Completa/Approva. Non blocca il salvataggio verbale.
  * @returns {Promise<object|null>}
@@ -237,13 +248,11 @@ async function listNdtReports(req, res) {
         if (company_id) { conditions.push('r.company_id = @company_id'); params.company_id = parseInt(company_id); }
         if (report_type) { conditions.push('r.report_type = @report_type'); params.report_type = report_type; }
         if (status) { conditions.push('r.status = @status'); params.status = status; }
+        let phaseFilter = null;
         if (inspection_phase) {
             const parsedPhase = parseInspectionPhase(inspection_phase, { defaultWhenEmpty: null });
             if (parsedPhase.error) return sendPhaseInvalid(res, parsedPhase);
-            if (parsedPhase.value) {
-                conditions.push('r.inspection_phase = @inspection_phase');
-                params.inspection_phase = parsedPhase.value;
-            }
+            phaseFilter = parsedPhase.value || null;
         }
         if (date_from) { conditions.push('r.inspection_date >= @date_from'); params.date_from = date_from; }
         if (date_to) { conditions.push('r.inspection_date <= @date_to'); params.date_to = date_to; }
@@ -252,12 +261,19 @@ async function listNdtReports(req, res) {
             params.search = `%${search}%`;
         }
 
-        const where = conditions.join(' AND ');
-
-        const [dataResult, countResult] = await Promise.all([
-            query(`
+        const runList = (includePhase) => {
+            const listConditions = conditions.slice();
+            const listParams = { ...params };
+            if (includePhase && phaseFilter) {
+                listConditions.push('r.inspection_phase = @inspection_phase');
+                listParams.inspection_phase = phaseFilter;
+            }
+            const where = listConditions.join(' AND ');
+            const phaseColumn = includePhase ? 'r.inspection_phase, ' : '';
+            return Promise.all([
+                query(`
                 SELECT r.id, r.uuid, r.report_number, r.report_type, r.report_year,
-                       r.client, r.job_order, r.inspector, r.inspector_qualification_id, r.inspection_phase, r.status,
+                       r.client, r.job_order, r.inspector, r.inspector_qualification_id, ${phaseColumn}r.status,
                        r.inspection_date, r.certificate_date,
                        r.created_at, r.updated_at,
                        c.name AS company_name,
@@ -269,9 +285,25 @@ async function listNdtReports(req, res) {
                 WHERE ${where}
                 ORDER BY r.updated_at DESC
                 OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY
-            `, params),
-            query(`SELECT COUNT(*) AS total FROM ndt_reports r WHERE ${where}`, params),
-        ]);
+            `, listParams),
+                query(`SELECT COUNT(*) AS total FROM ndt_reports r WHERE ${where}`, listParams),
+            ]);
+        };
+
+        let dataResult;
+        let countResult;
+        if (inspectionPhaseColumnAbsent) {
+            [dataResult, countResult] = await runList(false);
+        } else {
+            try {
+                [dataResult, countResult] = await runList(true);
+            } catch (phaseErr) {
+                if (!isMissingInspectionPhaseColumn(phaseErr)) throw phaseErr;
+                inspectionPhaseColumnAbsent = true;
+                logger.warn('listNdtReports: colonna inspection_phase assente, elenco senza la fase');
+                [dataResult, countResult] = await runList(false);
+            }
+        }
 
         res.json({
             success: true,
@@ -581,7 +613,7 @@ async function updateNdtReport(req, res) {
         const existingPhase = existing.recordset[0].inspection_phase || null;
         let nextPhase = existingPhase;
         if (inspection_phase !== undefined) {
-            const parsedPhase = parseInspectionPhase(inspection_phase, { defaultWhenEmpty: existingPhase || 'after' });
+            const parsedPhase = parseInspectionPhase(inspection_phase, { defaultWhenEmpty: existingPhase });
             if (parsedPhase.error) return sendPhaseInvalid(res, parsedPhase);
             nextPhase = parsedPhase.value;
         }
@@ -805,4 +837,5 @@ module.exports = {
     updateNdtReport,
     deleteNdtReport,
     getInspectorEligibility,
+    resetInspectionPhaseColumnCache,
 };

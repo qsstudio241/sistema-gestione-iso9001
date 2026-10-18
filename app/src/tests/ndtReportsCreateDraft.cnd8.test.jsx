@@ -45,6 +45,8 @@ vi.mock("../components/NcCreateModal.jsx", () => ({
 }));
 
 const createNdtReport = vi.fn();
+const updateNdtReport = vi.fn();
+const getNdtReport = vi.fn();
 const getNdtReportList = vi.fn();
 const getNdtReportStats = vi.fn();
 
@@ -61,9 +63,9 @@ vi.mock("../services/apiService", () => ({
     getSuppliers: vi.fn().mockResolvedValue({ data: [] }),
     getProjects: vi.fn().mockResolvedValue({ data: [] }),
     getWPSList: vi.fn().mockResolvedValue({ data: [] }),
-    getNdtReport: vi.fn(),
+    getNdtReport: (...args) => getNdtReport(...args),
     createNdtReport: (...args) => createNdtReport(...args),
-    updateNdtReport: vi.fn(),
+    updateNdtReport: (...args) => updateNdtReport(...args),
     deleteNdtReport: vi.fn(),
     getNdtInspectorEligibility: vi.fn().mockResolvedValue({
       data: {
@@ -160,6 +162,8 @@ describe("CND-8 Nuovo verbale → bozza UUID", () => {
     createNdtReport.mockReset();
     getNdtReportList.mockReset();
     getNdtReportList.mockResolvedValue({ data: [] });
+    getNdtReport.mockReset();
+    updateNdtReport.mockReset();
     getNdtReportStats.mockReset();
     getNdtReportStats.mockResolvedValue({
       data: { total: 0, draft: 0, approved: 0, vt_count: 0, mt_count: 0, pt_count: 0, ut_count: 0 },
@@ -248,5 +252,43 @@ describe("CND-8 Nuovo verbale → bozza UUID", () => {
       const last = getNdtReportList.mock.calls.at(-1)[0];
       expect(last.inspection_phase).toBe("before");
     });
+  });
+
+  it("verbale vecchio senza fase: aprire e salvare non scrive dopo", async () => {
+      getNdtReportList.mockResolvedValue({
+        data: [{
+          id: 9,
+          report_number: "VT-2020-001",
+          report_type: "VT",
+          inspection_phase: null,
+          status: "draft",
+          client: "Officina",
+          company_id: 48,
+          items_count: 0,
+        }],
+      });
+      getNdtReport.mockResolvedValue({
+        data: {
+          id: 9,
+          report_number: "VT-2020-001",
+          report_type: "VT",
+          inspection_phase: null,
+          status: "draft",
+          client: "Officina",
+          company_id: 48,
+          items: [],
+          instruments: [],
+        },
+      });
+      updateNdtReport.mockResolvedValue({ data: { id: 9, status: "draft" } });
+      const user = userEvent.setup();
+      render(<NdtReportsPage />);
+      await user.click(await screen.findByText("VT-2020-001"));
+      const phase = await screen.findByLabelText("Fase ispezione");
+      expect(phase).toHaveValue("");
+      await user.click(screen.getByRole("button", { name: "Salva bozza" }));
+      await waitFor(() => expect(updateNdtReport).toHaveBeenCalled());
+      const payload = updateNdtReport.mock.calls[0][1];
+      expect(payload.inspection_phase || null).toBeNull();
   });
 });

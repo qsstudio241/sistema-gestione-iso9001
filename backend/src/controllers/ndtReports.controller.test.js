@@ -74,7 +74,12 @@ function mockGetQueries(report) {
   });
 }
 
-afterEach(() => jest.clearAllMocks());
+afterEach(() => {
+  jest.clearAllMocks();
+  if (typeof ctrl.resetInspectionPhaseColumnCache === 'function') {
+    ctrl.resetInspectionPhaseColumnCache();
+  }
+});
 
 describe('listNdtReports — company_access', () => {
   it('studio senza access list: SQL senza IN (@uca_', async () => {
@@ -566,6 +571,128 @@ describe('inspection_phase prima / durante / dopo', () => {
     const setCall = query.mock.calls.find(([sql]) => String(sql).includes('UPDATE ndt_reports'));
     expect(setCall[1].inspection_phase).toBe('before');
     expect(resSet.status).not.toHaveBeenCalledWith(400);
+  });
+
+  it('update di un verbale con fase vuota non scrive after se il body non sceglie la fase', async () => {
+    query.mockImplementation(async (sql) => {
+      if (sql.includes('FROM ndt_reports WHERE id = @id') && sql.includes('company_id')) {
+        return {
+          recordset: [{
+            id: 8, company_id: 12, project_id: null, report_type: 'VT',
+            inspector: 'Mario Rossi', inspection_phase: null,
+          }],
+        };
+      }
+      return { recordset: [] };
+    });
+    const res = mockRes();
+    await ctrl.updateNdtReport(mockReq({
+      params: { id: '8' },
+      user: studioAdmin,
+      body: { status: 'draft', inspector: 'Mario Rossi', inspection_phase: '' },
+    }), res);
+    const upd = query.mock.calls.find(([sql]) => String(sql).includes('UPDATE ndt_reports'));
+    expect(res.status).not.toHaveBeenCalledWith(400);
+    expect(upd[1].inspection_phase).toBeNull();
+  });
+
+  it('update di un verbale con fase vuota scrive before se il body lo sceglie', async () => {
+    query.mockImplementation(async (sql) => {
+      if (sql.includes('FROM ndt_reports WHERE id = @id') && sql.includes('company_id')) {
+        return {
+          recordset: [{
+            id: 8, company_id: 12, project_id: null, report_type: 'VT',
+            inspector: 'Mario Rossi', inspection_phase: null,
+          }],
+        };
+      }
+      return { recordset: [] };
+    });
+    const res = mockRes();
+    await ctrl.updateNdtReport(mockReq({
+      params: { id: '8' },
+      user: studioAdmin,
+      body: { status: 'draft', inspector: 'Mario Rossi', inspection_phase: 'before' },
+    }), res);
+    const upd = query.mock.calls.find(([sql]) => String(sql).includes('UPDATE ndt_reports'));
+    expect(upd[1].inspection_phase).toBe('before');
+  });
+
+  it('update di un verbale con fase vuota scrive after solo se il body lo sceglie', async () => {
+    query.mockImplementation(async (sql) => {
+      if (sql.includes('FROM ndt_reports WHERE id = @id') && sql.includes('company_id')) {
+        return {
+          recordset: [{
+            id: 8, company_id: 12, project_id: null, report_type: 'VT',
+            inspector: 'Mario Rossi', inspection_phase: null,
+          }],
+        };
+      }
+      return { recordset: [] };
+    });
+    const res = mockRes();
+    await ctrl.updateNdtReport(mockReq({
+      params: { id: '8' },
+      user: studioAdmin,
+      body: { status: 'draft', inspector: 'Mario Rossi', inspection_phase: 'after' },
+    }), res);
+    const upd = query.mock.calls.find(([sql]) => String(sql).includes('UPDATE ndt_reports'));
+    expect(upd[1].inspection_phase).toBe('after');
+  });
+});
+
+describe('listNdtReports senza colonna inspection_phase (migrazione 177 assente)', () => {
+  afterEach(() => {
+    if (typeof ctrl.resetInspectionPhaseColumnCache === 'function') {
+      ctrl.resetInspectionPhaseColumnCache();
+    }
+  });
+
+  it('risponde 200 e rilancia la SELECT senza la colonna', async () => {
+    query.mockImplementation(async (sql) => {
+      if (String(sql).includes('inspection_phase')) {
+        throw new Error("Invalid column name 'inspection_phase'.");
+      }
+      if (String(sql).includes('COUNT(*) AS total')) return { recordset: [{ total: 1 }] };
+      return { recordset: [{ id: 7, report_number: 'VT-2020-004', client: 'Officina' }] };
+    });
+    const res = mockRes();
+    await ctrl.listNdtReports(mockReq({ user: studioAdmin }), res);
+    expect(res.status).not.toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      success: true,
+      data: [expect.objectContaining({ id: 7, report_number: 'VT-2020-004' })],
+    }));
+    const dataSql = query.mock.calls.map(([sql]) => String(sql)).filter((sql) => sql.includes('OFFSET'));
+    expect(dataSql.length).toBeGreaterThan(0);
+    expect(dataSql[dataSql.length - 1]).not.toMatch(/inspection_phase/);
+  });
+
+  it('filtro fase con colonna assente non va in errore SQL', async () => {
+    query.mockImplementation(async (sql) => {
+      if (String(sql).includes('inspection_phase')) {
+        throw new Error("Invalid column name 'inspection_phase'.");
+      }
+      if (String(sql).includes('COUNT(*) AS total')) return { recordset: [{ total: 1 }] };
+      return { recordset: [{ id: 7, report_number: 'VT-2020-004' }] };
+    });
+    const res = mockRes();
+    await ctrl.listNdtReports(mockReq({
+      user: studioAdmin,
+      query: { inspection_phase: 'before' },
+    }), res);
+    expect(res.status).not.toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
+    const dataSql = query.mock.calls.map(([sql]) => String(sql)).filter((sql) => sql.includes('OFFSET'));
+    expect(dataSql[dataSql.length - 1]).not.toMatch(/inspection_phase/);
+  });
+
+  it('un altro errore SQL resta 500', async () => {
+    query.mockRejectedValue(new Error('timeout di rete'));
+    const res = mockRes();
+    await ctrl.listNdtReports(mockReq({ user: studioAdmin }), res);
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ code: 'NDT_LIST_ERROR' }));
   });
 });
 
