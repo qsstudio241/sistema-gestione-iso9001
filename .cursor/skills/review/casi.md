@@ -220,7 +220,7 @@ Le altre 38 sono tipi che la checklist non nominava. Raggruppati, senza una voce
 Non sono regole nuove. Erano ipotesi sullo SHA revisionato, non un commento di Bugbot su quello SHA.
 
 - #801: gate NDT e copertura 9712 ignorano `deleted_at`; il generatore WPS include WPQR cestinate; riassegnare un saldatore risponde 409; le NC nate dall'audit non hanno `organization_id` e spariscono dal cestino; l'email di sollecito include NC cestinate.
-  **Esito 18/10/2026:** gate NDT e copertura 9712 — `deleted_at IS NULL` in `ndtInspectorGate` e `cnd9712.adapter` (follow-up). Generatore WPS ancora aperto.
+  **Esito 18/10/2026:** gate NDT e copertura 9712 — corretto in [#828](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/828) (`deleted_at IS NULL`). Generatore WPS ancora aperto.
 - #791: la coda di ingest non filtra azienda né ruolo (isolamento già in checklist, non eseguito); `cert_ndt` non è nel filtro del modulo qualifiche.
   **Esito 18/10/2026:** coda ingest — corretto in [#826](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/826) (lista per azienda, conferma/scarto bloccati per viewer e per altra azienda). `cert_ndt` già risolto.
 - #786: una WPQR creata a mano, con `company_id` vuoto, non si lega.
@@ -237,12 +237,12 @@ Rilettura in sola lettura dopo il merge della [#824](https://github.com/qsstudio
 
 | Esito | Gravità | PR | File | Cosa resta |
 |---|---|---|---|---|
-| Ancora presente | alta | #801 | `ndtInspectorGate.service.js`, `cnd9712.adapter.js` | Le SELECT filtrano `status` non revocata/sospesa e non `deleted_at`. Un patentino NDT o un'idoneità visiva nel cestino restano un titolo valido. |
+| Corretto in [#828](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/828) | alta | #801 | `ndtInspectorGate.service.js`, `cnd9712.adapter.js` | SELECT con `deleted_at IS NULL` su patentino e idoneità visiva (gate e copertura 9712). |
 | Ancora presente | alta | #801 | `wpsGenerator.service.js` (`loadWpqrRecords`) | La query non ha `deleted_at IS NULL`. Una WPQR cestinata entra ancora tra le basi di una WPS. |
 | Già risolto | media | #801 | `welding.controller.js` (`assignWpsWelder`), `projects.controller.js` (`addProjectWelder`) | Il controllo «già assegnato» esclude `deleted_at`. Riassegnare dopo il cestino non risponde più 409. |
 | Già risolto | media | #801 | `trash.service.js` (`listTrashedNonConformities`, `loadTrashRow`) | Elenco e ripristino usano `COALESCE(organization_id della NC, organization_id dell'audit)`. La NC nata dall'audit compare nel cestino. |
 | Già risolto | media | #801 | `ncAlertEscalation.service.js` | NC e azioni in sollecito hanno `deleted_at IS NULL`. |
-| Ancora presente | alta | #791 | `PendingIngestQueue.jsx`, `ingestStaging.controller.js`, `ingestStaging.service.js`, `ingestStaging.routes.js` | La lista è per studio, senza azienda. Conferma e scarto non controllano azienda né ruolo: la rotta ha solo `authenticate`. Un utente di un'azienda, o un viewer, può confermare o scartare lo staging di un'altra. |
+| Corretto in [#826](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/826) | alta | #791 | `PendingIngestQueue.jsx`, `ingestStaging.controller.js`, `ingestStaging.service.js` | Lista per azienda; conferma/scarto bloccati per viewer e per altra azienda. |
 | Già risolto | media | #791 | `ingestStaging.controller.js` (`MODULE_DOC_TYPES.qualifiche`) | Il filtro include `cert_ndt`. |
 | Ancora presente | media | #786 | `wpsWpqrLinks.service.js` (`companyClause`) | Il match esige `company_id` uguale. La WPQR creata a mano, con azienda vuota, non si lega alla WPS della stessa azienda. |
 | Ancora presente | media | #764 | `documentIngestPipeline.service.js` (`applyHeaderIssuingBodyFallback`) | Se l'ente AI è vuoto o `altro` e `extractIssuingBody` trova una sigla nel testo (IIS è in lista), l'OCR dell'intestazione non parte. |
