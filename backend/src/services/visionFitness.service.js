@@ -14,7 +14,8 @@ const {
   visionFitnessSqlInList,
   isVisionFitnessType,
 } = require('../constants/occupationalQualificationTypes');
-const { visionClockDates } = require('./weldingCoordinatorAuth.service');
+const { visionRowStatus } = require('./weldingCoordinatorAuth.service');
+const { queryOptionalVisionClocks } = require('./qualificationExpirySql');
 
 /**
  * Tipi qualifica che richiedono idoneità visiva in corso di validità.
@@ -93,45 +94,38 @@ async function findVisionFitnessGaps(organizationId, opts = {}) {
     };
   }
 
-  const visionReq = pool.request().input('orgId', organizationId);
-  const visionCompany = bindCompanyScope(visionReq, { companyId, companyIds });
-  const visionRes = await visionReq.query(`
-    SELECT q.id, q.person_name, q.personnel_id, q.qualification_type,
-           q.expiry_date, q.near_vision_expiry_date, q.colour_vision_expiry_date,
-           q.status, q.company_id
+  const visionCompany = bindCompanyScope(pool.request(), { companyId, companyIds });
+  const visionWhere = `
     FROM qualifications q
     WHERE q.organization_id = @orgId
       AND q.deleted_at IS NULL
       AND q.status NOT IN ('revocata', 'sospesa')
       AND q.qualification_type IN (${visionIn})
       ${visionCompany}
-  `);
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  `;
+  const visionRes = await queryOptionalVisionClocks(
+    (sql) => {
+      const visionReq = pool.request().input('orgId', organizationId);
+      bindCompanyScope(visionReq, { companyId, companyIds });
+      return visionReq.query(sql);
+    },
+    {
+      withClocks: `
+    SELECT q.id, q.person_name, q.personnel_id, q.qualification_type,
+           q.expiry_date, q.near_vision_expiry_date, q.colour_vision_expiry_date,
+           q.status, q.company_id
+    ${visionWhere}`,
+      withoutClocks: `
+    SELECT q.id, q.person_name, q.personnel_id, q.qualification_type,
+           q.expiry_date, q.status, q.company_id
+    ${visionWhere}`,
+    },
+  );
 
   function visionStatus(row) {
     if (!row) return { state: 'missing', expiry_date: null, vision_id: null };
-    const clocks = visionClockDates(row);
-    const dates = clocks.usesSplit
-      ? [clocks.near, clocks.colour].filter(Boolean)
-      : (row.expiry_date ? [row.expiry_date] : []);
-    if (!dates.length) {
-      return { state: 'ok', expiry_date: null, vision_id: row.id, note: 'senza_scadenza' };
-    }
-    let nearest = null;
-    let anyExpired = false;
-    for (const raw of dates) {
-      const exp = new Date(raw);
-      exp.setHours(0, 0, 0, 0);
-      if (exp < today) anyExpired = true;
-      if (!nearest || exp < nearest) nearest = exp;
-    }
-    const expiryDate = nearest ? nearest.toISOString().slice(0, 10) : null;
-    if (anyExpired) {
-      return { state: 'expired', expiry_date: expiryDate, vision_id: row.id };
-    }
-    return { state: 'ok', expiry_date: expiryDate, vision_id: row.id };
+    const st = visionRowStatus(row);
+    return { ...st, vision_id: row.id };
   }
 
   function pickBestVision(candidates) {

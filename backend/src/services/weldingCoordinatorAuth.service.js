@@ -67,18 +67,64 @@ function earlierIso(a, b) {
   return b < a ? b : a;
 }
 
+/** La data più vicina tra quelle presenti. Una voce vuota non entra nel confronto. */
+function earliestIsoDate(dates) {
+  let best = null;
+  for (const raw of dates || []) {
+    if (!raw) continue;
+    if (best == null || raw < best) best = raw;
+  }
+  return best;
+}
+
 /**
- * Due orologi del certificato oculistico. Se entrambe le colonne sono vuote,
- * usesSplit è false e resta expiry_date (record già presenti).
- * @returns {{ near: string|null, colour: string|null, usesSplit: boolean }}
+ * Date di calendario presenti sul certificato oculistico: scadenza unica,
+ * visita acuità, test dei colori. Una data vuota non cancella le altre.
+ * @returns {string[]}
+ */
+function visionPresentDates(q) {
+  if (!q || !isVisionFitnessType(q.qualification_type)) return [];
+  return [
+    toIsoDate(q.expiry_date),
+    toIsoDate(q.near_vision_expiry_date),
+    toIsoDate(q.colour_vision_expiry_date),
+  ].filter(Boolean);
+}
+
+/**
+ * Due orologi del certificato oculistico, più la scadenza unica.
+ * usesSplit è true se è compilata almeno una delle due date nuove: lo
+ * scadenzario mostra quelle righe. La scadenza unica resta nei dati (expiry)
+ * e non viene spenta da una sola data nuova.
+ * @returns {{ near: string|null, colour: string|null, expiry: string|null, usesSplit: boolean }}
  */
 function visionClockDates(q) {
   if (!q || !isVisionFitnessType(q.qualification_type)) {
-    return { near: null, colour: null, usesSplit: false };
+    return { near: null, colour: null, expiry: null, usesSplit: false };
   }
   const near = toIsoDate(q.near_vision_expiry_date);
   const colour = toIsoDate(q.colour_vision_expiry_date);
-  return { near, colour, usesSplit: Boolean(near || colour) };
+  const expiry = toIsoDate(q.expiry_date);
+  return { near, colour, expiry, usesSplit: Boolean(near || colour) };
+}
+
+/**
+ * Stato del certificato oculistico su date pure (AAAA-MM-GG).
+ * Scaduto se qualunque data presente è già passata. La data restituita è la
+ * più restrittiva, senza passare da mezzanotte locale / toISOString.
+ * @param {object} row
+ * @param {string} [todayIso] YYYY-MM-DD
+ */
+function visionRowStatus(row, todayIso) {
+  if (!row) return { state: 'missing', expiry_date: null };
+  const dates = visionPresentDates(row);
+  if (!dates.length) {
+    return { state: 'ok', expiry_date: null, note: 'senza_scadenza' };
+  }
+  const today = todayIso || new Date().toISOString().slice(0, 10);
+  const nearest = earliestIsoDate(dates);
+  const expired = dates.some((d) => d < today);
+  return { state: expired ? 'expired' : 'ok', expiry_date: nearest };
 }
 
 /**
@@ -86,15 +132,16 @@ function visionClockDates(q) {
  * stato salvato in ingest). Per i tipi a conferma semestrale (ISO 9606-1, ISO 14732) vale la data
  * PIU' IMMINENTE tra expiry_date e next_confirmation_due (ISO 9606-1 §9.2, ISO 14732 §6.2: senza
  * conferma entro 6 mesi la qualifica diventa non valida). Per i coordinatori ISO 14731 vale la data
- * piu' imminente tra expiry_date e cpd_valid_until. Per il certificato oculistico, se sono
- * compilate le due date (visita acuità / test dei colori), vale la più vicina; se sono entrambe
- * vuote resta expiry_date. Difensivo: se una manca usa l'altra.
+ * piu' imminente tra expiry_date e cpd_valid_until. Per il certificato oculistico vale la
+ * data più restrittiva tra quelle presenti: scadenza unica, visita acuità, test dei colori.
+ * Una data vuota non cancella le altre. Se non c'è nessuna data, null.
  */
 function effectiveExpiryDate(q) {
   const row = q || {};
   const expiry = toIsoDate(row.expiry_date);
-  const clocks = visionClockDates(row);
-  if (clocks.usesSplit) return earlierIso(clocks.near, clocks.colour);
+  if (isVisionFitnessType(row.qualification_type)) {
+    return earliestIsoDate(visionPresentDates(row));
+  }
   if (requiresSemiannualConfirmation(row.qualification_type)) {
     return earlierIso(expiry, toIsoDate(row.next_confirmation_due));
   }
@@ -199,14 +246,14 @@ function isQualificationOperationallyActive(q, todayIso) {
 
   const today = todayIso || new Date().toISOString().slice(0, 10);
 
-  const clocks = visionClockDates(q);
-  if (clocks.usesSplit) {
-    if (clocks.near && clocks.near < today) return false;
-    if (clocks.colour && clocks.colour < today) return false;
+  if (isVisionFitnessType(q.qualification_type)) {
+    const restrictive = earliestIsoDate(visionPresentDates(q));
+    if (restrictive && restrictive < today) return false;
+    return true;
   }
 
   const expiry = q.expiry_date ? String(q.expiry_date).slice(0, 10) : null;
-  if (!clocks.usesSplit && expiry && expiry < today) return false;
+  if (expiry && expiry < today) return false;
 
   if (requiresSemiannualConfirmation(q.qualification_type)) {
     const nextConf = q.next_confirmation_due ? String(q.next_confirmation_due).slice(0, 10) : null;
@@ -225,7 +272,10 @@ module.exports = {
   isCoordinator14731Type,
   toIsoDate,
   earlierIso,
+  earliestIsoDate,
+  visionPresentDates,
   visionClockDates,
+  visionRowStatus,
   effectiveExpiryDate,
   deriveQualificationStatus,
   addMonthsIso,
