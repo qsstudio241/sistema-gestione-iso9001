@@ -60,13 +60,53 @@ function strictPositiveInt(raw) {
 }
 
 /**
+ * Una stringa JSON (client in cache, o valore già annidato) è una lista di id,
+ * non un id singolo. Gli elementi non numerici restano nella lista: li rifiuta
+ * strictPositiveInt, come per un array inviato dal form.
+ */
+function unwrapWpsIdList(raw, depth = 0) {
+    if (depth > 32) return { ok: false };
+    if (Array.isArray(raw)) {
+        const list = [];
+        for (const item of raw) {
+            if (typeof item === 'string' && /^\s*(\[|")/.test(item)) {
+                const inner = unwrapWpsIdList(item, depth + 1);
+                if (!inner.ok) return inner;
+                list.push(...inner.list);
+            } else {
+                list.push(item);
+            }
+        }
+        return { ok: true, list };
+    }
+    if (typeof raw === 'string') {
+        const text = raw.trim();
+        if (!text) return { ok: true, list: [] };
+        if (text.startsWith('[') || (text.startsWith('"') && text.endsWith('"'))) {
+            try {
+                return unwrapWpsIdList(JSON.parse(text), depth + 1);
+            } catch {
+                return { ok: false };
+            }
+        }
+        return { ok: true, list: [raw] };
+    }
+    return { ok: true, list: [raw] };
+}
+
+/**
  * WPS da collegare a una commessa. Assente nell'org → 404, azienda non
  * consentita → 403, e il chiamante non deve arrivare all'INSERT/UPDATE.
  * @returns {Promise<{ ok: boolean, json?: string|null }>}
  */
 async function writableWpsIdsJson(res, user, organizationId, raw) {
     if (raw == null || raw === '') return { ok: true, json: null };
-    const list = Array.isArray(raw) ? raw : [raw];
+    const unwrapped = unwrapWpsIdList(raw);
+    if (!unwrapped.ok) {
+        res.status(400).json({ error: 'WPS di riferimento non valida', code: 'VALIDATION_ERROR' });
+        return { ok: false };
+    }
+    const list = unwrapped.list;
     if (list.length === 0) return { ok: true, json: '[]' };
     const ids = [];
     for (const item of list) {
@@ -100,6 +140,7 @@ const {
     resolveCommercialCustomerFields,
 } = require('../services/commercialCustomerCounterparty.service');
 const { stampTechnicalReviewChecklistJson } = require('../utils/technicalReviewChecklist');
+const { normalizeApplicableWpsIds } = require('../utils/applicableWpsIds');
 
 /** JWT non include full_name: se manca, lo legge da users. */
 async function userForReviewStamp(user) {
@@ -187,13 +228,7 @@ async function listProjects(req, res) {
         const total = countResult.recordset[0].total;
 
         const data = result.recordset.map(row => {
-            let wpsCount = 0;
-            if (row.applicable_wps_ids) {
-                try {
-                    const parsed = JSON.parse(row.applicable_wps_ids);
-                    wpsCount = Array.isArray(parsed) ? parsed.length : 0;
-                } catch (_) { /* JSON non valido */ }
-            }
+            const wpsCount = normalizeApplicableWpsIds(row.applicable_wps_ids).length;
             return { ...row, wps_count: wpsCount };
         });
 
@@ -264,23 +299,19 @@ async function getProject(req, res) {
         }
         if (await denyOutsideCompany(res, req.user, project.company_id, 'read')) return;
 
-        // Parse WPS ids e recupera dettagli
+        // Parse WPS ids e recupera dettagli (anche JSON annidato; le WPS nel cestino no)
         let wpsDetails = [];
-        if (project.applicable_wps_ids) {
-            try {
-                const wpsIds = JSON.parse(project.applicable_wps_ids);
-                if (Array.isArray(wpsIds) && wpsIds.length > 0) {
-                    const placeholders = wpsIds.map((_, i) => `@wpsId${i}`).join(',');
-                    const wpsParams = { organization_id };
-                    wpsIds.forEach((wid, i) => { wpsParams[`wpsId${i}`] = parseInt(wid); });
-                    const wpsResult = await query(`
-                        SELECT id, wps_code, welding_process, status
-                        FROM welding_procedures
-                        WHERE id IN (${placeholders}) AND organization_id = @organization_id AND deleted_at IS NULL
-                    `, wpsParams);
-                    wpsDetails = wpsResult.recordset;
-                }
-            } catch (_) { /* JSON non valido */ }
+        const wpsIds = normalizeApplicableWpsIds(project.applicable_wps_ids);
+        if (wpsIds.length > 0) {
+            const placeholders = wpsIds.map((_, i) => `@wpsId${i}`).join(',');
+            const wpsParams = { organization_id };
+            wpsIds.forEach((wid, i) => { wpsParams[`wpsId${i}`] = wid; });
+            const wpsResult = await query(`
+                SELECT id, wps_code, welding_process, status
+                FROM welding_procedures
+                WHERE id IN (${placeholders}) AND organization_id = @organization_id AND deleted_at IS NULL
+            `, wpsParams);
+            wpsDetails = wpsResult.recordset;
         }
 
         // Saldatori assegnati

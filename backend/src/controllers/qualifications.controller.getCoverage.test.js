@@ -151,6 +151,36 @@ describe('getCoverage — golden payload (COV-4)', () => {
   });
 });
 
+describe('getCoverage — lettura tollerante di applicable_wps_ids', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  test('valore annidato (bug storico) -> id letti correttamente, nessun NaN nei parametri', async () => {
+    const nested = JSON.stringify([JSON.stringify([1, 2, 3])]);
+    const calls = mockPool({ project: { ...project, applicable_wps_ids: nested }, wps: wpsRows, quals: qualRows });
+    const res = mockRes();
+    await getCoverage({ user: { organization_id: 1 }, query: { project_id: '5' } }, res);
+    const wpsCall = calls.find((c) => /FROM welding_procedures/.test(c.sql));
+    expect(wpsCall.params).toEqual({ orgId: 1, wid0: 1, wid1: 2, wid2: 3 });
+    expect(res.json.mock.calls[0][0].has_wps).toBe(true);
+    expect(res.json.mock.calls[0][0].coverage).toHaveLength(3);
+  });
+
+  test('valore corrotto non numerico -> has_wps false senza interrogare welding_procedures', async () => {
+    const calls = mockPool({ project: { ...project, applicable_wps_ids: '["[\\"x\\"]"]' } });
+    const res = mockRes();
+    await getCoverage({ user: { organization_id: 1 }, query: { project_id: '5' } }, res);
+    expect(calls.some((c) => /FROM welding_procedures/.test(c.sql))).toBe(false);
+    expect(res.json.mock.calls[0][0].has_wps).toBe(false);
+  });
+
+  test('id presenti ma nessuna WPS nell\'organizzazione -> has_wps false (comportamento invariato)', async () => {
+    mockPool({ project: { ...project, applicable_wps_ids: '["[7]"]' }, wps: [] });
+    const res = mockRes();
+    await getCoverage({ user: { organization_id: 1 }, query: { project_id: '5' } }, res);
+    expect(res.json.mock.calls[0][0].has_wps).toBe(false);
+  });
+});
+
 const GOLDEN = {
   project_id: 5,
   project_code: 'COM-001',
