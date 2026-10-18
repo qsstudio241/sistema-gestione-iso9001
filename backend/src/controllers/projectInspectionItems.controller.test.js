@@ -213,6 +213,33 @@ describe('bozze verbali dai controlli previsti', () => {
     expect(insert).not.toMatch(/inspection_phase/);
   });
 
+  it('stesso metodo e fase, testo diverso: nasce una seconda bozza', async () => {
+    const other = { ...item, id: 4, acceptance_standard: 'altro testo utente' };
+    const inserted = [];
+    query.mockImplementation(async (sql, params) => {
+      const text = String(sql);
+      if (text.includes('FROM projects')) return { recordset: [PROJECT] };
+      if (text.includes('FROM project_inspection_items')) return { recordset: [item, other] };
+      if (text.includes('COUNT(*)')) return { recordset: [{ cnt: inserted.length }] };
+      if (text.includes('SELECT TOP 1')) {
+        const hit = inserted.find((row) => row.notes === params.notes && row.inspection_phase === params.phase);
+        return { recordset: hit ? [hit] : [] };
+      }
+      if (text.includes('INSERT INTO ndt_reports')) {
+        const row = { id: 44 + inserted.length, report_number: params.report_number, notes: params.notes, inspection_phase: params.inspection_phase };
+        inserted.push(row);
+        return { recordset: [{ id: row.id, report_number: row.report_number, report_type: 'VT', status: 'draft' }] };
+      }
+      return { recordset: [] };
+    });
+    const res = mockRes();
+    await generateDrafts({ user: user('admin'), params: { id: '7' } }, res);
+    expect(res.body.data.created).toHaveLength(2);
+    expect(res.body.data.already).toHaveLength(0);
+    expect(inserted.map((row) => row.notes).join('\n')).toContain('altro testo utente');
+    expect(inserted.map((row) => row.notes).join('\n')).not.toMatch(/5817/);
+  });
+
   it('senza metodo non nasce un verbale', async () => {
     query.mockImplementation(async (sql) => {
       const text = String(sql);

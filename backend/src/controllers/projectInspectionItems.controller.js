@@ -236,7 +236,12 @@ async function nextReportNumber(organizationId, reportType, year) {
     return `${reportType}-${year}-${String(seq).padStart(3, '0')}`;
 }
 
-async function findOpenDraft(organizationId, projectId, method, phase, includePhase) {
+async function findOpenDraft(organizationId, projectId, method, phase, notes, includePhase) {
+    const sameNotes = `
+          AND (
+            (@notes IS NULL AND notes IS NULL)
+            OR notes = @notes
+          )`;
     if (!includePhase) {
         const found = await query(`
             SELECT TOP 1 id, report_number
@@ -246,7 +251,8 @@ async function findOpenDraft(organizationId, projectId, method, phase, includePh
               AND report_type = @method
               AND is_deleted = 0
               AND status = 'draft'
-        `, { organization_id: organizationId, project_id: projectId, method });
+              ${sameNotes}
+        `, { organization_id: organizationId, project_id: projectId, method, notes });
         return found.recordset[0] || null;
     }
     const found = await query(`
@@ -261,7 +267,8 @@ async function findOpenDraft(organizationId, projectId, method, phase, includePh
             (@phase IS NULL AND inspection_phase IS NULL)
             OR inspection_phase = @phase
           )
-    `, { organization_id: organizationId, project_id: projectId, method, phase });
+          ${sameNotes}
+    `, { organization_id: organizationId, project_id: projectId, method, phase, notes });
     return found.recordset[0] || null;
 }
 
@@ -328,16 +335,17 @@ async function generateDrafts(req, res) {
                 skipped.push({ id: item.id, reason: 'senza metodo' });
                 continue;
             }
+            const notes = draftNotes(item);
             let existing;
             try {
                 existing = await findOpenDraft(
-                    project.organization_id, project.id, item.method, item.inspection_phase || null, includePhase,
+                    project.organization_id, project.id, item.method, item.inspection_phase || null, notes, includePhase,
                 );
             } catch (err) {
                 if (!isMissingPhaseColumn(err)) throw err;
                 includePhase = false;
                 existing = await findOpenDraft(
-                    project.organization_id, project.id, item.method, null, false,
+                    project.organization_id, project.id, item.method, null, notes, false,
                 );
             }
             if (existing) {
