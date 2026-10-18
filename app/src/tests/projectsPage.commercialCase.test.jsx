@@ -106,4 +106,17 @@ describe("ProjectsPage — selettore Caso Riesame Requisiti", () => {
     const payload = mockUpdateProject.mock.calls.at(-1)[1];
     expect(payload).not.toHaveProperty("commercial_case_id");
   });
+
+  it("dopo la scelta, una modifica successiva non rimanda il caso", async () => {
+    const user = await openProject();
+    const select = await screen.findByLabelText("Caso Riesame Requisiti");
+    await waitFor(() => expect(select).toHaveTextContent("Offerta ponte (Approvato)"));
+    await user.selectOptions(select, "12");
+    await waitFor(() => expect(mockUpdateProject).toHaveBeenCalled(), { timeout: 3000 });
+    expect(mockUpdateProject.mock.calls.at(-1)[1].commercial_case_id).toBe(12);
+    mockUpdateProject.mockClear();
+    await user.type(screen.getByPlaceholderText("Nome cliente"), "Y");
+    await waitFor(() => expect(mockUpdateProject).toHaveBeenCalled(), { timeout: 3000 });
+    expect(mockUpdateProject.mock.calls.at(-1)[1]).not.toHaveProperty("commercial_case_id");
+  });
 });

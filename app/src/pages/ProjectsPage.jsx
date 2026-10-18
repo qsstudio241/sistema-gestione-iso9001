@@ -77,9 +77,10 @@ function ProjectFormModal({ project, companies, defaultCompanyId, wpsList, quali
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
-  // Il passaggio all'approvazione scrive la commessa da solo. L'auto-save della
-  // commessa manda il caso solo se l'utente ha toccato il selettore.
-  const caseTouchedRef = useRef(false);
+  // Il passaggio all'approvazione scrive la commessa da solo. Il caso parte
+  // solo col salvataggio della scelta, non con le modifiche successive.
+  const caseRevRef = useRef(0);
+  const caseSentRef = useRef(0);
 
   // Cliente: elenco controparti (anagrafica aziende) per l'azienda selezionata,
   // stesso pattern usato dal Riesame Contratti (company_counterparties, ruolo end_customer).
@@ -174,12 +175,20 @@ function ProjectFormModal({ project, companies, defaultCompanyId, wpsList, quali
         applyTechnicalReviewCompletionStamp(technicalReviewChecklist || {}, user)
       ),
     };
-    if (caseTouchedRef.current) {
+    const rev = caseRevRef.current;
+    const pending = rev !== caseSentRef.current;
+    if (pending) {
       payload.commercial_case_id = form.commercial_case_id ? Number(form.commercial_case_id) : null;
     } else {
       delete payload.commercial_case_id;
     }
-    return payload;
+    return { payload, rev, pending };
+  }
+
+  function acceptCaseWrite(built) {
+    if (built.pending && caseRevRef.current === built.rev) {
+      caseSentRef.current = built.rev;
+    }
   }
 
   // Auto-save con debounce 800ms (salva progetto + sync welders)
@@ -192,7 +201,8 @@ function ProjectFormModal({ project, companies, defaultCompanyId, wpsList, quali
       setAutoSaveStatus('saving');
       setError(null);
       try {
-        const payload = projectPayload();
+        const built = projectPayload();
+        const payload = built.payload;
         let savedProjectId = savedIdRef.current;
         if (savedIdRef.current) {
           await apiService.updateProject(savedIdRef.current, payload);
@@ -201,6 +211,7 @@ function ProjectFormModal({ project, companies, defaultCompanyId, wpsList, quali
           savedProjectId = res?.data?.id || res?.id;
           savedIdRef.current = savedProjectId;
         }
+        acceptCaseWrite(built);
         // Sincronizza welders diff dall'ultima sincronizzazione
         if (savedProjectId) {
           const newIds = Array.isArray(form.welder_ids) ? form.welder_ids : [];
@@ -241,7 +252,8 @@ function ProjectFormModal({ project, companies, defaultCompanyId, wpsList, quali
     setSaving(true);
     setError(null);
     try {
-      const payload = projectPayload();
+      const built = projectPayload();
+      const payload = built.payload;
       let savedProjectId;
       if (project?.id) {
         await apiService.updateProject(project.id, payload);
@@ -250,6 +262,7 @@ function ProjectFormModal({ project, companies, defaultCompanyId, wpsList, quali
         const res = await apiService.createProject(payload);
         savedProjectId = res?.data?.id || res?.id;
       }
+      acceptCaseWrite(built);
 
       // Sincronizza welders: aggiungi i nuovi, rimuovi i vecchi
       if (savedProjectId) {
@@ -300,7 +313,7 @@ function ProjectFormModal({ project, companies, defaultCompanyId, wpsList, quali
                   onChange={(e) => {
                     const val = e.target.value;
                     // Cambiando azienda la controparte e il caso di riesame potrebbero non appartenerle più.
-                    caseTouchedRef.current = true;
+                    caseRevRef.current += 1;
                     setForm((f) => ({ ...f, company_id: val, end_customer_id: "", commercial_case_id: "" }));
                   }}
                 >
@@ -319,7 +332,7 @@ function ProjectFormModal({ project, companies, defaultCompanyId, wpsList, quali
                   disabled={!form.company_id}
                   title={form.company_id ? "Caso della stessa azienda" : "Seleziona un'azienda per scegliere il caso"}
                   onChange={(e) => {
-                    caseTouchedRef.current = true;
+                    caseRevRef.current += 1;
                     set("commercial_case_id", e.target.value);
                   }}
                 >
