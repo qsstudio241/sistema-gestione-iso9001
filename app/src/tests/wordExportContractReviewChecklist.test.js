@@ -4,6 +4,7 @@ import {
   buildContractReviewChecklistFileName,
   generateContractReviewChecklistBlob,
 } from '../utils/wordExportContractReviewChecklist';
+import { normalizeChecklistRow } from '../utils/contractReviewChecklistAttachments';
 
 vi.mock('file-saver', () => ({ saveAs: vi.fn(), default: { saveAs: vi.fn() } }));
 
@@ -100,6 +101,89 @@ describe('wordExportContractReviewChecklist', () => {
         checklist: [],
       }),
     ).rejects.toThrow(/Checklist assente/);
+  });
+
+  it('in calce scrive data, nome di chi ha compilato e l\'approvazione', async () => {
+    const blob = await generateContractReviewChecklistBlob({
+      caseMeta: {
+        id: 3,
+        title: 'Caso chiuso',
+        status: 'APPROVED',
+        compiler_name: 'Anna Verdi',
+        approved_at: '2026-10-17T09:30:00.000Z',
+      },
+      checklist: [
+        {
+          ...SAMPLE_CHECKLIST[0],
+          answered_at: '2026-10-16T15:00:00.000Z',
+          answered_by_name: 'Luca Neri',
+        },
+      ],
+    });
+    const zip = new PizZip(await blobToArrayBuffer(blob));
+    const xml = zip.files['word/document.xml'].asText();
+    const compiled = new Date('2026-10-16T15:00:00.000Z').toLocaleDateString('it-IT', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
+    const approved = new Date('2026-10-17T09:30:00.000Z').toLocaleDateString('it-IT', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
+    expect(xml).toContain('Chiusura del riesame');
+    expect(xml).toContain('Luca Neri');
+    expect(xml).toContain(compiled);
+    expect(xml).toContain(`Approvato il ${approved}`);
+    expect(xml).not.toContain('Anna Verdi');
+  });
+
+  it('senza nome sulla voce usa l\'utente corrente e non stampa un id', async () => {
+    const blob = await generateContractReviewChecklistBlob({
+      caseMeta: {
+        id: 4,
+        title: 'Caso bozza',
+        status: 'INTAKE_REVIEW',
+        compiler_name: 'Anna Verdi',
+      },
+      checklist: [
+        {
+          ...SAMPLE_CHECKLIST[0],
+          answered_at: '2026-10-16T15:00:00.000Z',
+          answered_by: 99,
+        },
+      ],
+    });
+    const zip = new PizZip(await blobToArrayBuffer(blob));
+    const xml = zip.files['word/document.xml'].asText();
+    expect(xml).toContain('Anna Verdi');
+    expect(xml).not.toContain('Approvato');
+    expect(xml).not.toContain('>99<');
+  });
+
+  it('chi scarica il file non sostituisce chi ha compilato la checklist', async () => {
+    const checklist = [
+      normalizeChecklistRow({
+        ...SAMPLE_CHECKLIST[0],
+        answered_by: 9,
+        answered_by_name: 'Luca Neri',
+        answered_at: '2026-10-16T15:00:00.000Z',
+      }),
+    ];
+    const blob = await generateContractReviewChecklistBlob({
+      caseMeta: {
+        id: 5,
+        title: 'Due utenti',
+        status: 'INTAKE_REVIEW',
+        compiler_name: 'Anna Verdi',
+      },
+      checklist,
+    });
+    const zip = new PizZip(await blobToArrayBuffer(blob));
+    const xml = zip.files['word/document.xml'].asText();
+    expect(xml).toContain('Luca Neri');
+    expect(xml).not.toContain('Anna Verdi');
   });
 
   it('nome file sanitizzato', () => {

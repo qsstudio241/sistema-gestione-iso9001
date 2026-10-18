@@ -355,7 +355,7 @@ describe('importJobs.controller commitToQualification', () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
-        const uploadDir = path.join(__dirname, '../../uploads/test-commit');
+        const uploadDir = path.join(__dirname, '../../uploads/imports/1002/55');
         fs.mkdirSync(uploadDir, { recursive: true });
         tempPdfPath = path.join(uploadDir, 'patentino-test.pdf');
         fs.writeFileSync(tempPdfPath, '%PDF-1.4 test');
@@ -587,6 +587,37 @@ describe('importJobs.controller commitToQualification', () => {
         expect(updateCertSql).toMatch(/certificate_file_url/);
         expect(updateFileSql).toMatch(/qualification_id/);
         expect(updateFileParams.qualId).toBe(123);
+    });
+
+    it('file import fuori dalla forma attesa (altra org): nessun certificate_file_url, il commit prosegue', async () => {
+        const otherOrgDir = path.join(__dirname, '../../uploads/imports/9999/55');
+        fs.mkdirSync(otherOrgDir, { recursive: true });
+        const otherPath = path.join(otherOrgDir, 'patentino-altrui.pdf');
+        fs.writeFileSync(otherPath, '%PDF-1.4 test');
+        const sqls = [];
+        try {
+            query
+                .mockResolvedValueOnce({ recordset: [{ id: 55, company_id: 44 }] })
+                .mockResolvedValueOnce({
+                    recordset: [{
+                        id: 9, status: 'reviewed', ai_extraction_json: AI_QUALIFICATION,
+                        original_name: 'patentino.pdf', confidence_score: 91, storage_path: otherPath,
+                    }],
+                })
+                .mockResolvedValueOnce({ recordset: [{ id: 44 }] })
+                .mockResolvedValueOnce({ recordset: [{ id: 123 }] })
+                .mockImplementation(async (sql) => { sqls.push(sql); return { recordset: [] }; });
+
+            const res = makeRes();
+            await commitToQualification(makeReq(), res);
+
+            expect(res.status).toHaveBeenCalledWith(201);
+            expect(res.json.mock.calls[0][0].data.certificate_file_url).toBeNull();
+            expect(sqls.some((q) => /SET certificate_file_url/.test(q))).toBe(false);
+        } finally {
+            query.mockReset();
+            try { fs.unlinkSync(otherPath); } catch { /* ignore */ }
+        }
     });
 
     it('blocca la bozza qualifica se manca company_id anche sul job', async () => {
@@ -1004,7 +1035,7 @@ describe('importJobs.controller: privacy log (nessun nome file nei log)', () => 
     beforeEach(() => {
         jest.clearAllMocks();
         spies = ['info', 'warn', 'error'].map((m) => jest.spyOn(logger, m).mockImplementation(() => {}));
-        const uploadDir = path.join(__dirname, '../../uploads/test-commit');
+        const uploadDir = path.join(__dirname, '../../uploads/imports/1002/55');
         fs.mkdirSync(uploadDir, { recursive: true });
         tempPdfPath = path.join(uploadDir, 'privacy-test.pdf');
         fs.writeFileSync(tempPdfPath, '%PDF-1.4 test');

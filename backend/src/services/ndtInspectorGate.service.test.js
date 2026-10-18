@@ -12,6 +12,7 @@ const {
   evaluateNdtInspectorGate,
   GATE_CODE,
 } = require('./ndtInspectorGate.service');
+const { resetVisionClockColumnCache } = require('./qualificationExpirySql');
 const { VISION_FITNESS_TYPE } = require('../constants/occupationalQualificationTypes');
 
 const TODAY = new Date('2026-08-25T12:00:00Z');
@@ -171,10 +172,99 @@ describe('evaluateInspectorFromRows', () => {
     expect(out.reasons[0]).toMatch(/visiva scaduta/);
     expect(out.vision.state).toBe('expired');
   });
+
+  it('con due omonimi usa il patentino collegato, non l\'altro', () => {
+    const valido = ndtQual({ id: 41, personnel_id: 10, certificate_number: 'VT-OK' });
+    const scaduto = ndtQual({
+      id: 42,
+      personnel_id: 11,
+      certificate_number: 'VT-OLD',
+      expiry_date: '2020-01-01',
+    });
+    const byName = evaluateInspectorFromRows({
+      ...base,
+      ndtQuals: [valido, scaduto],
+      visionRows: [visionQual(), visionQual({ id: 100, personnel_id: 11 })],
+    });
+    expect(byName.ok).toBe(true);
+    expect(byName.qualification.id).toBe(41);
+    expect(byName.candidates.map((c) => c.qualification_id)).toEqual([41]);
+
+    const byId = evaluateInspectorFromRows({
+      ...base,
+      qualificationId: 42,
+      ndtQuals: [valido, scaduto],
+      visionRows: [visionQual(), visionQual({ id: 100, personnel_id: 11 })],
+    });
+    expect(byId.ok).toBe(false);
+    expect(byId.reasons[0]).toMatch(/scaduto/);
+    expect(byId.qualification.id).toBe(42);
+  });
+
+  it('rifiuta un id di patentino che non è più in anagrafica', () => {
+    const out = evaluateInspectorFromRows({
+      ...base,
+      qualificationId: 99,
+      ndtQuals: [ndtQual()],
+      visionRows: [visionQual()],
+    });
+    expect(out.ok).toBe(false);
+    expect(out.reasons[0]).toMatch(/non è più in anagrafica/);
+  });
+
+  it('fallisce se il test dei colori è passato anche con la visita ancora valida', () => {
+    const out = evaluateInspectorFromRows({
+      ...base,
+      ndtQuals: [ndtQual()],
+      visionRows: [visionQual({
+        expiry_date: null,
+        near_vision_expiry_date: '2030-01-01',
+        colour_vision_expiry_date: '2020-01-01',
+      })],
+    });
+    expect(out.ok).toBe(false);
+    expect(out.vision.state).toBe('expired');
+    expect(out.reasons[0]).toContain('2020-01-01');
+  });
+
+  it('non sblocca il verbale se la scadenza unica è già passata e una sola data nuova è futura', () => {
+    const out = evaluateInspectorFromRows({
+      ...base,
+      ndtQuals: [ndtQual()],
+      visionRows: [visionQual({
+        expiry_date: '2020-01-01',
+        near_vision_expiry_date: '2027-01-01',
+        colour_vision_expiry_date: null,
+      })],
+    });
+    expect(out.ok).toBe(false);
+    expect(out.vision.state).toBe('expired');
+    expect(out.reasons[0]).toContain('2020-01-01');
+    expect(out.reasons[0]).not.toContain('2027-01-01');
+  });
+
+  it('la scritta scaduta il non slitta al giorno prima se la data è mezzanotte UTC', () => {
+    const out = evaluateInspectorFromRows({
+      ...base,
+      today: new Date('2026-06-02T12:00:00.000Z'),
+      ndtQuals: [ndtQual()],
+      visionRows: [visionQual({
+        expiry_date: new Date('2026-06-01T00:00:00.000Z'),
+        near_vision_expiry_date: null,
+        colour_vision_expiry_date: null,
+      })],
+    });
+    expect(out.ok).toBe(false);
+    expect(out.reasons[0]).toContain('2026-06-01');
+    expect(out.reasons[0]).not.toContain('2026-05-31');
+  });
 });
 
 describe('evaluateNdtInspectorGate', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    resetVisionClockColumnCache();
+  });
 
   it('carica qualifiche + visione e valuta', async () => {
     query.mockImplementation(async (sql) => {
@@ -206,5 +296,27 @@ describe('evaluateNdtInspectorGate', () => {
     const params = query.mock.calls[0][1];
     expect(sql).toMatch(/q\.company_id IN \(@acq_0\)/);
     expect(params.acq_0).toBe(11);
+  });
+
+  it('se le colonne 178 non ci sono il controllo ispettore non va in errore', async () => {
+    query.mockImplementation(async (sql) => {
+      if (sql.includes('ndt_method')) return { recordset: [ndtQual()] };
+      if (/near_vision_expiry_date/.test(sql)) {
+        throw new Error("Invalid column name 'colour_vision_expiry_date'.");
+      }
+      return {
+        recordset: [visionQual({ expiry_date: '2020-01-01' })],
+      };
+    });
+    const out = await evaluateNdtInspectorGate({
+      organizationId: 1001,
+      inspectorName: 'Mario Rossi',
+      reportType: 'VT',
+    });
+    expect(out.ok).toBe(false);
+    expect(out.vision.state).toBe('expired');
+    expect(out.reasons[0]).toContain('2020-01-01');
+    const visionSql = query.mock.calls.map((c) => c[0]).filter((sql) => !sql.includes('ndt_method'));
+    expect(visionSql.some((sql) => !/near_vision_expiry_date/.test(sql))).toBe(true);
   });
 });

@@ -148,3 +148,131 @@ describe('weldingCoordinatorAuth.service — isQualificationOperationallyActive'
     expect(svc.isQualificationOperationallyActive(null, TODAY)).toBe(false);
   });
 });
+
+describe('weldingCoordinatorAuth.service — effectiveExpiryDate (CPD coordinatori 14731)', () => {
+  it('coordinatore 14731: vale la data piu\' imminente tra expiry_date e cpd_valid_until', () => {
+    expect(svc.effectiveExpiryDate({
+      qualification_type: 'Coordinatore ISO 14731', expiry_date: '2030-01-01', cpd_valid_until: '2026-12-31',
+    })).toBe('2026-12-31');
+    expect(svc.effectiveExpiryDate({
+      qualification_type: 'Coordinatore ISO 14731', expiry_date: '2026-06-01', cpd_valid_until: '2028-01-01',
+    })).toBe('2026-06-01');
+  });
+
+  it('coordinatore 14731: se manca una delle due usa l\'altra, se mancano entrambe null', () => {
+    expect(svc.effectiveExpiryDate({ qualification_type: 'Coordinatore ISO 14731', expiry_date: null, cpd_valid_until: '2027-01-01' })).toBe('2027-01-01');
+    expect(svc.effectiveExpiryDate({ qualification_type: 'Coordinatore ISO 14731', expiry_date: '2027-02-02', cpd_valid_until: null })).toBe('2027-02-02');
+    expect(svc.effectiveExpiryDate({ qualification_type: 'Coordinatore ISO 14731' })).toBeNull();
+  });
+
+  it('accetta oggetti Date (colonne DATE di mssql)', () => {
+    const out = svc.effectiveExpiryDate({
+      qualification_type: 'Coordinatore ISO 14731',
+      expiry_date: new Date('2030-01-01'),
+      cpd_valid_until: new Date('2026-12-31'),
+    });
+    expect(new Date(out).toISOString().slice(0, 10)).toBe('2026-12-31');
+  });
+
+  it('altri tipi ignorano cpd_valid_until; i 9606/14732 restano sulla conferma semestrale', () => {
+    expect(svc.effectiveExpiryDate({ qualification_type: 'Operatore NDT UT Livello 2', expiry_date: '2030-01-01', cpd_valid_until: '2026-01-01' })).toBe('2030-01-01');
+    expect(svc.effectiveExpiryDate({
+      qualification_type: 'Saldatore ISO 9606-1', expiry_date: '2030-01-01', next_confirmation_due: '2026-12-01', cpd_valid_until: '2026-01-01',
+    })).toBe('2026-12-01');
+  });
+
+  it('isCoordinator14731Type', () => {
+    expect(svc.isCoordinator14731Type('Coordinatore ISO 14731')).toBe(true);
+    expect(svc.isCoordinator14731Type('Saldatore ISO 9606-1')).toBe(false);
+    expect(svc.isCoordinator14731Type(null)).toBe(false);
+  });
+
+  it('deriveQualificationStatus: CPD scaduto rende scaduta una qualifica valida', () => {
+    expect(svc.deriveQualificationStatus({
+      status: 'valida', qualification_type: 'Coordinatore ISO 14731', expiry_date: '2030-01-01', cpd_valid_until: '2026-01-01',
+    }, '2026-10-14')).toBe('scaduta');
+  });
+});
+
+describe('weldingCoordinatorAuth.service — scadenza oculistica restrittiva', () => {
+  const VISION = 'Certificato idoneità visiva (acuità + Ishihara)';
+  const TODAY = '2026-07-28';
+
+  function row(overrides) {
+    return {
+      qualification_type: VISION,
+      status: 'valida',
+      expiry_date: null,
+      near_vision_expiry_date: null,
+      colour_vision_expiry_date: null,
+      ...overrides,
+    };
+  }
+
+  it('solo scadenza unica scaduta', () => {
+    const q = row({ expiry_date: '2020-01-01' });
+    expect(svc.effectiveExpiryDate(q)).toBe('2020-01-01');
+    expect(svc.isQualificationOperationallyActive(q, TODAY)).toBe(false);
+    expect(svc.visionRowStatus(q, TODAY).state).toBe('expired');
+  });
+
+  it('solo una data nuova scaduta: l\'altra vuota non la cancella', () => {
+    const q = row({
+      expiry_date: '2030-01-01',
+      near_vision_expiry_date: '2020-06-01',
+    });
+    expect(svc.effectiveExpiryDate(q)).toBe('2020-06-01');
+    expect(svc.isQualificationOperationallyActive(q, TODAY)).toBe(false);
+  });
+
+  it('scadenza unica scaduta non è cancellata da una sola data nuova futura', () => {
+    const q = row({
+      expiry_date: '2020-01-01',
+      near_vision_expiry_date: '2027-01-01',
+    });
+    expect(svc.effectiveExpiryDate(q)).toBe('2020-01-01');
+    expect(svc.isQualificationOperationallyActive(q, TODAY)).toBe(false);
+    expect(svc.visionRowStatus(q, TODAY).expiry_date).toBe('2020-01-01');
+  });
+
+  it('entrambe le nuove con una scaduta', () => {
+    const q = row({
+      expiry_date: '2032-01-01',
+      near_vision_expiry_date: '2030-01-01',
+      colour_vision_expiry_date: '2020-01-01',
+    });
+    expect(svc.effectiveExpiryDate(q)).toBe('2020-01-01');
+    expect(svc.isQualificationOperationallyActive(q, TODAY)).toBe(false);
+  });
+
+  it('tutte vuote: nessuna scadenza, il certificato non risulta scaduto', () => {
+    const q = row({});
+    expect(svc.effectiveExpiryDate(q)).toBeNull();
+    expect(svc.isQualificationOperationallyActive(q, TODAY)).toBe(true);
+    expect(svc.visionRowStatus(q, TODAY)).toMatchObject({ state: 'ok', expiry_date: null });
+  });
+
+  it('tutte future: vale la data più vicina', () => {
+    const q = row({
+      expiry_date: '2032-01-01',
+      near_vision_expiry_date: '2028-04-01',
+      colour_vision_expiry_date: '2030-06-01',
+    });
+    expect(svc.effectiveExpiryDate(q)).toBe('2028-04-01');
+    expect(svc.isQualificationOperationallyActive(q, TODAY)).toBe(true);
+  });
+
+  it('confine fuso: mezzanotte UTC resta il giorno di calendario', () => {
+    const utcMidnight = new Date('2026-06-01T00:00:00.000Z');
+    const q = row({ expiry_date: utcMidnight });
+    expect(svc.toIsoDate(utcMidnight)).toBe('2026-06-01');
+    expect(svc.effectiveExpiryDate(q)).toBe('2026-06-01');
+    expect(svc.visionRowStatus(q, '2026-06-01')).toMatchObject({ state: 'ok', expiry_date: '2026-06-01' });
+    expect(svc.visionRowStatus(q, '2026-06-02')).toMatchObject({ state: 'expired', expiry_date: '2026-06-01' });
+    if (utcMidnight.getTimezoneOffset() !== 0) {
+      const shifted = new Date(utcMidnight.getTime());
+      shifted.setHours(0, 0, 0, 0);
+      expect(shifted.toISOString().slice(0, 10)).not.toBe('2026-06-01');
+    }
+  });
+});

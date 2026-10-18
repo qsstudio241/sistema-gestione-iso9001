@@ -19,6 +19,8 @@ const {
   visionFitnessSqlInList,
 } = require('../constants/occupationalQualificationTypes');
 const { normalizePersonName } = require('./visionFitness.service');
+const { toIsoDate, visionPresentDates } = require('./weldingCoordinatorAuth.service');
+const { queryOptionalVisionClocks } = require('./qualificationExpirySql');
 
 const GATE_CODE = 'NDT_INSPECTOR_GATE';
 const NDT_METHODS = new Set(['VT', 'MT', 'PT', 'UT', 'RT', 'ET', 'AE', 'TT', 'ST', 'LT']);
@@ -39,10 +41,19 @@ function startOfDay(value) {
   return d;
 }
 
+/** Giorno di calendario, senza mezzanotte locale che sposta la data in UTC. */
 function formatIsoDate(value) {
-  const d = startOfDay(value);
-  if (!d) return null;
-  return d.toISOString().slice(0, 10);
+  return toIsoDate(value);
+}
+
+/** Giorno locale di un Date già portato a mezzanotte locale (il «oggi» del gate). */
+function localCalendarIso(value) {
+  const d = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(d.getTime())) return null;
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 }
 
 function isNdt9712Qualification(q) {
@@ -91,6 +102,21 @@ function personMatches(row, inspectorName, personnelId) {
   return normalizePersonName(row.person_name) === normalizePersonName(inspectorName);
 }
 
+function visionGuideDates(row) {
+  return visionPresentDates(row);
+}
+
+function visionRowOk(row, todayIso) {
+  const dates = visionGuideDates(row);
+  if (!dates.length) return true;
+  return dates.every((raw) => raw >= todayIso);
+}
+
+function visionNearestDate(row) {
+  const dates = visionGuideDates(row);
+  return dates.reduce((best, raw) => (best == null || raw < best ? raw : best), null);
+}
+
 function visionStateForPerson(visionRows, inspectorName, personnelId, companyId, today) {
   const candidates = (visionRows || []).filter((v) => personMatches(v, inspectorName, personnelId));
   const preferred = companyId != null
@@ -102,20 +128,25 @@ function visionStateForPerson(visionRows, inspectorName, personnelId, companyId,
     return { state: 'missing', expiry_date: null, vision_id: null };
   }
 
+  const todayIso = typeof today === 'string' && /^\d{4}-\d{2}-\d{2}/.test(today)
+    ? today.slice(0, 10)
+    : localCalendarIso(today);
   const scored = pool.map((v) => {
-    const ok = isQualNotExpired(v, today);
+    const ok = visionRowOk(v, todayIso);
+    const guide = visionNearestDate(v);
+    const stamp = guide ? Date.parse(`${guide}T12:00:00Z`) : 0;
     let score = 0;
-    if (ok && v.expiry_date) score = 300 + new Date(v.expiry_date).getTime() / 1e12;
+    if (ok && guide) score = 300 + stamp / 1e12;
     else if (ok) score = 200;
-    else score = 100 + (v.expiry_date ? new Date(v.expiry_date).getTime() / 1e12 : 0);
-    return { v, ok, score };
+    else score = 100 + stamp / 1e12;
+    return { v, ok, score, guide };
   });
   scored.sort((a, b) => b.score - a.score);
   const best = scored[0];
   if (!best.ok) {
-    return { state: 'expired', expiry_date: best.v.expiry_date, vision_id: best.v.id };
+    return { state: 'expired', expiry_date: best.guide || best.v.expiry_date, vision_id: best.v.id };
   }
-  return { state: 'ok', expiry_date: best.v.expiry_date, vision_id: best.v.id };
+  return { state: 'ok', expiry_date: best.guide || best.v.expiry_date, vision_id: best.v.id };
 }
 
 function summarizeQual(q) {
@@ -149,22 +180,46 @@ function evaluateInspectorFromRows(opts = {}) {
   const covering = ndtQuals.filter((q) => qualCoversMethod(q, reportType) && isQualNotExpired(q, today));
   const candidatesMap = new Map();
   for (const q of covering) {
-    const key = normalizePersonName(q.person_name);
-    if (!key) continue;
+    const key = q.id != null ? `id:${q.id}` : `name:${normalizePersonName(q.person_name)}`;
+    if (!key || key === 'name:') continue;
     if (!candidatesMap.has(key)) {
       candidatesMap.set(key, {
+        qualification_id: q.id != null ? Number(q.id) : null,
         person_name: q.person_name,
+        certificate_number: q.certificate_number || null,
         ndt_method: reportType,
         ndt_level: ndtLevelNumber(q),
         expiry_date: q.expiry_date || null,
       });
     }
   }
-  const candidates = [...candidatesMap.values()].sort((a, b) =>
-    String(a.person_name).localeCompare(String(b.person_name), 'it')
-  );
+  const candidates = [...candidatesMap.values()].sort((a, b) => {
+    const byName = String(a.person_name).localeCompare(String(b.person_name), 'it');
+    if (byName !== 0) return byName;
+    return (Number(a.qualification_id) || 0) - (Number(b.qualification_id) || 0);
+  });
 
-  if (!inspectorName) {
+  const linkedRaw = opts.qualificationId;
+  const linkedId = linkedRaw != null && linkedRaw !== '' ? Number(linkedRaw) : null;
+  let personQuals;
+  let nameForMessages = inspectorName;
+  let visionPersonnelId = opts.personnelId;
+
+  if (linkedId != null && Number.isFinite(linkedId)) {
+    const linked = ndtQuals.find((q) => Number(q.id) === linkedId);
+    if (!linked) {
+      return {
+        ok: false,
+        reasons: ['Il patentino collegato al verbale non è più in anagrafica.'],
+        qualification: null,
+        vision: { state: 'unknown', expiry_date: null, vision_id: null },
+        candidates,
+      };
+    }
+    personQuals = [linked];
+    nameForMessages = linked.person_name || inspectorName;
+    visionPersonnelId = linked.personnel_id;
+  } else if (!inspectorName) {
     return {
       ok: false,
       reasons: ['Indicare il nome dell\'ispettore.'],
@@ -172,7 +227,18 @@ function evaluateInspectorFromRows(opts = {}) {
       vision: { state: 'unknown', expiry_date: null, vision_id: null },
       candidates,
     };
+  } else if (!reportType) {
+    return {
+      ok: false,
+      reasons: ['Indicare il metodo del verbale (VT, MT, PT, UT, \u2026).'],
+      qualification: null,
+      vision: { state: 'unknown', expiry_date: null, vision_id: null },
+      candidates,
+    };
+  } else {
+    personQuals = ndtQuals.filter((q) => personMatches(q, inspectorName, opts.personnelId));
   }
+
   if (!reportType) {
     return {
       ok: false,
@@ -183,13 +249,12 @@ function evaluateInspectorFromRows(opts = {}) {
     };
   }
 
-  const personQuals = ndtQuals.filter((q) => personMatches(q, inspectorName, opts.personnelId));
   if (personQuals.length === 0) {
     return {
       ok: false,
-      reasons: [`Nessun patentino ISO 9712 in anagrafica per ${inspectorName}.`],
+      reasons: [`Nessun patentino ISO 9712 in anagrafica per ${nameForMessages}.`],
       qualification: null,
-      vision: visionStateForPerson(visionRows, inspectorName, opts.personnelId, companyId, today),
+      vision: visionStateForPerson(visionRows, nameForMessages, visionPersonnelId, companyId, today),
       candidates,
     };
   }
@@ -199,9 +264,9 @@ function evaluateInspectorFromRows(opts = {}) {
     const have = [...new Set(personQuals.map((q) => normalizeMethod(q.ndt_method) || 'non indicato'))].join(', ');
     return {
       ok: false,
-      reasons: [`Patentino ISO 9712 di ${inspectorName} non copre il metodo ${reportType} (metodi in anagrafica: ${have}).`],
+      reasons: [`Patentino ISO 9712 di ${nameForMessages} non copre il metodo ${reportType} (metodi in anagrafica: ${have}).`],
       qualification: summarizeQual(personQuals[0]),
-      vision: visionStateForPerson(visionRows, inspectorName, personQuals[0].personnel_id, companyId, today),
+      vision: visionStateForPerson(visionRows, nameForMessages, personQuals[0].personnel_id, companyId, today),
       candidates,
     };
   }
@@ -217,7 +282,7 @@ function evaluateInspectorFromRows(opts = {}) {
       ok: false,
       reasons: [`Patentino ISO 9712 ${reportType} scaduto il ${formatIsoDate(latest.expiry_date) || 'data sconosciuta'}.`],
       qualification: summarizeQual(latest),
-      vision: visionStateForPerson(visionRows, inspectorName, latest.personnel_id, companyId, today),
+      vision: visionStateForPerson(visionRows, nameForMessages, latest.personnel_id, companyId, today),
       candidates,
     };
   }
@@ -231,7 +296,7 @@ function evaluateInspectorFromRows(opts = {}) {
       ok: false,
       reasons: [`Serve livello 2 o 3 per il giudizio autonomo (ISO 9712 \u00a75.3.2). Livello sul patentino: ${levelTxt}.`],
       qualification: summarizeQual(best),
-      vision: visionStateForPerson(visionRows, inspectorName, best.personnel_id, companyId, today),
+      vision: visionStateForPerson(visionRows, nameForMessages, best.personnel_id, companyId, today),
       candidates,
     };
   }
@@ -251,8 +316,8 @@ function evaluateInspectorFromRows(opts = {}) {
   const chosen = pool[0];
   const vision = visionStateForPerson(
     visionRows,
-    inspectorName,
-    chosen.personnel_id || opts.personnelId,
+    nameForMessages,
+    chosen.personnel_id || visionPersonnelId,
     companyId,
     today,
   );
@@ -302,15 +367,27 @@ async function loadNdtQuals(organizationId, allowedCompanyIds) {
 async function loadVisionRows(organizationId, allowedCompanyIds) {
   const visionIn = visionFitnessSqlInList();
   const { params, clause } = withCompanyScope(organizationId, allowedCompanyIds);
-  const result = await query(`
-    SELECT q.id, q.person_name, q.personnel_id, q.qualification_type,
-           q.expiry_date, q.status, q.company_id
+  const where = `
     FROM qualifications q
     WHERE q.organization_id = @organization_id
       AND q.status NOT IN ('revocata', 'sospesa')
       AND q.qualification_type IN (${visionIn})
       ${clause}
-  `, params);
+  `;
+  const result = await queryOptionalVisionClocks(
+    (sql) => query(sql, params),
+    {
+      withClocks: `
+    SELECT q.id, q.person_name, q.personnel_id, q.qualification_type,
+           q.expiry_date, q.near_vision_expiry_date, q.colour_vision_expiry_date,
+           q.status, q.company_id
+    ${where}`,
+      withoutClocks: `
+    SELECT q.id, q.person_name, q.personnel_id, q.qualification_type,
+           q.expiry_date, q.status, q.company_id
+    ${where}`,
+    },
+  );
   return result.recordset || [];
 }
 
@@ -351,6 +428,7 @@ async function evaluateNdtInspectorGate(opts = {}) {
   ]);
   return evaluateInspectorFromRows({
     inspectorName: opts.inspectorName,
+    qualificationId: opts.qualificationId,
     reportType: opts.reportType,
     companyId: opts.companyId,
     personnelId: opts.personnelId,

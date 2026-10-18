@@ -22,8 +22,8 @@
  *   GET    /qualifications/:id          → dettaglio
  *   POST   /qualifications              → crea (sempre attiva, approval_status=approvata)
  *   PUT    /qualifications/:id          → aggiorna
- *   DELETE /qualifications/:id          → soft delete (status=revocata) — non più esposto in UI
- *   DELETE /qualifications/:id/permanent → cancellazione fisica (nessun legame residuo)
+ *   DELETE /qualifications/:id          → stato di business revocata — non è il cestino
+ *   DELETE /qualifications/:id/permanent → cestino (deleted_at): non è una cancellazione definitiva
  *   POST   /qualifications/:id/renew    → rinnovo → nuovo record con previous_qualification_id
  */
 
@@ -32,6 +32,7 @@ const fs   = require('fs');
 const { getPool } = require('../config/database');
 const logger = require('../utils/logger');
 const { normalizeApplicableWpsIds } = require('../utils/applicableWpsIds');
+const { logEntityChange, trashedDetailHidden } = require('../services/entityChangeLog.service');
 const {
     ensureCompanyAccessLoaded,
     companyAccessSqlFilter,
@@ -40,9 +41,62 @@ const {
     hasCompanyAccessRows,
     sendAccessDenied,
 } = require('../services/companyAccess.service');
+
+/** Utente con user_company_access: 403 fuori dalle aziende consentite.
+ *  Studio senza aziende assegnate: lettura libera; scrittura no per il viewer. */
+async function denyOutsideCompany(res, user, companyId, level = 'read') {
+    const accessList = await ensureCompanyAccessLoaded(user);
+    if (!hasCompanyAccessRows(accessList)) {
+        if (level !== 'write') return false;
+        const studioDenied = await assertMutatingAllowed(user, {});
+        if (studioDenied) {
+            sendAccessDenied(res, studioDenied);
+            return true;
+        }
+        return false;
+    }
+    let denied;
+    if (companyId == null || companyId === '') {
+        denied = { status: 403, body: { error: 'Accesso non consentito', code: 'FORBIDDEN' } };
+    } else if (level === 'write') {
+        denied = await assertMutatingAllowed(user, { companyId });
+    } else {
+        denied = await assertCompanyRead(user, companyId);
+    }
+    if (denied) {
+        sendAccessDenied(res, denied);
+        return true;
+    }
+    return false;
+}
+
+/** Come denyOutsideCompany, senza scrivere la risposta. Serve a troncare una catena. */
+async function isOutsideCompany(user, companyId, level = 'read') {
+    const accessList = await ensureCompanyAccessLoaded(user);
+    if (!hasCompanyAccessRows(accessList)) {
+        if (level !== 'write') return false;
+        return Boolean(await assertMutatingAllowed(user, {}));
+    }
+    if (companyId == null || companyId === '') return true;
+    const denied = level === 'write'
+        ? await assertMutatingAllowed(user, { companyId })
+        : await assertCompanyRead(user, companyId);
+    return Boolean(denied);
+}
 const { resolvePersonnelForQualification } = require('../services/personnelQualificationLink.service');
+const {
+    DUPLICATE_QUALIFICATION_MESSAGE,
+    findQualificationDuplicate,
+    isQualificationDuplicateIndexError,
+    poolDb,
+} = require('../services/qualificationDuplicate.service');
 const { resolvePrintedDesignation } = require('../utils/weldingDesignation');
 const { describeIngestFileError, redactFileNameForLog } = require('../utils/ingestErrorMessage');
+const {
+    validateCertificateFileUrl,
+    expectedQualificationUrl,
+    CERTIFICATE_FILE_URL_ERROR,
+} = require('../services/certificateFileUrl.service');
 const {
     isWelder9606Type,
     requiresSemiannualConfirmation,
@@ -50,9 +104,17 @@ const {
     addMonthsIso,
     canUserConfirmSemiannual,
 } = require('../services/weldingCoordinatorAuth.service');
+const {
+    DAYS_WARNING,
+    DAYS_URGENT,
+    EFFECTIVE_SQL,
+    SITUAZIONE_BUCKET_SQL,
+    effectiveStatusFilterSql,
+    expiringDaysFilterSql,
+} = require('../services/qualificationExpirySql');
 const { toNumericOrNull } = require('../utils/numericSanitizer');
 const { FIELD_STATE, getFieldState, nullNotApplicableFields } = require('../data/jointTypeProfiles');
-const { occupationalQualificationSqlInList } = require('../constants/occupationalQualificationTypes');
+const { occupationalQualificationSqlInList, isVisionFitnessType } = require('../constants/occupationalQualificationTypes');
 const { findVisionFitnessGaps } = require('../services/visionFitness.service');
 const {
     computeWpsWelderCoverage,
@@ -79,6 +141,7 @@ const QUALIFICATION_MANUAL_EDITABLE_FIELDS = [
     'company_id', 'person_name', 'person_code', 'personnel_id', 'department',
     'qualification_type', 'standard_ref', 'scope_detail', 'certificate_number', 'issuing_body',
     'issue_date', 'exam_date', 'expiry_date', 'last_renewal_date',
+    'near_vision_expiry_date', 'colour_vision_expiry_date',
     'last_confirmation_date', 'next_confirmation_due', 'revalidation_date',
     'status', 'notes',
     'welding_process', 'material_group', 'position_range', 'ndt_method', 'ndt_level',
@@ -123,6 +186,12 @@ function toNum(v) {
 }
 
 /** Converte in intero finito o null (per colonne INT: ndt_level, training_hours). */
+/** Le due date oculistiche si salvano solo sul certificato visivo. Altri tipi: NULL. */
+function persistedVisionClocks(qualificationType, near, colour) {
+    if (!isVisionFitnessType(qualificationType)) return { near: null, colour: null };
+    return { near: near || null, colour: colour || null };
+}
+
 function toIntOrNull(v) {
     const n = toNumericOrNull(v);
     return n != null ? Math.trunc(n) : null;
@@ -143,46 +212,6 @@ function deriveRangeString(min, max, suffix = 'mm') {
     return `${b}${suffix}`;
 }
 
-// Soglie semaforo (giorni)
-const DAYS_WARNING = 60;
-const DAYS_URGENT  = 30;
-
-/**
- * Match SQL dei tipi che richiedono conferma periodica semestrale (ISO 9606-1
- * saldatori manuali, ISO 14732 operatori automatica/meccanizzata). Deve restare
- * sincronizzato con isWelder9606Type/isOperator14732Type in
- * weldingCoordinatorAuth.service.js — qui serve la versione SQL per WHERE/CASE
- * (non si può richiamare la funzione JS dentro una query T-SQL).
- */
-const SEMIANNUAL_TYPE_SQL_MATCH = `(
-    LOWER(q.qualification_type) LIKE '%9606%'
-    OR LOWER(q.qualification_type) LIKE '%patentino_saldatore%'
-    OR LOWER(q.qualification_type) = '9606_1'
-    OR LOWER(q.qualification_type) LIKE '%14732%'
-    OR LOWER(q.qualification_type) LIKE '%qualifica_14732%'
-)`;
-
-/**
- * Data di scadenza "effettiva" calcolata in SQL — stessa regola di
- * effectiveExpiryDate() (weldingCoordinatorAuth.service, usata per il semaforo per-riga): per i tipi
- * a conferma semestrale vale la data più imminente tra expiry_date e
- * next_confirmation_due. Usata sia nelle statistiche (getStats) sia nel filtro
- * ?situazione= di listQualifications, così i conteggi delle card e il colore
- * mostrato riga per riga restano sempre coerenti tra loro.
- */
-const EFFECTIVE_EXPIRY_SQL = `
-    CASE
-        WHEN ${SEMIANNUAL_TYPE_SQL_MATCH} THEN
-            CASE
-                WHEN q.expiry_date IS NULL THEN q.next_confirmation_due
-                WHEN q.next_confirmation_due IS NULL THEN q.expiry_date
-                WHEN q.next_confirmation_due < q.expiry_date THEN q.next_confirmation_due
-                ELSE q.expiry_date
-            END
-        ELSE q.expiry_date
-    END
-`;
-
 function semaforo(expiryDate, status) {
     if (status === 'sospesa' || status === 'revocata') return 'grigio';
     if (!expiryDate) return 'verde';
@@ -201,27 +230,73 @@ function semaforoForRow(q) {
     return semaforo(effectiveExpiryDate(q), q.status);
 }
 
-// Mappa tipo tab → LIKE su qualification_type
-const QUAL_TYPE_MAP = {
-    iso9606_1:      '%9606-1%',
-    iso9606_2:      '%9606-2%',
-    iso14732:       '%14732%',
-    iso14731:       '%14731%',
-    // NDT per metodo specifico
-    iso9712_vt:     '%VT%',
-    iso9712_pt:     '%PT%',
-    iso9712_mt:     '%MT%',
-    iso9712_ut:     '%UT%',
-    iso9712_rt:     '%RT%',
-    iso9712_et:     '%ET%',
-    // raggruppamento NDT generico
-    ndt:            '%NDT%',
-    // abilitazioni
-    pes_pav:        '%PES%',
-    pes:            '%PES%',
-    pav:            '%PAV%',
-    generico:       '%',        // intercettato dopo
-};
+/** company_id da query string: vuoto = nessun filtro; non numerico = errore (400). */
+function parseCompanyIdParam(raw) {
+    const text = raw === undefined || raw === null ? '' : String(raw).trim();
+    if (!text) return { value: null };
+    if (!/^\d{1,9}$/.test(text)) return { error: true };
+    return { value: parseInt(text, 10) };
+}
+
+/**
+ * Famiglia (tab) di ogni qualifica: una e una sola per riga, in ordine di priorita'. Lista e statistiche
+ * filtrano sulla stessa espressione e "generico" e' il complemento, quindi ogni qualifica compare in
+ * esattamente un tab specifico (oltre a "Tutti") e la somma dei tab = Totale. Le sigle di 2 lettere
+ * (NDT VT/PT/MT/UT/RT/ET) valgono solo come parola intera e in maiuscolo; PES e PAV come parola intera
+ * senza distinzione di maiuscole (un tipo "Abilitazione Pav" o "qualifica_pav" resta in PES/PAV).
+ * Niente match per sottostringa in parole comuni ("Addetto antincendio", "Pavimentazione").
+ */
+const PADDED_TYPE_BIN = "(N' ' + q.qualification_type + N' ') COLLATE Latin1_General_BIN";
+const PADDED_TYPE_CI = "(N' ' + q.qualification_type + N' ') COLLATE Latin1_General_CI_AS";
+const QUALIFICATION_TAB_FAMILY_SQL = `(CASE
+    WHEN q.qualification_type IN (${occupationalQualificationSqlInList()}) THEN 'salute_mansione'
+    WHEN q.qualification_type LIKE '%14732%' THEN 'iso14732'
+    WHEN q.qualification_type LIKE '%14731%' THEN 'iso14731'
+    WHEN q.qualification_type LIKE '%9606-1%' THEN 'iso9606_1'
+    WHEN q.qualification_type LIKE '%9606-2%' THEN 'iso9606_2'
+    WHEN q.qualification_type LIKE '%9606%' OR LOWER(q.qualification_type) LIKE '%patentino_saldatore%' THEN 'iso9606_1'
+    WHEN q.qualification_type LIKE '%NDT%' OR q.qualification_type LIKE '%9712%'
+      OR ${PADDED_TYPE_BIN} LIKE '%[^A-Za-z][VMPUER]T[^A-Za-z]%' THEN 'ndt'
+    WHEN q.qualification_type LIKE '%CEI 11-27%'
+      OR ${PADDED_TYPE_CI} LIKE '%[^A-Za-z]PES[^A-Za-z]%'
+      OR ${PADDED_TYPE_CI} LIKE '%[^A-Za-z]PAV[^A-Za-z]%' THEN 'pes_pav'
+    ELSE 'generico'
+END)`;
+const QUALIFICATION_TAB_FAMILIES = Object.freeze([
+    'iso9606_1', 'iso9606_2', 'iso14732', 'ndt', 'iso14731', 'pes_pav', 'salute_mansione', 'generico',
+]);
+
+// Chiavi non-tab (metodo NDT singolo, PES/PAV separati): stessa regola "parola intera" della partizione
+// dei tab, non una sottostringa ("%PT%" ritroverebbe "Istruttore", "%UT%" "Attestato di frequenza ...").
+const QUAL_TYPE_TOKEN_KEYS = Object.freeze({
+    iso9712_vt: { token: 'VT', padded: PADDED_TYPE_BIN },
+    iso9712_pt: { token: 'PT', padded: PADDED_TYPE_BIN },
+    iso9712_mt: { token: 'MT', padded: PADDED_TYPE_BIN },
+    iso9712_ut: { token: 'UT', padded: PADDED_TYPE_BIN },
+    iso9712_rt: { token: 'RT', padded: PADDED_TYPE_BIN },
+    iso9712_et: { token: 'ET', padded: PADDED_TYPE_BIN },
+    pes:        { token: 'PES', padded: PADDED_TYPE_CI },
+    pav:        { token: 'PAV', padded: PADDED_TYPE_CI },
+});
+
+/**
+ * Filtro tab (qualification_type) condiviso da lista e statistiche: le card contano
+ * esattamente le righe del tab attivo. Ritorna { clause, like } (like = valore del
+ * parametro @qualType, solo per le chiavi sconosciute, cercate come testo letterale).
+ */
+function buildQualificationTypeScope(qualificationType) {
+    const type = String(qualificationType || '').trim().slice(0, 100);
+    if (!type) return { clause: null, like: null };
+    if (QUALIFICATION_TAB_FAMILIES.includes(type)) {
+        return { clause: `${QUALIFICATION_TAB_FAMILY_SQL} = N'${type}'`, like: null };
+    }
+    if (Object.prototype.hasOwnProperty.call(QUAL_TYPE_TOKEN_KEYS, type)) {
+        const { token, padded } = QUAL_TYPE_TOKEN_KEYS[type];
+        return { clause: `${padded} LIKE '%[^A-Za-z]${token}[^A-Za-z]%'`, like: null };
+    }
+    const escaped = type.replace(/[\\%_[]/g, (ch) => `\\${ch}`);
+    return { clause: "q.qualification_type LIKE @qualType ESCAPE '\\'", like: `%${escaped}%` };
+}
 
 /** GET /qualifications */
 async function listQualifications(req, res) {
@@ -238,55 +313,35 @@ async function listQualifications(req, res) {
             page = 1, limit = 50,
         } = req.query;
 
-        const offset = (parseInt(page) - 1) * parseInt(limit);
-        let where = ['q.organization_id = @orgId'];
+        const companyScope = parseCompanyIdParam(company_id);
+        if (companyScope.error) {
+            return res.status(400).json({ error: 'company_id non valido.', code: 'INVALID_COMPANY_ID' });
+        }
+
+        const pageNum = Math.max(1, parseInt(page, 10) || 1);
+        const limitNum = Math.min(500, Math.max(1, parseInt(limit, 10) || 50));
+        const offset = (pageNum - 1) * limitNum;
+        let where = ['q.organization_id = @orgId', 'q.deleted_at IS NULL'];
         if (companyFilter.clause) where.push(companyFilter.clause);
         if (search) where.push("(q.person_name LIKE @search OR q.qualification_type LIKE @search OR q.certificate_number LIKE @search)");
-        if (company_id) where.push('q.company_id = @companyId');
-        if (status) where.push('q.status = @status');
+        if (companyScope.value !== null) where.push('q.company_id = @companyId');
+        // Stato effettivo (data), non colonna salvata: stessa logica di card e filtro situazione.
+        const statusClause = status ? effectiveStatusFilterSql(status) : null;
+        if (statusClause) where.push(statusClause);
+        else if (status) where.push('q.status = @status');
         if (approval_status) where.push('q.approval_status = @approvalStatus');
 
-        let qualTypeLike = null;
-        if (qualification_type === 'salute_mansione') {
-            // Tipi salute mansione: IN esplicito (canonici + alias legacy), non LIKE '%salute_mansione%'
-            where.push(`q.qualification_type IN (${occupationalQualificationSqlInList()})`);
-        } else if (qualification_type === 'generico') {
-            // generico = non rientra negli altri tipi noti (esclude anche salute mansione)
-            where.push(`q.qualification_type NOT LIKE '%9606%' AND q.qualification_type NOT LIKE '%14732%' AND q.qualification_type NOT LIKE '%14731%' AND q.qualification_type NOT LIKE '%NDT%' AND q.qualification_type NOT LIKE '%VT%' AND q.qualification_type NOT LIKE '%PT%' AND q.qualification_type NOT LIKE '%MT%' AND q.qualification_type NOT LIKE '%UT%' AND q.qualification_type NOT LIKE '%RT%' AND q.qualification_type NOT LIKE '%ET%' AND q.qualification_type NOT LIKE '%PES%' AND q.qualification_type NOT LIKE '%PAV%' AND q.qualification_type NOT IN (${occupationalQualificationSqlInList()})`);
-        } else if (qualification_type) {
-            qualTypeLike = QUAL_TYPE_MAP[qualification_type] || `%${qualification_type}%`;
-            where.push('q.qualification_type LIKE @qualType');
-        }
+        const typeScope = buildQualificationTypeScope(qualification_type);
+        const qualTypeLike = typeScope.like;
+        if (typeScope.clause) where.push(typeScope.clause);
 
         if (expiring_days) {
-            const expDaysInt = parseInt(expiring_days);
-            if (expDaysInt < 0) {
-                // Già scadute: expiry_date nel passato
-                where.push("q.expiry_date IS NOT NULL AND q.expiry_date < CAST(GETDATE() AS DATE) AND q.status NOT IN ('revocata','sospesa')");
-            } else {
-                where.push("q.expiry_date IS NOT NULL AND q.expiry_date <= DATEADD(day, @expDays, CAST(GETDATE() AS DATE)) AND q.expiry_date >= CAST(GETDATE() AS DATE) AND q.status NOT IN ('revocata','sospesa')");
-            }
+            where.push(expiringDaysFilterSql(parseInt(expiring_days)));
         }
 
-        // Filtro "situazione" (card statistiche / dropdown) — allineato a
-        // QUALIFICATION_SITUAZIONI nel frontend e agli stessi bucket di getStats.
-        // Usa EFFECTIVE_EXPIRY_SQL così un saldatore 9606-1/14732 con conferma
-        // semestrale scaduta finisce nel bucket corretto anche se il certificato
-        // di base non è ancora arrivato a naturale scadenza.
-        const today = 'CAST(GETDATE() AS DATE)';
-        const SITUAZIONE_WHERE = {
-            valide:         `q.status = 'valida' AND ((${EFFECTIVE_EXPIRY_SQL}) IS NULL OR (${EFFECTIVE_EXPIRY_SQL}) > DATEADD(day, ${DAYS_WARNING}, ${today}))`,
-            in_scadenza_60: `q.status NOT IN ('revocata','sospesa') AND (${EFFECTIVE_EXPIRY_SQL}) IS NOT NULL AND (${EFFECTIVE_EXPIRY_SQL}) BETWEEN DATEADD(day, ${DAYS_URGENT + 1}, ${today}) AND DATEADD(day, ${DAYS_WARNING}, ${today})`,
-            urgenti_30:     `q.status NOT IN ('revocata','sospesa') AND (${EFFECTIVE_EXPIRY_SQL}) IS NOT NULL AND (${EFFECTIVE_EXPIRY_SQL}) BETWEEN ${today} AND DATEADD(day, ${DAYS_URGENT}, ${today})`,
-            scadute:        `q.status NOT IN ('revocata','sospesa') AND (${EFFECTIVE_EXPIRY_SQL}) IS NOT NULL AND (${EFFECTIVE_EXPIRY_SQL}) < ${today}`,
-            // Bucket unico "Non attiva" (sospese + revocate) — allineato alla card
-            // statistica non_attive di getStats e alla colonna "Stato" in tabella,
-            // che già mostra entrambe con la stessa etichetta/colore (non le
-            // distingue): non serviva un filtro separato per le due sotto-categorie.
-            non_attive:     `q.status IN ('sospesa','revocata')`,
-        };
-        if (situazione && SITUAZIONE_WHERE[situazione]) {
-            where.push(SITUAZIONE_WHERE[situazione]);
+        // Filtro "situazione" (card statistiche): stessi bucket di getStats (SITUAZIONE_BUCKET_SQL).
+        if (situazione && SITUAZIONE_BUCKET_SQL[situazione]) {
+            where.push(SITUAZIONE_BUCKET_SQL[situazione]);
         }
 
         const whereClause = where.join(' AND ');
@@ -294,14 +349,14 @@ async function listQualifications(req, res) {
         const bindListFilters = (request) => {
             Object.entries(companyFilter.params).forEach(([k, v]) => request.input(k, v));
             if (search) request.input('search', `%${search}%`);
-            if (company_id) request.input('companyId', parseInt(company_id));
-            if (status) request.input('status', status);
+            if (companyScope.value !== null) request.input('companyId', companyScope.value);
+            if (status && !statusClause) request.input('status', status);
             if (approval_status) request.input('approvalStatus', approval_status);
             if (qualTypeLike) request.input('qualType', qualTypeLike);
             if (expiring_days) request.input('expDays', parseInt(expiring_days));
         };
 
-        const r = pool.request().input('orgId', orgId).input('lim', parseInt(limit)).input('off', offset);
+        const r = pool.request().input('orgId', orgId).input('lim', limitNum).input('off', offset);
         bindListFilters(r);
 
         const countReq = pool.request().input('orgId', orgId);
@@ -317,9 +372,10 @@ async function listQualifications(req, res) {
             LEFT JOIN users u ON u.user_id = q.approved_by
             WHERE ${whereClause}
             ORDER BY
-                CASE WHEN q.expiry_date IS NULL THEN 1 ELSE 0 END,
-                q.expiry_date ASC,
-                q.person_name ASC
+                CASE WHEN ${EFFECTIVE_SQL} IS NULL THEN 1 ELSE 0 END,
+                ${EFFECTIVE_SQL} ASC,
+                q.person_name ASC,
+                q.id ASC
             OFFSET @off ROWS FETCH NEXT @lim ROWS ONLY
         `);
 
@@ -332,8 +388,8 @@ async function listQualifications(req, res) {
         res.json({
             qualifications,
             total: countResult.recordset[0].total,
-            page: parseInt(page),
-            limit: parseInt(limit),
+            page: pageNum,
+            limit: limitNum,
         });
     } catch (err) {
         logger.error('listQualifications:', err.message);
@@ -341,7 +397,7 @@ async function listQualifications(req, res) {
     }
 }
 
-/** GET /qualifications/stats */
+/** GET /qualifications/stats[?company_id=&qualification_type=] — stesso scope (Ambito + tab) della lista. */
 async function getStats(req, res) {
     try {
         const pool       = await getPool();
@@ -349,20 +405,34 @@ async function getStats(req, res) {
         const accessList = await ensureCompanyAccessLoaded(req.user);
         const companyFilter = companyAccessSqlFilter(accessList, 'q');
 
-        const whereExtra = companyFilter.clause ? ` AND ${companyFilter.clause}` : '';
+        const companyScope = parseCompanyIdParam(req.query?.company_id);
+        if (companyScope.error) {
+            return res.status(400).json({ error: 'company_id non valido.', code: 'INVALID_COMPANY_ID' });
+        }
+        const typeScope = buildQualificationTypeScope(req.query?.qualification_type);
+
+        const where = ['q.organization_id = @orgId', 'q.deleted_at IS NULL'];
+        if (companyFilter.clause) where.push(companyFilter.clause);
+        if (companyScope.value !== null) where.push('q.company_id = @companyId');
+        if (typeScope.clause) where.push(typeScope.clause);
+
         const r = pool.request().input('orgId', orgId);
         Object.entries(companyFilter.params).forEach(([k, v]) => r.input(k, v));
+        if (companyScope.value !== null) r.input('companyId', companyScope.value);
+        if (typeScope.like) r.input('qualType', typeScope.like);
 
+        const bucketCount = (bucket, alias) =>
+            `COALESCE(SUM(CASE WHEN ${SITUAZIONE_BUCKET_SQL[bucket]} THEN 1 ELSE 0 END), 0) AS ${alias}`;
         const statsResult = await r.query(`
             SELECT
                 COUNT(*) AS total,
-                SUM(CASE WHEN q.status = 'valida' AND ((${EFFECTIVE_EXPIRY_SQL}) IS NULL OR (${EFFECTIVE_EXPIRY_SQL}) > DATEADD(day, 60, CAST(GETDATE() AS DATE))) THEN 1 ELSE 0 END) AS valide,
-                SUM(CASE WHEN (${EFFECTIVE_EXPIRY_SQL}) IS NOT NULL AND (${EFFECTIVE_EXPIRY_SQL}) BETWEEN DATEADD(day, 31, CAST(GETDATE() AS DATE)) AND DATEADD(day, 60, CAST(GETDATE() AS DATE)) AND q.status NOT IN ('revocata','sospesa') THEN 1 ELSE 0 END) AS in_scadenza_60,
-                SUM(CASE WHEN (${EFFECTIVE_EXPIRY_SQL}) IS NOT NULL AND (${EFFECTIVE_EXPIRY_SQL}) BETWEEN CAST(GETDATE() AS DATE) AND DATEADD(day, 30, CAST(GETDATE() AS DATE)) AND q.status NOT IN ('revocata','sospesa') THEN 1 ELSE 0 END) AS in_scadenza_30,
-                SUM(CASE WHEN (${EFFECTIVE_EXPIRY_SQL}) IS NOT NULL AND (${EFFECTIVE_EXPIRY_SQL}) < CAST(GETDATE() AS DATE) AND q.status NOT IN ('revocata','sospesa') THEN 1 ELSE 0 END) AS scadute,
-                SUM(CASE WHEN q.status IN ('sospesa','revocata') THEN 1 ELSE 0 END) AS non_attive
+                ${bucketCount('valide', 'valide')},
+                ${bucketCount('in_scadenza_60', 'in_scadenza_60')},
+                ${bucketCount('urgenti_30', 'in_scadenza_30')},
+                ${bucketCount('scadute', 'scadute')},
+                ${bucketCount('non_attive', 'non_attive')}
             FROM qualifications q
-            WHERE q.organization_id = @orgId${whereExtra}
+            WHERE ${where.join(' AND ')}
         `);
 
         const s = statsResult.recordset[0];
@@ -393,13 +463,15 @@ async function getVisionFitnessGaps(req, res) {
             ? parseInt(companyIdRaw, 10)
             : null;
 
-        if (companyId != null && !Number.isNaN(companyId)) {
-            const denied = await assertCompanyRead(req.user, companyId);
-            if (denied) return sendAccessDenied(res, denied);
-        }
+        const accessList = await ensureCompanyAccessLoaded(req.user);
+        const companyOk = companyId != null && !Number.isNaN(companyId);
+        if (companyOk && await denyOutsideCompany(res, req.user, companyId, 'read')) return;
 
         const result = await findVisionFitnessGaps(orgId, {
-            companyId: companyId != null && !Number.isNaN(companyId) ? companyId : null,
+            companyId: companyOk ? companyId : null,
+            companyIds: !companyOk && hasCompanyAccessRows(accessList)
+                ? accessList.map((a) => a.company_id)
+                : null,
         });
         res.json(result);
     } catch (err) {
@@ -423,10 +495,11 @@ async function getCoverage(req, res) {
         const projResult = await pool.request()
             .input('projId', parseInt(project_id))
             .input('orgId', orgId)
-            .query(`SELECT id, project_code, applicable_wps_ids, company_id FROM projects WHERE id=@projId AND organization_id=@orgId`);
+            .query(`SELECT id, project_code, applicable_wps_ids, company_id FROM projects WHERE id=@projId AND organization_id=@orgId AND deleted_at IS NULL`);
         if (!projResult.recordset.length) return res.status(404).json({ error: 'Commessa non trovata.' });
 
         const project = projResult.recordset[0];
+        if (await denyOutsideCompany(res, req.user, project.company_id, 'read')) return;
         const projectCompanyId = project.company_id || null;
         const wpsIds = normalizeApplicableWpsIds(project.applicable_wps_ids);
 
@@ -442,7 +515,7 @@ async function getCoverage(req, res) {
                        thickness_range_min, thickness_range_max, thickness_range,
                        welding_positions, position
                 FROM welding_procedures
-                WHERE id IN (${ph}) AND organization_id = @orgId AND status != 'annullata'
+                WHERE id IN (${ph}) AND organization_id = @orgId AND status != 'annullata' AND deleted_at IS NULL
             `);
             wpsRows = wRes.recordset;
         }
@@ -500,7 +573,7 @@ async function getCoverage(req, res) {
                     person_code:     q.person_code,
                     company_name:    q.company_name,
                     expiry_date:     q.expiry_date,
-                    semaforo:        semaforo(q.expiry_date, q.status),
+                    semaforo:        semaforoForRow(q),
                     coverage_detail: detail,
                 })),
             };
@@ -541,6 +614,7 @@ async function getOne(req, res) {
         if (!r.recordset.length) return res.status(404).json({ error: 'Non trovata.' });
 
         const row = r.recordset[0];
+        if (trashedDetailHidden(req.user, row)) return res.status(404).json({ error: 'Non trovata.' });
         const accessList = await ensureCompanyAccessLoaded(req.user);
         if (hasCompanyAccessRows(accessList)) {
             if (!row.company_id) {
@@ -566,6 +640,7 @@ async function createQualification(req, res) {
             qualification_type, standard_ref, scope_detail,
             certificate_number, issuing_body,
             issue_date, expiry_date, last_renewal_date,
+            near_vision_expiry_date, colour_vision_expiry_date,
             status = 'valida', notes,
             // v1 fields
             welding_process, material_group, position_range, ndt_method, ndt_level,
@@ -628,29 +703,35 @@ async function createQualification(req, res) {
         const orgId = req.user.organization_id;
         const userId = req.user.user_id;
 
+        const certUrlCheck = await validateCertificateFileUrl(certificate_file_url, { organizationId: orgId });
+        if (!certUrlCheck.ok) return res.status(CERTIFICATE_FILE_URL_ERROR.status).json(CERTIFICATE_FILE_URL_ERROR.body);
+
         // Anti-duplicato: stesso certificate_number + company_id + qualification_type (non revocate)
+        // oppure stessa persona (indice unico): criteri in qualificationDuplicate.service
         if (certificate_number?.trim() && company_id) {
-            const dupCheck = await pool.request()
-                .input('orgId',    orgId)
-                .input('certNum',  certificate_number.trim())
-                .input('compId',   parseInt(company_id))
-                .input('qualType', qualification_type.trim())
-                .query(`
-                    SELECT COUNT(*) AS cnt FROM qualifications
-                    WHERE organization_id=@orgId
-                      AND certificate_number=@certNum
-                      AND company_id=@compId
-                      AND qualification_type=@qualType
-                      AND status != 'revocata'
-                `);
-            if (dupCheck.recordset[0].cnt > 0) {
-                return res.status(400).json({
-                    error: 'Qualifica duplicata: esiste gi\u00e0 una qualifica attiva con lo stesso numero certificato, azienda e tipo.',
+            const isDuplicate = await findQualificationDuplicate(
+                poolDb(pool),
+                {
+                    organizationId: orgId,
+                    companyId: parseInt(company_id),
+                    certificateNumber: certificate_number,
+                    qualificationType: qualification_type.trim(),
+                    personName: personnelResult.personName || person_name.trim(),
+                },
+            );
+            if (isDuplicate) {
+                return res.status(409).json({
+                    error: DUPLICATE_QUALIFICATION_MESSAGE,
                     code: 'DUPLICATE_QUALIFICATION',
                 });
             }
         }
 
+        const visionClocks = persistedVisionClocks(
+            qualification_type,
+            near_vision_expiry_date,
+            colour_vision_expiry_date,
+        );
         const r = await pool.request()
             .input('orgId',     orgId)
             .input('compId',    company_id   || null)
@@ -665,6 +746,8 @@ async function createQualification(req, res) {
             .input('issuer',    issuing_body || null)
             .input('issueDate', issue_date   || null)
             .input('expiryDate',expiry_date  || null)
+            .input('nearVision', visionClocks.near)
+            .input('colourVision', visionClocks.colour)
             .input('renewalDate',last_renewal_date || null)
             .input('status',    status)
             .input('notes',     notes        || null)
@@ -693,7 +776,7 @@ async function createQualification(req, res) {
             .input('courseName',  course_name       || null)
             .input('trainHours',  toIntOrNull(training_hours))
             .input('examBody',    examiner_body     || null)
-            .input('certFileUrl', certificate_file_url || null)
+            .input('certFileUrl', certUrlCheck.value)
             // saldatore 9606-1 enrichment
             .input('examDate',    exam_date         || null)
             .input('lastConfDate',last_confirmation_date || null)
@@ -723,7 +806,7 @@ async function createQualification(req, res) {
                 INSERT INTO qualifications
                     (organization_id, company_id, person_name, person_code, personnel_id, department,
                      qualification_type, standard_ref, scope_detail, certificate_number, issuing_body,
-                     issue_date, exam_date, expiry_date, last_renewal_date,
+                     issue_date, exam_date, expiry_date, near_vision_expiry_date, colour_vision_expiry_date, last_renewal_date,
                      last_confirmation_date, next_confirmation_due, revalidation_date,
                      status, notes, created_by,
                      welding_process, material_group, position_range, ndt_method, ndt_level,
@@ -742,7 +825,7 @@ async function createQualification(req, res) {
                 VALUES
                     (@orgId, @compId, @personName, @personCode, @personnelId, @dept,
                      @qualType, @stdRef, @scope, @certNum, @issuer,
-                     @issueDate, @examDate, @expiryDate, @renewalDate,
+                     @issueDate, @examDate, @expiryDate, @nearVision, @colourVision, @renewalDate,
                      @lastConfDate, @nextConfDue, @revalDate,
                      @status, @notes, @userId,
                      @weldProc, @matGroup, @posRange, @ndtMethod, @ndtLevel,
@@ -759,8 +842,20 @@ async function createQualification(req, res) {
             `);
 
         logger.info(`[Qualif] Creata id=${r.recordset[0].id} per org ${orgId}`);
+        await logEntityChange({
+            organizationId: orgId,
+            entityTable: 'qualifications',
+            entityId: r.recordset[0].id,
+            actionType: 'created',
+            actorUserId: req.user.user_id,
+            after: body,
+            fields: QUALIFICATION_MANUAL_EDITABLE_FIELDS,
+        });
         res.status(201).json({ success: true, id: r.recordset[0].id });
     } catch (err) {
+        if (isQualificationDuplicateIndexError(err)) {
+            return res.status(409).json({ error: DUPLICATE_QUALIFICATION_MESSAGE, code: 'DUPLICATE_QUALIFICATION' });
+        }
         logger.error('createQualif:', err.message);
         res.status(500).json({ error: err.message });
     }
@@ -775,7 +870,7 @@ async function updateQualification(req, res) {
         const { body, designationApplicable } = applyFieldApplicability(req.body);
 
         const check = await pool.request().input('id', id).input('orgId', orgId)
-            .query('SELECT id, company_id FROM qualifications WHERE id=@id AND organization_id=@orgId');
+            .query('SELECT * FROM qualifications WHERE id=@id AND organization_id=@orgId AND deleted_at IS NULL');
         if (!check.recordset.length) return res.status(404).json({ error: 'Non trovata.' });
 
         const targetCompanyId = body.company_id !== undefined ? body.company_id : check.recordset[0].company_id;
@@ -787,6 +882,7 @@ async function updateQualification(req, res) {
             qualification_type, standard_ref, scope_detail,
             certificate_number, issuing_body,
             issue_date, expiry_date, last_renewal_date,
+            near_vision_expiry_date, colour_vision_expiry_date,
             status, notes,
             welding_process, material_group, position_range, ndt_method, ndt_level,
             joint_type, thickness_range, pipe_diameter, filler_material, shielding_gas, equipment_type,
@@ -805,6 +901,15 @@ async function updateQualification(req, res) {
             // operatore 14732 (saldatura automatica/meccanizzata)
             welding_type, single_multi_run, qualification_method,
         } = body;
+
+        // Valore invariato = nessuna rivalidazione (i record storici restano modificabili).
+        const currentCertUrl = check.recordset[0].certificate_file_url || null;
+        let certUrlToSave = certificate_file_url || null;
+        if (certUrlToSave !== currentCertUrl) {
+            const certUrlCheck = await validateCertificateFileUrl(certificate_file_url, { organizationId: orgId });
+            if (!certUrlCheck.ok) return res.status(CERTIFICATE_FILE_URL_ERROR.status).json(CERTIFICATE_FILE_URL_ERROR.body);
+            certUrlToSave = certUrlCheck.value;
+        }
 
         const thickMin = toNum(thickness_min_mm);
         const thickMax = toNum(thickness_max_mm);
@@ -833,6 +938,11 @@ async function updateQualification(req, res) {
             return res.status(personnelResult.status || 400).json({ error: personnelResult.error, code: personnelResult.code });
         }
 
+        const visionClocks = persistedVisionClocks(
+            qualification_type,
+            near_vision_expiry_date,
+            colour_vision_expiry_date,
+        );
         await pool.request()
             .input('id',        id)
             .input('orgId',     orgId)
@@ -848,6 +958,8 @@ async function updateQualification(req, res) {
             .input('issuer',    issuing_body || null)
             .input('issueDate', issue_date   || null)
             .input('expiryDate',expiry_date  || null)
+            .input('nearVision', visionClocks.near)
+            .input('colourVision', visionClocks.colour)
             .input('renewalDate',last_renewal_date || null)
             .input('status',    status || 'valida')
             .input('notes',     notes        || null)
@@ -872,7 +984,7 @@ async function updateQualification(req, res) {
             .input('courseName',  course_name       || null)
             .input('trainHours',  toIntOrNull(training_hours))
             .input('examBody',    examiner_body     || null)
-            .input('certFileUrl', certificate_file_url || null)
+            .input('certFileUrl', certUrlToSave)
             // saldatore 9606-1 enrichment
             .input('examDate',    exam_date         || null)
             .input('lastConfDate',last_confirmation_date || null)
@@ -904,7 +1016,9 @@ async function updateQualification(req, res) {
                     personnel_id=@personnelId,
                     department=@dept, qualification_type=@qualType, standard_ref=@stdRef,
                     scope_detail=@scope, certificate_number=@certNum, issuing_body=@issuer,
-                    issue_date=@issueDate, exam_date=@examDate, expiry_date=@expiryDate, last_renewal_date=@renewalDate,
+                    issue_date=@issueDate, exam_date=@examDate, expiry_date=@expiryDate,
+                    near_vision_expiry_date=@nearVision, colour_vision_expiry_date=@colourVision,
+                    last_renewal_date=@renewalDate,
                     last_confirmation_date=@lastConfDate, next_confirmation_due=@nextConfDue, revalidation_date=@revalDate,
                     status=@status, notes=@notes, updated_at=GETDATE(),
                     welding_process=@weldProc, material_group=@matGroup, position_range=@posRange,
@@ -929,14 +1043,27 @@ async function updateQualification(req, res) {
                 WHERE id=@id AND organization_id=@orgId
             `);
 
+        await logEntityChange({
+            organizationId: orgId,
+            entityTable: 'qualifications',
+            entityId: id,
+            actionType: 'updated',
+            actorUserId: req.user.user_id,
+            before: check.recordset[0],
+            after: body,
+            fields: QUALIFICATION_MANUAL_EDITABLE_FIELDS,
+        });
         res.json({ success: true });
     } catch (err) {
+        if (isQualificationDuplicateIndexError(err)) {
+            return res.status(409).json({ error: DUPLICATE_QUALIFICATION_MESSAGE, code: 'DUPLICATE_QUALIFICATION' });
+        }
         logger.error('updateQualif:', err.message);
         res.status(500).json({ error: err.message });
     }
 }
 
-/** DELETE /qualifications/:id — soft delete */
+/** DELETE /qualifications/:id — stato di business revocata, distinto dal cestino. */
 async function deleteQualification(req, res) {
     try {
         const pool  = await getPool();
@@ -944,14 +1071,24 @@ async function deleteQualification(req, res) {
         const id    = parseInt(req.params.id);
 
         const check = await pool.request().input('id', id).input('orgId', orgId)
-            .query('SELECT id, company_id FROM qualifications WHERE id=@id AND organization_id=@orgId');
+            .query('SELECT id, company_id, status FROM qualifications WHERE id=@id AND organization_id=@orgId AND deleted_at IS NULL');
         if (!check.recordset.length) return res.status(404).json({ error: 'Non trovata.' });
 
         const writeDenied = await assertMutatingAllowed(req.user, { companyId: check.recordset[0].company_id });
         if (writeDenied) return sendAccessDenied(res, writeDenied);
 
         await pool.request().input('id', id).input('orgId', orgId)
-            .query("UPDATE qualifications SET status='revocata', updated_at=GETDATE() WHERE id=@id AND organization_id=@orgId");
+            .query("UPDATE qualifications SET status='revocata', updated_at=GETDATE() WHERE id=@id AND organization_id=@orgId AND deleted_at IS NULL");
+        await logEntityChange({
+            organizationId: orgId,
+            entityTable: 'qualifications',
+            entityId: id,
+            actionType: 'updated',
+            actorUserId: req.user.user_id,
+            before: { status: check.recordset[0].status },
+            after: { status: 'revocata' },
+            fields: ['status'],
+        });
 
         res.json({ success: true });
     } catch (err) {
@@ -961,34 +1098,24 @@ async function deleteQualification(req, res) {
 }
 
 /**
- * DELETE /qualifications/:id/permanent — cancellazione fisica reale.
- *
- * Decisione di prodotto 28/07/2026: rimosso il concetto di "bozza mai approvata"
- * (non esiste più un gate di approvazione interna — v. header file). L'Elimina
- * definitiva è ora l'unica azione di rimozione esposta in UI (oltre alla modifica
- * diretta dello Stato) ed è consentita per QUALSIASI qualifica, purché non abbia
- * legami reali che ne renderebbero pericolosa la cancellazione:
- *  - non è collegata a un file di import (import_job_files.qualification_id);
- *  - non è la versione "precedente" di un rinnovo (nessun'altra qualifica la referenzia
- *    tramite previous_qualification_id);
- *  - non è assegnata a un WPS (wps_welders) o a una commessa (project_welders).
- *
- * Figli "logistici" eliminati in cascade esplicito (FK senza ON DELETE CASCADE):
- *  - qualification_confirmations (rilievo Mason 24/08/2026)
- *  - qual_notification_log (rilievo Mason 24/08/2026 — tipico su qualifiche
- *    con conferma semestrale già alertate: alert_kind=confirmation)
- * ingest_staging.target_qualification_id ha ON DELETE SET NULL (mig. 137).
+ * DELETE /qualifications/:id/permanent — cestino.
+ * Il nome della route resta per i client già in uso. Non cancella il file né
+ * le conferme: imposta deleted_at e deleted_by. revocata resta un altro stato.
  */
 async function hardDeleteQualification(req, res) {
     try {
         const pool  = await getPool();
         const orgId = req.user.organization_id;
         const id    = parseInt(req.params.id);
+        if (!Number.isInteger(id) || id <= 0) {
+            return res.status(400).json({ error: 'Identificativo non valido.', code: 'INVALID_ID' });
+        }
 
         const check = await pool.request().input('id', id).input('orgId', orgId)
             .query(`
-                SELECT id, company_id, approval_status, approved_at, certificate_file_url
-                FROM qualifications WHERE id=@id AND organization_id=@orgId
+                SELECT id, company_id, status, certificate_number, person_name
+                FROM qualifications
+                WHERE id=@id AND organization_id=@orgId AND deleted_at IS NULL
             `);
         if (!check.recordset.length) return res.status(404).json({ error: 'Non trovata.' });
 
@@ -996,78 +1123,22 @@ async function hardDeleteQualification(req, res) {
         const writeDenied = await assertMutatingAllowed(req.user, { companyId: row.company_id });
         if (writeDenied) return sendAccessDenied(res, writeDenied);
 
-        const [importLinks, renewalRefs] = await Promise.all([
-            pool.request().input('id', id)
-                .query('SELECT COUNT(*) AS cnt FROM import_job_files WHERE qualification_id=@id'),
-            pool.request().input('id', id)
-                .query('SELECT COUNT(*) AS cnt FROM qualifications WHERE previous_qualification_id=@id'),
-        ]);
+        await pool.request().input('id', id).input('orgId', orgId).input('actor', req.user.user_id)
+            .query(`UPDATE qualifications
+                    SET deleted_at = SYSUTCDATETIME(), deleted_by = @actor
+                    WHERE id=@id AND organization_id=@orgId AND deleted_at IS NULL`);
 
-        if (importLinks.recordset[0].cnt > 0) {
-            return res.status(409).json({
-                error: 'Impossibile eliminare: la qualifica \u00e8 collegata a un documento importato.',
-                code: 'HAS_IMPORT_LINK',
-            });
-        }
-        if (renewalRefs.recordset[0].cnt > 0) {
-            return res.status(409).json({
-                error: 'Impossibile eliminare: la qualifica \u00e8 collegata a un rinnovo successivo.',
-                code: 'HAS_RENEWAL_LINK',
-            });
-        }
+        await logEntityChange({
+            organizationId: orgId,
+            entityTable: 'qualifications',
+            entityId: id,
+            actionType: 'soft_deleted',
+            actorUserId: req.user.user_id,
+            before: { status: row.status, certificate_number: row.certificate_number, person_name: row.person_name, deleted_at: null },
+            after: { deleted_at: 'cestino' },
+        });
 
-        try {
-            const wpsLink = await pool.request().input('id', id)
-                .query('SELECT COUNT(*) AS cnt FROM wps_welders WHERE qualification_id=@id');
-            if (wpsLink.recordset[0].cnt > 0) {
-                return res.status(409).json({
-                    error: 'Impossibile eliminare: la qualifica \u00e8 assegnata a una procedura di saldatura (WPS).',
-                    code: 'HAS_WPS_LINK',
-                });
-            }
-        } catch (wpsErr) {
-            // Tabella wps_welders assente in alcuni ambienti storici: non blocca l'eliminazione.
-            logger.warn('[Qualif] Verifica wps_welders non eseguita:', wpsErr.message);
-        }
-
-        try {
-            const projLink = await pool.request().input('id', id)
-                .query('SELECT COUNT(*) AS cnt FROM project_welders WHERE qualification_id=@id');
-            if (projLink.recordset[0].cnt > 0) {
-                return res.status(409).json({
-                    error: 'Impossibile eliminare: la qualifica \u00e8 assegnata a una commessa.',
-                    code: 'HAS_PROJECT_LINK',
-                });
-            }
-        } catch (projErr) {
-            logger.warn('[Qualif] Verifica project_welders non eseguita:', projErr.message);
-        }
-
-        // Cascade esplicito: FK senza ON DELETE CASCADE (mig. 093/094).
-        // Ordine: figli logistici → qualifica. Il log alert (soprattutto
-        // confirmation per 9606/14732) era il blocco visto da Mason in produzione.
-        await pool.request().input('id', id).input('orgId', orgId)
-            .query('DELETE FROM qualification_confirmations WHERE qualification_id=@id AND organization_id=@orgId');
-        await pool.request().input('id', id).input('orgId', orgId)
-            .query('DELETE FROM qual_notification_log WHERE qualification_id=@id AND organization_id=@orgId');
-
-        await pool.request().input('id', id).input('orgId', orgId)
-            .query('DELETE FROM qualifications WHERE id=@id AND organization_id=@orgId');
-
-        if (row.certificate_file_url) {
-            try {
-                const uploadBase = process.env.UPLOAD_DIR
-                    ? path.resolve(process.env.UPLOAD_DIR)
-                    : path.resolve(__dirname, '../../uploads');
-                const relPart = row.certificate_file_url.replace(/^\//, '').replace(/^uploads\//, '');
-                const filePath = path.join(uploadBase, relPart);
-                if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-            } catch (_) {
-                /* best-effort: la cancellazione del record non deve fallire per questo */
-            }
-        }
-
-        logger.info(`[Qualif] Eliminata definitivamente id=${id} da user ${req.user.user_id} org ${orgId}`);
+        logger.info(`[Qualif] Nel cestino id=${id} da user ${req.user.user_id} org ${orgId}`);
         res.json({ success: true });
     } catch (err) {
         logger.error('hardDeleteQualification:', err.message);
@@ -1088,7 +1159,7 @@ async function renewQualification(req, res) {
         const userId = req.user.user_id;
 
         const check = await pool.request().input('id', id).input('orgId', orgId)
-            .query('SELECT * FROM qualifications WHERE id=@id AND organization_id=@orgId');
+            .query('SELECT * FROM qualifications WHERE id=@id AND organization_id=@orgId AND deleted_at IS NULL');
         if (!check.recordset.length) return res.status(404).json({ error: 'Non trovata.' });
 
         const q = check.recordset[0];
@@ -1098,10 +1169,23 @@ async function renewQualification(req, res) {
         // Sovrascritture dal body (es. nuove date, nuovo certificato)
         const {
             issue_date, expiry_date, last_renewal_date,
+            near_vision_expiry_date, colour_vision_expiry_date,
             certificate_number, certificate_file_url,
             notes,
         } = req.body || {};
 
+        const certUrlCheck = await validateCertificateFileUrl(certificate_file_url, { organizationId: orgId });
+        if (!certUrlCheck.ok) return res.status(CERTIFICATE_FILE_URL_ERROR.status).json(CERTIFICATE_FILE_URL_ERROR.body);
+
+        const visionClocks = persistedVisionClocks(
+            q.qualification_type,
+            near_vision_expiry_date != null && near_vision_expiry_date !== ''
+                ? near_vision_expiry_date
+                : q.near_vision_expiry_date,
+            colour_vision_expiry_date != null && colour_vision_expiry_date !== ''
+                ? colour_vision_expiry_date
+                : q.colour_vision_expiry_date,
+        );
         const r = await pool.request()
             .input('orgId',       orgId)
             .input('prevId',      id)
@@ -1116,6 +1200,8 @@ async function renewQualification(req, res) {
             .input('issuer',      q.issuing_body)
             .input('issueDate',   issue_date || null)
             .input('expiryDate',  expiry_date || null)
+            .input('nearVision',  visionClocks.near)
+            .input('colourVision', visionClocks.colour)
             .input('renewalDate', last_renewal_date || null)
             .input('notes',       notes || q.notes)
             .input('userId',      userId)
@@ -1140,12 +1226,13 @@ async function renewQualification(req, res) {
             .input('courseName',  q.course_name)
             .input('trainHours',  q.training_hours)
             .input('examBody',    q.examiner_body)
-            .input('certFileUrl', certificate_file_url || null)
+            .input('certFileUrl', certUrlCheck.value)
             .query(`
                 INSERT INTO qualifications
                     (organization_id, company_id, person_name, person_code, department,
                      qualification_type, standard_ref, scope_detail, certificate_number, issuing_body,
-                     issue_date, expiry_date, last_renewal_date, status, notes, created_by,
+                     issue_date, expiry_date, near_vision_expiry_date, colour_vision_expiry_date,
+                     last_renewal_date, status, notes, created_by,
                      previous_qualification_id, approval_status, personnel_id,
                      welding_process, material_group, position_range, ndt_method, ndt_level,
                      joint_type, thickness_range, pipe_diameter, filler_material, shielding_gas, equipment_type,
@@ -1156,7 +1243,7 @@ async function renewQualification(req, res) {
                 VALUES
                     (@orgId, @compId, @personName, @personCode, @dept,
                      @qualType, @stdRef, @scope, @certNum, @issuer,
-                     @issueDate, @expiryDate, @renewalDate, 'valida', @notes, @userId,
+                     @issueDate, @expiryDate, @nearVision, @colourVision, @renewalDate, 'valida', @notes, @userId,
                      @prevId, 'approvata', @personnelId,
                      @weldProc, @matGroup, @posRange, @ndtMethod, @ndtLevel,
                      @jointType, @thickRange, @pipeDiam, @filler, @shieldGas, @equipType,
@@ -1169,6 +1256,9 @@ async function renewQualification(req, res) {
         logger.info(`[Qualif] Rinnovo: nuovo id=${newId} da id=${id} per org ${orgId}`);
         res.status(201).json({ success: true, id: newId, previous_qualification_id: id });
     } catch (err) {
+        if (isQualificationDuplicateIndexError(err)) {
+            return res.status(409).json({ error: DUPLICATE_QUALIFICATION_MESSAGE, code: 'DUPLICATE_QUALIFICATION' });
+        }
         logger.error('renewQualif:', err.message);
         res.status(500).json({ error: err.message });
     }
@@ -1208,6 +1298,7 @@ async function uploadBatch(req, res) {
         if (!company_id || isNaN(company_id)) {
             return res.status(400).json({ error: 'company_id obbligatorio: seleziona un\'azienda specifica prima di caricare i patentini.' });
         }
+        if (await denyOutsideCompany(res, req.user, company_id, 'write')) return;
 
         if (!req.files || req.files.length === 0) {
             return res.status(400).json({ error: 'Nessun file caricato.' });
@@ -1330,7 +1421,7 @@ async function uploadCertificate(req, res) {
         if (!req.file) return res.status(400).json({ error: 'Nessun file caricato.' });
 
         const check = await pool.request().input('id', id).input('orgId', orgId)
-            .query('SELECT id, company_id, certificate_file_url FROM qualifications WHERE id=@id AND organization_id=@orgId');
+            .query('SELECT * FROM qualifications WHERE id=@id AND organization_id=@orgId AND deleted_at IS NULL');
         if (!check.recordset.length) {
             fs.unlinkSync(req.file.path);
             return res.status(404).json({ error: 'Qualifica non trovata.' });
@@ -1345,7 +1436,14 @@ async function uploadCertificate(req, res) {
         const uploadBase = process.env.UPLOAD_DIR
             ? path.resolve(process.env.UPLOAD_DIR)
             : path.resolve(__dirname, '../../uploads');
-        const relUrl = '/uploads/' + path.relative(uploadBase, req.file.path).replace(/\\/g, '/');
+        const relUrl = expectedQualificationUrl(
+            '/uploads/' + path.relative(uploadBase, req.file.path).replace(/\\/g, '/'),
+            orgId,
+        );
+        if (!relUrl) {
+            fs.unlinkSync(req.file.path);
+            return res.status(CERTIFICATE_FILE_URL_ERROR.status).json(CERTIFICATE_FILE_URL_ERROR.body);
+        }
 
         await pool.request()
             .input('id', id).input('orgId', orgId).input('url', relUrl)
@@ -1367,8 +1465,9 @@ async function getHistory(req, res) {
         const id    = parseInt(req.params.id);
 
         const check = await pool.request().input('id', id).input('orgId', orgId)
-            .query('SELECT id FROM qualifications WHERE id=@id AND organization_id=@orgId');
+            .query('SELECT id, company_id FROM qualifications WHERE id=@id AND organization_id=@orgId');
         if (!check.recordset.length) return res.status(404).json({ error: 'Non trovata.' });
+        if (await denyOutsideCompany(res, req.user, check.recordset[0].company_id, 'read')) return;
 
         // Risali la catena (max 20 rinnovi)
         const chain = [];
@@ -1377,7 +1476,8 @@ async function getHistory(req, res) {
             const r = await pool.request()
                 .input('id', currentId).input('orgId', orgId)
                 .query(`
-                    SELECT q.id, q.issue_date, q.expiry_date, q.certificate_number,
+                    SELECT q.id, q.company_id, q.issue_date, q.expiry_date, q.certificate_number,
+                           q.qualification_type, q.next_confirmation_due, q.cpd_valid_until,
                            q.approval_status, q.status, q.previous_qualification_id,
                            c.name AS company_name
                     FROM qualifications q
@@ -1386,7 +1486,11 @@ async function getHistory(req, res) {
                 `);
             if (!r.recordset.length) break;
             const row = r.recordset[0];
-            chain.push({ ...row, semaforo: semaforo(row.expiry_date, row.status) });
+            if (await isOutsideCompany(req.user, row.company_id, 'read')) {
+                if (chain.length === 0 && await denyOutsideCompany(res, req.user, row.company_id, 'read')) return;
+                break;
+            }
+            chain.push({ ...row, semaforo: semaforoForRow(row) });
             if (!row.previous_qualification_id) break;
             currentId = row.previous_qualification_id;
         }
@@ -1465,7 +1569,7 @@ async function confirmSemiannual(req, res) {
             .input('userId', userId)
             .query(`
                 SELECT q.id, q.company_id, q.qualification_type, q.approval_status, q.status,
-                       q.last_confirmation_date, q.next_confirmation_due,
+                       q.expiry_date, q.last_confirmation_date, q.next_confirmation_due,
                        u.full_name AS user_name
                 FROM qualifications q
                 LEFT JOIN users u ON u.user_id = @userId
@@ -1474,6 +1578,7 @@ async function confirmSemiannual(req, res) {
         if (!check.recordset.length) return res.status(404).json({ error: 'Non trovata.' });
 
         const qual = check.recordset[0];
+        if (await denyOutsideCompany(res, req.user, qual.company_id, 'write')) return;
 
         // Nessun gate su approval_status (rimosso — v. header file): la conferma è
         // consentita su qualsiasi qualifica attiva (status non revocata/sospesa).
@@ -1507,6 +1612,16 @@ async function confirmSemiannual(req, res) {
         }
 
         const nextDue = addMonthsIso(confirmedDate, 6);
+        // Una conferma che riporta la scadenza effettiva nel futuro rimette "valida" una riga
+        // marcata "scaduta" in ingest (stato salvato obsoleto); altri stati restano invariati.
+        const effectiveAfter = effectiveExpiryDate({ ...qual, next_confirmation_due: nextDue });
+        const todayIso = new Date().toISOString().slice(0, 10);
+        // mssql restituisce le colonne DATE come oggetti Date: confronto sempre su YYYY-MM-DD
+        const effectiveAfterIso = effectiveAfter instanceof Date
+            ? effectiveAfter.toISOString().slice(0, 10)
+            : (effectiveAfter ? String(effectiveAfter).slice(0, 10) : null);
+        const reviveStatus = qual.status === 'scaduta'
+            && (!effectiveAfterIso || effectiveAfterIso >= todayIso);
         const notesTrim = notes?.trim() ? notes.trim().substring(0, 500) : null;
 
         let confirmerName = qual.user_name || req.user.name || req.user.full_name || 'Coordinatore';
@@ -1559,10 +1674,12 @@ async function confirmSemiannual(req, res) {
                 .input('orgId', orgId)
                 .input('lastConf', confirmedDate)
                 .input('nextDue', nextDue)
+                .input('reviveStatus', reviveStatus ? 1 : 0)
                 .query(`
                     UPDATE qualifications
                     SET last_confirmation_date = @lastConf,
                         next_confirmation_due = @nextDue,
+                        status = CASE WHEN @reviveStatus = 1 AND status = 'scaduta' THEN 'valida' ELSE status END,
                         updated_at = GETDATE()
                     WHERE id = @qualId AND organization_id = @orgId
                 `);
@@ -1647,6 +1764,7 @@ async function updateConfirmation(req, res) {
         if (!check.recordset.length) return res.status(404).json({ error: 'Non trovata.' });
 
         const qual = check.recordset[0];
+        if (await denyOutsideCompany(res, req.user, qual.company_id, 'write')) return;
         if (!requiresSemiannualConfirmation(qual.qualification_type)) {
             return res.status(400).json({
                 error: 'Tipo qualifica non ammesso per conferma semestrale (solo ISO 9606-1 / ISO 14732).',
@@ -1737,13 +1855,24 @@ async function exportConfirmations(req, res) {
         const dateFrom = req.query.date_from ? String(req.query.date_from).slice(0, 10) : null;
         const dateTo = req.query.date_to ? String(req.query.date_to).slice(0, 10) : null;
 
+        const accessList = await ensureCompanyAccessLoaded(req.user);
         if (companyId != null && Number.isFinite(companyId)) {
-            const readDenied = await assertCompanyRead(req.user, companyId);
-            if (readDenied) return sendAccessDenied(res, readDenied);
+            if (await denyOutsideCompany(res, req.user, companyId, 'read')) return;
+        }
+        if (qualId != null && Number.isFinite(qualId)) {
+            const qualRow = await pool.request().input('id', qualId).input('orgId', orgId)
+                .query('SELECT id, company_id FROM qualifications WHERE id=@id AND organization_id=@orgId');
+            if (!qualRow.recordset.length) return res.status(404).json({ error: 'Non trovata.' });
+            if (await denyOutsideCompany(res, req.user, qualRow.recordset[0].company_id, 'read')) return;
         }
 
-        const conditions = ['qc.organization_id = @orgId'];
+        const conditions = ['qc.organization_id = @orgId', 'q.deleted_at IS NULL'];
         const params = { orgId };
+        const companyFilter = companyAccessSqlFilter(accessList, 'qc');
+        if (companyFilter.clause) {
+            conditions.push(companyFilter.clause);
+            Object.assign(params, companyFilter.params);
+        }
 
         if (companyId != null && Number.isFinite(companyId)) {
             conditions.push('qc.company_id = @compId');
@@ -1839,9 +1968,12 @@ async function verifyCoverageRequirement(req, res) {
         const { verifyCoverage } = require('../services/capabilityCoverage');
         const pool = await getPool();
         const orgId = req.user.organization_id;
+        const rawCompany = req.body?.company_id;
+        const companyId = rawCompany != null && rawCompany !== '' ? Number(rawCompany) : null;
+        if (await denyOutsideCompany(res, req.user, companyId, 'read')) return;
         const result = await verifyCoverage(req.body || {}, {
             organizationId: orgId,
-            companyId: req.body?.company_id != null ? Number(req.body.company_id) : null,
+            companyId,
             pool,
         });
         res.json(result);
@@ -1876,4 +2008,8 @@ module.exports = {
     // Esportate per test unitari (calcolo semaforo/scadenza effettiva)
     effectiveExpiryDate,
     semaforoForRow,
+    SITUAZIONE_BUCKET_SQL,
+    QUALIFICATION_TAB_FAMILY_SQL,
+    buildQualificationTypeScope,
+    parseCompanyIdParam,
 };

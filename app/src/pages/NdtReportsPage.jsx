@@ -26,6 +26,11 @@ import {
     EMPTY_NDT_MARK_ITEM,
 } from "../hooks/useNdtAutoSave.js";
 import {
+    INSPECTION_PHASES,
+    DEFAULT_INSPECTION_PHASE,
+    inspectionPhaseShort,
+} from "../utils/ndtInspectionPhase.js";
+import {
     defaultMethodParams,
     defaultPtParams,
     defaultMtParams,
@@ -555,7 +560,9 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
         certificate_date: "",
         responsible: "",
         inspector: currentUserName,   // auto-fill nome utente loggato
+        inspector_qualification_id: null,
         client_representative: "",
+        inspection_phase: DEFAULT_INSPECTION_PHASE,
         status: "draft",
     };
 
@@ -582,7 +589,11 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
             certificate_date:     report.certificate_date ? String(report.certificate_date).substring(0, 10) : "",
             responsible:          report.responsible || "",
             inspector:            report.inspector || currentUserName || "",
+            inspector_qualification_id: report.inspector_qualification_id || null,
             client_representative: report.client_representative || "",
+            inspection_phase:     report.inspection_phase === null
+                ? ""
+                : (report.inspection_phase || DEFAULT_INSPECTION_PHASE),
             status:               report.status || "draft",
         };
     });
@@ -687,11 +698,17 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
         let cancelled = false;
         const timer = setTimeout(() => {
             setInspectorGate((g) => ({ ...g, loading: true, error: null }));
-            apiService.getNdtInspectorEligibility({
-                inspector: form.inspector || "",
-                report_type: form.report_type,
-                company_id: form.company_id || "",
-            }).then((res) => {
+            const fetchEligibility = apiService.getNdtInspectorEligibility;
+            const pending = typeof fetchEligibility === "function"
+                ? fetchEligibility({
+                    inspector: form.inspector || "",
+                    inspector_qualification_id: form.inspector_qualification_id || "",
+                    report_type: form.report_type,
+                    company_id: form.company_id || "",
+                })
+                : undefined;
+            // Promise.resolve: se il mock del test è già stato azzerato, non è un thenable.
+            Promise.resolve(pending).then((res) => {
                 if (cancelled) return;
                 const data = res?.data || {};
                 setInspectorGate({
@@ -705,21 +722,63 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
                 });
             }).catch(() => {
                 if (cancelled) return;
-                setInspectorGate({
+                setInspectorGate((g) => ({
+                    ...g,
                     loading: false,
                     ok: false,
                     reasons: ["Impossibile verificare il patentino (rete). Salva bozza; completa quando sei online."],
-                    candidates: [],
-                    qualification: null,
-                    vision: null,
                     error: "network",
-                });
+                }));
             });
         }, 300);
         return () => { cancelled = true; clearTimeout(timer); };
-    }, [form.inspector, form.report_type, form.company_id, eligibilityNonce]);
+    }, [form.inspector, form.inspector_qualification_id, form.report_type, form.company_id, eligibilityNonce]);
 
     const gateReasonsText = (inspectorGate.reasons || []).filter(Boolean).join(" ");
+    const inspectorCandidates = inspectorGate.candidates || [];
+    const inspectorLoadFailed = inspectorGate.error === "network";
+    const retryInspectorGate = () => setEligibilityNonce((n) => n + 1);
+    const inspectorOptionValue = (c) => (
+        c.qualification_id != null ? `q:${c.qualification_id}` : `name:${c.person_name}`
+    );
+    const linkedCandidate = inspectorCandidates.find((c) =>
+        form.inspector_qualification_id != null
+        && String(c.qualification_id) === String(form.inspector_qualification_id)
+    );
+    const nameOnlyMatch = !form.inspector_qualification_id
+        ? inspectorCandidates.find((c) => c.qualification_id == null && c.person_name === form.inspector)
+        : null;
+    const inspectorSelectValue = linkedCandidate
+        ? inspectorOptionValue(linkedCandidate)
+        : (nameOnlyMatch
+            ? inspectorOptionValue(nameOnlyMatch)
+            : (form.inspector ? `name:${form.inspector}` : ""));
+    const showLegacyInspector = Boolean(form.inspector) && !linkedCandidate && !nameOnlyMatch;
+    const onInspectorPick = (raw) => {
+        if (!raw) {
+            setForm((f) => ({ ...f, inspector: "", inspector_qualification_id: null }));
+            return;
+        }
+        if (raw.startsWith("q:")) {
+            const picked = inspectorCandidates.find((row) => String(row.qualification_id) === raw.slice(2));
+            setForm((f) => ({
+                ...f,
+                inspector: picked ? picked.person_name : f.inspector,
+                inspector_qualification_id: picked ? picked.qualification_id : null,
+            }));
+            return;
+        }
+        if (raw.startsWith("name:")) {
+            setForm((f) => ({ ...f, inspector: raw.slice(5), inspector_qualification_id: null }));
+        }
+    };
+    const inspectorOptionLabel = (c) => {
+        const method = c.ndt_method
+            ? ` \u2014 ${c.ndt_method}${c.ndt_level != null ? ` liv.${c.ndt_level}` : ""}`
+            : "";
+        const cert = c.certificate_number ? ` \u2014 n. ${c.certificate_number}` : "";
+        return `${c.person_name}${method}${cert}`;
+    };
     const canComplete = !inspectorGate.loading && inspectorGate.ok;
     const completeTitle = inspectorGate.loading
         ? "Verifica patentino ISO 9712 in corso\u2026"
@@ -1008,6 +1067,7 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
                                     <label htmlFor="ndt-report-type">Tipo metodo</label>
                                     <select
                                         id="ndt-report-type"
+                                        aria-label="Tipo metodo"
                                         value={form.report_type}
                                         onChange={e => {
                                             const v = e.target.value;
@@ -1021,6 +1081,21 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
                                         title={isEdit ? "Il metodo \u00e8 fissato alla creazione (numero verbale)." : undefined}
                                     >
                                         {REPORT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                                    </select>
+                                </div>
+                                <div className="ndt-form-group">
+                                    <label htmlFor="ndt-inspection-phase">Fase ispezione</label>
+                                    <select
+                                        id="ndt-inspection-phase"
+                                        value={form.inspection_phase || ""}
+                                        onChange={e => set("inspection_phase", e.target.value)}
+                                    >
+                                        {!form.inspection_phase && (
+                                            <option value="">Non indicata</option>
+                                        )}
+                                        {INSPECTION_PHASES.map(p => (
+                                            <option key={p.value} value={p.value}>{p.label}</option>
+                                        ))}
                                     </select>
                                 </div>
                                 <div className="ndt-form-group ndt-grow">
@@ -1509,26 +1584,53 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
                                     <input type="text" value={form.responsible} onChange={e => set("responsible", e.target.value)} placeholder="Nome responsabile" />
                                 </div>
                                 <div className="ndt-form-group">
-                                    <label>
+                                    <label htmlFor="ndt-inspector">
                                         {"L\u2019Ispettore"}
                                         {form.inspector === currentUserName && currentUserName && (
                                             <span className="eq-computed-label"> (utente corrente)</span>
                                         )}
                                     </label>
-                                    <input
-                                        type="text"
-                                        list="ndt-inspector-candidates"
-                                        value={form.inspector}
-                                        onChange={e => set("inspector", e.target.value)}
-                                        placeholder="Nome ispettore (patentino 9712)"
-                                    />
-                                    <datalist id="ndt-inspector-candidates">
-                                        {(inspectorGate.candidates || []).map((c) => (
-                                            <option key={c.person_name} value={c.person_name}>
-                                                {c.ndt_method ? `${c.ndt_method}${c.ndt_level != null ? ` liv.${c.ndt_level}` : ""}` : ""}
+                                    <select
+                                        id="ndt-inspector"
+                                        value={inspectorSelectValue}
+                                        onChange={e => onInspectorPick(e.target.value)}
+                                    >
+                                        <option value="">
+                                            {inspectorLoadFailed
+                                                ? "Impossibile caricare i patentini"
+                                                : inspectorCandidates.length === 0
+                                                    ? "Nessun ispettore con patentino 9712 per questo metodo"
+                                                    : "\u2014 scegli un ispettore con patentino 9712 \u2014"}
+                                        </option>
+                                        {showLegacyInspector && (
+                                            <option value={`name:${form.inspector}`}>
+                                                {`${form.inspector} (nome gi\u00e0 sul verbale)`}
+                                            </option>
+                                        )}
+                                        {inspectorCandidates.map((c) => (
+                                            <option key={inspectorOptionValue(c)} value={inspectorOptionValue(c)}>
+                                                {inspectorOptionLabel(c)}
                                             </option>
                                         ))}
-                                    </datalist>
+                                    </select>
+                                    {!inspectorGate.loading && inspectorLoadFailed && (
+                                        <div className="ndt-notes-warning">
+                                            {"Impossibile caricare i patentini, riprova"}
+                                            <button
+                                                type="button"
+                                                className="ndt-notes-fix-btn"
+                                                onClick={retryInspectorGate}
+                                                disabled={inspectorGate.loading}
+                                            >
+                                                {"Riprova"}
+                                            </button>
+                                        </div>
+                                    )}
+                                    {!inspectorGate.loading && !inspectorLoadFailed && inspectorCandidates.length === 0 && !judgmentLocked && (
+                                        <div className="ndt-notes-warning">
+                                            {"Nessun patentino ISO 9712 valido per questo metodo. Aggiungilo in Qualifiche."}
+                                        </div>
+                                    )}
                                     {judgmentLocked && (
                                         <div className="ndt-notes-warning">
                                             {gateReasonsText || "Scegli un ispettore con patentino ISO 9712 valido e visita medica visiva in corso."}
@@ -1569,6 +1671,7 @@ export default function NdtReportsPage() {
 
     const [filterType, setFilterType] = useState("");
     const [filterStatus, setFilterStatus] = useState("");
+    const [filterPhase, setFilterPhase] = useState("");
     const [searchText, setSearchText] = useState("");
 
     const [view, setView] = useState("list"); // "list" | "form"
@@ -1598,6 +1701,7 @@ export default function NdtReportsPage() {
                 project_code: null,
                 job_order: fd.job_order || "",
                 inspector: fd.inspector || "",
+                inspection_phase: fd.inspection_phase || "",
                 inspection_date: fd.inspection_date || null,
                 items_count: Array.isArray(d.items) ? d.items.length : 0,
                 status: "draft",
@@ -1606,9 +1710,9 @@ export default function NdtReportsPage() {
                 items: d.items || [{ ...EMPTY_NDT_MARK_ITEM }],
                 method_params: fd.method_params,
             };
-        });
+        }).filter((row) => !filterPhase || row.inspection_phase === filterPhase);
         return [...localRows, ...server];
-    }, []);
+    }, [filterPhase]);
 
     const loadData = useCallback(async () => {
         setLoading(true);
@@ -1617,6 +1721,7 @@ export default function NdtReportsPage() {
             const params = {};
             if (filterType)    params.report_type = filterType;
             if (filterStatus)  params.status = filterStatus;
+            if (filterPhase)   params.inspection_phase = filterPhase;
             if (filterCompany) params.company_id = filterCompany;
             if (searchText)    params.search = searchText;
 
@@ -1639,7 +1744,7 @@ export default function NdtReportsPage() {
         } finally {
             setLoading(false);
         }
-    }, [filterType, filterStatus, filterCompany, searchText, mergeLocalDraftsIntoList]);
+    }, [filterType, filterStatus, filterPhase, filterCompany, searchText, mergeLocalDraftsIntoList]);
 
     useEffect(() => { loadData(); }, [loadData]);
 
@@ -1827,9 +1932,13 @@ export default function NdtReportsPage() {
                     <option value="">Tutti i metodi</option>
                     {REPORT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                 </select>
-                <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+                <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} aria-label="Stato">
                     <option value="">Tutti gli stati</option>
                     {REPORT_STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                </select>
+                <select value={filterPhase} onChange={e => setFilterPhase(e.target.value)} aria-label="Fase ispezione">
+                    <option value="">Tutte le fasi</option>
+                    {INSPECTION_PHASES.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
                 </select>
             </div>
 
@@ -1842,6 +1951,7 @@ export default function NdtReportsPage() {
                             <tr>
                                 <th>N. Verbale</th>
                                 <th>Tipo</th>
+                                <th>Fase</th>
                                 <th>Cliente</th>
                                 <th>Commessa</th>
                                 <th>Ispettore</th>
@@ -1853,7 +1963,7 @@ export default function NdtReportsPage() {
                         </thead>
                         <tbody>
                             {reports.length === 0 && (
-                                <tr><td colSpan={9} className="ndt-empty">Nessun verbale trovato</td></tr>
+                                <tr><td colSpan={10} className="ndt-empty">Nessun verbale trovato</td></tr>
                             )}
                             {reports.map(r => {
                                 const st = REPORT_STATUSES.find(s => s.value === r.status) || REPORT_STATUSES[0];
@@ -1870,6 +1980,7 @@ export default function NdtReportsPage() {
                                             {r.report_number || (r._local ? <em>bozza locale</em> : <em>bozza</em>)}
                                         </td>
                                         <td><span className="ndt-type-tag">{r.report_type}</span></td>
+                                        <td>{inspectionPhaseShort(r.inspection_phase) || "\u2014"}</td>
                                         <td>{r.client || "—"}</td>
                                         <td>{r.project_code || r.job_order || "—"}</td>
                                         <td>{r.inspector || "—"}</td>

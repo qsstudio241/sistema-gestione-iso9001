@@ -23,6 +23,15 @@ import { hasLicensedModule, hasMaterialComplianceCapability } from "../utils/lic
 
 // ─── Definizione navigazione ──────────────────────────────────────────────────
 
+/** Il badge Qualifiche e la somma di due card della pagina: Scadute + Urgenti 30gg. */
+function qualificationsBadgeTitle(alerts) {
+  const total = Number(alerts.qualifications) || 0;
+  if (total <= 0) return undefined;
+  const expired = Number(alerts.qualificationsExpired) || 0;
+  const expiring = Number(alerts.qualificationsExpiring) || 0;
+  return `${total} da gestire: ${expired} scadute (card "Scadute") + ${expiring} in scadenza entro 30 gg (card "Urgenti 30gg")`;
+}
+
 function buildNavItems(user, alerts = {}) {
   const isCompanyClient = hasCompanyAccess(user);
   const isAdmin = user?.role === "admin" || user?.role === "superadmin";
@@ -55,7 +64,7 @@ function buildNavItems(user, alerts = {}) {
       items: filterByLicense([
         { to: "/documents",   icon: "📄", label: "Documenti", badge: alerts.documents > 0 ? alerts.documents : null, licenseKey: "documents" },
         { to: "/deadlines",   icon: "\uD83D\uDCC5", label: "Scadenzari", licenseKey: "documents" },
-        { to: "/qualifiche",  icon: "🎓", label: "Qualifiche", badge: alerts.qualifications > 0 ? alerts.qualifications : null, licenseKey: "qualifiche" },
+        { to: "/qualifiche",  icon: "🎓", label: "Qualifiche", badge: alerts.qualifications > 0 ? alerts.qualifications : null, badgeTitle: qualificationsBadgeTitle(alerts), licenseKey: "qualifiche" },
         { to: "/nc",                  icon: "🚨", label: "Non Conformità",      licenseKey: "nc" },
         { to: "/rischi",              icon: "⚠️",  label: "Rischi, Opportunità e Obiettivi",   licenseKey: "rischi" },
         { to: "/management-reviews",  icon: "📋", label: "Riesame Direzione",     licenseKey: "riesame_direzione" },
@@ -97,6 +106,9 @@ function buildNavItems(user, alerts = {}) {
       items: filterByLicense([
         ...(!isCompanyClient ? [{ to: "/settings/studio", icon: "🏢", label: "Il mio Studio" }] : []),
         companiesNavItem,
+        ...((isAdmin || user?.role === "auditor") && !isCompanyClient
+          ? [{ to: "/cestino", icon: "\uD83D\uDDD1\uFE0F", label: "Cestino" }]
+          : []),
         ...(isAdmin && !isCompanyClient ? [
           { to: "/settings/users",    icon: "👥", label: "Utenti" },
           { to: "/settings/licenses", icon: "🔑", label: "Licenze moduli" },
@@ -273,13 +285,13 @@ function Sidebar({
                   <>
                     <span className="sidebar-item-label">{item.label}</span>
                     {item.badge && (
-                      <span className="sidebar-badge">{item.badge > 99 ? "99+" : item.badge}</span>
+                      <span className="sidebar-badge" title={item.badgeTitle}>{item.badge > 99 ? "99+" : item.badge}</span>
                     )}
                     {item.locked && <span className="sidebar-lock">🔒</span>}
                   </>
                 )}
                 {!showLabels && item.badge && (
-                  <span className="sidebar-badge-sm">{item.badge > 9 ? "9+" : item.badge}</span>
+                  <span className="sidebar-badge-sm" title={item.badgeTitle}>{item.badge > 9 ? "9+" : item.badge}</span>
                 )}
                 {!showLabels && item.locked && (
                   <span className="sidebar-lock-sm">🔒</span>
@@ -366,6 +378,8 @@ function AppLayoutInner({ children }) {
       setAlerts({
         documents: Number(docsRes?.documents) || 0,
         qualifications: Number(docsRes?.qualifications) || 0,
+        qualificationsExpired: Number(docsRes?.qualifications_expired) || 0,
+        qualificationsExpiring: Number(docsRes?.qualifications_expiring) || 0,
         complaints: overdue,
         libraryGaps: isSuperadmin ? libraryGaps : 0,
       });

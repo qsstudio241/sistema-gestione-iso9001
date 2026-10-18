@@ -10,6 +10,8 @@ vi.mock("../services/apiService", () => ({
     getWPSList: vi.fn().mockResolvedValue({ data: [], total: 0 }),
     getWPQRList: vi.fn().mockResolvedValue({ data: [], total: 0 }),
     getWPQRStats: vi.fn().mockResolvedValue({ data: {} }),
+    getWpqrTestRuns: vi.fn().mockResolvedValue({ runs: [], available: true }),
+    saveWpqrTestRuns: vi.fn(),
   },
 }));
 

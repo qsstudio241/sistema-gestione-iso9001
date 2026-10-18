@@ -64,6 +64,7 @@ describe('listNonConformities  -  RBAC studio', () => {
         const listSql = query.mock.calls[0][0];
         const listParams = query.mock.calls[0][1];
         expect(listSql).toContain('auditor_org_id = @auditor_org_id');
+        expect(listSql).toContain('FROM attachments WHERE nc_id = nc.nc_id AND deleted_at IS NULL');
         expect(listSql).toContain('LEFT JOIN projects');
         expect(listParams).toMatchObject({
             organization_id: ORG_ID,
@@ -501,5 +502,194 @@ describe('createNonConformity  -  project_id opzionale', () => {
         expect(res.json).toHaveBeenCalledWith(
             expect.objectContaining({ code: 'PROJECT_COMPANY_MISMATCH' }),
         );
+    });
+});
+
+describe('deleteNonConformity — scope organizzazione', () => {
+    it('il soft delete porta organization_id su NC, azioni e allegati', async () => {
+        query.mockImplementation(async (sql) => {
+            if (/SELECT nc\.nc_id/.test(sql)) {
+                return { recordset: [{ nc_id: 7, audit_id: null, source_category: 'manual', company_id: 5 }] };
+            }
+            return { recordset: [] };
+        });
+        const req = mockReq({
+            user: { role: 'admin', company_access: [] },
+            params: { id: '7' },
+        });
+        const res = mockRes();
+        await ctrl.deleteNonConformity(req, res);
+        const updates = query.mock.calls.map((call) => String(call[0])).filter((sql) => /SET deleted_at/.test(sql));
+        expect(updates).toHaveLength(3);
+        updates.forEach((sql) => {
+            expect(sql).toContain('@organization_id');
+            expect(sql).toContain('COALESCE(nc.organization_id, a.organization_id)');
+        });
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
+    });
+});
+
+describe('cestino NC', () => {
+    it('una NC cestinata non si aggiorna', async () => {
+        query.mockResolvedValueOnce({ recordset: [] });
+        const req = mockReq({ params: { id: '5' }, body: { root_cause: 'x' } });
+        const res = mockRes();
+        await ctrl.updateNonConformity(req, res);
+        expect(String(query.mock.calls[0][0])).toContain('nc.deleted_at IS NULL');
+        expect(res.status).toHaveBeenCalledWith(404);
+    });
+
+    it('l\'aggiornamento di una NC viva scrive il log', async () => {
+        query.mockImplementation(async (sql) => {
+            if (/INSERT INTO entity_change_log/.test(sql)) return { recordset: [] };
+            if (/UPDATE/.test(sql)) return { recordset: [] };
+            return {
+                recordset: [{
+                    nc_id: 5,
+                    current_status: 'open',
+                    verification_notes: null,
+                    approved_at: null,
+                    audit_id: null,
+                    root_cause: null,
+                }],
+            };
+        });
+        const req = mockReq({
+            user: { role: 'admin', auditor_org_id: null, company_access: [] },
+            params: { id: '5' },
+            body: { root_cause: 'Causa nuova' },
+        });
+        const res = mockRes();
+        await ctrl.updateNonConformity(req, res);
+        const updateSql = String(query.mock.calls.find((call) => /UPDATE non_conformities/.test(String(call[0])))[0]);
+        expect(updateSql).toContain('deleted_at IS NULL');
+        const insert = query.mock.calls.find((call) => /INSERT INTO entity_change_log/.test(String(call[0])));
+        expect(insert[1].action_type).toBe('updated');
+        expect(insert[1].field_name).toBe('root_cause');
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
+    });
+
+    it('la chiusura non conta azioni già nel cestino', async () => {
+        query.mockImplementation(async (sql) => {
+            if (/SELECT COUNT\(\*\) AS cnt FROM nc_actions/.test(sql)) return { recordset: [{ cnt: 1 }] };
+            if (/UPDATE|INSERT INTO entity_change_log/.test(sql)) return { recordset: [] };
+            return {
+                recordset: [{
+                    nc_id: 5,
+                    current_status: 'open',
+                    verification_notes: 'OK',
+                    approved_at: null,
+                    audit_id: null,
+                    corrective_action_needed: 'yes',
+                    root_cause: 'causa',
+                    verification_contact_id: 3,
+                }],
+            };
+        });
+        const req = mockReq({
+            user: { role: 'admin', auditor_org_id: null, company_access: [] },
+            params: { id: '5' },
+            body: { status: 'closed' },
+        });
+        const res = mockRes();
+        await ctrl.updateNonConformity(req, res);
+        const counts = query.mock.calls.map((call) => String(call[0])).filter((sql) => /SELECT COUNT\(\*\) AS cnt FROM nc_actions/.test(sql));
+        expect(counts).toHaveLength(2);
+        counts.forEach((sql) => expect(sql).toContain('deleted_at IS NULL'));
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
+    });
+
+    it('non crea un\'azione su una NC cestinata', async () => {
+        query.mockResolvedValue({ recordset: [] });
+        const req = mockReq({
+            user: { role: 'admin', auditor_org_id: null, company_access: [] },
+            params: { id: '5' },
+            body: { description: 'Trattamento', action_type: 'immediate' },
+        });
+        const res = mockRes();
+        await ctrl.createNcAction(req, res);
+        expect(String(query.mock.calls[0][0])).toContain('nc.deleted_at IS NULL');
+        expect(res.status).toHaveBeenCalledWith(404);
+        expect(query.mock.calls.some((call) => /INSERT INTO nc_actions/.test(String(call[0])))).toBe(false);
+    });
+
+    it('la creazione di un\'azione viva lascia il log', async () => {
+        query.mockImplementation(async (sql) => {
+            if (/INSERT INTO nc_actions/.test(sql)) return { recordset: [{ action_id: 44 }] };
+            if (/INSERT INTO entity_change_log/.test(sql) || /UPDATE/.test(sql)) return { recordset: [] };
+            return { recordset: [{ nc_id: 5, audit_id: null, source_category: 'manual', company_id: 5 }] };
+        });
+        const req = mockReq({
+            user: { role: 'admin', auditor_org_id: null, company_access: [] },
+            params: { id: '5' },
+            body: { description: 'Trattamento', action_type: 'immediate' },
+        });
+        const res = mockRes();
+        await ctrl.createNcAction(req, res);
+        expect(res.status).toHaveBeenCalledWith(201);
+        const insert = query.mock.calls.find((call) => /INSERT INTO entity_change_log/.test(String(call[0])));
+        expect(insert[1].action_type).toBe('created');
+        expect(insert[1].entity_table).toBe('nc_actions');
+    });
+
+    it('non aggiorna un\'azione cestinata', async () => {
+        query.mockResolvedValue({ recordset: [] });
+        const req = mockReq({
+            user: { role: 'admin', auditor_org_id: null, company_access: [] },
+            params: { id: '5', actionId: '9' },
+            body: { status: 'completed' },
+        });
+        const res = mockRes();
+        await ctrl.updateNcAction(req, res);
+        expect(String(query.mock.calls[0][0])).toContain('a.deleted_at IS NULL');
+        expect(String(query.mock.calls[0][0])).toContain('nc.deleted_at IS NULL');
+        expect(res.status).toHaveBeenCalledWith(404);
+    });
+
+    it('il soft delete di un\'azione da audit usa COALESCE sull\'organizzazione', async () => {
+        query.mockImplementation(async (sql) => {
+            if (/INSERT INTO entity_change_log/.test(sql) || /SET deleted_at/.test(sql)) return { recordset: [] };
+            return { recordset: [{ action_id: 9, nc_id: 5, audit_id: 3, source_category: 'audit', company_id: 5 }] };
+        });
+        const req = mockReq({
+            user: { role: 'admin', auditor_org_id: null, company_access: [] },
+            params: { id: '5', actionId: '9' },
+        });
+        const res = mockRes();
+        await ctrl.deleteNcAction(req, res);
+        const update = String(query.mock.calls.find((call) => /SET deleted_at/.test(String(call[0])))[0]);
+        expect(update).toContain('COALESCE(nc.organization_id, au.organization_id)');
+        expect(update).toContain('nc.deleted_at IS NULL');
+        expect(update).not.toContain('nc.organization_id = @organization_id');
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
+    });
+
+    it('il push ignora le NC già nel cestino', async () => {
+        query.mockImplementation(async (sql) => {
+            if (/FROM audits a/.test(sql)) {
+                return { recordset: [{ audit_id: 3, audit_number: 'A-1', organization_id: ORG_ID }] };
+            }
+            return { recordset: [] };
+        });
+        const req = mockReq({
+            user: { role: 'admin', auditor_org_id: null, company_access: [] },
+            params: { auditRef: '3' },
+        });
+        const res = mockRes();
+        await ctrl.pushAuditToNcRegister(req, res);
+        const existing = query.mock.calls.map((call) => String(call[0])).find((sql) => /source_question_id/.test(sql));
+        expect(existing).toContain('deleted_at IS NULL');
+    });
+
+    it('non approva la chiusura di una NC cestinata', async () => {
+        query.mockResolvedValueOnce({ recordset: [] });
+        const req = mockReq({
+            params: { id: '5' },
+            user: { role: 'admin', auditor_org_id: null, company_access: [] },
+        });
+        const res = mockRes();
+        await ctrl.approveNcClosure(req, res);
+        expect(String(query.mock.calls[0][0])).toContain('nc.deleted_at IS NULL');
+        expect(res.status).toHaveBeenCalledWith(404);
     });
 });

@@ -5,11 +5,11 @@
 const express = require('express');
 const router  = express.Router();
 const { authenticate } = require('../middleware/auth.middleware');
-const { requireLicensedModule } = require('../middleware/moduleLicense.middleware');
+const { useModuleLicense } = require('../middleware/moduleLicense.middleware');
 const ctrl = require('../controllers/managementReviews.controller');
 
 router.use(authenticate);
-router.use(requireLicensedModule('riesame_direzione'));
+useModuleLicense(router, 'riesame_direzione');
 
 router.get('/management-reviews/input-summary',         ctrl.getInputSummary);
 router.post('/management-reviews/:id/generate-draft',   ctrl.generateDraft);

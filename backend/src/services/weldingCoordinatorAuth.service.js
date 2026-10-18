@@ -13,6 +13,7 @@
  */
 
 const { query } = require('../config/database');
+const { isVisionFitnessType } = require('../constants/occupationalQualificationTypes');
 
 const STUDIO_ADMIN_ROLES = new Set(['admin', 'superadmin']);
 
@@ -41,20 +42,113 @@ function requiresSemiannualConfirmation(qualificationType) {
   return isWelder9606Type(qualificationType) || isOperator14732Type(qualificationType);
 }
 
+/** Coordinatori di saldatura ISO 14731 (IWE/IWT/IWS...): il titolo si mantiene con il CPD. */
+function isCoordinator14731Type(qualificationType) {
+  return String(qualificationType || '').toLowerCase().includes('14731');
+}
+
+/** YYYY-MM-DD oppure null. Le Date mssql si leggono in UTC per non spostare il giorno. */
+function toIsoDate(value) {
+  if (value == null || value === '') return null;
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) return null;
+    const y = value.getUTCFullYear();
+    const m = String(value.getUTCMonth() + 1).padStart(2, '0');
+    const d = String(value.getUTCDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+  const match = String(value).match(/^(\d{4}-\d{2}-\d{2})/);
+  return match ? match[1] : null;
+}
+
+function earlierIso(a, b) {
+  if (!a) return b || null;
+  if (!b) return a;
+  return b < a ? b : a;
+}
+
+/** La data più vicina tra quelle presenti. Una voce vuota non entra nel confronto. */
+function earliestIsoDate(dates) {
+  let best = null;
+  for (const raw of dates || []) {
+    if (!raw) continue;
+    if (best == null || raw < best) best = raw;
+  }
+  return best;
+}
+
+/**
+ * Date di calendario presenti sul certificato oculistico: scadenza unica,
+ * visita acuità, test dei colori. Una data vuota non cancella le altre.
+ * @returns {string[]}
+ */
+function visionPresentDates(q) {
+  if (!q || !isVisionFitnessType(q.qualification_type)) return [];
+  return [
+    toIsoDate(q.expiry_date),
+    toIsoDate(q.near_vision_expiry_date),
+    toIsoDate(q.colour_vision_expiry_date),
+  ].filter(Boolean);
+}
+
+/**
+ * Due orologi del certificato oculistico, più la scadenza unica.
+ * usesSplit è true se è compilata almeno una delle due date nuove: lo
+ * scadenzario mostra quelle righe. La scadenza unica resta nei dati (expiry)
+ * e non viene spenta da una sola data nuova.
+ * @returns {{ near: string|null, colour: string|null, expiry: string|null, usesSplit: boolean }}
+ */
+function visionClockDates(q) {
+  if (!q || !isVisionFitnessType(q.qualification_type)) {
+    return { near: null, colour: null, expiry: null, usesSplit: false };
+  }
+  const near = toIsoDate(q.near_vision_expiry_date);
+  const colour = toIsoDate(q.colour_vision_expiry_date);
+  const expiry = toIsoDate(q.expiry_date);
+  return { near, colour, expiry, usesSplit: Boolean(near || colour) };
+}
+
+/**
+ * Stato del certificato oculistico su date pure (AAAA-MM-GG).
+ * Scaduto se qualunque data presente è già passata. La data restituita è la
+ * più restrittiva, senza passare da mezzanotte locale / toISOString.
+ * @param {object} row
+ * @param {string} [todayIso] YYYY-MM-DD
+ */
+function visionRowStatus(row, todayIso) {
+  if (!row) return { state: 'missing', expiry_date: null };
+  const dates = visionPresentDates(row);
+  if (!dates.length) {
+    return { state: 'ok', expiry_date: null, note: 'senza_scadenza' };
+  }
+  const today = todayIso || new Date().toISOString().slice(0, 10);
+  const nearest = earliestIsoDate(dates);
+  const expired = dates.some((d) => d < today);
+  return { state: expired ? 'expired' : 'ok', expiry_date: nearest };
+}
+
 /**
  * Data di scadenza "effettiva" di una qualifica (fonte unica: semaforo, GET /qualifications/:id,
  * stato salvato in ingest). Per i tipi a conferma semestrale (ISO 9606-1, ISO 14732) vale la data
  * PIU' IMMINENTE tra expiry_date e next_confirmation_due (ISO 9606-1 §9.2, ISO 14732 §6.2: senza
- * conferma entro 6 mesi la qualifica diventa non valida). Difensivo: se una manca usa l'altra;
- * per gli altri tipi resta solo expiry_date.
+ * conferma entro 6 mesi la qualifica diventa non valida). Per i coordinatori ISO 14731 vale la data
+ * piu' imminente tra expiry_date e cpd_valid_until. Per il certificato oculistico vale la
+ * data più restrittiva tra quelle presenti: scadenza unica, visita acuità, test dei colori.
+ * Una data vuota non cancella le altre. Se non c'è nessuna data, null.
  */
 function effectiveExpiryDate(q) {
-  const expiry = q.expiry_date || null;
-  if (!requiresSemiannualConfirmation(q.qualification_type)) return expiry;
-  const nextConf = q.next_confirmation_due || null;
-  if (!expiry) return nextConf;
-  if (!nextConf) return expiry;
-  return new Date(nextConf) < new Date(expiry) ? nextConf : expiry;
+  const row = q || {};
+  const expiry = toIsoDate(row.expiry_date);
+  if (isVisionFitnessType(row.qualification_type)) {
+    return earliestIsoDate(visionPresentDates(row));
+  }
+  if (requiresSemiannualConfirmation(row.qualification_type)) {
+    return earlierIso(expiry, toIsoDate(row.next_confirmation_due));
+  }
+  if (isCoordinator14731Type(row.qualification_type)) {
+    return earlierIso(expiry, toIsoDate(row.cpd_valid_until));
+  }
+  return expiry;
 }
 
 /**
@@ -147,9 +241,16 @@ async function canUserConfirmSemiannual(user, companyId) {
  */
 function isQualificationOperationallyActive(q, todayIso) {
   if (!q) return false;
+  if (q.deleted_at) return false;
   if (['revocata', 'sospesa'].includes(q.status)) return false;
 
   const today = todayIso || new Date().toISOString().slice(0, 10);
+
+  if (isVisionFitnessType(q.qualification_type)) {
+    const restrictive = earliestIsoDate(visionPresentDates(q));
+    if (restrictive && restrictive < today) return false;
+    return true;
+  }
 
   const expiry = q.expiry_date ? String(q.expiry_date).slice(0, 10) : null;
   if (expiry && expiry < today) return false;
@@ -168,6 +269,13 @@ module.exports = {
   isWelder9606Type,
   isOperator14732Type,
   requiresSemiannualConfirmation,
+  isCoordinator14731Type,
+  toIsoDate,
+  earlierIso,
+  earliestIsoDate,
+  visionPresentDates,
+  visionClockDates,
+  visionRowStatus,
   effectiveExpiryDate,
   deriveQualificationStatus,
   addMonthsIso,

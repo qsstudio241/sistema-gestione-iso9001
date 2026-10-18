@@ -3,18 +3,20 @@
  * Tab: Tutti | Saldatori | NDT | Coordinatori | Operatori | Abilitazioni | Generiche
  */
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import apiService from "../services/apiService";
 import { useCompanyScope } from "../contexts/CompanyScopeContext";
 import QualificationForm from "./QualificationForm";
 import QualificationUploadButton from "../components/QualificationUploadButton";
 import ReprocessQueueBanner from "../components/ReprocessQueueBanner";
+import PendingIngestQueue from "../components/PendingIngestQueue";
 import CoverageVerifyPanel from "../components/CoverageVerifyPanel";
 import { formatDate } from "../utils/dateHelpers";
-import { resolveBackendUploadUrl } from "../utils/resolveBackendUploadUrl";
+import { ProtectedFileLink } from "../components/ProtectedFile";
 import AskAiButton from "../components/AskAiButton";
 import { saveQualContext } from "../utils/aiAssistantContext";
 import { requiresSemiannualConfirmation } from "../utils/weldingConfirmationRules";
+import { isVisionFitnessType } from "../data/occupationalQualificationTypes";
 import {
     QUALIFICATION_SITUAZIONI,
     STATS_TO_SITUAZIONE,
@@ -38,14 +40,14 @@ const TABS = [
 ];
 
 // Colonne dinamiche per tab
-const TAB_COLUMNS = {
+export const TAB_COLUMNS = {
     iso9606_1: ["Persona", "Certificato", "Processo", "Spessore", "Posizioni", "Scadenza", "Azioni"],
-    iso9606_2: ["Persona", "Certificato", "Processo", "Materiale", "Scadenza", "Azioni"],
+    iso9606_2: ["Persona", "Certificato", "Processo", "Materiale", "Posizioni", "Scadenza", "Azioni"],
     iso14732:  ["Persona", "Certificato", "Processo", "Attrezzatura", "Scadenza", "Azioni"],
     ndt:       ["Persona", "Certificato", "Metodo", "Livello", "Schema", "Scadenza", "Azioni"],
     iso14731:  ["Persona", "Certificato", "Titolo (IWE/IWT/IWS)", "CPD fino a", "Azioni"],
     pes_pav:   ["Persona", "Certificato", "Tipo", "Ente", "Scadenza", "Azioni"],
-    salute_mansione: ["Persona", "Documento", "Tipo", "Ente", "Scadenza", "Azioni"],
+    salute_mansione: ["Persona", "Documento", "Tipo", "Ente", "Riferimento", "Scadenza", "Azioni"],
     generico:  ["Persona", "Certificato", "Tipo qualifica", "Ore", "Ente esame", "Scadenza", "Azioni"],
     tutti:     ["Stato", "Persona", "Tipo qualifica", "Certificato", "Scadenza", "Azioni"],
 };
@@ -163,8 +165,8 @@ export function QualRow({ q, tabKey, onEdit, onHardDelete, onRenew, onHistory, h
         <td className="sq-col-actions">
             {hardDeleteId === q.id ? (
                 <div className="sq-confirm">
-                    <span title="Elimina anche le eventuali conferme semestrali registrate">
-                        Eliminare definitivamente? (anche le conferme semestrali)
+                    <span title="Il record va nel cestino. Non è una cancellazione definitiva.">
+                        Il record va nel cestino. Non è una cancellazione definitiva.
                     </span>
                     <button className="sq-confirm-yes" onClick={() => onHardDelete(q.id)}>{"S\u00EC"}</button>
                     <button className="sq-confirm-no" onClick={() => setHardDeleteId(null)}>No</button>
@@ -174,7 +176,7 @@ export function QualRow({ q, tabKey, onEdit, onHardDelete, onRenew, onHistory, h
                     <button className="sq-btn-icon" title="Modifica" onClick={() => onEdit(q)}>{"\u270F\uFE0F"}</button>
                     <button className="sq-btn-icon sq-btn-renew" title="Rinnova" onClick={() => onRenew(q)}>{"\u267B\uFE0F"}</button>
                     <button className="sq-btn-icon sq-btn-history" title="Storico rinnovi" onClick={() => onHistory(q)}>{"\uD83D\uDCC5"}</button>
-                    <button className="sq-btn-icon sq-btn-hard-del" title="Elimina (dato inserito per errore)" onClick={() => setHardDeleteId(q.id)}>{"\uD83D\uDDD1\uFE0F"}</button>
+                    <button className="sq-btn-icon sq-btn-hard-del" title="Elimina: il record va nel cestino" onClick={() => setHardDeleteId(q.id)}>{"\uD83D\uDDD1\uFE0F"}</button>
                 </div>
             )}
         </td>
@@ -191,15 +193,15 @@ export function QualRow({ q, tabKey, onEdit, onHardDelete, onRenew, onHistory, h
     const certCell = (
         <td className="sq-col-cert">
             {q.certificate_file_url
-                ? <a
-                    href={resolveBackendUploadUrl(q.certificate_file_url, apiService.baseUrl)}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                ? <ProtectedFileLink
+                    fileUrl={q.certificate_file_url}
+                    kind="qualifica"
+                    recordId={q.id}
                     className="sq-cert-link"
                     title="Apri certificato"
                   >
                     {"\uD83D\uDCC4"} {q.certificate_number || "Certificato"}
-                  </a>
+                  </ProtectedFileLink>
                 : (q.certificate_number || "\u2014")}
             {q.issuing_body && <div className="sq-issuer">{q.issuing_body}</div>}
         </td>
@@ -211,12 +213,50 @@ export function QualRow({ q, tabKey, onEdit, onHardDelete, onRenew, onHistory, h
     // mostrare entrambe le date, uno stato "Scaduta"/"In scadenza" con
     // certificato ancora lontano nel tempo risulta incomprensibile: rendiamo
     // sempre visibile quale delle due date sta determinando il colore.
+    const nearIso = q.near_vision_expiry_date ? String(q.near_vision_expiry_date).slice(0, 10) : "";
+    const colourIso = q.colour_vision_expiry_date ? String(q.colour_vision_expiry_date).slice(0, 10) : "";
+    const certificateIso = q.expiry_date ? String(q.expiry_date).slice(0, 10) : "";
+    const hasVisionClocks = isVisionFitnessType(q.qualification_type) && (nearIso || colourIso);
+    const effectiveIso = q.effective_expiry_date ? String(q.effective_expiry_date).slice(0, 10) : "";
+    const certificateBinds = Boolean(
+        certificateIso
+        && effectiveIso === certificateIso
+        && certificateIso !== nearIso
+        && certificateIso !== colourIso
+    );
     const hasDualExpiry = requiresSemiannualConfirmation(q.qualification_type) && q.next_confirmation_due;
     const confirmationIsBinding = hasDualExpiry && q.effective_expiry_date
         ? String(q.effective_expiry_date).slice(0, 10) === String(q.next_confirmation_due).slice(0, 10)
         : false;
 
-    const expiryCell = hasDualExpiry ? (
+    const expiryCell = hasVisionClocks ? (
+        <td className="sq-col-expiry sq-col-expiry--dual">
+            {nearIso && (
+                <span
+                    className={`sq-expiry-date sq-expiry-line${effectiveIso === nearIso ? ` sq-expiry-${q.semaforo}` : ""}`}
+                    title="Scadenza della visita di acuit\u00e0"
+                >
+                    {"Visita acuit\u00e0: "}{formatDate(nearIso)}
+                </span>
+            )}
+            {colourIso && (
+                <span
+                    className={`sq-expiry-date sq-expiry-line${effectiveIso === colourIso ? ` sq-expiry-${q.semaforo}` : ""}`}
+                    title="Scadenza del test dei colori"
+                >
+                    {"Test dei colori: "}{formatDate(colourIso)}
+                </span>
+            )}
+            {certificateBinds && (
+                <span
+                    className={`sq-expiry-date sq-expiry-line sq-expiry-${q.semaforo}`}
+                    title="Scadenza unica del certificato: resta valida anche se è compilata una sola delle due date nuove"
+                >
+                    {"Scadenza certificato: "}{formatDate(certificateIso)}
+                </span>
+            )}
+        </td>
+    ) : hasDualExpiry ? (
         <td className="sq-col-expiry sq-col-expiry--dual">
             <span
                 className={`sq-expiry-date sq-expiry-line${confirmationIsBinding ? "" : ` sq-expiry-${q.semaforo}`}`}
@@ -340,10 +380,30 @@ export function QualRow({ q, tabKey, onEdit, onHardDelete, onRenew, onHistory, h
 
 // ── Componente principale ─────────────────────────────────────────────────────
 
-function QualificationsPage() {
-    const { companyId: companyScope, companies, scopeCompanyName } = useCompanyScope();
+/** Parametri di deep link (`?qualification_type=`, `?company_id=`, `?highlight=&section=`) letti una volta all'apertura. */
+export function parseDeepLink(search) {
+    const params = new URLSearchParams(search || "");
+    const typeRaw = String(params.get("qualification_type") || "").trim();
+    const tab = TABS.some((t) => t.key === typeRaw) ? typeRaw : "tutti";
+    const companyRaw = String(params.get("company_id") || "").trim();
+    const highlightRaw = String(params.get("highlight") || "").trim();
+    const section = String(params.get("section") || "").trim();
+    return {
+        tab,
+        companyId: /^\d{1,9}$/.test(companyRaw) ? companyRaw : "",
+        highlightId: /^\d{1,9}$/.test(highlightRaw) ? highlightRaw : "",
+        section: /^[a-z_-]{1,40}$/.test(section) ? section : "",
+    };
+}
 
-    const [activeTab,  setActiveTab]  = useState("tutti");
+function readDeepLink() {
+    return parseDeepLink(typeof window !== "undefined" ? window.location.search : "");
+}
+
+function QualificationsPage() {
+    const { companyId: companyScope, setCompanyId, locked, scopeReady, companies, scopeCompanyName } = useCompanyScope();
+
+    const [activeTab,  setActiveTab]  = useState(() => readDeepLink().tab);
     const [quals,      setQuals]      = useState([]);
     const [stats,      setStats]      = useState(null);
     const [loading,    setLoading]    = useState(true);
@@ -363,6 +423,9 @@ function QualificationsPage() {
 
     const [formOpen,    setFormOpen]    = useState(false);
     const [editingQual, setEditingQual] = useState(null);
+    const [formSection, setFormSection] = useState(undefined);
+    const [pendingQueueKey, setPendingQueueKey] = useState(0);
+    const [resolvedStaging, setResolvedStaging] = useState(null);
     const [hardDeleteId, setHardDeleteId] = useState(null);
 
     const setFilter = useCallback((key, val) => {
@@ -390,7 +453,10 @@ function QualificationsPage() {
             if (filters.situazione) params.situazione = filters.situazione;
             if (companyScope) params.company_id = companyScope;
 
-            const statsParams = companyScope ? { company_id: companyScope } : {};
+            // Card = stesso scope della lista (Ambito + tab); search e situazione restringono solo la lista.
+            const statsParams = {};
+            if (companyScope) statsParams.company_id = companyScope;
+            if (currentTab.qualification_type) statsParams.qualification_type = currentTab.qualification_type;
 
             const [res, statsRes] = await Promise.all([
                 apiService.getQualifications(params),
@@ -419,7 +485,46 @@ function QualificationsPage() {
         setEditingQual(null);
         setFormOpen(true);
     }
-    function handleEdit(q) { setEditingQual(q);    setFormOpen(true); }
+    function handleEdit(q) { setFormSection(undefined); setEditingQual(q);    setFormOpen(true); }
+    const refreshPendingQueue = useCallback(() => {
+        setPendingQueueKey((k) => k + 1);
+    }, []);
+    const handleIngestStagingChanged = useCallback((change) => {
+        if (change && change.stagingId != null) setResolvedStaging({ stagingId: change.stagingId, status: change.status });
+        loadData();
+        refreshPendingQueue();
+    }, [loadData, refreshPendingQueue]);
+
+    // Deep link da Scadenzario/Dashboard: azienda e scheda da aprire (una sola volta).
+    const deepLinkRef = useRef(readDeepLink());
+    const deepLinkDone = useRef({ company: false, highlight: false });
+    useEffect(() => {
+        const dl = deepLinkRef.current;
+        if (!scopeReady || deepLinkDone.current.company) return;
+        if (!dl.companyId || locked) {
+            deepLinkDone.current.company = true;
+            return;
+        }
+        // Utenti con ambito aziendale: scopeReady e' gia' true mentre l'elenco aziende si sta ancora caricando.
+        if (!companies || companies.length === 0) return;
+        deepLinkDone.current.company = true;
+        const known = (companies || []).some((c) => String(c.id || c.company_id) === dl.companyId);
+        if (known) setCompanyId(dl.companyId);
+    }, [scopeReady, locked, companies, setCompanyId]);
+
+    useEffect(() => {
+        const dl = deepLinkRef.current;
+        if (!scopeReady || !dl.highlightId || deepLinkDone.current.highlight) return;
+        deepLinkDone.current.highlight = true;
+        apiService.getQualification(dl.highlightId)
+            .then((q) => {
+                if (!q || !q.id) return;
+                setFormSection(dl.section || undefined);
+                setEditingQual(q);
+                setFormOpen(true);
+            })
+            .catch(() => setError("Qualifica indicata nel link non trovata o non accessibile."));
+    }, [scopeReady]);
     // onSaved = solo ricarica lista. Chiudere qui richiudeva la finestra
     // pochi secondi dopo l'apertura (auto-save). Stesso contratto di
     // ProjectsPage / EquipmentPage: chiude solo X / Chiudi.
@@ -436,6 +541,7 @@ function QualificationsPage() {
     }
 
     function handleRenew(q) {
+        setFormSection(undefined);
         setEditingQual({ ...q, _renew: true });
         setFormOpen(true);
     }
@@ -490,7 +596,8 @@ function QualificationsPage() {
                         companyId={companyScope}
                         companyName={scopeCompanyName}
                         activeTab={activeTab}
-                        onUploadComplete={loadData}
+                        onUploadComplete={handleIngestStagingChanged}
+                        resolvedStaging={resolvedStaging}
                     />
                     <button
                         type="button"
@@ -508,6 +615,7 @@ function QualificationsPage() {
             )}
 
             <ReprocessQueueBanner />
+            <PendingIngestQueue refreshKey={pendingQueueKey} onChanged={handleIngestStagingChanged} />
 
             <CoverageVerifyPanel
                 companyId={companyScope}
@@ -638,8 +746,9 @@ function QualificationsPage() {
                         editingQual?.company_name
                         || (!editingQual && companyScope ? scopeCompanyName : undefined)
                     }
+                    openSection={formSection}
                     onSaved={loadData}
-                    onClose={() => { setFormOpen(false); setEditingQual(null); }}
+                    onClose={() => { setFormOpen(false); setEditingQual(null); setFormSection(undefined); }}
                 />
             )}
 

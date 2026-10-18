@@ -9,6 +9,8 @@
  * - Supporto offline con fallback
  */
 
+import { buildProtectedFileUrl } from '../utils/protectedFile';
+
 // Configurazione ambiente - usa VITE_API_URL se presente
 const API_CONFIG = {
     development: {
@@ -1809,6 +1811,47 @@ class ApiService {
         return response.blob();
     }
 
+    /**
+     * Scarica un file protetto di /uploads (certificati) come Blob, con Authorization.
+     * Un solo retry dopo refresh token su 401. Errori come ApiError (status 401/403/404/...).
+     * @param {string} fileUrl valore salvato nel record (`/uploads/...`)
+     * @returns {Promise<Blob>}
+     */
+    async fetchProtectedFileBlob(fileUrl) {
+        const url = buildProtectedFileUrl(fileUrl, this.baseUrl);
+        if (!url) throw new ApiError('Percorso file non valido', 400, 'INVALID_FILE_PATH');
+
+        const attempt = async () => {
+            const token = this.getToken();
+            return fetch(url, {
+                method: 'GET',
+                cache: 'no-store',
+                credentials: 'include',
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+            });
+        };
+
+        let response;
+        try {
+            response = await attempt();
+            if (response.status === 401 && (await this.refreshToken())) {
+                response = await attempt();
+            }
+        } catch (err) {
+            throw new ApiError(err?.message || 'Errore di rete', 0, 'NETWORK_ERROR');
+        }
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new ApiError(
+                errorData.error || `HTTP ${response.status}`,
+                response.status,
+                errorData.code || 'PROTECTED_FILE_ERROR',
+            );
+        }
+        return response.blob();
+    }
+
     /** Scarica file registro documenti via Bearer (affidabile anche senza token in URL). */
     async downloadDocFile(docId, attId = null, suggestedName = null) {
         const blob = await this.getDocFileBlob(docId, attId);
@@ -1854,9 +1897,18 @@ class ApiService {
         return this.delete(`/qualifications/${id}`);
     }
 
-    /** Cancellazione fisica reale (nessun legame residuo: conferme, import, rinnovi, WPS). */
+    /** Elimina in UI: sposta nel cestino (deleted_at), non cancella il file. */
     async hardDeleteQualification(id) {
         return this.delete(`/qualifications/${id}/permanent`);
+    }
+
+    async listTrash(entity) {
+        const q = entity ? `?entity=${encodeURIComponent(entity)}` : "";
+        return this.get(`/trash${q}`);
+    }
+
+    async restoreTrash(entity, id) {
+        return this.post(`/trash/${encodeURIComponent(entity)}/${id}/restore`, {});
     }
 
     async renewQualification(id, data = {}) {
@@ -2757,6 +2809,21 @@ class ApiService {
     async createWPQR(data)           { return this.post('/welding/wpqr', data); }
     async updateWPQR(id, data)       { return this.put(`/welding/wpqr/${id}`, data); }
     async deleteWPQR(id)             { return this.delete(`/welding/wpqr/${id}`); }
+
+    // WPQR — passate di prova (WV-4a su main, montate nel dettaglio WPQR in questa slice) e verifica vs norma (WV-5c).
+    // `verify` risponde 404 finché la rotta non è su `main`.
+    /** Passate di prova della WPQR. Risponde `{ runs, available }`. */
+    async getWpqrTestRuns(wpqrId)        { return this.get(`/welding/wpqr/${wpqrId}/test-runs`); }
+    /** Replace-set delle passate (stesso contratto del GET). */
+    async saveWpqrTestRuns(wpqrId, runs) { return this.put(`/welding/wpqr/${wpqrId}/test-runs`, { runs }); }
+    /** Verifica WPQR vs norma: stateless, nessuna scrittura. Risponde `{ verification }`. */
+    async verifyWpqr(fields, { runs, standardReference } = {}) {
+        return this.post('/welding/wpqr/verify', {
+            fields,
+            runs,
+            standard_reference: standardReference,
+        });
+    }
 
     // WPS Welders
     async getWpsWelders(wpsId)              { return this.get(`/welding/wps/${wpsId}/welders`); }

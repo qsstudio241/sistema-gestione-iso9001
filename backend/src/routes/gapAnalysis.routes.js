@@ -7,7 +7,7 @@
 const express = require('express');
 const router = express.Router();
 const { authenticate } = require('../middleware/auth.middleware');
-const { requireLicensedModule } = require('../middleware/moduleLicense.middleware');
+const { requireLicensedModule, useModuleLicense } = require('../middleware/moduleLicense.middleware');
 const { logAiInteraction } = require('../middleware/aiAuditTrail.middleware');
 const ctrl = require('../controllers/gapAnalysis.controller');
 
@@ -15,7 +15,7 @@ router.get('/gap-analysis', authenticate, requireLicensedModule('ai_norms'), ctr
 
 const salRouter = express.Router({ mergeParams: true });
 salRouter.use(authenticate);
-salRouter.use(requireLicensedModule('sal'));
+useModuleLicense(salRouter, 'sal');
 
 salRouter.get('/gap-matrix', ctrl.getSalGapMatrix);
 salRouter.get('/gap-statuses', ctrl.listSalGapStatuses);

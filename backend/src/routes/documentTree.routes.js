@@ -8,10 +8,10 @@ const router      = express.Router();
 const treeCtrl    = require('../controllers/documentTree.controller');
 const historyCtrl = require('../controllers/documentHistory.controller');
 const { authenticate } = require('../middleware/auth.middleware');
-const { requireLicensedModule } = require('../middleware/moduleLicense.middleware');
+const { useModuleLicense } = require('../middleware/moduleLicense.middleware');
 
 router.use(authenticate);
-router.use(requireLicensedModule('documents'));
+useModuleLicense(router, 'documents');
 
 // Albero documentale
 router.get ('/documents/tree',                       treeCtrl.getTree);

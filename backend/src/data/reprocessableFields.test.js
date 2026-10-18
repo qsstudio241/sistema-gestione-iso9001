@@ -31,11 +31,12 @@ const { REPROCESSABLE_FIELD_REGISTRY } = require('./reprocessableFields');
 const { listRulePacks } = require('../services/qualificationVerify');
 require('../services/qualificationVerify/registerDefaultPacks');
 const { REPROCESSABLE_FIELDS: QUALIFICATION_WRITE_FIELDS } = require('../services/qualificationIngest.service');
-const { WPQR_REPROCESSABLE_FIELDS } = require('../services/wpqrIngest.service');
+const { WPQR_REPROCESSABLE_FIELDS, WPQR_TEST_RUNS_REPROCESSABLE_FIELDS } = require('../services/wpqrIngest.service');
 
 const WRITE_WHITELISTS_BY_TABLE = {
     qualifications: QUALIFICATION_WRITE_FIELDS,
     wpqr_records: WPQR_REPROCESSABLE_FIELDS,
+    wpqr_test_runs: WPQR_TEST_RUNS_REPROCESSABLE_FIELDS,
 };
 
 const isVerify = (def) => def.kind === 'verify';
@@ -89,12 +90,21 @@ describe('Registro campi rielaborabili — sincronia con le whitelist di scrittu
         }
         expect(mismatches).toEqual([]);
     });
+
+    it('wpqr_test_results: NA è un valore vero, candidato solo se vt_result è NULL', () => {
+        expect(BACKFILL_REGISTRY.wpqr_test_results.candidateWhere).toBe('vt_result IS NULL');
+        expect(WPQR_REPROCESSABLE_FIELDS.wpqr_test_results.writeGuard).toBe('vt_result IS NULL');
+        for (const part of WPQR_REPROCESSABLE_FIELDS.wpqr_test_results.bundleColumns) {
+            expect(part.writeGuard).toBe(`${part.column} IS NULL`);
+        }
+    });
 });
 
 describe('Registro — voci kind:verify (sola lettura, nessuna scrittura)', () => {
     const allWhitelistKeys = () => [
         ...Object.keys(QUALIFICATION_WRITE_FIELDS),
         ...Object.keys(WPQR_REPROCESSABLE_FIELDS),
+        ...Object.keys(WPQR_TEST_RUNS_REPROCESSABLE_FIELDS),
     ];
 
     it('esistono le voci verify_9606_1 e verify_9606_2 e ogni voce senza kind è un backfill', () => {
@@ -125,6 +135,7 @@ describe('Registro — voci kind:verify (sola lettura, nessuna scrittura)', () =
         const writeColumns = new Set([
             ...Object.values(QUALIFICATION_WRITE_FIELDS),
             ...Object.values(WPQR_REPROCESSABLE_FIELDS),
+            ...Object.values(WPQR_TEST_RUNS_REPROCESSABLE_FIELDS),
         ].map((d) => d && d.column).filter(Boolean));
         for (const key of Object.keys(VERIFY_REGISTRY)) {
             expect(writeKeys.has(key)).toBe(false);

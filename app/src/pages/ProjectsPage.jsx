@@ -812,7 +812,7 @@ function ProjectsPage() {
                   <td onClick={(e) => e.stopPropagation()}>
                     {deleteId === p.id ? (
                       <div className="pj-confirm">
-                        <span>Eliminare?</span>
+                        <span>Il record va nel cestino. Non è una cancellazione definitiva.</span>
                         <button className="pj-confirm-yes" type="button" onClick={() => handleConfirmDelete(p.id)}>S - </button>
                         <button className="pj-confirm-no" onClick={() => setDeleteId(null)}>No</button>
                       </div>

@@ -22,6 +22,7 @@ const caseDocumentAnalysisService = require('../services/caseDocumentAnalysis.se
 const caseCapabilityGapReportService = require('../services/caseCapabilityGapReport.service');
 const commercialChecklistTemplateService = require('../services/commercialChecklistTemplate.service');
 const commercialChecklistAttachmentService = require('../services/commercialChecklistAttachment.service');
+const { linkApprovedCaseToProject } = require('../services/commercialCaseHandoffProject.service');
 const {
     PRELIMINARY_ITEMS,
 } = require('../data/commercialChecklistDefaults');
@@ -162,12 +163,15 @@ async function getCase(req, res) {
             ),
             query(
                 `
-                SELECT *
-                FROM commercial_case_checklist
-                WHERE case_id = @caseId
-                ORDER BY phase ASC, id ASC
+                SELECT ccl.*, u.full_name AS answered_by_name
+                FROM commercial_case_checklist AS ccl
+                LEFT JOIN users AS u
+                  ON u.user_id = ccl.answered_by
+                 AND u.organization_id = @organizationId
+                WHERE ccl.case_id = @caseId
+                ORDER BY ccl.phase ASC, ccl.id ASC
                 `,
-                { caseId },
+                { caseId, organizationId },
             ),
             query(
                 `
@@ -1725,7 +1729,6 @@ async function analyzeRequirements(req, res) {
 async function registerHandoff(req, res) {
     try {
         const organizationId = req.user.organization_id;
-        const userId = req.user.user_id;
         const caseId = parseCaseId(req.params.id);
         if (!caseId) {
             return sendErr(res, 400, 'ID caso non valido', 'VALIDATION_ERROR');
@@ -1756,31 +1759,26 @@ async function registerHandoff(req, res) {
         const notesVal =
             notes !== undefined && notes !== null ? String(notes).trim().substring(0, 500) : null;
 
-        const upd = await query(
-            `
-            UPDATE commercial_cases
-            SET handoff_ref = @handoffRef,
-                handoff_at = SYSUTCDATETIME(),
-                handoff_by = @userId,
-                handoff_notes = @notesVal,
-                updated_at = SYSUTCDATETIME()
-            OUTPUT INSERTED.*
-            WHERE id = @caseId AND organization_id = @organizationId
-            `,
-            {
-                handoffRef: handoffRef.substring(0, 100),
-                userId,
-                notesVal,
-                caseId,
-                organizationId,
-            },
-        );
-
-        if (!upd.recordset.length) {
+        const link = await linkApprovedCaseToProject({
+            organizationId,
+            user: req.user,
+            caseRow: existing,
+            handoffRef,
+            notes: notesVal,
+        });
+        if (!link.ok) {
+            return sendErr(res, link.status, link.error, link.code);
+        }
+        if (!link.case) {
             return sendErr(res, 404, 'Caso non trovato', 'NOT_FOUND');
         }
 
-        return res.json(upd.recordset[0]);
+        return res.json({
+            ...link.case,
+            project_id: link.project.id,
+            project_link: link.action,
+            project_code: link.project.project_code,
+        });
     } catch (err) {
         logger.error('registerHandoff', err.message);
         return sendErr(res, 500, err.message, 'SERVER_ERROR');

@@ -29,6 +29,7 @@ const {
     repairFontSubstitutionArtifacts,
 } = require('../utils/textEncodingRepair');
 const { describeIngestFileError, redactFileNameForLog, redactJsonSnippetForLog } = require('../utils/ingestErrorMessage');
+const { redactFileNameForAi, dropPlaceholderValues } = require('../utils/aiPromptPrivacy');
 
 let extractTextWithOCR = null;
 let extractHeaderTextWithOCR = null;
@@ -87,6 +88,9 @@ async function extractDocumentText(pdfBuffer, options = {}) {
     let text = '';
     let ocrUsed = false;
     const layoutSink = options.collectOcrLayout ? [] : null;
+    const maxPages = options.maxPages != null
+        ? options.maxPages
+        : (options.docType === 'wpqr' ? 4 : 3);
 
     try {
         text = await extractPdfText(pdfBuffer);
@@ -101,7 +105,7 @@ async function extractDocumentText(pdfBuffer, options = {}) {
             logger.info('[IngestPipeline] Testo breve, tentativo OCR', { chars: text.length });
             text = await extractTextWithOCR(
                 pdfBuffer,
-                layoutSink ? { maxPages: 3, lang: 'ita+eng', layoutSink } : { maxPages: 3, lang: 'ita+eng' },
+                layoutSink ? { maxPages, lang: 'ita+eng', layoutSink } : { maxPages, lang: 'ita+eng' },
             );
             ocrUsed = true;
         } catch (ocrErr) {
@@ -171,7 +175,7 @@ async function extractFieldsByAi(text, docType, fileName, organizationId = null,
         const specific = result.data?.type_specific_data || {};
         const flat = { ...specific };
         if (result.data?.title && !flat.title) flat.title = result.data.title;
-        return { fields: maybeRestrictDesignationFields(flat, designationOnly), model: result.model || null, warnings };
+        return { fields: maybeRestrictDesignationFields(dropPlaceholderValues(flat), designationOnly), model: result.model || null, warnings };
     } catch (err) {
         const errMsg = describeIngestFileError(err, 'errore non specificato');
         warnings.push(`AI extraction: ${errMsg}`);
@@ -199,7 +203,7 @@ async function extractFieldsByAi(text, docType, fileName, organizationId = null,
                     },
                     {
                         role: 'user',
-                        content: `Estrai campi da questo ${schema?.label || docType} (file ${fileName}). JSON piatto con chiavi: ${retryKeys.join(', ')}. Testo:\n${text.slice(0, 3000)}`,
+                        content: `Estrai campi da questo ${schema?.label || docType} (file ${redactFileNameForAi(fileName)}). JSON piatto con chiavi: ${retryKeys.join(', ')}. Testo:\n${text.slice(0, 3000)}`,
                     },
                 ],
                 { temperature: 0.1, responseFormat: 'json', maxTokens: 2500 }
@@ -209,7 +213,7 @@ async function extractFieldsByAi(text, docType, fileName, organizationId = null,
                 ? parsed.type_specific_data
                 : parsed;
             warnings.push('AI extraction recuperata dopo retry JSON');
-            return { fields: maybeRestrictDesignationFields(fields, designationOnly), model: retry.model || null, warnings };
+            return { fields: maybeRestrictDesignationFields(dropPlaceholderValues(fields), designationOnly), model: retry.model || null, warnings };
         } catch (retryErr) {
             const retryMsg = describeIngestFileError(retryErr, 'errore non specificato');
             warnings.push(`AI retry fallito: ${retryMsg}`);
@@ -553,7 +557,10 @@ async function runDocumentIngest({
     // Il layout OCR serve solo al 14732, come nel percorso con doc_type esplicito.
     const extractedText = preExtracted || await extractDocumentText(
         pdfBuffer,
-        docType === 'qualifica_14732' ? { collectOcrLayout: true } : {},
+        {
+            collectOcrLayout: docType === 'qualifica_14732',
+            docType,
+        },
     );
     const { text, ocrUsed, warnings: textWarnings } = extractedText;
     const ocrLayout = docType === 'qualifica_14732' ? extractedText.ocrLayout : undefined;

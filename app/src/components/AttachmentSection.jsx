@@ -161,7 +161,7 @@ function AttachmentSection({ questionId, attachmentManager, onUploadSuccess, cus
     const attachment = questionAttachments[indexInFiltered];
     if (
       !window.confirm(
-        `Rimuovere "${attachment.name}"?\n\n(Il file fisico rimarrà sul disco per tracciabilità)`
+        `Rimuovere "${attachment.name}"? Il record va nel cestino. Il file resta sul disco. Non è una cancellazione definitiva.`
       )
     ) {
       return;

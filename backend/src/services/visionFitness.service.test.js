@@ -7,6 +7,7 @@ jest.mock('../config/database', () => ({
 }));
 
 const { getPool } = require('../config/database');
+const { resetVisionClockColumnCache } = require('./qualificationExpirySql');
 const {
   requiresVisionFitness,
   findVisionFitnessGaps,
@@ -68,6 +69,7 @@ function mockPool(requiringRows, visionRows) {
 describe('findVisionFitnessGaps', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    resetVisionClockColumnCache();
   });
 
   it('segnala missing se NDT senza certificato visione', async () => {
@@ -145,5 +147,66 @@ describe('findVisionFitnessGaps', () => {
     const { gaps, summary } = await findVisionFitnessGaps(100);
     expect(summary.expired).toBe(1);
     expect(gaps[0].vision_state).toBe('expired');
+  });
+
+  it('segnala expired se il test dei colori è passato anche con la visita ancora valida', async () => {
+    mockPool(
+      [{
+        id: 1,
+        person_name: 'Mario Rossi',
+        personnel_id: 10,
+        qualification_type: 'Certificazione NDT ISO 9712',
+        ndt_method: 'VT',
+        expiry_date: '2030-01-01',
+        status: 'valida',
+        company_id: 1,
+        company_name: 'Demo',
+      }],
+      [{
+        id: 99,
+        person_name: 'Mario Rossi',
+        personnel_id: 10,
+        qualification_type: VISION_FITNESS_TYPE,
+        expiry_date: null,
+        near_vision_expiry_date: '2030-01-01',
+        colour_vision_expiry_date: '2020-01-01',
+        status: 'valida',
+        company_id: 1,
+      }],
+    );
+    const { gaps, summary } = await findVisionFitnessGaps(100);
+    expect(summary.expired).toBe(1);
+    expect(gaps[0].vision_state).toBe('expired');
+  });
+
+  it('scadenza unica già passata resta scaduta anche con una sola data nuova futura', async () => {
+    mockPool(
+      [{
+        id: 1,
+        person_name: 'Mario Rossi',
+        personnel_id: 10,
+        qualification_type: 'Certificazione NDT ISO 9712',
+        ndt_method: 'VT',
+        expiry_date: '2030-01-01',
+        status: 'valida',
+        company_id: 1,
+        company_name: 'Demo',
+      }],
+      [{
+        id: 99,
+        person_name: 'Mario Rossi',
+        personnel_id: 10,
+        qualification_type: VISION_FITNESS_TYPE,
+        expiry_date: new Date('2020-01-01T00:00:00.000Z'),
+        near_vision_expiry_date: '2027-04-01',
+        colour_vision_expiry_date: null,
+        status: 'valida',
+        company_id: 1,
+      }],
+    );
+    const { gaps, summary } = await findVisionFitnessGaps(100);
+    expect(summary.expired).toBe(1);
+    expect(gaps[0].vision_expiry_date).toBe('2020-01-01');
+    expect(gaps[0].vision_expiry_date).not.toBe('2019-12-31');
   });
 });

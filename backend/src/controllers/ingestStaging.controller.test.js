@@ -40,7 +40,7 @@ function mockRes() {
 describe('listStagingHandler — filtro ?module=', () => {
     afterEach(() => jest.clearAllMocks());
 
-    it('module=qualifiche mappa sui doc_type patentino_saldatore/qualifica_14732', async () => {
+    it('module=qualifiche mappa sui doc_type patentino_saldatore/qualifica_14732/cert_ndt', async () => {
         getModuleForDocType.mockReturnValue('qualifiche');
         getLicensedModuleKeysForOrg.mockResolvedValue(['qualifiche']);
         listStaging.mockResolvedValue([]);
@@ -50,7 +50,7 @@ describe('listStagingHandler — filtro ?module=', () => {
         await listStagingHandler(req, res);
 
         expect(listStaging).toHaveBeenCalledWith(expect.objectContaining({
-            docTypes: ['patentino_saldatore', 'qualifica_14732'],
+            docTypes: ['patentino_saldatore', 'qualifica_14732', 'cert_ndt'],
         }));
         expect(res.status).not.toHaveBeenCalledWith(400);
     });
@@ -106,14 +106,29 @@ describe('listStagingHandler — filtro ?module=', () => {
         expect(listStaging).not.toHaveBeenCalled();
     });
 
-    it('superadmin bypassa il controllo licenza modulo', async () => {
+    it('admin e superadmin con elenco senza saldatura ricevono 403', async () => {
+        getModuleForDocType.mockReturnValue('saldatura');
+        getLicensedModuleKeysForOrg.mockResolvedValue(['audit', 'nc']);
+
+        for (const role of ['admin', 'superadmin']) {
+            const req = { query: { module: 'saldatura' }, user: { organization_id: 1004, role } };
+            const res = mockRes();
+            await listStagingHandler(req, res);
+            expect(res.status).toHaveBeenCalledWith(403);
+            expect(listStaging).not.toHaveBeenCalled();
+        }
+    });
+
+    it('superadmin con elenco che include saldatura legge la coda', async () => {
+        getModuleForDocType.mockReturnValue('saldatura');
+        getLicensedModuleKeysForOrg.mockResolvedValue(['audit', 'saldatura']);
         listStaging.mockResolvedValue([]);
-        const req = { query: { module: 'saldatura' }, user: { organization_id: 1001, role: 'superadmin' } };
+        const req = { query: { module: 'saldatura' }, user: { organization_id: 1005, role: 'superadmin' } };
         const res = mockRes();
         await listStagingHandler(req, res);
 
-        expect(getLicensedModuleKeysForOrg).not.toHaveBeenCalled();
         expect(res.status).not.toHaveBeenCalledWith(403);
+        expect(listStaging).toHaveBeenCalled();
     });
 });
 

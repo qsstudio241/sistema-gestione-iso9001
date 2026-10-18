@@ -17,9 +17,6 @@ const { getLicensedModuleKeysForOrg } = require('../services/moduleLicense.servi
 const { getLearningStats } = require('../services/ingestFeedback.service');
 
 async function assertModuleAccess(req, docType) {
-    const role = req.user?.role ? String(req.user.role).trim().toLowerCase() : '';
-    if (role === 'superadmin' || role === 'admin') return;
-
     const moduleKey = getModuleForDocType(docType);
     if (!moduleKey) {
         const err = new Error('Tipo documento non supportato');
@@ -70,7 +67,7 @@ async function getStaging(req, res) {
 
 // doc_type -> modulo licenza, usato per validare l'accesso quando si filtra per modulo.
 const MODULE_DOC_TYPES = {
-    qualifiche: ['patentino_saldatore', 'qualifica_14732'],
+    qualifiche: ['patentino_saldatore', 'qualifica_14732', 'cert_ndt'],
     // Generalizzazione 08/08/2026 (migrazione 143): la coda di rielaborazione
     // WPQR usa lo stesso meccanismo, filtrata per modulo "saldatura".
     saldatura: ['wpqr'],

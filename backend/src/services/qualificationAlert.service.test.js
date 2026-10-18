@@ -3,6 +3,7 @@
  * Copre: effectiveAlertDue per ISO 9606-1 e ISO 14732 (entrambe con conferma semestrale).
  */
 
+jest.mock('../config/database', () => ({ query: jest.fn(), getPool: jest.fn() }));
 jest.mock('./alertMail.service', () => ({ sendAlertEmail: jest.fn() }));
 jest.mock('../utils/logger', () => ({
   info: jest.fn(),
@@ -11,7 +12,12 @@ jest.mock('../utils/logger', () => ({
   debug: jest.fn(),
 }));
 
-const { effectiveAlertDue, matchQualAlertRule, mapQualificationDeadlineRows } = require('./qualificationAlert.service');
+const { effectiveAlertDue, matchQualAlertRule, mapQualificationDeadlineRows, fetchQualificationsForDeadline } = require('./qualificationAlert.service');
+const {
+  EFFECTIVE_EXPIRY_SQL,
+  EFFECTIVE_EXPIRY_SQL_WITHOUT_VISION_CLOCKS,
+  resetVisionClockColumnCache,
+} = require('./qualificationExpirySql');
 
 describe('qualificationAlert.service — effectiveAlertDue', () => {
   it('ISO 9606-1: conferma semestrale più imminente → kind confirmation', () => {
@@ -158,5 +164,115 @@ describe('qualificationAlert.service — mapQualificationDeadlineRows con date n
     // Date.toString() (che inizia dal nome del giorno della settimana).
     expect(rows[0].qualification_id).toBe(1);
     expect(rows[1].qualification_id).toBe(2);
+  });
+
+  it('certificato oculistico: due righe distinte in Scadenzari, anche oltre i 365 giorni', () => {
+    const rows = mapQualificationDeadlineRows([
+      {
+        id: 9,
+        person_name: 'ZZ Ispettore Prova',
+        qualification_type: 'Certificato idoneità visiva (acuità + Ishihara)',
+        status: 'valida',
+        expiry_date: '2035-01-01',
+        near_vision_expiry_date: '2027-03-01',
+        colour_vision_expiry_date: '2031-03-01',
+        certificate_number: 'OCCHIO-ZZ',
+      },
+    ], 365);
+
+    expect(rows).toHaveLength(2);
+    expect(rows.map((r) => r.vision_clock).sort()).toEqual(['colour', 'near']);
+    expect(rows.find((r) => r.vision_clock === 'near').title).toMatch(/Visita acuit/);
+    expect(rows.find((r) => r.vision_clock === 'colour').title).toMatch(/Test dei colori/);
+    expect(rows.find((r) => r.vision_clock === 'near').id).toBe('qual-9-near');
+    expect(rows.every((r) => r.qualification_id === 9)).toBe(true);
+  });
+
+  it('una sola data nuova non cancella la scadenza unica nello scadenzario', () => {
+    const rows = mapQualificationDeadlineRows([
+      {
+        id: 4,
+        person_name: 'Ada Ispettore',
+        qualification_type: 'Certificato idoneità visiva (acuità + Ishihara)',
+        status: 'valida',
+        expiry_date: '2020-01-01',
+        near_vision_expiry_date: '2027-03-01',
+        colour_vision_expiry_date: null,
+      },
+    ], 365);
+    expect(rows.map((r) => r.vision_clock).sort()).toEqual(['expiry', 'near']);
+    expect(rows.find((r) => r.vision_clock === 'expiry').due_date).toBe('2020-01-01');
+  });
+
+  it('se la scadenza unica è la più vicina compare insieme alle due date nuove', () => {
+    const rows = mapQualificationDeadlineRows([
+      {
+        id: 5,
+        person_name: 'Ada Ispettore',
+        qualification_type: 'Certificato idoneità visiva (acuità + Ishihara)',
+        status: 'valida',
+        expiry_date: '2020-01-01',
+        near_vision_expiry_date: '2027-03-01',
+        colour_vision_expiry_date: '2030-03-01',
+      },
+    ], 365);
+    expect(rows.map((r) => r.vision_clock).sort()).toEqual(['colour', 'expiry', 'near']);
+  });
+});
+
+describe('qualificationAlert.service — colonne visione assenti', () => {
+  const VISION = 'Certificato idoneità visiva (acuità + Ishihara)';
+
+  afterEach(() => {
+    resetVisionClockColumnCache();
+  });
+
+  it('la SQL senza colonne 178 non le nomina e resta sulla scadenza unica', () => {
+    expect(EFFECTIVE_EXPIRY_SQL).toMatch(/MIN\(v\.d\)/);
+    expect(EFFECTIVE_EXPIRY_SQL).toMatch(/near_vision_expiry_date/);
+    expect(EFFECTIVE_EXPIRY_SQL_WITHOUT_VISION_CLOCKS).not.toMatch(/near_vision_expiry_date/);
+    expect(EFFECTIVE_EXPIRY_SQL_WITHOUT_VISION_CLOCKS).not.toMatch(/colour_vision_expiry_date/);
+    expect(EFFECTIVE_EXPIRY_SQL_WITHOUT_VISION_CLOCKS).toMatch(/q\.expiry_date/);
+  });
+
+  it('lo scadenzario non va in errore se le colonne 178 mancano', async () => {
+    const query = jest.fn(async (sql) => {
+      if (/near_vision_expiry_date/.test(sql)) {
+        throw new Error("Invalid column name 'near_vision_expiry_date'.");
+      }
+      return {
+        recordset: [{
+          id: 7,
+          person_name: 'Ada Ispettore',
+          qualification_type: VISION,
+          status: 'valida',
+          expiry_date: '2020-01-01',
+        }],
+      };
+    });
+    const request = {
+      input() { return request; },
+      query,
+    };
+    const rows = await fetchQualificationsForDeadline({ request: () => request }, 1005);
+    expect(rows).toHaveLength(1);
+    expect(rows[0].expiry_date).toBe('2020-01-01');
+    expect(query.mock.calls[0][0]).toMatch(/near_vision_expiry_date/);
+    expect(query.mock.calls[1][0]).not.toMatch(/near_vision_expiry_date/);
+
+    query.mockClear();
+    await fetchQualificationsForDeadline({ request: () => request }, 1005);
+    expect(query).toHaveBeenCalledTimes(1);
+    expect(query.mock.calls[0][0]).not.toMatch(/near_vision_expiry_date/);
+  });
+
+  it('effectiveAlertDue tiene la scadenza unica se è la più restrittiva', () => {
+    const r = effectiveAlertDue({
+      qualification_type: VISION,
+      expiry_date: '2020-01-01',
+      near_vision_expiry_date: '2027-03-01',
+      colour_vision_expiry_date: null,
+    });
+    expect(r).toEqual({ date: '2020-01-01', kind: 'expiry' });
   });
 });

@@ -11,13 +11,16 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import apiService from "../services/apiService";
 import DocumentViewerChrome from "./DocumentViewerChrome";
+import { fileNameWithExt, protectedFileErrorMessage } from "../utils/protectedFile";
 import "./DocumentPdfViewer.css";
 
 /** Touch / viewport stretto: iframe PDF blob inaffidabile (Chrome Android). */
 export function prefersMobilePdfFallback() {
   if (typeof window === "undefined") return false;
-  if (window.matchMedia("(pointer: coarse)").matches) return true;
-  if (window.matchMedia("(max-width: 640px)").matches) return true;
+  if (typeof window.matchMedia === "function") {
+    if (window.matchMedia("(pointer: coarse)")?.matches) return true;
+    if (window.matchMedia("(max-width: 640px)")?.matches) return true;
+  }
   return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "");
 }
 
@@ -52,10 +55,19 @@ export async function openPdfBlob(blob, blobUrl, fileName) {
   triggerBlobLink(blobUrl, { newTab: true });
 }
 
-export default function DocumentPdfViewer({ docId, attachmentId, fileName, onClose }) {
+/**
+ * @param {object} props
+ * @param {() => Promise<Blob>} [props.loadBlob] sorgente alternativa a `docId` (es. file protetti
+ *   di /uploads). Cambiando `sourceKey` il file viene ricaricato.
+ */
+export default function DocumentPdfViewer({ docId, attachmentId, fileName, onClose, loadBlob, sourceKey }) {
   const [blobUrl, setBlobUrl] = useState(null);
   const [pdfBlob, setPdfBlob] = useState(null);
   const [loadError, setLoadError] = useState(false);
+  const [errorStatus, setErrorStatus] = useState(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const loadBlobRef = useRef(loadBlob);
+  loadBlobRef.current = loadBlob;
   const [loading, setLoading] = useState(true);
   const [opening, setOpening] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
@@ -64,16 +76,20 @@ export default function DocumentPdfViewer({ docId, attachmentId, fileName, onClo
   const useMobileLayout = prefersMobilePdfFallback();
 
   useEffect(() => {
-    if (!docId) return;
+    if (!docId && !loadBlobRef.current) return;
     let cancelled = false;
     setLoading(true);
     setLoadError(false);
+    setErrorStatus(null);
     setBlobUrl(null);
     setPdfBlob(null);
     blobRef.current = null;
 
-    apiService
-      .getDocFileBlob(docId, attachmentId || null)
+    const source = loadBlobRef.current
+      ? loadBlobRef.current()
+      : apiService.getDocFileBlob(docId, attachmentId || null);
+
+    source
       .then((blob) => {
         if (cancelled) return;
         blobRef.current = blob;
@@ -82,8 +98,10 @@ export default function DocumentPdfViewer({ docId, attachmentId, fileName, onClo
         revokeRef.current = url;
         setBlobUrl(url);
       })
-      .catch(() => {
-        if (!cancelled) setLoadError(true);
+      .catch((err) => {
+        if (cancelled) return;
+        setErrorStatus(typeof err?.status === "number" ? err.status : null);
+        setLoadError(true);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -97,26 +115,29 @@ export default function DocumentPdfViewer({ docId, attachmentId, fileName, onClo
       }
       blobRef.current = null;
     };
-  }, [docId, attachmentId]);
+  }, [docId, attachmentId, sourceKey, retryCount]);
+
+  const downloadName = fileNameWithExt(fileName || "documento", pdfBlob?.type || "application/pdf");
+  const isImage = String(pdfBlob?.type || "").startsWith("image/");
 
   const handleDownload = useCallback(() => {
     if (!blobUrl) return;
-    triggerBlobLink(blobUrl, { download: true, fileName: fileName || "documento.pdf" });
-  }, [blobUrl, fileName]);
+    triggerBlobLink(blobUrl, { download: true, fileName: downloadName });
+  }, [blobUrl, downloadName]);
 
   const handleOpen = useCallback(async () => {
     if (!blobUrl || !blobRef.current) return;
     setOpening(true);
     try {
-      await openPdfBlob(blobRef.current, blobUrl, fileName);
+      await openPdfBlob(blobRef.current, blobUrl, downloadName);
     } catch {
       triggerBlobLink(blobUrl, { newTab: true });
     } finally {
       setOpening(false);
     }
-  }, [blobUrl, fileName]);
+  }, [blobUrl, downloadName]);
 
-  if (!docId) return null;
+  if (!docId && !loadBlob) return null;
 
   return (
     <DocumentViewerChrome
@@ -134,7 +155,21 @@ export default function DocumentPdfViewer({ docId, attachmentId, fileName, onClo
               <p>Caricamento PDF...</p>
             </div>
           )}
-          {!loading && loadError && (
+          {!loading && loadError && loadBlob && (
+            <div className="pdf-viewer-fallback" role="alert">
+              <p>{protectedFileErrorMessage(errorStatus)}</p>
+              {errorStatus !== 401 && errorStatus !== 403 && errorStatus !== 404 && (
+                <button
+                  type="button"
+                  className="pdf-viewer-btn pdf-viewer-btn--download"
+                  onClick={() => setRetryCount((n) => n + 1)}
+                >
+                  Riprova
+                </button>
+              )}
+            </div>
+          )}
+          {!loading && loadError && !loadBlob && (
             <div className="pdf-viewer-fallback">
               <p>Il browser non riesce a visualizzare questo PDF.</p>
               <button
@@ -168,7 +203,10 @@ export default function DocumentPdfViewer({ docId, attachmentId, fileName, onClo
               </button>
             </div>
           )}
-          {!loading && blobUrl && !useMobileLayout && (
+          {!loading && blobUrl && !useMobileLayout && isImage && (
+            <img src={blobUrl} className="pdf-viewer-image" alt={fileName || "Documento"} />
+          )}
+          {!loading && blobUrl && !useMobileLayout && !isImage && (
             <iframe
               src={blobUrl}
               className="pdf-viewer-iframe"

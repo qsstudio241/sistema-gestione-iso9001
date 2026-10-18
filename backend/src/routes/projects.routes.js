@@ -4,13 +4,13 @@
 const express = require('express');
 const router  = express.Router();
 const { authenticate } = require('../middleware/auth.middleware');
-const { requireLicensedModule } = require('../middleware/moduleLicense.middleware');
+const { requireLicensedModule, useModuleLicense } = require('../middleware/moduleLicense.middleware');
 const { logAiInteraction } = require('../middleware/aiAuditTrail.middleware');
 const ctrl = require('../controllers/projects.controller');
 const aiSuggestCtrl = require('../controllers/weldingAiSuggest.controller');
 
 router.use(authenticate);
-router.use(requireLicensedModule('saldatura'));
+useModuleLicense(router, 'saldatura');
 
 router.get   ('/projects/stats',                       ctrl.getProjectStats);
 router.get   ('/projects',                             ctrl.listProjects);

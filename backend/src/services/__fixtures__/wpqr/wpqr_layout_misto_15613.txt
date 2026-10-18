@@ -1,0 +1,25 @@
+SYNTHETIC WPQR FIXTURE — ISO 15613 with 15614-1 range (no real certificate).
+Qualification standard: ISO 15613:2004
+Range of qualification according to ISO 15614-1:2019 Level 2
+Certificate No.: SYN-15613-003
+Date of welding: 2021-11-04
+Welding process: SAW (12x)
+Joint type: BW
+Product: plate
+Filler: S 42 4 FB T3
+PWHT: none
+
+--- PAGE 2 ---
+Joint details and welding sequences
+Run  Process  Size  Current  Voltage  Travel  Heat input  Other
+1    121      4.0   480      30       8 mm/s  1800 J/mm   spray
+2    121      4.0   500      32       7 mm/s  2100 J/mm   spray
+No shielding gas flow (SAW)
+Stick-out: 25-40 mm
+Deposited thickness: 8 mm and 12 mm (two values)
+
+--- PAGE 3 RESULTS ---
+VT: Satisfactory
+RT: Satisfactory
+UT: --
+Macro: Satisfactory

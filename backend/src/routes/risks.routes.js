@@ -7,7 +7,7 @@ const express = require('express');
 const multer  = require('multer');
 const router  = express.Router();
 const { authenticate } = require('../middleware/auth.middleware');
-const { requireLicensedModule } = require('../middleware/moduleLicense.middleware');
+const { useModuleLicense } = require('../middleware/moduleLicense.middleware');
 const ctrl    = require('../controllers/risks.controller');
 const cfCtrl  = require('../controllers/contextFactors.controller');
 const ipCtrl  = require('../controllers/interestedParties.controller');
@@ -24,7 +24,7 @@ const uploadM03Xlsx = multer({
 });
 
 router.use(authenticate);
-router.use(requireLicensedModule('rischi'));
+useModuleLicense(router, 'rischi');
 
 // ─── Risks ──────────────────────────────────────────────────────────────────
 router.get('/risks/stats',  ctrl.getRiskStats);

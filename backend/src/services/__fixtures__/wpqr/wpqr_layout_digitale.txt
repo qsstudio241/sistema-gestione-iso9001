@@ -1,0 +1,39 @@
+SYNTHETIC WPQR FIXTURE — digital native text (no real certificate).
+ISO 15614-1:2017 Level 2
+Certificate No.: SYN-DIG-001
+Date of welding: 2024-03-12
+Record issued: 2024-03-20
+Manufacturer: Synthetic Lab
+Heat input range of qualification: -25 %
+Preheat: Tp – CT 80
+PWHT: none
+Backing gas: none
+Wire feed speed: N.A.
+Welding process: 135
+Current type: DC-EP
+
+--- PAGE 2 ---
+Record of weld test
+Joint preparation: single V
+Cleaning method: grinding
+Nozzle diameter: 16
+Gas flow: 12-15 l/min
+Stick-out / contact tube distance: 15-20 mm
+Bead technique: stringer
+Electrode: single
+
+Run  Welding process  Size of filler  Current A  Voltage V  Type of current/polarity  Wire feed speed  Travel speed  Heat input  Metal transfer  Other
+1    135              1.2             220        24.5       DC-EP                     N.A.             4.5 mm/s      0.9 kJ/mm   N.A.            N.A.
+2 +n 135              1.2             210        23.0       DC-EP                     N.A.             5.0 mm/s      0.8 kJ/mm   N.A.            N.A.
+
+--- PAGE 3 RESULTS ---
+VT: Accettabile / Satisfactory
+PT: Accettabile
+MT: --
+RT: --
+UT: Not required
+Tensile: Satisfactory
+Bend: Accettabile
+Impact: Not required
+Hardness: --
+Macro: Accettabile
