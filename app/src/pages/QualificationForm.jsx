@@ -13,6 +13,7 @@ import {
   getJointTypeProfile,
   getVisibleFieldKeys,
   nullNotApplicableFields,
+  resolveProfileStandard,
   uses9606DimensionalBlock,
 } from "../data/jointTypeProfiles";
 import { getProcessSelectOptions, canonicalizeProcessValue } from "../utils/weldingProcessSelect";
@@ -123,7 +124,9 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
   const isWelder9606 = (form.qualification_type || "").includes("9606");
   const isOperator14732 = (form.qualification_type || "").includes("14732");
   const show9606Dimensions = uses9606DimensionalBlock(form.qualification_type);
-  const jointProfile = getJointTypeProfile(form.joint_type);
+  const jointProfile = getJointTypeProfile(form.joint_type, {
+    standard: resolveProfileStandard(form.qualification_type),
+  });
   const profileVisibility = getVisibleFieldKeys({
     jointType: form.joint_type,
     productType: form.product_type,
@@ -614,17 +617,18 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
               {show9606Dimensions && (
                 <>
                   <div className="qf-row">
-                    {jointProfile?.key === "BW" && (
+                    {jointProfile && (jointProfile.key === "BW" || jointProfile.key === "FW") && (
                       <div className="qf-field">
                         <label>{jointProfile.testThicknessLabel}</label>
-                        <input type="number" step="0.1" min="0" value={form.thickness_s_test_mm} onChange={handle("thickness_s_test_mm")} placeholder="es. 12" />
-                        <span style={{ fontSize: 11, color: "#94a3b8" }}>{jointProfile.testThicknessHint}</span>
-                      </div>
-                    )}
-                    {jointProfile?.key === "FW" && (
-                      <div className="qf-field">
-                        <label>{jointProfile.testThicknessLabel}</label>
-                        <input type="number" step="0.1" min="0" value={form.thickness_t_test_mm} onChange={handle("thickness_t_test_mm")} placeholder="es. 8" />
+                        <input
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          data-testid="qf-test-thickness"
+                          value={form[jointProfile.testThicknessKey] ?? ""}
+                          onChange={handle(jointProfile.testThicknessKey)}
+                          placeholder={jointProfile.testThicknessKey === "thickness_s_test_mm" ? "es. 12" : "es. 8"}
+                        />
                         <span style={{ fontSize: 11, color: "#94a3b8" }}>{jointProfile.testThicknessHint}</span>
                       </div>
                     )}

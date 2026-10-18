@@ -105,6 +105,14 @@ describe('parseWelderQualificationDesignation (FE)', () => {
     expect(resolveTestThicknessByJoint({ joint_type: null, t: 10 })).toEqual({ s: null, t: 10 });
   });
 
+  it('ISO 9606-2 BW: t del materiale resta in t', () => {
+    expect(resolveTestThicknessByJoint({ joint_type: 'BW', t: 3, standard: 'ISO 9606-2' }))
+      .toEqual({ s: null, t: 3 });
+    const parsed = parseWelderQualificationDesignation('ISO 9606-2: 141 T BW FM1 t03 PA');
+    expect(parsed.thickness_t_test_mm).toBe(3);
+    expect(parsed.thickness_s_test_mm).toBeNull();
+  });
+
   it('resolvePrintedDesignation conserva la riga certificato', () => {
     expect(resolvePrintedDesignation('ISO 9606-1: 135 P FW FM1 t8 PB', { welding_process: '138' }))
       .toBe('ISO 9606-1: 135 P FW FM1 t8 PB');

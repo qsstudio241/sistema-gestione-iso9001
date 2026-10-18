@@ -73,15 +73,23 @@ export function resolvePrintedDesignation(printed, computeFields = {}) {
   return buildWelderDesignation(computeFields);
 }
 
+function isIso9606Part2(standard) {
+  return /9606[\s-]*2(?!\d)/i.test(String(standard || ""));
+}
+
 /**
  * Spessore della PROVA per tipo di giunto (ISO 9606-1): BW -> s depositato (Tab. 6),
  * FW -> t materiale (Tab. 8). Speculare al backend: sposta solo se la colonna corretta
  * e' vuota; se ci sono entrambi restano entrambi; giunto non BW/FW: nessuna deduzione.
+ * ISO 9606-2: t e' lo spessore del materiale — non si sposta in s.
  */
-export function resolveTestThicknessByJoint({ joint_type: jointType, s, t } = {}) {
+export function resolveTestThicknessByJoint({ joint_type: jointType, s, t, standard } = {}) {
   let sNum = num(s);
   let tNum = num(t);
   const joint = jointType == null ? "" : String(jointType).trim().toUpperCase();
+  if (isIso9606Part2(standard)) {
+    return { s: sNum, t: tNum };
+  }
   if (joint === "BW" && sNum == null && tNum != null) {
     sNum = tNum;
     tNum = null;
@@ -96,7 +104,8 @@ const POSITION_TOKEN_RE = /^(PA|PB|PC|PD|PE|PF|PG|PH|PJ|H-L045|J-L045)$/i;
 const PROCESS_TOKEN_RE = /^\d{2,3}[A-Z]?$/i;
 const PROCESS_IN_LINE_RE = /\b\d{2,3}[A-Z]?\b/i;
 const EDITION_ONLY_RE = /^(?:19|20)\d{2}(?:\s*[+]\s*A\d+)?\s*$/i;
-const LABELED_9606_RE = /ISO\s*9606-1\s*[:.\-]?\s*([^\n\r]*)/gi;
+const LABELED_9606_RE = /ISO\s*9606-[12]\s*[:.\-]?\s*([^\n\r]*)/gi;
+const LABELED_9606_PREFIX_RE = /^ISO\s*9606-[12]\s*[:.\-]?\s*/i;
 
 /**
  * Normalizza la sorgente della riga prima di tokenizzare (speculare al backend):
@@ -154,8 +163,8 @@ function pickDesignationSource(body) {
   const lines = String(body).split(/\r?\n/);
   for (const line of lines) {
     const compact = compactLine(line);
-    if (!compact || isEditionOnlyRemainder(compact.replace(/^ISO\s*9606-1\s*[:.\-]?\s*/i, ""))) continue;
-    const remainder = compact.replace(/^ISO\s*9606-1\s*[:.\-]?\s*/i, "");
+    if (!compact || isEditionOnlyRemainder(compact.replace(LABELED_9606_PREFIX_RE, ""))) continue;
+    const remainder = compact.replace(LABELED_9606_PREFIX_RE, "");
     if (!isDesignationRemainder(remainder) && !isDesignationRemainder(compact)) continue;
     return { rawLine: compact, tokenSource: remainder || compact };
   }
@@ -249,6 +258,7 @@ export function parseWelderQualificationDesignation(text) {
     joint_type: parsed.joint_type,
     s: parsed.thickness_s_test_mm,
     t: parsed.thickness_t_test_mm,
+    standard: body,
   });
   parsed.thickness_s_test_mm = thk.s;
   parsed.thickness_t_test_mm = thk.t;

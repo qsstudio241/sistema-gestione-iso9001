@@ -363,11 +363,23 @@ function mapPipelineFieldsToReview(f, pipelineText, fileName, docType = null) {
     // pipe_diameter_mm in revisione: preferisci il valore AI originale se presente,
     // altrimenti il min risolto (così il campo schema review resta allineato al DB).
     const pipeDiameterSingle = toNumericOrNull(f.pipe_diameter_mm) ?? pipeDiameterMinNum;
-    // ISO 9606-1: BW -> s depositato (Tab. 6), FW -> t materiale (Tab. 8). Vedi resolveTestThicknessByJoint.
+    const qualification_type = resolveQualificationType({
+        docType,
+        text: pipelineText,
+        fileName,
+        extractedFields: {
+            ndt_method: f.ndt_method || null,
+            certification_level: f.certification_level || null,
+            ndt_level: f.ndt_level || null,
+        },
+    }).type;
+    // ISO 9606-1: BW -> s depositato (Tab. 6), FW -> t materiale (Tab. 8).
+    // ISO 9606-2: t resta t (Tab. 3/5). Vedi resolveTestThicknessByJoint.
     const testThickness = resolveTestThicknessByJoint({
         joint_type: f.joint_type,
         s: f.thickness_s_test_mm,
         t: f.thickness_t_test_mm,
+        standard: f.standard_reference || f.standard_ref || qualification_type || pipelineText,
     });
 
     return {
@@ -442,16 +454,7 @@ function mapPipelineFieldsToReview(f, pipelineText, fileName, docType = null) {
         welding_type: f.welding_type || null,
         single_multi_run: f.single_multi_run || null,
         qualification_method: f.qualification_method || null,
-        qualification_type: resolveQualificationType({
-            docType,
-            text: pipelineText,
-            fileName,
-            extractedFields: {
-                ndt_method: f.ndt_method || null,
-                certification_level: f.certification_level || null,
-                ndt_level: f.ndt_level || null,
-            },
-        }).type,
+        qualification_type,
     };
 }
 
@@ -728,6 +731,7 @@ async function commitQualificationFromFields(fields, organizationId, companyId, 
         joint_type,
         s: f.thickness_s_test_mm,
         t: f.thickness_t_test_mm,
+        standard: qualificationType || standard_ref,
     });
     const product_type = f.product_type || null;
     const weld_details = f.weld_details || null;
