@@ -19,6 +19,7 @@ const {
   visionFitnessSqlInList,
 } = require('../constants/occupationalQualificationTypes');
 const { normalizePersonName } = require('./visionFitness.service');
+const { visionClockDates } = require('./weldingCoordinatorAuth.service');
 
 const GATE_CODE = 'NDT_INSPECTOR_GATE';
 const NDT_METHODS = new Set(['VT', 'MT', 'PT', 'UT', 'RT', 'ET', 'AE', 'TT', 'ST', 'LT']);
@@ -91,6 +92,32 @@ function personMatches(row, inspectorName, personnelId) {
   return normalizePersonName(row.person_name) === normalizePersonName(inspectorName);
 }
 
+function visionGuideDates(row) {
+  const clocks = visionClockDates(row);
+  if (clocks.usesSplit) return [clocks.near, clocks.colour].filter(Boolean);
+  return row && row.expiry_date ? [row.expiry_date] : [];
+}
+
+function visionRowOk(row, today) {
+  const dates = visionGuideDates(row);
+  if (!dates.length) return true;
+  return dates.every((raw) => {
+    const exp = startOfDay(raw);
+    return exp && exp >= today;
+  });
+}
+
+function visionNearestDate(row) {
+  const dates = visionGuideDates(row);
+  let nearest = null;
+  for (const raw of dates) {
+    const exp = startOfDay(raw);
+    if (!exp) continue;
+    if (!nearest || exp < nearest) nearest = exp;
+  }
+  return nearest;
+}
+
 function visionStateForPerson(visionRows, inspectorName, personnelId, companyId, today) {
   const candidates = (visionRows || []).filter((v) => personMatches(v, inspectorName, personnelId));
   const preferred = companyId != null
@@ -103,19 +130,20 @@ function visionStateForPerson(visionRows, inspectorName, personnelId, companyId,
   }
 
   const scored = pool.map((v) => {
-    const ok = isQualNotExpired(v, today);
+    const ok = visionRowOk(v, today);
+    const guide = visionNearestDate(v);
     let score = 0;
-    if (ok && v.expiry_date) score = 300 + new Date(v.expiry_date).getTime() / 1e12;
+    if (ok && guide) score = 300 + guide.getTime() / 1e12;
     else if (ok) score = 200;
-    else score = 100 + (v.expiry_date ? new Date(v.expiry_date).getTime() / 1e12 : 0);
-    return { v, ok, score };
+    else score = 100 + (guide ? guide.getTime() / 1e12 : 0);
+    return { v, ok, score, guide };
   });
   scored.sort((a, b) => b.score - a.score);
   const best = scored[0];
   if (!best.ok) {
-    return { state: 'expired', expiry_date: best.v.expiry_date, vision_id: best.v.id };
+    return { state: 'expired', expiry_date: best.guide || best.v.expiry_date, vision_id: best.v.id };
   }
-  return { state: 'ok', expiry_date: best.v.expiry_date, vision_id: best.v.id };
+  return { state: 'ok', expiry_date: best.guide || best.v.expiry_date, vision_id: best.v.id };
 }
 
 function summarizeQual(q) {
@@ -304,7 +332,8 @@ async function loadVisionRows(organizationId, allowedCompanyIds) {
   const { params, clause } = withCompanyScope(organizationId, allowedCompanyIds);
   const result = await query(`
     SELECT q.id, q.person_name, q.personnel_id, q.qualification_type,
-           q.expiry_date, q.status, q.company_id
+           q.expiry_date, q.near_vision_expiry_date, q.colour_vision_expiry_date,
+           q.status, q.company_id
     FROM qualifications q
     WHERE q.organization_id = @organization_id
       AND q.status NOT IN ('revocata', 'sospesa')

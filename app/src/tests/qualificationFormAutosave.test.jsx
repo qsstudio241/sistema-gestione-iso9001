@@ -21,6 +21,7 @@ vi.mock("../services/apiService", () => ({
 
 import apiService from "../services/apiService";
 import QualificationForm from "../pages/QualificationForm";
+import { VISION_FITNESS_TYPE } from "../data/occupationalQualificationTypes";
 
 const WELDER = {
   id: 7,
@@ -183,5 +184,36 @@ describe("QualificationForm — auto-save: tri-stato (#782) + canonicalizzazione
     expect(payload.welding_process).toBe("783");
     expect(payload.welding_process_test).toBe("135");
     expect(payload.notes).toBe("Nota smoke");
+  });
+});
+
+describe("QualificationForm — date del certificato oculistico", () => {
+  it("mostra visita e test dei colori solo sul certificato visivo", async () => {
+    await act(async () => {
+      render(
+        <QualificationForm
+          qualification={{
+            id: 4,
+            person_name: "ZZ Ispettore",
+            qualification_type: VISION_FITNESS_TYPE,
+            company_id: 10,
+            expiry_date: "2028-01-01",
+            near_vision_expiry_date: "2027-06-01",
+            colour_vision_expiry_date: "2030-06-01",
+          }}
+          onSaved={vi.fn()}
+          onClose={vi.fn()}
+        />
+      );
+    });
+    expect(screen.getByLabelText(/Scadenza visita acuit/)).toHaveValue("2027-06-01");
+    expect(screen.getByLabelText("Scadenza test dei colori")).toHaveValue("2030-06-01");
+  });
+
+  it("non mostra le due date su un patentino saldatore", async () => {
+    await act(async () => {
+      render(<QualificationForm qualification={WELDER} onSaved={vi.fn()} onClose={vi.fn()} />);
+    });
+    expect(screen.queryByLabelText("Scadenza test dei colori")).not.toBeInTheDocument();
   });
 });
