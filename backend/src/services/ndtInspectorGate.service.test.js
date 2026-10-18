@@ -298,6 +298,20 @@ describe('evaluateNdtInspectorGate', () => {
     expect(params.acq_0).toBe(11);
   });
 
+  it('esclude le qualifiche nel cestino (deleted_at) da patentino e idoneità visiva', async () => {
+    query.mockImplementation(async () => ({ recordset: [] }));
+    await evaluateNdtInspectorGate({
+      organizationId: 1001,
+      inspectorName: 'Mario Rossi',
+      reportType: 'VT',
+    });
+    const sqls = query.mock.calls.map((c) => c[0]);
+    expect(sqls.length).toBeGreaterThanOrEqual(2);
+    sqls.forEach((sql) => {
+      expect(sql).toMatch(/q\.deleted_at IS NULL/);
+    });
+  });
+
   it('se le colonne 178 non ci sono il controllo ispettore non va in errore', async () => {
     query.mockImplementation(async (sql) => {
       if (sql.includes('ndt_method')) return { recordset: [ndtQual()] };
