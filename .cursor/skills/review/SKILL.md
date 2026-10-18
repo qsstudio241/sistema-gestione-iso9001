@@ -138,6 +138,11 @@ Controllare solo ciò che il diff tocca.
 - La scadenza efficace è la più restrittiva tra i dati presenti. Compilare un
   campo nuovo non deve spegnere una data più vecchia già scaduta, né dare per
   buona una scadenza lasciata vuota.
+- Quella data, se entra in `SUM` o `COUNT` (card, badge), è un'espressione
+  scalare. `MIN` dentro `SELECT` è un aggregato su una subquery: SQL Server
+  risponde «Cannot perform an aggregate function on an expression containing
+  an aggregate or a subquery» e la pagina resta vuota. Il `WHERE` della lista
+  può tenere la subquery; le card no.
 
 **Valori già in tabella**
 
