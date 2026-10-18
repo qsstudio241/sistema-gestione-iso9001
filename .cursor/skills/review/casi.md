@@ -220,11 +220,11 @@ Le altre 38 sono tipi che la checklist non nominava. Raggruppati, senza una voce
 Non sono regole nuove. Erano ipotesi sullo SHA revisionato, non un commento di Bugbot su quello SHA.
 
 - #801: gate NDT e copertura 9712 ignorano `deleted_at`; il generatore WPS include WPQR cestinate; riassegnare un saldatore risponde 409; le NC nate dall'audit non hanno `organization_id` e spariscono dal cestino; l'email di sollecito include NC cestinate.
-  **Esito 18/10/2026:** gate NDT e copertura 9712 — corretto in [#828](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/828) (`deleted_at IS NULL`). Generatore WPS — corretto in questa slice (`deleted_at IS NULL` + filtro in memoria).
+  **Esito 18/10/2026:** gate NDT e copertura 9712 — corretto in [#828](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/828) (`deleted_at IS NULL`). Generatore WPS — corretto in [#830](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/830) (`deleted_at IS NULL` + filtro in memoria).
 - #791: la coda di ingest non filtra azienda né ruolo (isolamento già in checklist, non eseguito); `cert_ndt` non è nel filtro del modulo qualifiche.
   **Esito 18/10/2026:** coda ingest — corretto in [#826](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/826) (lista per azienda, conferma/scarto bloccati per viewer e per altra azienda). `cert_ndt` già risolto.
 - #786: una WPQR creata a mano, con `company_id` vuoto, non si lega.
-  **Esito 18/10/2026:** corretto in questa slice — match `company_id` uguale **oppure** assente (stesso tenant; mai un'altra azienda).
+  **Esito 18/10/2026:** corretto in [#830](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/830) — match `company_id` uguale **oppure** assente (stesso tenant; mai un'altra azienda).
 - #764: l'OCR di intestazione non parte se nel corpo c'è già una sigla.
 - #760: una data di nascita a due cifre diventa `exam_date`.
 - #733: il form di una 9606-2 BW usa ancora il profilo 9606-1; piastra→tubo con più posizioni usa sempre la soglia 150 mm (Bugbot lo scrive su un commit successivo).
@@ -239,13 +239,13 @@ Rilettura in sola lettura dopo il merge della [#824](https://github.com/qsstudio
 | Esito | Gravità | PR | File | Cosa resta |
 |---|---|---|---|---|
 | Corretto in [#828](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/828) | alta | #801 | `ndtInspectorGate.service.js`, `cnd9712.adapter.js` | SELECT con `deleted_at IS NULL` su patentino e idoneità visiva (gate e copertura 9712). |
-| Corretto in questa slice | alta | #801 | `wpsGenerator.service.js` (`loadWpqrRecords`) | SELECT con `deleted_at IS NULL`; elenco iniettato filtrato allo stesso modo. |
+| Corretto in [#830](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/830) | alta | #801 | `wpsGenerator.service.js` (`loadWpqrRecords`) | SELECT con `deleted_at IS NULL`; elenco iniettato filtrato allo stesso modo. |
 | Già risolto | media | #801 | `welding.controller.js` (`assignWpsWelder`), `projects.controller.js` (`addProjectWelder`) | Il controllo «già assegnato» esclude `deleted_at`. Riassegnare dopo il cestino non risponde più 409. |
 | Già risolto | media | #801 | `trash.service.js` (`listTrashedNonConformities`, `loadTrashRow`) | Elenco e ripristino usano `COALESCE(organization_id della NC, organization_id dell'audit)`. La NC nata dall'audit compare nel cestino. |
 | Già risolto | media | #801 | `ncAlertEscalation.service.js` | NC e azioni in sollecito hanno `deleted_at IS NULL`. |
 | Corretto in [#826](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/826) | alta | #791 | `PendingIngestQueue.jsx`, `ingestStaging.controller.js`, `ingestStaging.service.js` | Lista per azienda; conferma/scarto bloccati per viewer e per altra azienda. |
 | Già risolto | media | #791 | `ingestStaging.controller.js` (`MODULE_DOC_TYPES.qualifiche`) | Il filtro include `cert_ndt`. |
-| Corretto in questa slice | media | #786 | `wpsWpqrLinks.service.js` (`companyClause`) | Match `company_id` uguale oppure assente (stesso tenant). L'azienda diversa resta esclusa. |
+| Corretto in [#830](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/830) | media | #786 | `wpsWpqrLinks.service.js` (`companyClause`) | Match `company_id` uguale oppure assente (stesso tenant). L'azienda diversa resta esclusa. |
 | Ancora presente | media | #764 | `documentIngestPipeline.service.js` (`applyHeaderIssuingBodyFallback`) | Se l'ente AI è vuoto o `altro` e `extractIssuingBody` trova una sigla nel testo (IIS è in lista), l'OCR dell'intestazione non parte. |
 | Già risolto | media | #760 | `ruleFieldExtractors.js` (`allDates`, `extractQualificationDates`) | L'anno a due cifre non entra nell'elenco date di default. La nascita è esclusa dai candidati dell'esame. `12.05.75` non diventa `exam_date`. |
 | Ancora presente | media | #733 | `QualificationForm.jsx` | `getJointTypeProfile` è chiamato senza la norma. Per un BW di ISO 9606-2 l'input resta `thickness_s_test_mm` (profilo 9606-1). `getVisibleFieldKeys` conosce già il profilo `9606-2`, il form non lo usa. |
