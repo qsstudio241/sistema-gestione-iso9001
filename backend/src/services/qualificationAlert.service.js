@@ -14,7 +14,14 @@ const {
   parseRecipientList,
   uniqueEmails,
 } = require('./alertSchedulerHelpers');
-const { requiresSemiannualConfirmation, visionClockDates, earlierIso } = require('./weldingCoordinatorAuth.service');
+const { isVisionFitnessType } = require('../constants/occupationalQualificationTypes');
+const {
+  requiresSemiannualConfirmation,
+  visionClockDates,
+  visionPresentDates,
+  earliestIsoDate,
+} = require('./weldingCoordinatorAuth.service');
+const { queryOptionalVisionClocks } = require('./qualificationExpirySql');
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/i;
 
@@ -28,9 +35,8 @@ function validEmail(email) {
  * @returns {{ date: string|null, kind: 'expiry'|'confirmation'|null }}
  */
 function effectiveAlertDue(q) {
-  const clocks = visionClockDates(q);
-  if (clocks.usesSplit) {
-    const date = earlierIso(clocks.near, clocks.colour);
+  if (isVisionFitnessType(q && q.qualification_type)) {
+    const date = earliestIsoDate(visionPresentDates(q));
     return { date, kind: date ? 'expiry' : null };
   }
   const expiry = q.expiry_date || null;
@@ -268,9 +274,17 @@ async function logSent(pool, orgId, qualificationId, alertKind, email, alertDate
 }
 
 async function fetchQualificationsForDeadline(pool, orgId) {
-  const result = await pool.request()
-    .input('orgId', orgId)
-    .query(`
+  const tail = `
+      FROM qualifications q
+      LEFT JOIN companies c ON c.id = q.company_id
+      WHERE q.organization_id = @orgId
+        AND q.deleted_at IS NULL
+        AND q.status NOT IN ('revocata', 'sospesa')
+  `;
+  const result = await queryOptionalVisionClocks(
+    (sql) => pool.request().input('orgId', orgId).query(sql),
+    {
+      withClocks: `
       SELECT
         q.id, q.organization_id, q.company_id, q.person_name,
         q.qualification_type, q.certificate_number,
@@ -278,18 +292,29 @@ async function fetchQualificationsForDeadline(pool, orgId) {
         q.near_vision_expiry_date, q.colour_vision_expiry_date,
         q.status, q.approval_status,
         c.name AS company_name
-      FROM qualifications q
-      LEFT JOIN companies c ON c.id = q.company_id
-      WHERE q.organization_id = @orgId
-        AND q.deleted_at IS NULL
-        AND q.status NOT IN ('revocata', 'sospesa')
+      ${tail}
         AND (
           q.expiry_date IS NOT NULL
           OR q.next_confirmation_due IS NOT NULL
           OR q.near_vision_expiry_date IS NOT NULL
           OR q.colour_vision_expiry_date IS NOT NULL
         )
-    `);
+    `,
+      withoutClocks: `
+      SELECT
+        q.id, q.organization_id, q.company_id, q.person_name,
+        q.qualification_type, q.certificate_number,
+        q.expiry_date, q.next_confirmation_due,
+        q.status, q.approval_status,
+        c.name AS company_name
+      ${tail}
+        AND (
+          q.expiry_date IS NOT NULL
+          OR q.next_confirmation_due IS NOT NULL
+        )
+    `,
+    },
+  );
   return result.recordset || [];
 }
 
@@ -432,6 +457,24 @@ function mapQualificationDeadlineRows(rows, daysWindow = 365) {
           kindLabel: 'Scadenza test dei colori',
           idSuffix: 'colour',
           title: `Test dei colori: ${q.person_name}`,
+          daysWindow,
+          ignoreUpperBound: true,
+        });
+      }
+      // Una data vuota non cancella la scadenza unica. Se entrambe le date
+      // nuove ci sono e la unica è più lontana, restano le due righe.
+      const clocksPresent = [clocks.near, clocks.colour].filter(Boolean);
+      const uniqueStillBinds = Boolean(clocks.expiry) && (
+        !clocks.near
+        || !clocks.colour
+        || clocksPresent.every((d) => clocks.expiry < d)
+      );
+      if (uniqueStillBinds) {
+        pushDeadlineRow(out, q, clocks.expiry, {
+          kind: 'expiry',
+          kindLabel: 'Scadenza certificato',
+          idSuffix: 'expiry',
+          title: `Qualifica: ${q.person_name} (${q.qualification_type || 'n/d'})`,
           daysWindow,
           ignoreUpperBound: true,
         });
