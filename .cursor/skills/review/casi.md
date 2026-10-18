@@ -80,6 +80,7 @@ Per ogni caso: data, PR, area, gravità, cosa è successo, regola generale.
 - **Cosa è successo:** `vt_result` nasce già `NA` (migrazione 089). La rielaborazione tratta `NA` come «ancora vuoto». Un esito «non richiesto», che è davvero `NA`, resta candidato per sempre. Una conferma successiva può riscrivere gli altri esiti già a `NA`.
 - **Regola:** un default di colonna non è «vuoto» se lo stesso token è anche un valore vero. Dopo la conferma il record esce dai candidati, e la scrittura non copre quel valore.
 - **Confronto:** solo Bugbot. La skill ha letto la condizione SQL del registro e l'ha scartata come «stesso schema degli altri bundle», senza aprire il `DEFAULT` della colonna.
+- **Esito 18/10/2026:** riproducibile su main. Candidato e scrittura solo se la colonna è NULL (`NA` = «non richiesto»). Follow-up in questa slice.
 
 ### «N.A.» finisce in una colonna data
 
@@ -90,6 +91,7 @@ Per ogni caso: data, PR, area, gravità, cosa è successo, regola generale.
 - **Cosa è successo:** gli altri campi di pagina 2 trasformano `N.A.` e `--` in null. `test_date` copia il testo così com'è dentro una colonna `DATE`. L'inserimento del certificato fallisce.
 - **Regola:** gli stessi token vuoti valgono anche per la data, prima di legarla al database.
 - **Confronto:** solo Bugbot. La checklist guardava lo slittamento di fuso (`toISOString`), non il tipo SQL della colonna né i token già previsti dal prompt.
+- **Esito 18/10/2026:** riproducibile su main. `mapTestDate`: token vuoti e testo non `AAAA-MM-GG` → null. Follow-up in questa slice.
 
 ### Il processo 311 è trattato come un arco
 
@@ -100,6 +102,7 @@ Per ogni caso: data, PR, area, gravità, cosa è successo, regola generale.
 - **Cosa è successo:** il 311 (ossiacetilenica) è nell'elenco «senza materiale d'apporto», ma il controllo «è un arco?» esclude solo i processi stud. Corrente, tensione e polarità vengono chiesti lo stesso.
 - **Regola:** un processo escluso da una regola va riesaminato in quelle vicine.
 - **Confronto:** solo Bugbot. Il test del 142 copre l'apporto e il diametro del filo, non la corrente. La skill si è fermata a quel test.
+- **Esito 18/10/2026:** riproducibile su main. 311 (come 142) non è un arco: niente CURRENT_TYPE né corrente/tensione/polarità in passata. Follow-up in questa slice.
 
 ### Le passate AI si inseriscono a pezzi
 
@@ -110,6 +113,7 @@ Per ogni caso: data, PR, area, gravità, cosa è successo, regola generale.
 - **Cosa è successo:** ogni passata è un INSERT a sé. Se una riga fallisce, le precedenti restano e il tentativo successivo si ferma perché «una passata c'è già». Due conferme insieme possono anche duplicare le righe: l'indice non è univoco.
 - **Regola:** il gruppo di righe sta in una transazione. Il «c'è già?» da solo non basta, come per il codice commessa.
 - **Confronto:** l'inserimento a metà è di entrambi. La duplicazione in parallelo l'ha vista solo la skill (stessa famiglia del caso #811).
+- **Esito 18/10/2026:** riproducibile su main. `insertAiTestRunsIfEmpty` ora è una transazione con lucchetto sulla WPQR. Nessuna migrazione (niente indice univoco nuovo). Follow-up in questa slice.
 
 ### La testata vuota non cancella la passata
 
@@ -120,6 +124,7 @@ Per ogni caso: data, PR, area, gravità, cosa è successo, regola generale.
 - **Cosa è successo:** polarità e designazione del filo, se stanno solo sulla passata, fanno dire al pack che sul certificato mancano. La testata copre la riga (c'è il test); il contrario no.
 - **Regola:** un dato già sulla passata non è «assente sul certificato».
 - **Confronto:** solo la skill.
+- **Esito 18/10/2026:** riproducibile su main. FILLER e CURRENT_TYPE accettano il dato in passata. Follow-up in questa slice.
 
 ### Salvare un verbale vecchio scrive «dopo»
 

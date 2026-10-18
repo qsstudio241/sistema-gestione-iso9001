@@ -520,43 +520,69 @@ async function deleteWpsLinks({ organizationId, wpsId, actorUserId = null }) {
 
 /**
  * Ingest / rielaborazione: inserisce le passate AI solo se la WPQR non ne ha già
- * (mai sovrascrive passate manuali). Ritorna il numero di righe inserite.
+ * (mai sovrascrive passate manuali). Un'unica transazione + lucchetto sulla WPQR:
+ * se una riga fallisce non restano mezze passate; due conferme vicine non duplicano.
+ * Ritorna il numero di righe inserite.
  */
 async function insertAiTestRunsIfEmpty({ wpqrId, organizationId, companyId = null, runs = [] }) {
     requireTenant(organizationId);
     const list = Array.isArray(runs) ? runs.filter((r) => r && typeof r === 'object' && !Array.isArray(r)) : [];
     if (!list.length) return 0;
     if (!(await tableExists('wpqr_test_runs'))) return 0;
-    const existing = await query(
-        `SELECT TOP 1 id FROM wpqr_test_runs
-         WHERE wpqr_id = @wpqr_id AND organization_id = @organization_id AND deleted_at IS NULL`,
-        { wpqr_id: wpqrId, organization_id: organizationId }
-    );
-    if (existing.recordset && existing.recordset.length) return 0;
 
-    const columns = ['organization_id', 'company_id', 'wpqr_id', ...WRITABLE_COLUMNS, 'created_at', 'updated_at'];
-    const values = [
-        '@organization_id', '@company_id', '@wpqr_id',
-        ...WRITABLE_COLUMNS.map((c) => `@${c}`), 'GETDATE()', 'GETDATE()',
-    ];
-    let inserted = 0;
-    for (const raw of list) {
-        const row = { ...raw, source: 'ai' };
-        for (const col of WRITABLE_COLUMNS) {
-            if (row[col] === undefined) row[col] = null;
-        }
-        await query(
-            `INSERT INTO wpqr_test_runs (${columns.join(', ')}) VALUES (${values.join(', ')})`,
-            {
-                ...row,
-                organization_id: organizationId,
-                company_id: companyId == null ? null : companyId,
-                wpqr_id: wpqrId,
-            }
+    const pool = await getPool();
+    const tx = pool.transaction();
+    await tx.begin();
+    try {
+        const run = async (sqlText, params) => {
+            const request = tx.request();
+            Object.entries(params).forEach(([k, v]) => request.input(k, v));
+            return request.query(sqlText);
+        };
+        // Lucchetto sulla WPQR: due conferme vicine non devono entrambi vedere «vuoto».
+        await run(
+            `SELECT id FROM wpqr_records WITH (UPDLOCK, HOLDLOCK)
+             WHERE id = @wpqr_id AND organization_id = @organization_id`,
+            { wpqr_id: wpqrId, organization_id: organizationId }
         );
-        inserted += 1;
+        const existing = await run(
+            `SELECT TOP 1 id FROM wpqr_test_runs WITH (UPDLOCK, HOLDLOCK)
+             WHERE wpqr_id = @wpqr_id AND organization_id = @organization_id AND deleted_at IS NULL`,
+            { wpqr_id: wpqrId, organization_id: organizationId }
+        );
+        if (existing.recordset && existing.recordset.length) {
+            await tx.commit();
+            return 0;
+        }
+
+        const columns = ['organization_id', 'company_id', 'wpqr_id', ...WRITABLE_COLUMNS, 'created_at', 'updated_at'];
+        const values = [
+            '@organization_id', '@company_id', '@wpqr_id',
+            ...WRITABLE_COLUMNS.map((c) => `@${c}`), 'GETDATE()', 'GETDATE()',
+        ];
+        let inserted = 0;
+        for (const raw of list) {
+            const row = { ...raw, source: 'ai' };
+            for (const col of WRITABLE_COLUMNS) {
+                if (row[col] === undefined) row[col] = null;
+            }
+            await run(
+                `INSERT INTO wpqr_test_runs (${columns.join(', ')}) VALUES (${values.join(', ')})`,
+                {
+                    ...row,
+                    organization_id: organizationId,
+                    company_id: companyId == null ? null : companyId,
+                    wpqr_id: wpqrId,
+                }
+            );
+            inserted += 1;
+        }
+        await tx.commit();
+        return inserted;
+    } catch (err) {
+        await tx.rollback().catch(() => {});
+        throw err;
     }
-    return inserted;
 }
 
 module.exports = {
