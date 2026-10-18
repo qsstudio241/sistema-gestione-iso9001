@@ -1,0 +1,34 @@
+SYNTHETIC WPQR FIXTURE — noisy OCR from scan (no real certificate).
+lSO 15614-1:2004
+Certlficate No SYN-OCR-002
+Record issued 15.06.2018
+Manufacurer Synthetlc Works
+Welding process 135 MAG
+Current type DC/EP
+Preheat 100 C
+Joint details see page 3
+
+--- PAGE 2 ---
+Record of weld test
+Run Proses Size Curr Volt Travel Heat
+1    135    1,0  180  19,5  18 cm/min  12 kJ/cm
+2    135    1,0  190  20    16 cm/min  14 kJ/cm
+(no polarity column on this page)
+
+--- PAGE 3 ---
+Shieldlng gas M21
+Gas flow 14 l/min
+Preheat test 95
+lnterpass max 250
+
+--- PAGE 4 RESULTS ---
+Visual VT Acceptable
+PT Acceptable
+RT Not required
+UT Not required
+Tensile Acceptable
+Bend Acceptable
+Impact Not required
+Hardness Not required
+Macro Acceptable
+(no Date of welding on this scan — only issue date)

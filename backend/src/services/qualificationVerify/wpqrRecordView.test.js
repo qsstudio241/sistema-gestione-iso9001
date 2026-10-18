@@ -377,6 +377,7 @@ describe('toWpqrView — condizioni di prova di testata', () => {
         expect(toWpqrView({ heat_input_kind: 'arc_energy' }).heat_input_kind).toBe('arc_energy');
         expect(toWpqrView({ heat_input_kind: 'heat input' }).heat_input_kind).toBe('heat_input');
         expect(toWpqrView({ heat_input_kind: 'altro' }).heat_input_kind).toBeNull();
+        expect(toWpqrView({ heat_input_kind: 'altro' }).heat_input_kind_read).toBe('altro');
     });
 
     test('preheat/interpass di prova: colonna numerica, ripiego sul testo, «nessuno» riconosciuto', () => {

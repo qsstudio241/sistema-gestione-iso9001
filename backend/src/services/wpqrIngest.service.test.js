@@ -551,7 +551,10 @@ describe('round-trip a sentinella — ogni campo aiExpectedSchema sopravvive fin
         // GAP noti e già documentati come non ancora chiusi (vedi gap report §1) —
         // svuotare via via che vengono corretti, mai aggiungere qui senza una riga
         // nel gap report che lo motivi.
-        const knownGaps = [];
+        const knownGaps = [
+            // Tabella figlia: le passate non stanno su wpqr_records (insert-if-empty su wpqr_test_runs).
+            'test_runs',
+        ];
         const missing = findMissingSentinels(tokens, capturedValues, knownGaps);
         expect(missing).toEqual([]);
     });
