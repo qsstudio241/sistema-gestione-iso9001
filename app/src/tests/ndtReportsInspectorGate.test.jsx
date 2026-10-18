@@ -162,6 +162,8 @@ describe("NdtReportsPage — gate ispettore CND-2", () => {
     const evalA = screen.getAllByRole("button", { name: /A — Accettabile/ })[0];
     expect(evalA).toBeVisible();
     expect(evalA).not.toBeDisabled();
+    expect(screen.queryByText(/Nessun patentino ISO 9712 valido per questo metodo/)).toBeNull();
+    expect(screen.queryByText(/Nessun ispettore con patentino 9712/)).toBeNull();
 
     await act(async () => {
       window.dispatchEvent(new Event("online"));
@@ -206,5 +208,39 @@ describe("NdtReportsPage — gate ispettore CND-2", () => {
     const saved = apiService.createNdtReport.mock.calls.at(-1)[0];
     expect(saved.inspector).toBe("Mario Rossi");
     expect(saved.inspector_qualification_id).toBe(41);
+  });
+
+  it("errore rete: non dice che mancano i patentini; Riprova e nome già sul verbale", async () => {
+    eligibilityMock
+      .mockRejectedValueOnce(new Error("network"))
+      .mockResolvedValueOnce({
+        data: {
+          ok: true,
+          reasons: [],
+          candidates: [{ person_name: "Mario Rossi", ndt_method: "VT", ndt_level: 2 }],
+          qualification: { ndt_method: "VT", ndt_level: 2, person_name: "PS_Admin" },
+          vision: { state: "ok" },
+        },
+      });
+    const user = userEvent.setup();
+    await openNewReport(user);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Impossibile caricare i patentini, riprova/)).toBeTruthy();
+    }, { timeout: 2000 });
+
+    expect(screen.queryByText(/Nessun patentino ISO 9712 valido per questo metodo/)).toBeNull();
+    expect(screen.queryByText(/Aggiungilo in Qualifiche/)).toBeNull();
+    expect(screen.queryByText(/Nessun ispettore con patentino 9712/)).toBeNull();
+    expect(screen.getByRole("option", { name: /PS_Admin/ })).toHaveTextContent(/nome gi\u00e0 sul verbale/);
+    expect(screen.getByRole("combobox", { name: /Ispettore/ })).toHaveValue("name:PS_Admin");
+
+    await user.click(screen.getByRole("button", { name: "Riprova" }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("option", { name: /Mario Rossi/ })).toBeTruthy();
+    }, { timeout: 2000 });
+    expect(screen.queryByText(/Impossibile caricare i patentini, riprova/)).toBeNull();
+    expect(eligibilityMock).toHaveBeenCalledTimes(2);
   });
 });

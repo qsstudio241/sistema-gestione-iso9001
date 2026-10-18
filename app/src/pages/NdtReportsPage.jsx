@@ -715,15 +715,13 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
                 });
             }).catch(() => {
                 if (cancelled) return;
-                setInspectorGate({
+                setInspectorGate((g) => ({
+                    ...g,
                     loading: false,
                     ok: false,
                     reasons: ["Impossibile verificare il patentino (rete). Salva bozza; completa quando sei online."],
-                    candidates: [],
-                    qualification: null,
-                    vision: null,
                     error: "network",
-                });
+                }));
             });
         }, 300);
         return () => { cancelled = true; clearTimeout(timer); };
@@ -731,6 +729,8 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
 
     const gateReasonsText = (inspectorGate.reasons || []).filter(Boolean).join(" ");
     const inspectorCandidates = inspectorGate.candidates || [];
+    const inspectorLoadFailed = inspectorGate.error === "network";
+    const retryInspectorGate = () => setEligibilityNonce((n) => n + 1);
     const inspectorOptionValue = (c) => (
         c.qualification_id != null ? `q:${c.qualification_id}` : `name:${c.person_name}`
     );
@@ -1586,9 +1586,11 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
                                         onChange={e => onInspectorPick(e.target.value)}
                                     >
                                         <option value="">
-                                            {inspectorCandidates.length === 0
-                                                ? "Nessun ispettore con patentino 9712 per questo metodo"
-                                                : "\u2014 scegli un ispettore con patentino 9712 \u2014"}
+                                            {inspectorLoadFailed
+                                                ? "Impossibile caricare i patentini"
+                                                : inspectorCandidates.length === 0
+                                                    ? "Nessun ispettore con patentino 9712 per questo metodo"
+                                                    : "\u2014 scegli un ispettore con patentino 9712 \u2014"}
                                         </option>
                                         {showLegacyInspector && (
                                             <option value={`name:${form.inspector}`}>
@@ -1601,7 +1603,20 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
                                             </option>
                                         ))}
                                     </select>
-                                    {!inspectorGate.loading && inspectorCandidates.length === 0 && !judgmentLocked && (
+                                    {!inspectorGate.loading && inspectorLoadFailed && (
+                                        <div className="ndt-notes-warning">
+                                            {"Impossibile caricare i patentini, riprova"}
+                                            <button
+                                                type="button"
+                                                className="ndt-notes-fix-btn"
+                                                onClick={retryInspectorGate}
+                                                disabled={inspectorGate.loading}
+                                            >
+                                                {"Riprova"}
+                                            </button>
+                                        </div>
+                                    )}
+                                    {!inspectorGate.loading && !inspectorLoadFailed && inspectorCandidates.length === 0 && !judgmentLocked && (
                                         <div className="ndt-notes-warning">
                                             {"Nessun patentino ISO 9712 valido per questo metodo. Aggiungilo in Qualifiche."}
                                         </div>
