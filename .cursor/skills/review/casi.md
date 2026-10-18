@@ -226,11 +226,16 @@ Non sono regole nuove. Erano ipotesi sullo SHA revisionato, non un commento di B
 - #786: una WPQR creata a mano, con `company_id` vuoto, non si lega.
   **Esito 18/10/2026:** corretto in [#830](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/830) — match `company_id` uguale **oppure** assente (stesso tenant; mai un'altra azienda).
 - #764: l'OCR di intestazione non parte se nel corpo c'è già una sigla.
+  **Esito 18/10/2026:** corretto in [#833](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/833) — ente AI vuoto/`altro` non salta l'OCR se nel corpo c'è una sigla (IIS).
 - #760: una data di nascita a due cifre diventa `exam_date`.
 - #733: il form di una 9606-2 BW usa ancora il profilo 9606-1; piastra→tubo con più posizioni usa sempre la soglia 150 mm (Bugbot lo scrive su un commit successivo).
+  **Esito 18/10/2026:** form — corretto in [#833](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/833) (`getJointTypeProfile` con la norma; input su `testThicknessKey`). Soglia piastra→tubo già risolta.
 - #727: per la 9606-2, `t` del materiale finisce in `s`.
+  **Esito 18/10/2026:** corretto in [#833](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/833) — `resolveTestThicknessByJoint` non sposta t→s su ISO 9606-2.
 - #725: massimo numerico insieme al flag «illimitato»: il confronto non parte.
+  **Esito 18/10/2026:** corretto in [#833](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/833) — `compareRange` tratta il flag illimitato anche se c'è un massimo numerico.
 - #702: una qualifica 14732 entra nel dominio saldatori 9606.
+  **Esito 18/10/2026:** corretto in [#833](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/833) — `welder_9606` filtra solo `%9606%`. Il ponte commessa `wpsWelderCoverage` resta con 14732 (COV-4).
 
 ### Esito su main (18/10/2026)
 
@@ -246,13 +251,13 @@ Rilettura in sola lettura dopo il merge della [#824](https://github.com/qsstudio
 | Corretto in [#826](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/826) | alta | #791 | `PendingIngestQueue.jsx`, `ingestStaging.controller.js`, `ingestStaging.service.js` | Lista per azienda; conferma/scarto bloccati per viewer e per altra azienda. |
 | Già risolto | media | #791 | `ingestStaging.controller.js` (`MODULE_DOC_TYPES.qualifiche`) | Il filtro include `cert_ndt`. |
 | Corretto in [#830](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/830) | media | #786 | `wpsWpqrLinks.service.js` (`companyClause`) | Match `company_id` uguale oppure assente (stesso tenant). L'azienda diversa resta esclusa. |
-| Ancora presente | media | #764 | `documentIngestPipeline.service.js` (`applyHeaderIssuingBodyFallback`) | Se l'ente AI è vuoto o `altro` e `extractIssuingBody` trova una sigla nel testo (IIS è in lista), l'OCR dell'intestazione non parte. |
+| Corretto in [#833](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/833) | media | #764 | `documentIngestPipeline.service.js` (`applyHeaderIssuingBodyFallback`) | Ente AI vuoto/`altro`: l'OCR intestazione parte anche se nel corpo c'è una sigla (IIS). |
 | Già risolto | media | #760 | `ruleFieldExtractors.js` (`allDates`, `extractQualificationDates`) | L'anno a due cifre non entra nell'elenco date di default. La nascita è esclusa dai candidati dell'esame. `12.05.75` non diventa `exam_date`. |
-| Ancora presente | media | #733 | `QualificationForm.jsx` | `getJointTypeProfile` è chiamato senza la norma. Per un BW di ISO 9606-2 l'input resta `thickness_s_test_mm` (profilo 9606-1). `getVisibleFieldKeys` conosce già il profilo `9606-2`, il form non lo usa. |
+| Corretto in [#833](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/833) | media | #733 | `QualificationForm.jsx` | `getJointTypeProfile` riceve la norma. BW 9606-2 usa `thickness_t_test_mm` (`testThicknessKey`). |
 | Già risolto | bassa | #733 | `weldingQualificationRules9606Part2.js` (`computePlateToPipeMinDiameter`) | Più posizioni prendono la soglia più alta: PF insieme a un'altra posizione è 500 mm, non il pavimento 150. |
-| Ancora presente | media | #727 | `weldingDesignation.js` (`resolveTestThicknessByJoint`, `parseWelderQualificationDesignation`), `qualificationIngest.service.js` | Su ogni BW con `s` vuoto, `t` diventa `s`, anche per ISO 9606-2. `ISO 9606-2: 141 T BW … t03` restituisce `thickness_s_test_mm = 3` e `t` null. Lo stesso spostamento è nel commit. |
-| Ancora presente | bassa | #725 | `welder9606Correctness.pack.js` (`compareRange`) | Se ci sono insieme un massimo numerico e il flag «illimitato», nessuno dei due rami confronta il massimo. |
-| Ancora presente | media | #702 | `welder9606.adapter.js` | Il dominio `welder_9606` include ancora `qualification_type LIKE '%14732%'`. |
+| Corretto in [#833](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/833) | media | #727 | `weldingDesignation.js` (`resolveTestThicknessByJoint`, `parseWelderQualificationDesignation`), `qualificationIngest.service.js` | ISO 9606-2: `t` resta `t` anche su BW. |
+| Corretto in [#833](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/833) | bassa | #725 | `welder9606Correctness.pack.js` (`compareRange`) | Flag illimitato confrontato anche se c'è un massimo numerico. |
+| Corretto in [#833](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/833) | media | #702 | `welder9606.adapter.js` | Dominio `welder_9606` filtra solo `%9606%`. Il ponte commessa resta con 14732. |
 
 ### Quanto prende la checklist aggiornata
 

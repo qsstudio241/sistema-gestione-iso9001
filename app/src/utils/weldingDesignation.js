@@ -73,14 +73,22 @@ export function resolvePrintedDesignation(printed, computeFields = {}) {
   return buildWelderDesignation(computeFields);
 }
 
+function isIso9606Part2(text) {
+  return /9606[\s-]*2(?!\d)/i.test(String(text || ""));
+}
+
 /**
  * Spessore della PROVA per tipo di giunto (ISO 9606-1): BW -> s depositato (Tab. 6),
  * FW -> t materiale (Tab. 8). Speculare al backend: sposta solo se la colonna corretta
  * e' vuota; se ci sono entrambi restano entrambi; giunto non BW/FW: nessuna deduzione.
+ * ISO 9606-2: nessuno spostamento (`t` resta `t` anche su BW).
  */
-export function resolveTestThicknessByJoint({ joint_type: jointType, s, t } = {}) {
+export function resolveTestThicknessByJoint({ joint_type: jointType, s, t, standard } = {}) {
   let sNum = num(s);
   let tNum = num(t);
+  if (isIso9606Part2(standard)) {
+    return { s: sNum, t: tNum };
+  }
   const joint = jointType == null ? "" : String(jointType).trim().toUpperCase();
   if (joint === "BW" && sNum == null && tNum != null) {
     sNum = tNum;
@@ -249,6 +257,7 @@ export function parseWelderQualificationDesignation(text) {
     joint_type: parsed.joint_type,
     s: parsed.thickness_s_test_mm,
     t: parsed.thickness_t_test_mm,
+    standard: rawLine,
   });
   parsed.thickness_s_test_mm = thk.s;
   parsed.thickness_t_test_mm = thk.t;

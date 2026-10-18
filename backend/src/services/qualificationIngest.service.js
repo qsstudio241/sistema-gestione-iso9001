@@ -363,11 +363,14 @@ function mapPipelineFieldsToReview(f, pipelineText, fileName, docType = null) {
     // pipe_diameter_mm in revisione: preferisci il valore AI originale se presente,
     // altrimenti il min risolto (così il campo schema review resta allineato al DB).
     const pipeDiameterSingle = toNumericOrNull(f.pipe_diameter_mm) ?? pipeDiameterMinNum;
-    // ISO 9606-1: BW -> s depositato (Tab. 6), FW -> t materiale (Tab. 8). Vedi resolveTestThicknessByJoint.
+    // ISO 9606-1: BW -> s depositato (Tab. 6), FW -> t materiale (Tab. 8).
+    // ISO 9606-2: t resta t anche su BW. Vedi resolveTestThicknessByJoint.
     const testThickness = resolveTestThicknessByJoint({
         joint_type: f.joint_type,
         s: f.thickness_s_test_mm,
         t: f.thickness_t_test_mm,
+        standard: f.standard_reference || f.standard_ref || f.qualification_type
+            || f.qualification_designation,
     });
 
     return {
@@ -728,6 +731,7 @@ async function commitQualificationFromFields(fields, organizationId, companyId, 
         joint_type,
         s: f.thickness_s_test_mm,
         t: f.thickness_t_test_mm,
+        standard: standard_ref || qualificationType || f.qualification_designation,
     });
     const product_type = f.product_type || null;
     const weld_details = f.weld_details || null;

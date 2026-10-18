@@ -95,6 +95,11 @@ describe('CORR.THK_BW — Tab. 6 (spessore depositato s, giunto testa a testa)',
         none(bw(12, 3, null, { thickness_max_unlimited: true }), 'THK_BW');
     });
 
+    test('massimo numerico insieme al flag illimitato: il confronto del massimo parte', () => {
+        const f = one(bw(6, 3, 99, { thickness_max_unlimited: true }), 'THK_BW');
+        expectWarnOver(f, '§5.7 Tab. 6');
+    });
+
     test.each([
         ['s = 2,99 con massimo 6 (0,02 mm oltre)', bw(2.99, 2.99, 6)],
         ['s = 3 con massimo 6,01 (0,01 mm oltre)', bw(3, 3, 6.01)],
