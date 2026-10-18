@@ -631,9 +631,6 @@ async function generateWpsFromWpqr(params = {}) {
         }
         records = await loadWpqrRecords(organizationId, companyId);
     }
-    if (Array.isArray(records)) {
-        records = records.filter((r) => r && r.deleted_at == null);
-    }
 
     if (!Array.isArray(records) || records.length === 0) {
         return {

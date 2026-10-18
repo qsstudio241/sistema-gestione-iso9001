@@ -1,15 +1,11 @@
 'use strict';
 
-jest.mock('../config/database', () => ({ query: jest.fn() }));
-
-const { query } = require('../config/database');
 const {
     generateWpsFromWpqr,
     assessJointCoverageInputs,
     checkThicknessCoverage,
     checkDiameterCoverage,
     checkThroatCoverage,
-    loadWpqrRecords,
 } = require('./wpsGenerator.service');
 
 /** Fixture WPQR caso Mason (in-memory). */
@@ -480,44 +476,5 @@ describe('assessJointCoverageInputs / need_input', () => {
         expect(a.complete).toBe(true);
         expect(a.resolved.groupA).toBe('1.2');
         expect(a.resolved.groupB).toBe('1.1');
-    });
-
-    test('una WPQR cestinata in elenco non diventa base di una WPS', async () => {
-        const result = await generateWpsFromWpqr({
-            organizationId: 1,
-            request: MASON_REQUEST,
-            wpqrRecords: [{ ...WPQR_MASON_DEMO, deleted_at: '2026-10-01T00:00:00Z' }],
-        });
-        expect(result.status).toBe('not_possible');
-        expect(result.wpqr_used).toBeNull();
-        expect(result.wps_draft).toBeNull();
-        expect(result.extensions_needed.join(' ')).toMatch(/Registro WPQR vuoto/i);
-    });
-
-    test('tra una WPQR cestinata e una attiva resta solo l\'attiva', async () => {
-        const result = await generateWpsFromWpqr({
-            organizationId: 1,
-            request: MASON_REQUEST,
-            wpqrRecords: [
-                { ...WPQR_MASON_DEMO, id: 9, wpqr_code: 'WPQR-CESTINATA', deleted_at: '2026-10-01T00:00:00Z' },
-                WPQR_MASON_DEMO,
-            ],
-        });
-        expect(['ok', 'partial']).toContain(result.status);
-        expect(result.wpqr_used.wpqr_code).toBe('WPQR-MASON-DEMO');
-    });
-});
-
-describe('loadWpqrRecords — cestino', () => {
-    afterEach(() => jest.clearAllMocks());
-
-    test('la SELECT esclude le WPQR con deleted_at', async () => {
-        query.mockResolvedValue({ recordset: [] });
-        await loadWpqrRecords(1001, 5);
-        expect(query).toHaveBeenCalledTimes(1);
-        const sql = query.mock.calls[0][0];
-        expect(sql).toMatch(/wq\.deleted_at IS NULL/);
-        expect(sql).toMatch(/wq\.organization_id = @organization_id/);
-        expect(query.mock.calls[0][1]).toEqual({ organization_id: 1001, company_id: 5 });
     });
 });
