@@ -31,8 +31,11 @@ describe('WPQR — completezza modifica manuale vs schema ingest AI', () => {
             thickness_test_mm: 'thickness_tested', // stesso concetto, nome colonna DB storico diverso
             approval_date: 'issue_date', // mapPipelineFieldsToReview: approval_date || issue_date
         };
+        // Le passate si correggono con GET/PUT /welding/wpqr/:id/test-runs (WV-4a),
+        // non con le colonne di wpqr_records.
+        const exclude = ['test_runs'];
 
-        const missing = findIngestFieldsMissingFromManualEdit(schema, WPQR_MANUAL_EDITABLE_FIELDS, { aliases });
+        const missing = findIngestFieldsMissingFromManualEdit(schema, WPQR_MANUAL_EDITABLE_FIELDS, { aliases, exclude });
 
         expect(missing).toEqual([]);
     });

@@ -120,6 +120,7 @@ const WPQR_MANUAL_EDITABLE_FIELDS = [
     'thickness_t2_min', 'thickness_t2_max', 'thickness_t2_max_unlimited',
     // STUD-1: stud/prigioniero + Parent Metal 2 (mig. 159)
     'qualifying_element', 'base_material_group_2', 'base_material_spec_2',
+    ...wpqrTestRuns.WPQR_TEST_HEADER_FIELDS,
 ];
 
 // ?

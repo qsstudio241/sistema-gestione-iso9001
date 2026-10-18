@@ -54,6 +54,19 @@ const TABLE_ADAPTERS = {
             certificate_number: reviewFields.certificate_number,
         }),
     },
+    wpqr_test_runs: {
+        targetIdColumn: 'target_wpqr_id',
+        resultIdKey: 'wpqr_id',
+        excludeCondition: null,
+        candidateFrom: 'wpqr_records',
+        candidateSelectColumns: 'id, organization_id, company_id, wpqr_code, welding_process, product_type, joint_type, welding_positions, thickness_tested, certificate_file_url',
+        resolveDocType: () => 'wpqr',
+        mapPipelineFieldsToReview: (fields) => mapWpqrFields(fields),
+        buildStagingDisplayFields: (reviewFields) => ({
+            wpqr_code: reviewFields.wpqr_number || reviewFields.reference_number,
+            certificate_number: reviewFields.certificate_number,
+        }),
+    },
 };
 
 function getTableAdapter(table) {

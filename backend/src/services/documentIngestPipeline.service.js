@@ -88,6 +88,9 @@ async function extractDocumentText(pdfBuffer, options = {}) {
     let text = '';
     let ocrUsed = false;
     const layoutSink = options.collectOcrLayout ? [] : null;
+    const maxPages = options.maxPages != null
+        ? options.maxPages
+        : (options.docType === 'wpqr' ? 4 : 3);
 
     try {
         text = await extractPdfText(pdfBuffer);
@@ -102,7 +105,7 @@ async function extractDocumentText(pdfBuffer, options = {}) {
             logger.info('[IngestPipeline] Testo breve, tentativo OCR', { chars: text.length });
             text = await extractTextWithOCR(
                 pdfBuffer,
-                layoutSink ? { maxPages: 3, lang: 'ita+eng', layoutSink } : { maxPages: 3, lang: 'ita+eng' },
+                layoutSink ? { maxPages, lang: 'ita+eng', layoutSink } : { maxPages, lang: 'ita+eng' },
             );
             ocrUsed = true;
         } catch (ocrErr) {
@@ -554,7 +557,10 @@ async function runDocumentIngest({
     // Il layout OCR serve solo al 14732, come nel percorso con doc_type esplicito.
     const extractedText = preExtracted || await extractDocumentText(
         pdfBuffer,
-        docType === 'qualifica_14732' ? { collectOcrLayout: true } : {},
+        {
+            collectOcrLayout: docType === 'qualifica_14732',
+            docType,
+        },
     );
     const { text, ocrUsed, warnings: textWarnings } = extractedText;
     const ocrLayout = docType === 'qualifica_14732' ? extractedText.ocrLayout : undefined;
