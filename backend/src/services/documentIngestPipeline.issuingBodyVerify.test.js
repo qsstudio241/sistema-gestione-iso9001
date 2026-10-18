@@ -132,6 +132,18 @@ describe('ente AI vuoto o altro: come #764', () => {
         if (ai) expect(out.fields.issuing_body).toBe('altro');
         else expect(out.fields.issuing_body).toBeUndefined();
     });
+
+    it('AI vuoto + IIS nel corpo: l OCR dell\'intestazione parte comunque', async () => {
+        mockAi(null);
+        extractHeaderTextWithOCR.mockResolvedValue('TEC-Eurolab');
+        const out = await ingest(
+            'patentino_saldatore',
+            `${TEXT_SENZA_ENTE}\nIstituto Italiano della Saldatura IIS`
+        );
+        expect(extractHeaderTextWithOCR).toHaveBeenCalledTimes(1);
+        expect(out.fields.issuing_body).toBe('tec_eurolab');
+        expect(out.fieldSources.issuing_body).toBe('ocr_header');
+    });
 });
 
 describe('PDF gia letto con OCR completo', () => {
