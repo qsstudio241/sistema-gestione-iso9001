@@ -172,6 +172,45 @@ describe('evaluateInspectorFromRows', () => {
     expect(out.vision.state).toBe('expired');
   });
 
+  it('con due omonimi usa il patentino collegato, non l\'altro', () => {
+    const valido = ndtQual({ id: 41, personnel_id: 10, certificate_number: 'VT-OK' });
+    const scaduto = ndtQual({
+      id: 42,
+      personnel_id: 11,
+      certificate_number: 'VT-OLD',
+      expiry_date: '2020-01-01',
+    });
+    const byName = evaluateInspectorFromRows({
+      ...base,
+      ndtQuals: [valido, scaduto],
+      visionRows: [visionQual(), visionQual({ id: 100, personnel_id: 11 })],
+    });
+    expect(byName.ok).toBe(true);
+    expect(byName.qualification.id).toBe(41);
+    expect(byName.candidates.map((c) => c.qualification_id)).toEqual([41]);
+
+    const byId = evaluateInspectorFromRows({
+      ...base,
+      qualificationId: 42,
+      ndtQuals: [valido, scaduto],
+      visionRows: [visionQual(), visionQual({ id: 100, personnel_id: 11 })],
+    });
+    expect(byId.ok).toBe(false);
+    expect(byId.reasons[0]).toMatch(/scaduto/);
+    expect(byId.qualification.id).toBe(42);
+  });
+
+  it('rifiuta un id di patentino che non è più in anagrafica', () => {
+    const out = evaluateInspectorFromRows({
+      ...base,
+      qualificationId: 99,
+      ndtQuals: [ndtQual()],
+      visionRows: [visionQual()],
+    });
+    expect(out.ok).toBe(false);
+    expect(out.reasons[0]).toMatch(/non è più in anagrafica/);
+  });
+
   it('fallisce se il test dei colori è passato anche con la visita ancora valida', () => {
     const out = evaluateInspectorFromRows({
       ...base,

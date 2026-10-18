@@ -10,6 +10,8 @@ jest.mock('../utils/logger', () => ({
 jest.mock('../services/ndtInspectorGate.service', () => ({
   GATE_CODE: 'NDT_INSPECTOR_GATE',
   isJudgmentStatus: (s) => s === 'completed' || s === 'approved',
+  isNdt9712Qualification: (q) => /9712|NDT/i.test(String((q && q.qualification_type) || ''))
+    || ['VT', 'MT', 'PT', 'UT', 'RT'].includes(String((q && q.ndt_method) || '').toUpperCase()),
   evaluateNdtInspectorGate: jest.fn().mockResolvedValue({
     ok: true, reasons: [], qualification: null, vision: { state: 'ok' }, candidates: [],
   }),
@@ -564,5 +566,95 @@ describe('inspection_phase prima / durante / dopo', () => {
     const setCall = query.mock.calls.find(([sql]) => String(sql).includes('UPDATE ndt_reports'));
     expect(setCall[1].inspection_phase).toBe('before');
     expect(resSet.status).not.toHaveBeenCalledWith(400);
+  });
+});
+
+describe('inspector_qualification_id', () => {
+  const patent = {
+    id: 41,
+    person_name: 'Mario Rossi',
+    certificate_number: 'VT-99',
+    qualification_type: 'Certificazione NDT ISO 9712',
+    ndt_method: 'VT',
+    ndt_level: 2,
+    company_id: 12,
+    status: 'valida',
+    deleted_at: null,
+  };
+
+  function mockCreateQueries() {
+    query.mockImplementation(async (sql) => {
+      if (String(sql).includes('FROM qualifications')) return { recordset: [patent] };
+      if (String(sql).includes('COUNT(*) AS cnt')) return { recordset: [{ cnt: 0 }] };
+      if (String(sql).includes('INSERT INTO ndt_reports')) return { recordset: [{ id: 99 }] };
+      return { recordset: [] };
+    });
+  }
+
+  it('salva l\'id e il nome del patentino, anche se il testo inviato è diverso', async () => {
+    mockCreateQueries();
+    evaluateNdtInspectorGate.mockClear();
+    const res = mockRes();
+    await ctrl.createNdtReport(mockReq({
+      user: studioAdmin,
+      body: {
+        company_id: 12,
+        client: 'Cliente',
+        status: 'draft',
+        inspector: 'Nome sbagliato',
+        inspector_qualification_id: 41,
+      },
+    }), res);
+    expect(res.status).toHaveBeenCalledWith(201);
+    const params = query.mock.calls.find(([sql]) => String(sql).includes('INSERT INTO ndt_reports'))[1];
+    expect(params.inspector_qualification_id).toBe(41);
+    expect(params.inspector).toBe('Mario Rossi');
+    expect(evaluateNdtInspectorGate).not.toHaveBeenCalled();
+  });
+
+  it('in completamento il gate legge l\'id del patentino', async () => {
+    mockCreateQueries();
+    evaluateNdtInspectorGate.mockClear();
+    const res = mockRes();
+    await ctrl.createNdtReport(mockReq({
+      user: studioAdmin,
+      body: {
+        company_id: 12,
+        client: 'Cliente',
+        status: 'completed',
+        inspector_qualification_id: 41,
+      },
+    }), res);
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(evaluateNdtInspectorGate).toHaveBeenCalledWith(expect.objectContaining({
+      qualificationId: 41,
+      inspectorName: 'Mario Rossi',
+      reportType: 'VT',
+    }));
+  });
+
+  it('rifiuta un collegamento che non è un patentino ISO 9712', async () => {
+    query.mockImplementation(async (sql) => {
+      if (String(sql).includes('FROM qualifications')) {
+        return {
+          recordset: [{
+            ...patent,
+            qualification_type: 'Saldatore ISO 9606-1',
+            ndt_method: null,
+          }],
+        };
+      }
+      return { recordset: [] };
+    });
+    const res = mockRes();
+    await ctrl.createNdtReport(mockReq({
+      user: studioAdmin,
+      body: { company_id: 12, status: 'draft', inspector_qualification_id: 41 },
+    }), res);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      code: 'NDT_INSPECTOR_QUALIFICATION_NOT_9712',
+    }));
+    expect(query.mock.calls.some(([sql]) => String(sql).includes('INSERT INTO ndt_reports'))).toBe(false);
   });
 });
