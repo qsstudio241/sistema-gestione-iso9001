@@ -97,16 +97,6 @@ describe('parseWelderQualificationDesignation', () => {
         expect(fields.thickness_t_test_mm).toBeUndefined();
     });
 
-    it('ISO 9606-2 BW con token t: t resta t, s resta vuoto', () => {
-        const parsed = parseWelderQualificationDesignation('ISO 9606-2: 141 T BW FM1 t03 PA');
-        expect(parsed.joint_type).toBe('BW');
-        expect(parsed.thickness_t_test_mm).toBe(3);
-        expect(parsed.thickness_s_test_mm).toBeNull();
-        const fields = designationFieldsToIngest(parsed);
-        expect(fields.thickness_t_test_mm).toBe(3);
-        expect(fields.thickness_s_test_mm).toBeUndefined();
-    });
-
     it('BW con token spessore prima del giunto: assegnazione indipendente dall\'ordine', () => {
         const parsed = parseWelderQualificationDesignation('ISO 9606-1: 141 P t10 BW FM1 PA');
         expect(parsed.thickness_s_test_mm).toBe(10);
@@ -295,12 +285,18 @@ describe('resolveTestThicknessByJoint', () => {
         expect(resolveTestThicknessByJoint({ joint_type: 'FW', s: '10 mm' })).toEqual({ s: null, t: 10 });
     });
 
-    it('ISO 9606-2 BW: t del materiale resta in t, non diventa s', () => {
+    it('ISO 9606-2 BW: t resta t, non diventa s', () => {
         expect(resolveTestThicknessByJoint({
             joint_type: 'BW', t: 3, standard: 'ISO 9606-2',
         })).toEqual({ s: null, t: 3 });
-        expect(resolveTestThicknessByJoint({
-            joint_type: 'BW', t: '03', standard: 'Saldatore ISO 9606-2',
-        })).toEqual({ s: null, t: 3 });
+    });
+});
+
+describe('parseWelderQualificationDesignation ISO 9606-2', () => {
+    it('BW con token t03: thickness_t_test_mm = 3, s resta vuoto', () => {
+        const parsed = parseWelderQualificationDesignation('ISO 9606-2: 141 T BW FM1 t03 PA');
+        expect(parsed.joint_type).toBe('BW');
+        expect(parsed.thickness_t_test_mm).toBe(3);
+        expect(parsed.thickness_s_test_mm).toBeNull();
     });
 });

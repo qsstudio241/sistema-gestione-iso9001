@@ -1082,14 +1082,13 @@ describe('spessore prova per profilo giunto (VQ-BW-S) — BW -> s depositato, FW
             .toMatchObject({ thickness_s_test_mm: null, thickness_t_test_mm: null });
     });
 
-    it('ISO 9606-2 BW: t del materiale non viene copiato in s', () => {
-        const out = map({
+    it('ISO 9606-2 BW: t di prova resta t, non diventa s', () => {
+        expect(map({
             joint_type: 'BW',
             thickness_t_test_mm: 3,
-            standard_reference: 'ISO 9606-2',
-        });
-        expect(out.thickness_t_test_mm).toBe(3);
-        expect(out.thickness_s_test_mm).toBeNull();
+            standard_reference: 'ISO 9606-2:2004',
+            qualification_type: 'Saldatore ISO 9606-2',
+        })).toMatchObject({ thickness_s_test_mm: null, thickness_t_test_mm: 3 });
     });
 
     describe('commit', () => {

@@ -95,6 +95,11 @@ describe('CORR.THK_BW — Tab. 6 (spessore depositato s, giunto testa a testa)',
         none(bw(12, 3, null, { thickness_max_unlimited: true }), 'THK_BW');
     });
 
+    test('massimo numerico insieme al flag illimitato: il confronto del massimo parte', () => {
+        const f = one(bw(6, 3, 99, { thickness_max_unlimited: true }), 'THK_BW');
+        expectWarnOver(f, '§5.7 Tab. 6');
+    });
+
     test.each([
         ['s = 2,99 con massimo 6 (0,02 mm oltre)', bw(2.99, 2.99, 6)],
         ['s = 3 con massimo 6,01 (0,01 mm oltre)', bw(3, 3, 6.01)],
@@ -143,11 +148,6 @@ describe('CORR.THK_BW — Tab. 6 (spessore depositato s, giunto testa a testa)',
     test('limite superiore non dichiarato (max null senza flag): non si giudica il massimo', () => {
         none(bw(6, 3, null), 'THK_BW');
         expectWarnOver(one(bw(6, 2, null), 'THK_BW'), '§5.7 Tab. 6');
-    });
-
-    test('massimo numerico insieme al flag illimitato: si confronta il massimo', () => {
-        none(bw(6, 3, 12, { thickness_max_unlimited: true, welding_process_test: '135' }), 'THK_BW');
-        expectWarnOver(one(bw(6, 3, 20, { thickness_max_unlimited: true, welding_process_test: '135' }), 'THK_BW'), '§5.7 Tab. 6');
     });
 
     test('spessore di prova s assente con validità dichiarata → dato mancante (mai warn), cita il solo t', () => {

@@ -220,20 +220,22 @@ Le altre 38 sono tipi che la checklist non nominava. Raggruppati, senza una voce
 Non sono regole nuove. Erano ipotesi sullo SHA revisionato, non un commento di Bugbot su quello SHA.
 
 - #801: gate NDT e copertura 9712 ignorano `deleted_at`; il generatore WPS include WPQR cestinate; riassegnare un saldatore risponde 409; le NC nate dall'audit non hanno `organization_id` e spariscono dal cestino; l'email di sollecito include NC cestinate.
-  **Esito 18/10/2026:** gate NDT e copertura 9712 — corretto in [#828](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/828) (`deleted_at IS NULL`). Generatore WPS ancora aperto.
+  **Esito 18/10/2026:** gate NDT e copertura 9712 — corretto in [#828](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/828) (`deleted_at IS NULL`). Generatore WPS — corretto in [#829](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/829) (`loadWpqrRecords` con `deleted_at IS NULL`).
 - #791: la coda di ingest non filtra azienda né ruolo (isolamento già in checklist, non eseguito); `cert_ndt` non è nel filtro del modulo qualifiche.
   **Esito 18/10/2026:** coda ingest — corretto in [#826](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/826) (lista per azienda, conferma/scarto bloccati per viewer e per altra azienda). `cert_ndt` già risolto.
 - #786: una WPQR creata a mano, con `company_id` vuoto, non si lega.
+  **Esito 18/10/2026:** corretto in [#830](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/830) — match `company_id` uguale **oppure** assente (stesso tenant; mai un'altra azienda).
 - #764: l'OCR di intestazione non parte se nel corpo c'è già una sigla.
+  **Esito 18/10/2026:** corretto in [#833](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/833) — ente AI vuoto/`altro` non salta l'OCR se nel corpo c'è una sigla (IIS).
 - #760: una data di nascita a due cifre diventa `exam_date`.
 - #733: il form di una 9606-2 BW usa ancora il profilo 9606-1; piastra→tubo con più posizioni usa sempre la soglia 150 mm (Bugbot lo scrive su un commit successivo).
-  **Esito 18/10/2026:** form 9606-2 — corretto in [#831](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/831) (`getJointTypeProfile` con la norma; input sul `testThicknessKey`). Piastra→tubo già risolto.
+  **Esito 18/10/2026:** form — corretto in [#833](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/833) (`getJointTypeProfile` con la norma; input su `testThicknessKey`). Soglia piastra→tubo già risolta.
 - #727: per la 9606-2, `t` del materiale finisce in `s`.
-  **Esito 18/10/2026:** corretto in [#831](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/831) — `resolveTestThicknessByJoint` non sposta t→s se la norma è 9606-2.
+  **Esito 18/10/2026:** corretto in [#833](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/833) — `resolveTestThicknessByJoint` non sposta t→s su ISO 9606-2.
 - #725: massimo numerico insieme al flag «illimitato»: il confronto non parte.
-  **Esito 18/10/2026:** corretto in [#831](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/831) — `compareRange` confronta il massimo numerico anche se c'è il flag.
+  **Esito 18/10/2026:** pack 9606-1 corretto in [#833](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/833). Pack 9606-2 (`welder9606Part2.pack.js`) ancora aperto: stesso buco, residuo in [#831](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/831).
 - #702: una qualifica 14732 entra nel dominio saldatori 9606.
-  **Esito 18/10/2026:** rimandato (documentato in [#831](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/831)) — dopo COV-4 l'inclusione è intenzionale (operatori sulla stessa copertura WPS). Toglierla cambierebbe i semafori. Serve un dominio `operator_14732` dedicato, non un filtro silenzioso.
+  **Esito 18/10/2026:** corretto in [#833](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/833) — `welder_9606` filtra solo `%9606%`. Il ponte commessa `wpsWelderCoverage` resta con 14732 (COV-4).
 
 ### Esito su main (18/10/2026)
 
@@ -242,20 +244,20 @@ Rilettura in sola lettura dopo il merge della [#824](https://github.com/qsstudio
 | Esito | Gravità | PR | File | Cosa resta |
 |---|---|---|---|---|
 | Corretto in [#828](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/828) | alta | #801 | `ndtInspectorGate.service.js`, `cnd9712.adapter.js` | SELECT con `deleted_at IS NULL` su patentino e idoneità visiva (gate e copertura 9712). |
-| Ancora presente | alta | #801 | `wpsGenerator.service.js` (`loadWpqrRecords`) | La query non ha `deleted_at IS NULL`. Una WPQR cestinata entra ancora tra le basi di una WPS. |
+| Corretto in [#829](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/829) | alta | #801 | `wpsGenerator.service.js` (`loadWpqrRecords`) | SELECT con `deleted_at IS NULL`. Una WPQR cestinata non entra più tra le basi di una WPS. |
 | Già risolto | media | #801 | `welding.controller.js` (`assignWpsWelder`), `projects.controller.js` (`addProjectWelder`) | Il controllo «già assegnato» esclude `deleted_at`. Riassegnare dopo il cestino non risponde più 409. |
 | Già risolto | media | #801 | `trash.service.js` (`listTrashedNonConformities`, `loadTrashRow`) | Elenco e ripristino usano `COALESCE(organization_id della NC, organization_id dell'audit)`. La NC nata dall'audit compare nel cestino. |
 | Già risolto | media | #801 | `ncAlertEscalation.service.js` | NC e azioni in sollecito hanno `deleted_at IS NULL`. |
 | Corretto in [#826](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/826) | alta | #791 | `PendingIngestQueue.jsx`, `ingestStaging.controller.js`, `ingestStaging.service.js` | Lista per azienda; conferma/scarto bloccati per viewer e per altra azienda. |
 | Già risolto | media | #791 | `ingestStaging.controller.js` (`MODULE_DOC_TYPES.qualifiche`) | Il filtro include `cert_ndt`. |
-| Ancora presente | media | #786 | `wpsWpqrLinks.service.js` (`companyClause`) | Il match esige `company_id` uguale. La WPQR creata a mano, con azienda vuota, non si lega alla WPS della stessa azienda. |
-| Ancora presente | media | #764 | `documentIngestPipeline.service.js` (`applyHeaderIssuingBodyFallback`) | Se l'ente AI è vuoto o `altro` e `extractIssuingBody` trova una sigla nel testo (IIS è in lista), l'OCR dell'intestazione non parte. |
+| Corretto in [#830](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/830) | media | #786 | `wpsWpqrLinks.service.js` (`companyClause`) | Match `company_id` uguale oppure assente (stesso tenant). L'azienda diversa resta esclusa. |
+| Corretto in [#833](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/833) | media | #764 | `documentIngestPipeline.service.js` (`applyHeaderIssuingBodyFallback`) | Ente AI vuoto/`altro`: l'OCR intestazione parte anche se nel corpo c'è una sigla (IIS). |
 | Già risolto | media | #760 | `ruleFieldExtractors.js` (`allDates`, `extractQualificationDates`) | L'anno a due cifre non entra nell'elenco date di default. La nascita è esclusa dai candidati dell'esame. `12.05.75` non diventa `exam_date`. |
-| Corretto in [#831](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/831) | media | #733 | `QualificationForm.jsx` | Profilo 9606-2 e input su `testThicknessKey` (`t` per BW 9606-2). |
+| Corretto in [#833](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/833) | media | #733 | `QualificationForm.jsx` | `getJointTypeProfile` riceve la norma. BW 9606-2 usa `thickness_t_test_mm` (`testThicknessKey`). |
 | Già risolto | bassa | #733 | `weldingQualificationRules9606Part2.js` (`computePlateToPipeMinDiameter`) | Più posizioni prendono la soglia più alta: PF insieme a un'altra posizione è 500 mm, non il pavimento 150. |
-| Corretto in [#831](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/831) | media | #727 | `weldingDesignation.js`, `qualificationIngest.service.js` | 9606-2: `t` resta `t`. 9606-1 invariato. |
-| Corretto in [#831](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/831) | bassa | #725 | `welder9606Correctness.pack.js`, `welder9606Part2.pack.js` | Massimo numerico confrontato anche con flag illimitato. |
-| Rimandato (vedi [#831](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/831)) | media | #702 | `welder9606.adapter.js` | Inclusione 14732 intenzionale dopo COV-4 (stessa copertura WPS). Escluderla cambierebbe i semafori. Serve dominio dedicato, non filtro silenzioso. |
+| Corretto in [#833](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/833) | media | #727 | `weldingDesignation.js` (`resolveTestThicknessByJoint`, `parseWelderQualificationDesignation`), `qualificationIngest.service.js` | ISO 9606-2: `t` resta `t` anche su BW. |
+| Corretto in [#833](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/833) (9606-1); residuo [#831](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/831) (9606-2) | bassa | #725 | `welder9606Correctness.pack.js`, `welder9606Part2.pack.js` | 9606-1: flag illimitato confrontato anche con massimo numerico. 9606-2: `compareRange` salta ancora il massimo se c'è il flag. |
+| Corretto in [#833](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/833) | media | #702 | `welder9606.adapter.js` | Dominio `welder_9606` filtra solo `%9606%`. Il ponte commessa resta con 14732. |
 
 ### Quanto prende la checklist aggiornata
 

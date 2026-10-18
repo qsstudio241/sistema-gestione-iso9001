@@ -268,7 +268,7 @@ async function match(req, ctx) {
         q.organization_id = @orgId
         AND q.deleted_at IS NULL
         AND q.status NOT IN ('revocata','sospesa')
-        AND (q.qualification_type LIKE '%9606%' OR q.qualification_type LIKE '%14732%')
+        AND q.qualification_type LIKE '%9606%'
     `;
     if (companyId) {
         qReq.input('compId', Number(companyId));

@@ -67,16 +67,15 @@ describe("QualificationForm — profili BW/FW e date in fondo", () => {
     expect(screen.queryByText(/Spessore materiale t del provino/)).not.toBeInTheDocument();
   });
 
-  it("BW ISO 9606-2 mostra t del materiale e scrive su thickness_t_test_mm", async () => {
+  it("ISO 9606-2 BW usa t del materiale, non s depositato", async () => {
     await renderForm({
-      id: 20,
+      id: 12,
       qualification_type: "Saldatore ISO 9606-2",
       person_name: "Mario Rossi",
       company_id: 1,
       joint_type: "BW",
-      product_type: "T",
+      product_type: "P",
       thickness_t_test_mm: 3,
-      thickness_s_test_mm: 99,
       approval_status: "bozza",
     });
     expect(screen.getByText(/Spessore materiale t del provino/)).toBeInTheDocument();
