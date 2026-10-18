@@ -33,9 +33,9 @@ const SEMIANNUAL_TYPE_SQL_MATCH = `(
  * effectiveExpiryDate() (weldingCoordinatorAuth.service, usata per il semaforo per-riga): per i tipi
  * a conferma semestrale vale la data più imminente tra expiry_date e
  * next_confirmation_due (per i coordinatori 14731: expiry_date e cpd_valid_until).
- * Per il certificato oculistico, se è compilata almeno una delle due date
- * (visita acuità / test dei colori), vale la più vicina; se sono entrambe
- * NULL resta expiry_date. Usata sia nelle statistiche (getStats) sia nel filtro
+ * Per il certificato oculistico vale la data più restrittiva tra quelle
+ * presenti: scadenza unica, visita acuità, test dei colori. Una data NULL
+ * non cancella le altre. Usata sia nelle statistiche (getStats) sia nel filtro
  * ?situazione= di listQualifications, così i conteggi delle card e il colore
  * mostrato riga per riga restano sempre coerenti tra loro.
  */
@@ -57,17 +57,59 @@ const EFFECTIVE_EXPIRY_SQL = `
                 WHEN q.cpd_valid_until < q.expiry_date THEN q.cpd_valid_until
                 ELSE q.expiry_date
             END
-        WHEN ${VISION_TYPE_SQL_MATCH}
-             AND (q.near_vision_expiry_date IS NOT NULL OR q.colour_vision_expiry_date IS NOT NULL) THEN
-            CASE
-                WHEN q.near_vision_expiry_date IS NULL THEN q.colour_vision_expiry_date
-                WHEN q.colour_vision_expiry_date IS NULL THEN q.near_vision_expiry_date
-                WHEN q.near_vision_expiry_date < q.colour_vision_expiry_date THEN q.near_vision_expiry_date
-                ELSE q.colour_vision_expiry_date
-            END
+        WHEN ${VISION_TYPE_SQL_MATCH} THEN
+            (SELECT MIN(v.d) FROM (VALUES
+                (q.expiry_date),
+                (q.near_vision_expiry_date),
+                (q.colour_vision_expiry_date)
+            ) AS v(d))
         ELSE q.expiry_date
     END
 `;
+
+/**
+ * Stessa scadenza effettiva senza le colonne della migrazione 178.
+ * Si usa solo se quelle colonne non esistono: resta la scadenza unica.
+ */
+const EFFECTIVE_EXPIRY_SQL_WITHOUT_VISION_CLOCKS = EFFECTIVE_EXPIRY_SQL
+  .replace(
+    `WHEN ${VISION_TYPE_SQL_MATCH} THEN
+            (SELECT MIN(v.d) FROM (VALUES
+                (q.expiry_date),
+                (q.near_vision_expiry_date),
+                (q.colour_vision_expiry_date)
+            ) AS v(d))`,
+    `WHEN ${VISION_TYPE_SQL_MATCH} THEN q.expiry_date`,
+  );
+
+let visionClocksAbsent = false;
+
+function resetVisionClockColumnCache() {
+  visionClocksAbsent = false;
+}
+
+/** Errore SQL Server «Invalid column name» sulle due date oculistiche. */
+function isMissingVisionClockColumnError(err) {
+  const msg = String((err && err.message) || '');
+  return /Invalid column name '(near_vision_expiry_date|colour_vision_expiry_date)'/i.test(msg);
+}
+
+/**
+ * Esegue la query con le colonne 178. Se non ci sono, riprova senza e da lì
+ * in poi usa solo la scadenza unica. Gli altri errori risalgono.
+ * @param {(sql: string) => Promise<any>} runQuery
+ * @param {{ withClocks: string, withoutClocks: string }} sqls
+ */
+async function queryOptionalVisionClocks(runQuery, { withClocks, withoutClocks }) {
+  if (visionClocksAbsent) return runQuery(withoutClocks);
+  try {
+    return await runQuery(withClocks);
+  } catch (err) {
+    if (!isMissingVisionClockColumnError(err)) throw err;
+    visionClocksAbsent = true;
+    return runQuery(withoutClocks);
+  }
+}
 
 const TODAY_SQL = 'CAST(GETDATE() AS DATE)';
 const EFFECTIVE_SQL = `(${EFFECTIVE_EXPIRY_SQL})`;
@@ -127,7 +169,11 @@ module.exports = {
     SEMIANNUAL_TYPE_SQL_MATCH,
     VISION_TYPE_SQL_MATCH,
     EFFECTIVE_EXPIRY_SQL,
+    EFFECTIVE_EXPIRY_SQL_WITHOUT_VISION_CLOCKS,
     EFFECTIVE_SQL,
+    resetVisionClockColumnCache,
+    isMissingVisionClockColumnError,
+    queryOptionalVisionClocks,
     ACTIVE_STATUS_SQL,
     SITUAZIONE_BUCKET_SQL,
     EFFECTIVE_STATUS_FILTER_SQL,

@@ -215,8 +215,15 @@ export function QualRow({ q, tabKey, onEdit, onHardDelete, onRenew, onHistory, h
     // sempre visibile quale delle due date sta determinando il colore.
     const nearIso = q.near_vision_expiry_date ? String(q.near_vision_expiry_date).slice(0, 10) : "";
     const colourIso = q.colour_vision_expiry_date ? String(q.colour_vision_expiry_date).slice(0, 10) : "";
+    const certificateIso = q.expiry_date ? String(q.expiry_date).slice(0, 10) : "";
     const hasVisionClocks = isVisionFitnessType(q.qualification_type) && (nearIso || colourIso);
     const effectiveIso = q.effective_expiry_date ? String(q.effective_expiry_date).slice(0, 10) : "";
+    const certificateBinds = Boolean(
+        certificateIso
+        && effectiveIso === certificateIso
+        && certificateIso !== nearIso
+        && certificateIso !== colourIso
+    );
     const hasDualExpiry = requiresSemiannualConfirmation(q.qualification_type) && q.next_confirmation_due;
     const confirmationIsBinding = hasDualExpiry && q.effective_expiry_date
         ? String(q.effective_expiry_date).slice(0, 10) === String(q.next_confirmation_due).slice(0, 10)
@@ -238,6 +245,14 @@ export function QualRow({ q, tabKey, onEdit, onHardDelete, onRenew, onHistory, h
                     title="Scadenza del test dei colori"
                 >
                     {"Test dei colori: "}{formatDate(colourIso)}
+                </span>
+            )}
+            {certificateBinds && (
+                <span
+                    className={`sq-expiry-date sq-expiry-line sq-expiry-${q.semaforo}`}
+                    title="Scadenza unica del certificato: resta valida anche se è compilata una sola delle due date nuove"
+                >
+                    {"Scadenza certificato: "}{formatDate(certificateIso)}
                 </span>
             )}
         </td>
