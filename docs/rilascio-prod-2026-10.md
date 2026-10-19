@@ -228,6 +228,13 @@ Ordine da tenere, solo dopo il sì separato. Dopo ogni migrazione: una SELECT di
 
 ---
 
+## Aggiornamento 19 ottobre 2026
+
+- Dipendenze backend aggiornate su `main` (PR #841): multer `2.4.0`, compression `1.8.2`, nodemailer `10.1.7`. Il deploy è stato fatto solo su TEST. Il backend di produzione non è stato aggiornato e non è stato riavviato.
+- Verifica `GEMINI_MODEL` in produzione, sola lettura. Nel processo (MainPID `1000083`) la variabile non c’è: vale il default del codice, `gemini-3.8-flash`. Nel file di ambiente c’è già `gemini-3.8-flash`. Non punta a `3.7` né a `3.5`. Va bene. Non è stato modificato e il servizio non è stato riavviato.
+
+---
+
 ## Cosa non fare
 
 - Niente su produzione senza un sì separato. Questo file non è quel sì.
