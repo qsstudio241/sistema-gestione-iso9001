@@ -36,6 +36,35 @@ describe("visionFitnessDates", () => {
     expect(saved.expiry_date).toBe("2020-01-01");
   });
 
+  it("rinnovare la visita non lascia i colori fermi sul giorno precedente", () => {
+    const next = applyVisitDateChange({
+      expiry_date: "2027-06-01",
+      near_vision_expiry_date: "2027-06-01",
+      colour_vision_expiry_date: "2027-06-01",
+    }, "2028-06-01");
+    expect(next.near_vision_expiry_date).toBe("2028-06-01");
+    expect(next.expiry_date).toBe("2028-06-01");
+    expect(next.colour_vision_expiry_date).toBe("");
+    const saved = visionDatesForSave(next, "2028-06-01");
+    expect(saved.colour_vision_expiry_date).toBe("");
+    expect(earliestIsoDate([
+      saved.expiry_date,
+      saved.near_vision_expiry_date,
+      saved.colour_vision_expiry_date,
+    ])).toBe("2028-06-01");
+  });
+
+  it("una data colori diversa resta anche se la visita cambia", () => {
+    const next = applyVisitDateChange({
+      expiry_date: "2029-01-01",
+      near_vision_expiry_date: "2027-06-01",
+      colour_vision_expiry_date: "2026-01-01",
+    }, "2028-06-01");
+    expect(next.colour_vision_expiry_date).toBe("2026-01-01");
+    expect(next.expiry_date).toBe("2029-01-01");
+    expect(next.near_vision_expiry_date).toBe("2028-06-01");
+  });
+
   it("elenco: una data se i colori sono vuoti, due se sono diversi", () => {
     const single = visionListPresentation({
       qualification_type: VISION,

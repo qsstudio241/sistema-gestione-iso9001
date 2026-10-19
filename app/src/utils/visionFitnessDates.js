@@ -45,12 +45,17 @@ export function applyVisitDateChange(form, nextRaw) {
   const next = toIsoDate(nextRaw) || "";
   const expiry = toIsoDate(form?.expiry_date) || "";
   const near = toIsoDate(form?.near_vision_expiry_date) || "";
+  const colour = toIsoDate(form?.colour_vision_expiry_date) || "";
   const prevShown = near || expiry;
   const expiryOut = !expiry || expiry === prevShown ? next : expiry;
+  // I colori uguali alla visita precedente significano «come visita».
+  // Se la visita cambia, quella copia non deve restare sul giorno vecchio.
+  const colourOut = colour && prevShown && colour === prevShown ? "" : colour;
   return {
     ...form,
     near_vision_expiry_date: next,
     expiry_date: expiryOut,
+    colour_vision_expiry_date: colourOut,
   };
 }
 
