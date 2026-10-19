@@ -192,6 +192,21 @@ function persistedVisionClocks(qualificationType, near, colour) {
     return { near: near || null, colour: colour || null };
 }
 
+/**
+ * Colori nel rinnovo del certificato visivo.
+ * Campo assente: resta la data già salvata (chiamate che non parlano di colori).
+ * Campo presente e vuoto: la colonna si svuota. I colori valgono come la visita.
+ * Non si ricopia il giorno vecchio e non si riempie la colonna con la data della visita.
+ */
+function renewColourVisionDate(qualificationType, body, previousColour) {
+    if (!isVisionFitnessType(qualificationType)) return null;
+    const payload = body && typeof body === 'object' ? body : {};
+    if (!Object.prototype.hasOwnProperty.call(payload, 'colour_vision_expiry_date')) {
+        return previousColour || null;
+    }
+    return payload.colour_vision_expiry_date || null;
+}
+
 function toIntOrNull(v) {
     const n = toNumericOrNull(v);
     return n != null ? Math.trunc(n) : null;
@@ -1169,7 +1184,7 @@ async function renewQualification(req, res) {
         // Sovrascritture dal body (es. nuove date, nuovo certificato)
         const {
             issue_date, expiry_date, last_renewal_date,
-            near_vision_expiry_date, colour_vision_expiry_date,
+            near_vision_expiry_date,
             certificate_number, certificate_file_url,
             notes,
         } = req.body || {};
@@ -1177,14 +1192,13 @@ async function renewQualification(req, res) {
         const certUrlCheck = await validateCertificateFileUrl(certificate_file_url, { organizationId: orgId });
         if (!certUrlCheck.ok) return res.status(CERTIFICATE_FILE_URL_ERROR.status).json(CERTIFICATE_FILE_URL_ERROR.body);
 
+        const nearForRenew = near_vision_expiry_date != null && near_vision_expiry_date !== ''
+            ? near_vision_expiry_date
+            : q.near_vision_expiry_date;
         const visionClocks = persistedVisionClocks(
             q.qualification_type,
-            near_vision_expiry_date != null && near_vision_expiry_date !== ''
-                ? near_vision_expiry_date
-                : q.near_vision_expiry_date,
-            colour_vision_expiry_date != null && colour_vision_expiry_date !== ''
-                ? colour_vision_expiry_date
-                : q.colour_vision_expiry_date,
+            nearForRenew,
+            renewColourVisionDate(q.qualification_type, req.body, q.colour_vision_expiry_date),
         );
         const r = await pool.request()
             .input('orgId',       orgId)
