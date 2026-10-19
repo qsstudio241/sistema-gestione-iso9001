@@ -247,7 +247,7 @@ function WPSFormModal({ wps, defaultCompanyId, onSave, onClose, onSaved }) {
 
 // ── Genera WPS da WPQR (P1) ───────────────────────────────────────────────────
 
-function draftToCreatePayload(draft, companyId, wpsCode) {
+export function draftToCreatePayload(draft, companyId, wpsCode) {
   return {
     company_id: companyId || null,
     wps_code: wpsCode,
@@ -260,7 +260,11 @@ function draftToCreatePayload(draft, companyId, wpsCode) {
     position: draft.welding_positions || null,
     thickness_range_min: draft.thickness_range_min != null ? draft.thickness_range_min : null,
     thickness_range_max: draft.thickness_range_max != null ? draft.thickness_range_max : null,
+    preheat_temp: draft.preheat_temp || null,
+    interpass_temp: draft.interpass_temp || null,
+    pwht: draft.pwht || null,
     qualification_standard: draft.qualification_standard || "ISO 15614-1",
+    wpqr_id: draft.wpqr_id != null ? draft.wpqr_id : null,
     wpqr_ref: draft.wpqr_ref || null,
     parent_material_a: draft.parent_material_a || null,
     parent_material_b: draft.parent_material_b || null,

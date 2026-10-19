@@ -46,6 +46,7 @@ describe('wpsGenerator.service (P0)', () => {
         expect(result.wps_draft).toBeTruthy();
         expect(result.wps_draft.joint_type).toBe('FW');
         expect(result.wps_draft.wpqr_ref).toBe('WPQR-MASON-DEMO');
+        expect(result.wps_draft.wpqr_id).toBe(1);
         expect(result.wps_draft.welding_process).toBe('135');
         expect(result.extensions_needed).toEqual([]);
     });

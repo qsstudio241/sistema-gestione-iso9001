@@ -466,6 +466,9 @@ function buildWpsDraft(wpqr, request, groupA, groupB) {
         heat_input: wpqr.heat_input_note || null,
         current_range: wpqr.current_type || null,
         metal_transfer: wpqr.metal_transfer || null,
+        preheat_temp: wpqr.preheat_temp || null,
+        interpass_temp: wpqr.interpass_temp || null,
+        pwht: wpqr.pwht || null,
         status: 'bozza',
     };
 }

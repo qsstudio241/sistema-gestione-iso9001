@@ -17,6 +17,13 @@ const {
     hasCompanyAccessRows,
     sendAccessDenied,
 } = require('../services/companyAccess.service');
+const {
+    insertLink,
+    listWpqrRecordsForWps,
+    wpqrLinkedToWpsCountSql,
+    linksAvailable,
+    ROLES: WPS_WPQR_ROLES,
+} = require('../services/wpsWpqrLinks.service');
 
 /** Utente con user_company_access: 403 fuori dalle aziende consentite.
  *  Studio senza aziende assegnate: lettura libera; scrittura no per il viewer. */
@@ -169,15 +176,18 @@ async function listWPS(req, res) {
         }
 
         const where = conditions.join(' AND ');
+        const linksOn = await linksAvailable();
+        const wpqrCountSql = linksOn
+            ? wpqrLinkedToWpsCountSql('w.id')
+            : `(SELECT COUNT(*) FROM wpqr_records wq
+                 WHERE wq.wps_id = w.id AND wq.organization_id = @organization_id
+                   AND wq.deleted_at IS NULL)`;
 
         const result = await query(`
             SELECT
                 w.*,
                 c.name AS company_name,
-                (SELECT COUNT(*) FROM wpqr_records wq
-                 WHERE wq.wps_id = w.id AND wq.organization_id = @organization_id
-                   AND wq.deleted_at IS NULL
-                ) AS wpqr_count
+                ${wpqrCountSql} AS wpqr_count
             FROM welding_procedures w
             LEFT JOIN companies c ON w.company_id = c.id
             WHERE ${where}
@@ -231,17 +241,16 @@ async function getWPS(req, res) {
         }
         if (await denyOutsideCompany(res, req.user, result.recordset[0].company_id, 'read')) return;
 
-        const wpqrResult = await query(`
-            SELECT * FROM wpqr_records
-            WHERE wps_id = @wps_id AND organization_id = @organization_id AND deleted_at IS NULL
-            ORDER BY test_date DESC
-        `, { wps_id: parseInt(id), organization_id });
+        const linkedWpqr = await listWpqrRecordsForWps({
+            organizationId: organization_id,
+            wpsId: parseInt(id, 10),
+        });
 
         res.json({
             success: true,
             data: {
                 ...result.recordset[0],
-                wpqr_records: wpqrResult.recordset,
+                wpqr_records: linkedWpqr,
             },
         });
     } catch (error) {
@@ -337,7 +346,7 @@ async function createWPS(req, res) {
             filler_material, shielding_gas, joint_type, position,
             thickness_range_min, thickness_range_max, pipe_diameter_min,
             preheat_temp, interpass_temp, pwht, qualification_standard,
-            status = 'bozza', notes,
+            status = 'bozza', notes, wpqr_id,
             wpqr_ref, parent_material_a, parent_material_b,
             heat_input, current_range, voltage_range, metal_transfer,
         } = req.body;
@@ -409,9 +418,33 @@ async function createWPS(req, res) {
             after: { wps_code, status, company_id, welding_process, notes: notes || null },
             fields: ['wps_code', 'status', 'company_id', 'welding_process', 'notes'],
         });
-        logger.info('WPS created', { id: newId, organization_id, wps_code });
 
-        res.status(201).json({ success: true, data: { id: newId, wps_code, status } });
+        let wpqr_link = null;
+        const parsedWpqrId = wpqr_id != null && wpqr_id !== '' ? parseInt(wpqr_id, 10) : null;
+        if (Number.isSafeInteger(parsedWpqrId) && parsedWpqrId > 0) {
+            try {
+                wpqr_link = await insertLink({
+                    organizationId: organization_id,
+                    companyId: company_id ? parseInt(company_id, 10) : null,
+                    wpsId: newId,
+                    wpqrId: parsedWpqrId,
+                    role: WPS_WPQR_ROLES.PRIMARY,
+                    userId: user_id,
+                });
+            } catch (linkErr) {
+                logger.error('WPS created but WPQR link failed', {
+                    id: newId, wpqr_id: parsedWpqrId, error: linkErr.message,
+                });
+                wpqr_link = { created: false, available: false, error: linkErr.message };
+            }
+        }
+
+        logger.info('WPS created', { id: newId, organization_id, wps_code, wpqr_id: parsedWpqrId || null });
+
+        res.status(201).json({
+            success: true,
+            data: { id: newId, wps_code, status, wpqr_id: parsedWpqrId || null, wpqr_link },
+        });
     } catch (error) {
         logger.error('Error creating WPS', { error: error.message });
         res.status(500).json({ error: 'Errore durante la creazione della WPS', code: 'WPS_CREATE_ERROR' });
@@ -1562,10 +1595,11 @@ async function getWpsCoverage(req, res) {
                 w.approval_status, w.status,
                 w.expiry_date, w.issue_date,
                 c.name AS company_name,
-                (SELECT COUNT(*) FROM wpqr_records wq
+                ${(await linksAvailable())
+                    ? wpqrLinkedToWpsCountSql('w.id')
+                    : `(SELECT COUNT(*) FROM wpqr_records wq
                  WHERE wq.wps_id = w.id AND wq.organization_id = @organization_id
-                   AND wq.deleted_at IS NULL
-                ) AS wpqr_count
+                   AND wq.deleted_at IS NULL)`} AS wpqr_count
             FROM welding_procedures w
             LEFT JOIN companies c ON c.id = w.company_id
             WHERE ${wpsWhere}

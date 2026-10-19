@@ -89,6 +89,9 @@ describe("GenerateWpsModal (P1-B)", () => {
         thickness_range_max: 20,
         qualification_standard: "ISO 15614-1",
         wpqr_ref: "WPQR-M1",
+        wpqr_id: 1,
+        preheat_temp: "20 °C",
+        interpass_temp: "max 200 °C",
         status: "bozza",
       },
       extensions_needed: [],
@@ -119,6 +122,9 @@ describe("GenerateWpsModal (P1-B)", () => {
     expect(payload.status).toBe("bozza");
     expect(payload.company_id).toBe(10);
     expect(payload.joint_type).toBe("FW");
+    expect(payload.wpqr_id).toBe(1);
+    expect(payload.preheat_temp).toBe("20 °C");
+    expect(payload.interpass_temp).toBe("max 200 °C");
     expect(onSaved).toHaveBeenCalled();
   });
 });
