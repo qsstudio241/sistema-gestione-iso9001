@@ -290,6 +290,42 @@ describe("QualificationForm — date del certificato oculistico", () => {
     expect(payload.colour_vision_expiry_date).toBe("");
   });
 
+  it("rinnovo con colori vuoti non rimanda la data colori vecchia", async () => {
+    apiService.renewQualification.mockResolvedValue({ id: 77 });
+    await act(async () => {
+      render(
+        <QualificationForm
+          qualification={{
+            id: 9,
+            _renew: true,
+            person_name: "ZZ Ispettore",
+            qualification_type: VISION_FITNESS_TYPE,
+            company_id: 10,
+            expiry_date: "2024-01-15",
+            near_vision_expiry_date: "2024-01-15",
+            colour_vision_expiry_date: "2024-01-15",
+          }}
+          onSaved={vi.fn()}
+          onClose={vi.fn()}
+        />
+      );
+    });
+    expect(screen.getByLabelText("Scadenza visita oculistica")).toHaveValue("2024-01-15");
+    expect(screen.getByTestId("qf-colour-toggle")).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByLabelText("Scadenza test colori")).not.toBeInTheDocument();
+    apiService.renewQualification.mockClear();
+    fireEvent.change(screen.getByLabelText("Scadenza visita oculistica"), {
+      target: { value: "2028-06-01" },
+    });
+    await flushAutosaveWindow();
+    expect(apiService.renewQualification).toHaveBeenCalled();
+    const payload = apiService.renewQualification.mock.calls.at(-1)[1];
+    expect(payload.near_vision_expiry_date).toBe("2028-06-01");
+    expect(payload.expiry_date).toBe("2028-06-01");
+    expect(payload.colour_vision_expiry_date).toBe("");
+    expect(payload.colour_vision_expiry_date).not.toBe("2024-01-15");
+  });
+
   it("non mostra il campo colori su un patentino saldatore", async () => {
     await act(async () => {
       render(<QualificationForm qualification={WELDER} onSaved={vi.fn()} onClose={vi.fn()} />);
