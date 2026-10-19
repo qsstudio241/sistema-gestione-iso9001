@@ -89,7 +89,10 @@ export function visionListPresentation(q) {
   if (!colourDistinct) {
     const date = effective || visit;
     if (!date) return null;
-    return { mode: "single", date, hint: "colori: come visita" };
+    // Il richiamo vale se la data mostrata è la visita. Se a schermo c'è
+    // una scadenza storica più vecchia, non si dice che i colori scadono quel giorno.
+    const hint = date === visit ? "colori: come visita" : "";
+    return { mode: "single", date, hint };
   }
   const lines = [];
   const visitShown = near || visit;

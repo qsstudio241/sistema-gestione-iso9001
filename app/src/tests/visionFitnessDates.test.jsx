@@ -45,7 +45,15 @@ describe("visionFitnessDates", () => {
     });
     expect(single.mode).toBe("single");
     expect(single.date).toBe("2020-01-01");
-    expect(single.hint).toBe("colori: come visita");
+    expect(single.hint).toBe("");
+    const same = visionListPresentation({
+      qualification_type: VISION,
+      expiry_date: "2027-06-01",
+      near_vision_expiry_date: "2027-06-01",
+      colour_vision_expiry_date: "",
+    });
+    expect(same.mode).toBe("single");
+    expect(same.hint).toBe("colori: come visita");
 
     const split = visionListPresentation({
       qualification_type: VISION,

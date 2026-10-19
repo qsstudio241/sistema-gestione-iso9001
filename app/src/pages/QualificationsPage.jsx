@@ -224,8 +224,7 @@ export function QualRow({ q, tabKey, onEdit, onHardDelete, onRenew, onHistory, h
         <td className="sq-col-expiry">
             <span className={`sq-expiry-date sq-expiry-${q.semaforo}`} title="Scadenza visita oculistica. I colori seguono la visita.">
                 {formatDate(visionList.date)}
-                {" \u00b7 "}
-                {visionList.hint}
+                {visionList.hint ? ` \u00b7 ${visionList.hint}` : ""}
             </span>
         </td>
     ) : visionList?.mode === "split" ? (
