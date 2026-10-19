@@ -56,15 +56,15 @@ export function applyVisitDateChange(form, nextRaw) {
 
 /**
  * Valori da scrivere.
- * La visita va nella colonna di acuità (near_vision_expiry_date).
- * expiry_date non si svuota: se è l'unica data compilata, la visita la ripete lì.
- * I colori restano vuoti se non sono una data diversa: niente copia della visita.
+ * La visita mostrata va nella colonna di acuità. Se il campo è vuoto, resta vuoto.
+ * expiry_date non si svuota qui: una data storica diversa resta.
+ * I colori si scrivono solo se la data è diversa dalla visita.
  */
-export function visionDatesForSave(form) {
+export function visionDatesForSave(form, visitRaw) {
   const expiry = toIsoDate(form?.expiry_date) || "";
   const near = toIsoDate(form?.near_vision_expiry_date) || "";
   const colour = toIsoDate(form?.colour_vision_expiry_date) || "";
-  const visit = near || expiry;
+  const visit = visitRaw === undefined ? (near || expiry) : (toIsoDate(visitRaw) || "");
   const colourOut = colour && colour !== visit ? colour : "";
   return {
     expiry_date: expiry,

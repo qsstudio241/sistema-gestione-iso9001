@@ -27,6 +27,13 @@ describe("visionFitnessDates", () => {
     expect(next.near_vision_expiry_date).toBe("2028-01-15");
     expect(next.expiry_date).toBe("2020-01-01");
     expect(visionDatesForSave(next).colour_vision_expiry_date).toBe("");
+    const cleared = applyVisitDateChange({
+      expiry_date: "2020-01-01",
+      near_vision_expiry_date: "2027-06-01",
+    }, "");
+    const saved = visionDatesForSave(cleared, "");
+    expect(saved.near_vision_expiry_date).toBe("");
+    expect(saved.expiry_date).toBe("2020-01-01");
   });
 
   it("elenco: una data se i colori sono vuoti, due se sono diversi", () => {

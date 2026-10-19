@@ -7,7 +7,6 @@ import apiService from "../services/apiService";
 import { OCCUPATIONAL_QUALIFICATION_TYPES, isVisionFitnessType } from "../data/occupationalQualificationTypes";
 import {
   applyVisitDateChange,
-  colourDistinctFromVisit,
   displayedVisitDate,
   toIsoDate,
   visionDatesForSave,
@@ -124,6 +123,7 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
   const [customType, setCustomType] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
   const [colourOpen, setColourOpen] = useState(false);
+  const [visitDate, setVisitDate] = useState("");
   const verify = useQualificationVerify();
   const formRef = useRef(form);
   formRef.current = form;
@@ -247,16 +247,22 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
       }
       d.welding_process = canonicalizeProcessValue(d.welding_process);
       d.welding_process_test = canonicalizeProcessValue(d.welding_process_test);
-      setColourOpen(colourDistinctFromVisit(d));
+      const shownVisit = displayedVisitDate(d);
+      setVisitDate(shownVisit);
+      setColourOpen(Boolean(
+        toIsoDate(d.colour_vision_expiry_date) && toIsoDate(d.colour_vision_expiry_date) !== shownVisit
+      ));
       setForm(d);
       if (d.qualification_type && !QUAL_TYPES.includes(d.qualification_type)) {
         setCustomType(true);
       }
     } else if (defaultCompanyId) {
       setColourOpen(false);
+      setVisitDate("");
       setForm((f) => ({ ...f, company_id: String(defaultCompanyId) }));
     } else {
       setColourOpen(false);
+      setVisitDate("");
     }
   }, [qualification, defaultCompanyId]);
 
@@ -321,7 +327,7 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
           welding_process_test: canonicalizeProcessValue(payloadFields.welding_process_test),
           company_id: parseInt(form.company_id, 10),
           personnel_id: form.personnel_id ? parseInt(form.personnel_id, 10) : null,
-          ...(isVisionFitnessType(form.qualification_type) ? visionDatesForSave(form) : {}),
+          ...(isVisionFitnessType(form.qualification_type) ? visionDatesForSave(form, visitDate) : {}),
         };
         if (savedIdRef.current) {
           await apiService.updateQualification(savedIdRef.current, payload);
@@ -343,7 +349,7 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
     }, 800);
     return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form]);
+  }, [form, visitDate]);
 
   function handle(field) {
     return (e) => {
@@ -356,6 +362,7 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
   function handleVisitChange(e) {
     markUserEdit();
     const value = e.target.value;
+    setVisitDate(value);
     setForm((f) => applyVisitDateChange(f, value));
   }
 
@@ -983,7 +990,7 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
                   id="qf-visit-expiry"
                   data-testid="qf-visit-expiry"
                   type="date"
-                  value={displayedVisitDate(form)}
+                  value={visitDate}
                   onChange={handleVisitChange}
                 />
                 <p className="qf-locked-hint">{"Acuit\u00e0, annuale (ISO 9712:2021 \u00a77.4.2)"}</p>
