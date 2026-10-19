@@ -1,8 +1,54 @@
 # Piano di rilascio in produzione — ottobre 2026
 
+> **Esito 19/10/2026 ore 13 — backend acceso, sito fermo.** Il rilascio non è chiuso. Il backend di produzione è aggiornato e in esecuzione. Il sito è ancora quello del 18 ottobre. Non rieseguire le migrazioni 173–180. Non rifare il deploy del backend se il MainPID è ancora `1207471` e l’health risponde 200.
+
+## Esito 19/10/2026 ore 13 — backend acceso, sito fermo
+
+Stato attuale. La sezione sotto, «Esito 19/10/2026 — fermo al deploy», resta la storia del primo tentativo. Non è stata cancellata.
+
+### Backend acceso
+
+- Backend di produzione aggiornato e in esecuzione.
+- Commit `130a42cf109fc71d9f27f5fc011b514f5f339c40`.
+- MainPID prima `1000083`, dopo `1207471` (19/10/2026 11:41 UTC). Health 200.
+- Node `v20.20.0` era già presente. Non è stato aggiornato.
+- Dipendenze: multer `2.4.0`, compression `1.8.2`, nodemailer `10.1.7`.
+- `DISABLE_EMAIL` assente. Non è stata aggiunta. `GEMINI_MODEL` nel file `gemini-3.8-flash`, assente nel processo. Non sono stati modificati.
+- Il codice acceso contiene la fase del verbale, il patentino, le date oculistiche e i controlli previsti.
+
+### Permessi e copia di sicurezza
+
+- Il servizio gira come `spascarella`.
+- `chown -R` su `/var/www/sgq-backend`. `node_modules` non è più di root.
+- Backup fresco della cartella: `/var/www/sgq-backend-bak-20261019-113939` (1.172.902.231 byte).
+- Il backup delle 08:57 non è stato toccato.
+- Il database non è stato ripristinato.
+- Le migrazioni 173–180 non sono state rieseguite.
+
+### Sito ancora fermo
+
+- `https://systemgest.netlify.app` è ancora su `b65e8f87537800198b1aa7de98bfc2d8926ffe39` (deploy `6ad51c1fb56825e4edc67abf`, ready, 18/10/2026 19:21 UTC).
+- Il publish di `130a42cf` non è stato fatto. In questa macchina non c’è `NETLIFY_AUTH_TOKEN`. L’API Netlify risponde 401.
+- Esiste già un deploy in errore di quello SHA: `6ad5d5a638ddf713391b1c5d` (19/10/2026 08:32 UTC). Il sito vivo non è stato sostituito.
+
+### Non fatto
+
+- Smoke di produzione.
+- Test «modulo spento → 403».
+- Rilettura dei moduli di MASON e di ERAM.
+- Unione della pull request #840.
+
+### Prossimo passo
+
+Il rilascio non è chiuso. Il prossimo passo, solo con un nuovo sì o con un token Netlify, è ripubblicare il frontend di `main` e poi lo smoke. Non rieseguire le migrazioni. Non rifare il deploy del backend se il MainPID è ancora `1207471` e l’health risponde 200.
+
+---
+
 > **Esito 19/10/2026 — fermo al deploy.** Il rilascio non è chiuso. Lo schema di produzione è avanti. Il codice acceso è ancora quello del 17 ottobre. Non rieseguire le migrazioni 177, 178, 179 e 180.
 
 ## Esito 19/10/2026 — fermo al deploy
+
+Storia del primo tentativo, mattina del 19 ottobre. Lo stato attuale è la sezione sopra.
 
 Il tentativo del 19 ottobre 2026 sul database `SGQ_ISO9001` si è fermato al deploy del backend. Lo schema è avanti rispetto al codice. Le colonne nuove sono vuote. Il backend acceso, quello del 17 ottobre, non le legge.
 
@@ -65,7 +111,9 @@ Rollback del codice: ricopiare la cartella `/var/www/sgq-backend-bak-20261019-08
 
 ### Prossimo passo
 
-Solo se il committente dà un nuovo sì. Il passo è il deploy del backend: sistemare i permessi di `node_modules`, poi `npm ci`. Non sono le migrazioni. Le 177–180 sono già sul database.
+Questo era il passo dopo il primo tentativo, al mattino. Alle 13 il backend è stato acceso. Lo stato attuale e il passo vero sono nella prima sezione. Non rifare il deploy.
+
+Solo se il committente dava un nuovo sì. Il passo, in quel momento, era il deploy del backend: sistemare i permessi di `node_modules`, poi `npm ci`. Non erano le migrazioni. Le 177–180 erano già sul database.
 
 ---
 
@@ -73,9 +121,9 @@ Solo se il committente dà un nuovo sì. Il passo è il deploy del backend: sist
 
 Lettura fatta il 18 ottobre 2026, solo consultazione, prima del tentativo del 19. Database `SGQ_ISO9001` sul servizio `sgq-backend` (`sistemi.fr-busato.it`). Quel giorno: nessun backup, nessuna migrazione, nessun deploy, nessun riavvio, nessuna email, nessuna modifica ai dati.
 
-**Questo documento non è un sì.** Il rilascio non è chiuso. Un sì nuovo, se arriverà, riguarda solo il deploy del backend (sezione in cima). Non rieseguire le 177–180.
+**Questo documento non è un sì.** Il rilascio non è chiuso. Dal 19/10 ore 13 il backend è già acceso: un sì nuovo, o un token Netlify, riguarda il frontend e poi lo smoke (prima sezione). Non rieseguire le 173–180. Non rifare il deploy del backend se il MainPID è `1207471` e l’health risponde 200.
 
-Finestra consigliata, quando arriverà quel sì: **sera o weekend**, quando MASON e ERAM non stanno compilando verbali, qualifiche o commesse. Il sì nuovo non rifà le migrazioni: è solo il deploy del backend. Il tempo di circa un’ora e mezza, più lo smoke, è la stima del piano intero scritta il 18 ottobre.
+Finestra consigliata, quando arriverà quel sì: **sera o weekend**, quando MASON e ERAM non stanno compilando verbali, qualifiche o commesse. Il sì nuovo non rifà le migrazioni e non rifà il deploy del backend: è la ripubblicazione del frontend e poi lo smoke. Il tempo di circa un’ora e mezza, più lo smoke, è la stima del piano intero scritta il 18 ottobre.
 
 ---
 
@@ -183,7 +231,9 @@ Le 173–176 sono già applicate e le colonne sono vuote. Rifarle non dovrebbe r
 
 ## Passi del piano (memoria)
 
-Il 19 ottobre 2026 i backup (passi 1 e 2) e le migrazioni 177–180 (passi 7–10) sono stati fatti. Il deploy del backend (passo 11) non è riuscito. I passi 12, 13 e 14 non sono stati fatti. Il controllo moduli (passo 15) è stato una lettura: MASON e ERAM sono invariati. Le 173–176 non sono state rilanciate. Non rifare i passi già fatti. Il dettaglio è la sezione in cima.
+Lo stato attuale è «Esito 19/10/2026 ore 13». Alle 13 il passo 11 è riuscito (MainPID `1207471`, health 200). Il sito (passo 12) e lo smoke (passo 14) non sono stati fatti. Non rifare il deploy del backend se quel MainPID è ancora quello e l’health risponde 200. Non rieseguire le migrazioni.
+
+Memoria del primo tentativo: i backup (passi 1 e 2) e le migrazioni 177–180 (passi 7–10) sono stati fatti al mattino. Il primo deploy del backend non è riuscito. In quel momento i passi 12, 13 e 14 non erano stati fatti. Il controllo moduli (passo 15) è stato una lettura al mattino: MASON e ERAM invariati. Alle 13 quella lettura non è stata rifatta. Le 173–176 non sono state rilanciate.
 
 Ordine originale, tenuto qui come memoria. Dopo ogni migrazione: una SELECT di verifica, poi si passa alla successiva. Se la verifica fallisce, ci si ferma e si usa il rollback di quel passo. Non si prosegue «tanto poi si sistema».
 
@@ -264,10 +314,14 @@ I passi 7, 8, 9 e 10 sono memoria del piano. L’esito reale è in cima. Non rif
 - Rollback: eliminare la tabella `project_inspection_items` se è ancora vuota. Non esiste un file `180_rollback.sql`. Se qualcuno ha già inserito controlli, il drop li perde: ci si ferma e si usa il backup.
 - Rischio: basso finché la tabella è vuota.
 
-### 11. Deploy del backend di `main` — tentato il 19/10, non riuscito
+### 11. Deploy del backend di `main` — acceso il 19/10 ore 13
 
-- Il 19 ottobre questo passo si è fermato: `npm ci` non è andato avanti per i permessi di `node_modules`. Il processo non è stato riavviato. Il codice acceso è di nuovo quello del backup. Dettaglio nella sezione in cima.
-- Il commit da pubblicare, quando ci sarà un sì nuovo, è `130a42cf` (include la #841), non `a8c46231`. Prima del gesto: `git fetch origin main`, poi sistemare i permessi di `node_modules` e solo dopo `npm ci`. Non rilanciare le migrazioni.
+Alle 13 il backend è in esecuzione: commit `130a42cf109fc71d9f27f5fc011b514f5f339c40`, MainPID `1207471` (prima `1000083`), health 200. Non rifare questo passo se quel MainPID è ancora quello e l’health risponde 200. Dettaglio nella prima sezione.
+
+Memoria del primo tentativo, mattina:
+
+- Il 19 ottobre, al mattino, questo passo si è fermato: `npm ci` non è andato avanti per i permessi di `node_modules`. Il processo non è stato riavviato. Il codice acceso era di nuovo quello del backup delle 08:57.
+- Memoria del mattino, già superata alle 13: il commit da mettere in esecuzione era `130a42cf` (include la #841). Quel commit è acceso. Non rifare `npm ci` né il restart se il MainPID è `1207471` e l’health risponde 200. Non rilanciare le migrazioni.
 - Verifica: health ok; nei file appena copiati compaiono fase del verbale, patentino, date oculistiche, controlli previsti, e il rispetto dei moduli per admin e superadmin.
 - Tempo: circa 10 minuti.
 - Rollback: ripristinare la copia del passo 2 e riavviare. Il MainPID deve cambiare. Health di nuovo ok.
@@ -275,15 +329,19 @@ I passi 7, 8, 9 e 10 sono memoria del piano. L’esito reale è in cima. Non rif
 
 ### 12. Deploy del frontend di `main` su Netlify produzione — non fatto il 19/10
 
-- Il sito vivo è già il codice app di `main` (commit pubblicato `b65e8f87`). La #836 non cambia pagine. Va comunque chiuso il giro: un publish di `main` riuscito, così lo SHA del sito e lo SHA di `main` coincidono.
+Dal 19/10 ore 13 questo è il prossimo passo, solo con un nuovo sì o con un token Netlify. Poi lo smoke. Il publish di `130a42cf` non è stato fatto: in questa macchina non c’è `NETLIFY_AUTH_TOKEN` e l’API Netlify risponde 401. C’è già un deploy in errore di quello SHA, `6ad5d5a638ddf713391b1c5d` (19/10/2026 08:32 UTC). Il sito vivo non è stato sostituito.
+
+- Il sito vivo pubblica ancora `b65e8f87537800198b1aa7de98bfc2d8926ffe39` (deploy `6ad51c1fb56825e4edc67abf`, ready, 18/10/2026 19:21 UTC). Va chiuso il giro con un publish di `main` riuscito, così lo SHA del sito e lo SHA di `main` coincidono.
 - Il publish di `a8c46231` del 18 ottobre è fallito e non ha sostituito il sito. Va capito l’errore di build prima di dare per fatto il passo. Se fallisce di nuovo, il sito resta quello di adesso, che per le pagine è lo stesso codice.
 - Tempo: circa 5 minuti se la build passa.
 - Rollback: su Netlify ripubblicare il deploy `6ad51c1fb56825e4edc67abf` (commit `b65e8f87`).
-- Rischio: lasciare il frontend nuovo con il backend vecchio. In questa finestra il frontend è già avanti: il rimedio è il passo 11, non un altro publish isolato.
+- Rischio rimasto: il sito è ancora il commit del 18 ottobre e il backend è già `130a42cf`. Il rimedio è questo passo, non un altro deploy del backend.
 
-### 13. Riavvio del servizio — non fatto il 19/10
+### 13. Riavvio del servizio — fatto il 19/10 ore 13
 
-- Dopo il deploy del backend. Verificare che il **MainPID non sia più `1000083`**. Se resta `1000083`, il riavvio non è avvenuto e il codice nuovo non è quello che risponde.
+Alle 13 il servizio è stato riavviato. MainPID prima `1000083`, dopo `1207471` (19/10/2026 11:41 UTC). Health 200. Non riavviare di nuovo solo per controllare.
+
+- Memoria del piano: dopo il deploy del backend bisogna verificare che il MainPID sia cambiato. Se fosse rimasto `1000083`, il riavvio non sarebbe avvenuto.
 - Tempo: circa 2 minuti, con una breve interruzione.
 - Rollback: ripristinare la cartella del passo 2 e riavviare di nuovo. Il PID cambierà ancora. Health ok.
 - Rischio: minuti in cui il sito non salva. Per questo la finestra è sera o weekend.
@@ -306,20 +364,21 @@ I passi 7, 8, 9 e 10 sono memoria del piano. L’esito reale è in cima. Non rif
 
 ## Aggiornamento 19 ottobre 2026 (prima del tentativo)
 
-Questo appunto è la verifica fatta prima della finestra. L’esito del tentativo, fermo al deploy, è la sezione in cima. A fine tentativo il backend di produzione è di nuovo sulle dipendenze vecchie (multer `1.4.5-lts.2`, compression `1.8.1`, nodemailer `8.0.8`) e non è stato riavviato.
+Questo appunto è la verifica fatta prima della finestra. L’esito del primo tentativo, fermo al deploy, è «Esito 19/10/2026 — fermo al deploy». Lo stato attuale è «Esito 19/10/2026 ore 13»: alle 13 le dipendenze in esecuzione sono multer `2.4.0`, compression `1.8.2`, nodemailer `10.1.7`, e il servizio è stato riavviato (MainPID `1207471`).
 
-- Dipendenze backend aggiornate su `main` (PR #841): multer `2.4.0`, compression `1.8.2`, nodemailer `10.1.7`. Il deploy di quelle versioni è stato fatto solo su TEST. Su produzione, dopo il tentativo fermo, non sono in esecuzione.
-- Verifica `GEMINI_MODEL` in produzione, sola lettura. Nel processo (MainPID `1000083`) la variabile non c’è: vale il default del codice, `gemini-3.8-flash`. Nel file di ambiente c’è già `gemini-3.8-flash`. Non punta a `3.7` né a `3.5`. Va bene. Non è stato modificato e il servizio non è stato riavviato.
+- Dipendenze backend aggiornate su `main` (PR #841): multer `2.4.0`, compression `1.8.2`, nodemailer `10.1.7`. Al mattino, dopo il primo tentativo fermo, in produzione c’erano ancora multer `1.4.5-lts.2`, compression `1.8.1`, nodemailer `8.0.8`. Alle 13 sono in esecuzione le versioni di `main`.
+- Verifica `GEMINI_MODEL` in produzione, sola lettura, prima della finestra. Nel processo di allora (MainPID `1000083`) la variabile non c’era: vale il default del codice, `gemini-3.8-flash`. Nel file di ambiente c’è già `gemini-3.8-flash`. Non punta a `3.7` né a `3.5`. Alle 13 il processo è il MainPID `1207471` e `GEMINI_MODEL` è ancora assente. Non è stato modificato.
 
 ---
 
 ## Cosa non fare
 
-- Niente su produzione senza un sì separato. Questo file non è quel sì.
-- Non riavviare il servizio adesso. Il MainPID `1000083` è quello atteso.
+Lo stato attuale è «Esito 19/10/2026 ore 13». Se un punto sotto dice il contrario, vale quella sezione.
+
+- Niente sul backend di produzione senza un sì separato. Questo file non è quel sì. Il publish del frontend, se arriverà, vuole un sì nuovo oppure un token Netlify.
+- Non rifare il deploy del backend e non riavviare il servizio se il MainPID è ancora `1207471` e l’health risponde 200.
 - Non rilanciare la 173, la 174, la 175 o la 176 «per sicurezza».
-- Non rieseguire la 177, la 178, la 179 o la 180. Sono già sul database di produzione. Le colonne nuove sono vuote e il backend del 17 ottobre non le legge.
+- Non rieseguire la 177, la 178, la 179 o la 180. Sono già sul database. Alle 13 non sono state rieseguite e il database non è stato ripristinato.
 - Non eseguire i rollback della 173–176 in questa finestra.
 - Non accendere Strumenti o Riesame Direzione su ERAM, e non spegnerli su MASON, dentro questo rilascio.
-- Non pubblicare solo il frontend, e non accendere solo il backend nuovo, in due sere diverse.
-- Non fare lo smoke di produzione e non mandare email finché non c’è un sì nuovo. Quel sì non è un permesso di riapplicare le migrazioni.
+- Non fare lo smoke di produzione e non mandare email finché non c’è un sì nuovo. Quel sì non è un permesso di riapplicare le migrazioni né di rifare il deploy del backend.
