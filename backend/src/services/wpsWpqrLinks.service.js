@@ -257,6 +257,59 @@ async function linkWpqrToWps({ organizationId, companyId, wpqrId, match, userId 
     return { linked: (res.created || res.updated) ? [match] : [], flags: [] };
 }
 
+/**
+ * SQL per COUNT delle WPQR legate a una WPS: colonna legacy `wpqr_records.wps_id`
+ * unita a `wps_wpqr_links` (D9). `wpsExpr` è un identificatore SQL già sicuro
+ * (alias colonna, mai input utente).
+ */
+function wpqrLinkedToWpsCountSql(wpsExpr, orgParam = '@organization_id') {
+    return `(SELECT COUNT(*) FROM wpqr_records wq
+             WHERE wq.organization_id = ${orgParam} AND wq.deleted_at IS NULL
+               AND (wq.wps_id = ${wpsExpr} OR EXISTS (
+                   SELECT 1 FROM wps_wpqr_links l
+                   WHERE l.organization_id = ${orgParam}
+                     AND l.wps_id = ${wpsExpr}
+                     AND l.wpqr_id = wq.id
+                     AND l.deleted_at IS NULL
+               )))`;
+}
+
+/** Lettori WPS: unione legame D9 + colonna legacy `wps_id`. Tabella 174 assente → solo legacy. */
+async function listWpqrRecordsForWps({ organizationId, wpsId }) {
+    const org = requireTenant(organizationId);
+    const wps = Number(wpsId);
+    if (!Number.isSafeInteger(wps) || wps <= 0) return [];
+    const hasLinks = await tableExists('wps_wpqr_links');
+    const sql = hasLinks
+        ? `SELECT q.*
+           FROM wpqr_records q
+           WHERE q.organization_id = @organization_id
+             AND q.deleted_at IS NULL
+             AND (
+               q.wps_id = @wps_id
+               OR EXISTS (
+                 SELECT 1 FROM wps_wpqr_links l
+                 WHERE l.organization_id = @organization_id
+                   AND l.wps_id = @wps_id
+                   AND l.wpqr_id = q.id
+                   AND l.deleted_at IS NULL
+               )
+             )
+           ORDER BY q.test_date DESC`
+        : `SELECT q.*
+           FROM wpqr_records q
+           WHERE q.organization_id = @organization_id
+             AND q.deleted_at IS NULL
+             AND q.wps_id = @wps_id
+           ORDER BY q.test_date DESC`;
+    const r = await query(sql, { organization_id: org, wps_id: wps });
+    return r.recordset || [];
+}
+
+async function linksAvailable() {
+    return tableExists('wps_wpqr_links');
+}
+
 module.exports = {
     ROLES,
     FLAG,
@@ -267,4 +320,7 @@ module.exports = {
     insertLink,
     linkWpsToSupportingWpqr,
     linkWpqrToWps,
+    listWpqrRecordsForWps,
+    wpqrLinkedToWpsCountSql,
+    linksAvailable,
 };
