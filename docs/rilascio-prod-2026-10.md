@@ -1,5 +1,54 @@
 # Piano di rilascio in produzione — ottobre 2026
 
+## Esito finale 19/10/2026
+
+Il rilascio è chiuso. La ripubblicazione del sito non serve.
+
+Tra il commit `b65e8f87537800198b1aa7de98bfc2d8926ffe39` (già online su https://systemgest.netlify.app) e `130a42cf109fc71d9f27f5fc011b514f5f339c40` non c’è nessun file del frontend. I file diversi sono solo backend, CI, documenti e skill. Il sito già pubblicato parla già con il backend acceso.
+
+Le due sezioni sotto restano la storia della giornata. Non sono state cancellate.
+
+### Servizio
+
+- MainPID `1207471`. Health 200. Controllo delle 12:10 UTC, stesso processo delle 11:41 UTC. Non è stato riavviato.
+- Non sono state rieseguite le migrazioni. Non è stato rifatto il deploy. `DISABLE_EMAIL` e `GEMINI_MODEL` non sono stati toccati.
+
+### Smoke sul sito vero
+
+Sito https://systemgest.netlify.app. Studio GrokBot Studio Test, organizzazione 1008, azienda 183. Dati solo con prefisso `ZZ_REL_20261019`, poi cestino o cancellazione.
+
+| Prova | Esito | Nota |
+|---|---|---|
+| Login | OK | Studio GrokBot Studio Test, id 1008 |
+| Qualifiche, due date oculistiche | OK | Acuità 01/06/2027 e colori 01/06/2030, in scheda e in elenco |
+| Coda ingest isolata per azienda | OK | Il PDF di prova è entrato in coda con azienda 183. Lo studio ha una sola azienda. Nessuna voce di altre aziende. Poi la voce è stata scartata |
+| Commesse, Controlli previsti | OK | Controllo VT, fase prima, visibile in commessa |
+| Verbali CND, patentini 9712 | OK | Il verbale VT è collegato al patentino. In tendina: ispettore VT livello 2. Manca il certificato oculistico di quella persona: l’avviso è quello previsto |
+| Riesame Requisiti, Word | OK | Checklist compilata. In calce al Word: data 19/10/2026 e nome di chi ha compilato |
+| WPQR passate | OK | Passata 1, processo 135, corrente 180 A, tensione 24 V |
+| Upload PDF (multer 2) | OK | Allegato del certificato in Qualifiche, HTTP 200 |
+
+### Modulo spento, poi riacceso
+
+Solo su GrokBot Studio Test. Prima l’elenco moduli era vuoto: per il programma significa tutti accesi. È stato spento solo Rischi, una voce del menu.
+
+- Con il modulo spento, la chiamata dell’admin dello studio risponde 403 (`MODULE_NOT_LICENSED`, modulo `rischi`) e la voce non è nel menu.
+- Riacceso subito. La chiamata torna 200 e la voce torna nel menu.
+- Alla fine l’elenco è di nuovo vuoto, come prima.
+
+### MASON e ERAM
+
+Riletti dopo la prova. Non sono stati modificati.
+
+- MASON (1003) ha ancora Riesame Direzione e Strumenti.
+- ERAM (1004) non li ha.
+
+### Chiusura
+
+Smoke ok, prova del 403 ok, moduli invariati. Il rilascio è chiuso. Non ripubblicare il sito. Non rieseguire le migrazioni 173–180. Non rifare il deploy del backend finché il MainPID è `1207471` e l’health risponde 200.
+
+---
+
 > **Esito 19/10/2026 ore 13 — backend acceso, sito fermo.** Il rilascio non è chiuso. Il backend di produzione è aggiornato e in esecuzione. Il sito è ancora quello del 18 ottobre. Non rieseguire le migrazioni 173–180. Non rifare il deploy del backend se il MainPID è ancora `1207471` e l’health risponde 200.
 
 ## Esito 19/10/2026 ore 13 — backend acceso, sito fermo
