@@ -1,10 +1,81 @@
 # Piano di rilascio in produzione — ottobre 2026
 
-Lettura fatta il 18 ottobre 2026, solo consultazione. Database `SGQ_ISO9001` sul servizio `sgq-backend` (`sistemi.fr-busato.it`). Nessun backup, nessuna migrazione, nessun deploy, nessun riavvio, nessuna email, nessuna modifica ai dati.
+> **Esito 19/10/2026 — fermo al deploy.** Il rilascio non è chiuso. Lo schema di produzione è avanti. Il codice acceso è ancora quello del 17 ottobre. Non rieseguire le migrazioni 177, 178, 179 e 180.
 
-**Questo documento non è il sì.** In produzione non si fa nulla finché il committente non dà un sì separato, per iscritto, su questa finestra.
+## Esito 19/10/2026 — fermo al deploy
 
-Finestra consigliata, quando arriverà quel sì: **sera o weekend**, quando MASON e ERAM non stanno compilando verbali, qualifiche o commesse. Tempo complessivo indicativo, se non ci sono intoppi: circa un’ora e mezza, più lo smoke fatto insieme al superadmin del committente.
+Il tentativo del 19 ottobre 2026 sul database `SGQ_ISO9001` si è fermato al deploy del backend. Lo schema è avanti rispetto al codice. Le colonne nuove sono vuote. Il backend acceso, quello del 17 ottobre, non le legge.
+
+`main` da pubblicare era `130a42cf` (include la #841). Quel commit non è in esecuzione.
+
+### Già applicate su PROD (non rieseguire)
+
+| Migrazione | Esito sul database `SGQ_ISO9001` |
+|---|---|
+| **177** fase del verbale | Colonna e vincolo presenti. 4 verbali, fasi vuote |
+| **178** date oculistiche | PASS. 151 qualifiche. Le date nuove sono vuote. La scadenza unica è ancora presente: 149 compilate, 2 vuote |
+| **179** patentino | Colonna presente, vuota sui 4 verbali |
+| **180** controlli previsti | Tabella `project_inspection_items` presente, 0 righe, niente `ON DELETE CASCADE` |
+
+Le migrazioni 173, 174, 175 e 176 non sono state rilanciate.
+
+Conteggi invariati: verbali 4, qualifiche 151, commesse 4, riesami 9, WPQR 13, non conformità 32.
+
+### Anomalia degli script
+
+Nel repository gli script della 177, della 179 e della 180 accettano solo il database di prova. Su PROD non è stato lanciato lo script con quel lucchetto. È stato eseguito lo stesso SQL e gli stessi controlli. La 178 sì: è stato usato lo script con `SGQ_MIGRATION_TARGET=prod`.
+
+### Deploy del backend — non riuscito
+
+`npm ci` si è fermato. In `node_modules` ci sono file di root: l’utente del servizio non può cancellarli. Il processo non è stato riavviato. Codice e dipendenze sono stati ricopiati dal backup, senza restart.
+
+Dipendenze di nuovo in esecuzione: multer `1.4.5-lts.2`, compression `1.8.1`, nodemailer `8.0.8`.
+
+Il codice acceso non legge la fase del verbale, il patentino, le date oculistiche e i controlli previsti.
+
+### Backup fatti prima delle migrazioni
+
+- Database: `/var/opt/mssql/data/PROD_pre_mig177_180_20261019_085711.bak` — 2.084.679.168 byte, `COPY_ONLY`, checksum, `RESTORE VERIFYONLY` ok.
+- Cartella: `/var/www/sgq-backend-bak-20261019-085711` — 1,2 GB. C’è una nota il cui nome finisce con `NOTE.txt`.
+
+### Servizio, dopo il tentativo
+
+- MainPID `1000083` prima e dopo. Il controllo health risponde 200.
+- `DISABLE_EMAIL` assente. Non è stata aggiunta.
+- `GEMINI_MODEL` nel file di ambiente: `gemini-3.8-flash`. Nel processo la variabile è assente.
+- Moduli invariati. MASON (organizzazione 1003) ha Riesame Direzione e Strumenti. ERAM (organizzazione 1004) no.
+
+### Non fatto
+
+- Smoke di produzione.
+- Ripubblicazione su Netlify. Il sito resta il commit `b65e8f87`.
+- Test «modulo spento → 403».
+- Unione della pull request #840.
+
+### Rollback — non eseguito
+
+Solo se si decide di annullare le migrazioni di questa finestra, e solo se i campi sono ancora vuoti. Ordine:
+
+1. **180:** drop della tabella `project_inspection_items`.
+2. **179:** drop della colonna `inspector_qualification_id`.
+3. **178:** eseguire `database/migrations/178_rollback.sql`.
+4. **177:** drop del vincolo `CK_ndt_reports_inspection_phase`, poi drop della colonna `inspection_phase`.
+
+Rollback del codice: ricopiare la cartella `/var/www/sgq-backend-bak-20261019-085711` sopra `/var/www/sgq-backend` e riavviare solo il servizio `sgq-backend`. Il 19 ottobre il codice e le dipendenze sono già stati ricopiati da quel backup. Il riavvio non c’è stato.
+
+### Prossimo passo
+
+Solo se il committente dà un nuovo sì. Il passo è il deploy del backend: sistemare i permessi di `node_modules`, poi `npm ci`. Non sono le migrazioni. Le 177–180 sono già sul database.
+
+---
+
+## Lettura del 18 ottobre 2026
+
+Lettura fatta il 18 ottobre 2026, solo consultazione, prima del tentativo del 19. Database `SGQ_ISO9001` sul servizio `sgq-backend` (`sistemi.fr-busato.it`). Quel giorno: nessun backup, nessuna migrazione, nessun deploy, nessun riavvio, nessuna email, nessuna modifica ai dati.
+
+**Questo documento non è un sì.** Il rilascio non è chiuso. Un sì nuovo, se arriverà, riguarda solo il deploy del backend (sezione in cima). Non rieseguire le 177–180.
+
+Finestra consigliata, quando arriverà quel sì: **sera o weekend**, quando MASON e ERAM non stanno compilando verbali, qualifiche o commesse. Il sì nuovo non rifà le migrazioni: è solo il deploy del backend. Il tempo di circa un’ora e mezza, più lo smoke, è la stima del piano intero scritta il 18 ottobre.
 
 ---
 
@@ -34,7 +105,7 @@ Già presenti sullo schema (non sono pendenti):
 | **175** | Tabella del diario modifiche presente |
 | **176** | Colonna cestino `deleted_at` presente su qualifiche, WPS, WPQR, passate, legami, saldatori di WPS, commesse, saldatori di commessa, non conformità, allegati, azioni NC, documenti e allegati del riesame |
 
-Ancora assenti (queste sì, pendenti):
+Ancora assenti il 18 ottobre (pendenti quel giorno). Il 19 ottobre la 177, la 178, la 179 e la 180 sono state applicate: non sono più pendenti e non vanno rieseguite. Esito in cima.
 
 | Migrazione | Cosa manca |
 |---|---|
@@ -110,18 +181,20 @@ Le 173–176 sono già applicate e le colonne sono vuote. Rifarle non dovrebbe r
 
 ---
 
-## Passi ancora non eseguiti
+## Passi del piano (memoria)
 
-Ordine da tenere, solo dopo il sì separato. Dopo ogni migrazione: una SELECT di verifica, poi si passa alla successiva. Se la verifica fallisce, ci si ferma e si usa il rollback di quel passo. Non si prosegue «tanto poi si sistema».
+Il 19 ottobre 2026 i backup (passi 1 e 2) e le migrazioni 177–180 (passi 7–10) sono stati fatti. Il deploy del backend (passo 11) non è riuscito. I passi 12, 13 e 14 non sono stati fatti. Il controllo moduli (passo 15) è stato una lettura: MASON e ERAM sono invariati. Le 173–176 non sono state rilanciate. Non rifare i passi già fatti. Il dettaglio è la sezione in cima.
 
-### 1. Backup del database di produzione
+Ordine originale, tenuto qui come memoria. Dopo ogni migrazione: una SELECT di verifica, poi si passa alla successiva. Se la verifica fallisce, ci si ferma e si usa il rollback di quel passo. Non si prosegue «tanto poi si sistema».
+
+### 1. Backup del database di produzione — fatto il 19/10
 
 - Cosa: backup SQL Server del database `SGQ_ISO9001`, file con data e ora, sul server. Non un export parziale.
 - Tempo: circa 15 minuti.
 - Rollback: il backup non si annulla. È il punto a cui si torna se un passo dopo fallisce (ripristino di questo file).
 - Rischio: se qualcuno scrive durante il backup, la copia può non essere l’ultimo secondo. Per questo la finestra è sera o weekend.
 
-### 2. Backup della cartella backend
+### 2. Backup della cartella backend — fatto il 19/10
 
 - Cosa: copia di `/var/www/sgq-backend` in una cartella a parte, con data. Si copia, non si sposta. Restano fuori dalla chiacchierata i file di segreti: non vanno in git.
 - Tempo: circa 5 minuti.
@@ -157,7 +230,9 @@ Ordine da tenere, solo dopo il sì separato. Dopo ogni migrazione: una SELECT di
 - Rollback: non usare `176_rollback.sql` in questo rilascio. Toglie le colonne del cestino. Il backend acceso le legge: le pagine andrebbero in errore anche con il cestino vuoto.
 - Rischio: come la 173.
 
-### 7. Migrazione 177 — da eseguire
+### 7. Migrazione 177 — già applicata il 19/10, non rieseguire
+
+I passi 7, 8, 9 e 10 sono memoria del piano. L’esito reale è in cima. Non rifarli.
 
 - Aggiunge la fase del verbale (prima / durante / dopo), vuota, sulle righe già presenti.
 - Verifica: la colonna c’è; i verbali esistenti restano senza fase; nessun valore fuori dai tre ammessi.
@@ -165,7 +240,7 @@ Ordine da tenere, solo dopo il sì separato. Dopo ogni migrazione: una SELECT di
 - Rollback: togliere il vincolo `CK_ndt_reports_inspection_phase` e poi la colonna. Non esiste un file `177_rollback.sql`. Farlo solo se la 177 di questa finestra è andata storta e nessuno ha già scelto una fase. Se il backend nuovo è già acceso, insieme alla colonna va ripristinato anche il backend del passo 2.
 - Rischio: basso sui 4 verbali attuali, perché la colonna nasce vuota. Il vincolo non ha valori vecchi da rifiutare.
 
-### 8. Migrazione 178 — da eseguire
+### 8. Migrazione 178 — già applicata il 19/10, non rieseguire
 
 - Aggiunge le due date oculistiche, vuote. La scadenza unica resta.
 - Verifica: le due colonne ci sono; le qualifiche esistenti le hanno vuote; la scadenza unica è intatta.
@@ -173,7 +248,7 @@ Ordine da tenere, solo dopo il sì separato. Dopo ogni migrazione: una SELECT di
 - Rollback: eseguire `database/migrations/178_rollback.sql`. Toglie le due date e non tocca la scadenza unica. Se nel frattempo qualcuno le ha compilate, quei valori si perdono: per questo il backup viene prima, e il rollback si fa subito se la verifica fallisce, non il giorno dopo.
 - Rischio: basso oggi (colonne assenti, 151 righe). Diventa perdita dati solo se si torna indietro dopo che le date sono state scritte.
 
-### 9. Migrazione 179 — da eseguire
+### 9. Migrazione 179 — già applicata il 19/10, non rieseguire
 
 - Aggiunge il collegamento al patentino, vuoto, senza vincolo verso le qualifiche. Il nome già scritto sul verbale resta.
 - Verifica: la colonna c’è; i verbali esistenti hanno il collegamento vuoto.
@@ -181,7 +256,7 @@ Ordine da tenere, solo dopo il sì separato. Dopo ogni migrazione: una SELECT di
 - Rollback: togliere la colonna `inspector_qualification_id`. Non esiste un file `179_rollback.sql`. I nomi già sul verbale non dipendono da questa colonna.
 - Rischio: basso sui 4 verbali. Nessun id orfano possibile, perché la colonna nasce vuota e non ha una chiave esterna.
 
-### 10. Migrazione 180 — da eseguire
+### 10. Migrazione 180 — già applicata il 19/10, non rieseguire
 
 - Crea la tabella dei controlli previsti, vuota. Non riscrive le 4 commesse.
 - Verifica: la tabella c’è, ha 0 righe, le commesse sono ancora 4 (o il numero del momento).
@@ -189,15 +264,16 @@ Ordine da tenere, solo dopo il sì separato. Dopo ogni migrazione: una SELECT di
 - Rollback: eliminare la tabella `project_inspection_items` se è ancora vuota. Non esiste un file `180_rollback.sql`. Se qualcuno ha già inserito controlli, il drop li perde: ci si ferma e si usa il backup.
 - Rischio: basso finché la tabella è vuota.
 
-### 11. Deploy del backend di `main`
+### 11. Deploy del backend di `main` — tentato il 19/10, non riuscito
 
-- Solo dopo 177, 178, 179 e 180 verificate. Si pubblica il backend di `origin/main` del momento del sì (il 18 ottobre era `a8c46231`). Prima del gesto: `git fetch origin main`.
+- Il 19 ottobre questo passo si è fermato: `npm ci` non è andato avanti per i permessi di `node_modules`. Il processo non è stato riavviato. Il codice acceso è di nuovo quello del backup. Dettaglio nella sezione in cima.
+- Il commit da pubblicare, quando ci sarà un sì nuovo, è `130a42cf` (include la #841), non `a8c46231`. Prima del gesto: `git fetch origin main`, poi sistemare i permessi di `node_modules` e solo dopo `npm ci`. Non rilanciare le migrazioni.
 - Verifica: health ok; nei file appena copiati compaiono fase del verbale, patentino, date oculistiche, controlli previsti, e il rispetto dei moduli per admin e superadmin.
 - Tempo: circa 10 minuti.
 - Rollback: ripristinare la copia del passo 2 e riavviare. Il MainPID deve cambiare. Health di nuovo ok.
 - Rischio: il backend di `main` senza le colonne 177–180 cerca oggetti che non ci sono. Per questo le migrazioni vengono prima. Lo stesso backend, con i moduli spenti, risponde 403 anche ad admin e superadmin: è il comportamento da provare nello smoke, non da scoprire di lunedì mattina.
 
-### 12. Deploy del frontend di `main` su Netlify produzione
+### 12. Deploy del frontend di `main` su Netlify produzione — non fatto il 19/10
 
 - Il sito vivo è già il codice app di `main` (commit pubblicato `b65e8f87`). La #836 non cambia pagine. Va comunque chiuso il giro: un publish di `main` riuscito, così lo SHA del sito e lo SHA di `main` coincidono.
 - Il publish di `a8c46231` del 18 ottobre è fallito e non ha sostituito il sito. Va capito l’errore di build prima di dare per fatto il passo. Se fallisce di nuovo, il sito resta quello di adesso, che per le pagine è lo stesso codice.
@@ -205,21 +281,21 @@ Ordine da tenere, solo dopo il sì separato. Dopo ogni migrazione: una SELECT di
 - Rollback: su Netlify ripubblicare il deploy `6ad51c1fb56825e4edc67abf` (commit `b65e8f87`).
 - Rischio: lasciare il frontend nuovo con il backend vecchio. In questa finestra il frontend è già avanti: il rimedio è il passo 11, non un altro publish isolato.
 
-### 13. Riavvio del servizio
+### 13. Riavvio del servizio — non fatto il 19/10
 
 - Dopo il deploy del backend. Verificare che il **MainPID non sia più `1000083`**. Se resta `1000083`, il riavvio non è avvenuto e il codice nuovo non è quello che risponde.
 - Tempo: circa 2 minuti, con una breve interruzione.
 - Rollback: ripristinare la cartella del passo 2 e riavviare di nuovo. Il PID cambierà ancora. Health ok.
 - Rischio: minuti in cui il sito non salva. Per questo la finestra è sera o weekend.
 
-### 14. Smoke di produzione
+### 14. Smoke di produzione — non fatto il 19/10
 
 - Gli stessi percorsi provati sul server di prova, sul sito vero, più il test che sul prova **non** è stato fatto: con il superadmin del committente, spegnere un modulo di prova (o usare uno studio che non lo ha) e verificare che la chiamata risponda **403**. Poi riaccendere ciò che si era spento, tornando all’elenco annotato sopra. Senza quel superadmin lo smoke non è completo.
 - Tempo: circa 30 minuti, con il committente disponibile.
 - Rollback: lo smoke non scrive lo schema. Se un percorso è rosso, ci si ferma e si torna indietro con i rollback dei passi 11, 13 e, se il guasto è una migrazione di questa finestra, 7–10. Non si corregge il database a mano.
 - Rischio: il test del 403 cambia per un attimo l’elenco moduli se lo si fa spegnendo un modulo vero. Meglio uno studio di prova, oppure spegnere e riaccendere subito, con l’elenco di MASON e di ERAM sotto gli occhi. Non lasciare ERAM o MASON con un modulo tolto.
 
-### 15. Controllo moduli di MASON e di ERAM
+### 15. Controllo moduli di MASON e di ERAM — letto il 19/10, invariati
 
 - Solo lettura, a fine finestra.
 - Atteso, se nessuno ha toccato le licenze: MASON ha ancora Riesame Direzione e Strumenti; ERAM non li ha.
@@ -228,9 +304,11 @@ Ordine da tenere, solo dopo il sì separato. Dopo ogni migrazione: una SELECT di
 
 ---
 
-## Aggiornamento 19 ottobre 2026
+## Aggiornamento 19 ottobre 2026 (prima del tentativo)
 
-- Dipendenze backend aggiornate su `main` (PR #841): multer `2.4.0`, compression `1.8.2`, nodemailer `10.1.7`. Il deploy è stato fatto solo su TEST. Il backend di produzione non è stato aggiornato e non è stato riavviato.
+Questo appunto è la verifica fatta prima della finestra. L’esito del tentativo, fermo al deploy, è la sezione in cima. A fine tentativo il backend di produzione è di nuovo sulle dipendenze vecchie (multer `1.4.5-lts.2`, compression `1.8.1`, nodemailer `8.0.8`) e non è stato riavviato.
+
+- Dipendenze backend aggiornate su `main` (PR #841): multer `2.4.0`, compression `1.8.2`, nodemailer `10.1.7`. Il deploy di quelle versioni è stato fatto solo su TEST. Su produzione, dopo il tentativo fermo, non sono in esecuzione.
 - Verifica `GEMINI_MODEL` in produzione, sola lettura. Nel processo (MainPID `1000083`) la variabile non c’è: vale il default del codice, `gemini-3.8-flash`. Nel file di ambiente c’è già `gemini-3.8-flash`. Non punta a `3.7` né a `3.5`. Va bene. Non è stato modificato e il servizio non è stato riavviato.
 
 ---
@@ -240,7 +318,8 @@ Ordine da tenere, solo dopo il sì separato. Dopo ogni migrazione: una SELECT di
 - Niente su produzione senza un sì separato. Questo file non è quel sì.
 - Non riavviare il servizio adesso. Il MainPID `1000083` è quello atteso.
 - Non rilanciare la 173, la 174, la 175 o la 176 «per sicurezza».
+- Non rieseguire la 177, la 178, la 179 o la 180. Sono già sul database di produzione. Le colonne nuove sono vuote e il backend del 17 ottobre non le legge.
 - Non eseguire i rollback della 173–176 in questa finestra.
 - Non accendere Strumenti o Riesame Direzione su ERAM, e non spegnerli su MASON, dentro questo rilascio.
 - Non pubblicare solo il frontend, e non accendere solo il backend nuovo, in due sere diverse.
-- Non fare lo smoke di produzione, non mandare email, non applicare migrazioni, finché il sì non c’è.
+- Non fare lo smoke di produzione e non mandare email finché non c’è un sì nuovo. Quel sì non è un permesso di riapplicare le migrazioni.
