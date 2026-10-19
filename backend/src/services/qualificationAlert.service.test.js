@@ -182,7 +182,7 @@ describe('qualificationAlert.service — mapQualificationDeadlineRows con date n
 
     expect(rows).toHaveLength(2);
     expect(rows.map((r) => r.vision_clock).sort()).toEqual(['colour', 'near']);
-    expect(rows.find((r) => r.vision_clock === 'near').title).toMatch(/Visita acuit/);
+    expect(rows.find((r) => r.vision_clock === 'near').title).toMatch(/Visita oculistica/);
     expect(rows.find((r) => r.vision_clock === 'colour').title).toMatch(/Test dei colori/);
     expect(rows.find((r) => r.vision_clock === 'near').id).toBe('qual-9-near');
     expect(rows.every((r) => r.qualification_id === 9)).toBe(true);
@@ -200,8 +200,43 @@ describe('qualificationAlert.service — mapQualificationDeadlineRows con date n
         colour_vision_expiry_date: null,
       },
     ], 365);
-    expect(rows.map((r) => r.vision_clock).sort()).toEqual(['expiry', 'near']);
-    expect(rows.find((r) => r.vision_clock === 'expiry').due_date).toBe('2020-01-01');
+    expect(rows).toHaveLength(1);
+    expect(rows[0].vision_clock).toBe('expiry');
+    expect(rows[0].due_date).toBe('2020-01-01');
+  });
+
+  it('colori vuoti: una sola riga anche se la scadenza storica è più lontana', () => {
+    const rows = mapQualificationDeadlineRows([
+      {
+        id: 8,
+        person_name: 'Ada Ispettore',
+        qualification_type: 'Certificato idoneità visiva (acuità + Ishihara)',
+        status: 'valida',
+        expiry_date: '2035-01-01',
+        near_vision_expiry_date: '2027-03-01',
+        colour_vision_expiry_date: null,
+      },
+    ], 365);
+    expect(rows).toHaveLength(1);
+    expect(rows[0].vision_clock).toBe('near');
+    expect(rows[0].due_date).toBe('2027-03-01');
+    expect(rows[0].title).toMatch(/Visita oculistica/);
+  });
+
+  it('colori uguali alla visita: non si duplica la scadenza', () => {
+    const rows = mapQualificationDeadlineRows([
+      {
+        id: 6,
+        person_name: 'Ada Ispettore',
+        qualification_type: 'Certificato idoneità visiva (acuità + Ishihara)',
+        status: 'valida',
+        expiry_date: '2027-03-01',
+        near_vision_expiry_date: '2027-03-01',
+        colour_vision_expiry_date: '2027-03-01',
+      },
+    ], 365);
+    expect(rows).toHaveLength(1);
+    expect(rows[0].due_date).toBe('2027-03-01');
   });
 
   it('se la scadenza unica è la più vicina compare insieme alle due date nuove', () => {

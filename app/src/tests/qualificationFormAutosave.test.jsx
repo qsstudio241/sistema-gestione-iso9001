@@ -188,7 +188,7 @@ describe("QualificationForm — auto-save: tri-stato (#782) + canonicalizzazione
 });
 
 describe("QualificationForm — date del certificato oculistico", () => {
-  it("mostra visita e test dei colori solo sul certificato visivo", async () => {
+  it("un solo campo visita; i colori diversi restano aperti", async () => {
     await act(async () => {
       render(
         <QualificationForm
@@ -206,14 +206,95 @@ describe("QualificationForm — date del certificato oculistico", () => {
         />
       );
     });
-    expect(screen.getByLabelText(/Scadenza visita acuit/)).toHaveValue("2027-06-01");
-    expect(screen.getByLabelText("Scadenza test dei colori")).toHaveValue("2030-06-01");
+    expect(screen.getByLabelText("Scadenza visita oculistica")).toHaveValue("2027-06-01");
+    expect(screen.queryByLabelText("Data scadenza")).not.toBeInTheDocument();
+    expect(screen.getByTestId("qf-colour-toggle")).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByLabelText("Scadenza test colori")).toHaveValue("2030-06-01");
+    expect(screen.getByText(/vale fino a 5 anni/)).toBeInTheDocument();
   });
 
-  it("non mostra le due date su un patentino saldatore", async () => {
+  it("colori chiusi di default se non c'è una data diversa", async () => {
+    await act(async () => {
+      render(
+        <QualificationForm
+          qualification={{
+            id: 5,
+            person_name: "ZZ Ispettore",
+            qualification_type: VISION_FITNESS_TYPE,
+            company_id: 10,
+            expiry_date: "2027-06-01",
+          }}
+          onSaved={vi.fn()}
+          onClose={vi.fn()}
+        />
+      );
+    });
+    expect(screen.getByLabelText("Scadenza visita oculistica")).toHaveValue("2027-06-01");
+    expect(screen.getByTestId("qf-colour-toggle")).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByLabelText("Scadenza test colori")).not.toBeInTheDocument();
+  });
+
+  it("salvataggio: la visita va in acuità, la data vecchia resta, i colori vuoti non si copiano", async () => {
+    await act(async () => {
+      render(
+        <QualificationForm
+          qualification={{
+            id: 6,
+            person_name: "ZZ Ispettore",
+            qualification_type: VISION_FITNESS_TYPE,
+            company_id: 10,
+            expiry_date: "2020-01-01",
+            near_vision_expiry_date: "2027-06-01",
+            colour_vision_expiry_date: "",
+          }}
+          onSaved={vi.fn()}
+          onClose={vi.fn()}
+        />
+      );
+    });
+    apiService.updateQualification.mockClear();
+    fireEvent.change(screen.getByPlaceholderText("Note aggiuntive..."), {
+      target: { value: "Nota visita" },
+    });
+    await flushAutosaveWindow();
+    const payload = apiService.updateQualification.mock.calls.at(-1)[1];
+    expect(payload.expiry_date).toBe("2020-01-01");
+    expect(payload.near_vision_expiry_date).toBe("2027-06-01");
+    expect(payload.colour_vision_expiry_date).toBe("");
+  });
+
+  it("solo la scadenza storica: il salvataggio la scrive anche sulla visita", async () => {
+    await act(async () => {
+      render(
+        <QualificationForm
+          qualification={{
+            id: 8,
+            person_name: "ZZ Ispettore",
+            qualification_type: VISION_FITNESS_TYPE,
+            company_id: 10,
+            expiry_date: "2026-04-01",
+          }}
+          onSaved={vi.fn()}
+          onClose={vi.fn()}
+        />
+      );
+    });
+    apiService.updateQualification.mockClear();
+    fireEvent.change(screen.getByPlaceholderText("Note aggiuntive..."), {
+      target: { value: "Nota solo visita" },
+    });
+    await flushAutosaveWindow();
+    const payload = apiService.updateQualification.mock.calls.at(-1)[1];
+    expect(payload.expiry_date).toBe("2026-04-01");
+    expect(payload.near_vision_expiry_date).toBe("2026-04-01");
+    expect(payload.colour_vision_expiry_date).toBe("");
+  });
+
+  it("non mostra il campo colori su un patentino saldatore", async () => {
     await act(async () => {
       render(<QualificationForm qualification={WELDER} onSaved={vi.fn()} onClose={vi.fn()} />);
     });
-    expect(screen.queryByLabelText("Scadenza test dei colori")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("qf-colour-toggle")).not.toBeInTheDocument();
+    expect(screen.getByText(/Data scadenza/)).toBeInTheDocument();
   });
 });
