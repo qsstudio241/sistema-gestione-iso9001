@@ -32,6 +32,15 @@ const NORM_BATCH_REQUEST_TIMEOUT_MS = 15 * 60 * 1000;
 const NORM_BATCH_TIMEOUT_MESSAGE =
     "L'elaborazione delle norme sta richiedendo più tempo del previsto (molti PDF e pause anti-sovraccarico AI). Non è un errore di rete: attendere o riprovare con meno file.";
 
+/** Timeout ingest batch WPS/WPQR: OCR + AI su PDF firmati (spesso >180s). Non alza i GET. */
+const WELDING_BATCH_REQUEST_TIMEOUT_MS = 10 * 60 * 1000;
+const WELDING_BATCH_TIMEOUT_MESSAGE =
+    "L'estrazione WPS/WPQR sta richiedendo più tempo del previsto. Non è un errore di rete: attendere o riprovare con un PDF alla volta.";
+
+function isFetchAbortError(err, controller) {
+    return err?.name === 'AbortError' || controller?.signal?.aborted === true;
+}
+
 // Storage keys
 const TOKEN_KEY = 'sgq_auth_token';
 const REFRESH_TOKEN_KEY = 'sgq_refresh_token';
@@ -2841,7 +2850,7 @@ class ApiService {
         const token = this.getToken();
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 180000);
+        const timeoutId = setTimeout(() => controller.abort(), WELDING_BATCH_REQUEST_TIMEOUT_MS);
         try {
             const response = await fetch(`${this.baseUrl}/welding/wpqr/upload-batch`, {
                 method: 'POST', headers, body: fd, signal: controller.signal,
@@ -2854,7 +2863,7 @@ class ApiService {
             return response.json();
         } catch (err) {
             clearTimeout(timeoutId);
-            if (err.name === 'AbortError') throw new Error('Timeout upload WPQR (180s)');
+            if (isFetchAbortError(err, controller)) throw new Error(WELDING_BATCH_TIMEOUT_MESSAGE);
             throw err;
         }
     }
@@ -2865,7 +2874,7 @@ class ApiService {
         const token = this.getToken();
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 180000);
+        const timeoutId = setTimeout(() => controller.abort(), WELDING_BATCH_REQUEST_TIMEOUT_MS);
         try {
             const response = await fetch(`${this.baseUrl}/welding/wps/upload-batch`, {
                 method: 'POST', headers, body: fd, signal: controller.signal,
@@ -2878,7 +2887,7 @@ class ApiService {
             return response.json();
         } catch (err) {
             clearTimeout(timeoutId);
-            if (err.name === 'AbortError') throw new Error('Timeout upload WPS (180s)');
+            if (isFetchAbortError(err, controller)) throw new Error(WELDING_BATCH_TIMEOUT_MESSAGE);
             throw err;
         }
     }
@@ -3065,5 +3074,5 @@ class ApiError extends Error {
 
 // Singleton export
 const apiService = new ApiService();
-export { apiService, ApiError, config as apiConfig, setAuditLockTokensForAudit, clearAllAuditLockTokens, hasAuditLockToken, NORM_BATCH_REQUEST_TIMEOUT_MS, NORM_BATCH_TIMEOUT_MESSAGE };
+export { apiService, ApiError, config as apiConfig, setAuditLockTokensForAudit, clearAllAuditLockTokens, hasAuditLockToken, NORM_BATCH_REQUEST_TIMEOUT_MS, NORM_BATCH_TIMEOUT_MESSAGE, WELDING_BATCH_REQUEST_TIMEOUT_MS, WELDING_BATCH_TIMEOUT_MESSAGE };
 export default apiService;
