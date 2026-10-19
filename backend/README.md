@@ -107,18 +107,20 @@ sudo ufw status
 
 ### FASE 2: Installazione Backend Node.js
 
-#### 2.1 Installa Node.js 18 LTS
+#### 2.1 Installa Node.js 20 LTS
+
+Nodemailer 10 non parte su Node 18. Il VPS e la CI usano già Node 20.
 
 ```bash
 # Aggiungi repository NodeSource
-curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
 
 # Installa Node.js e npm
 sudo apt install -y nodejs
 
 # Verifica versioni
-node --version  # v18.x.x
-npm --version   # 9.x.x
+node --version  # v20.x.x
+npm --version
 ```
 
 #### 2.2 Setup Progetto Backend
