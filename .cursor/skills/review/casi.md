@@ -8,6 +8,16 @@ Per ogni caso: data, PR, area, gravità, cosa è successo, regola generale.
 
 ## 19/10/2026
 
+### I colori uguali alla visita restano sul giorno vecchio
+
+- **Data:** 19/10/2026
+- **PR:** [#842](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/842)
+- **Area:** qualifiche, certificato oculistico
+- **Gravità:** media
+- **Cosa è successo:** la data colori era uguale alla visita (non è un secondo orologio). Al rinnovo della visita quel giorno resta in tabella, il pannello colori è chiuso, e la scadenza effettiva torna al giorno vecchio. Il certificato appena rinnovato risulta scaduto.
+- **Regola:** se i colori valgono «come visita», cambiare la visita non lascia la copia sul giorno precedente. Una data colori diversa, più vecchia, resta.
+- **Confronto:** lo ha visto solo Bugbot. La skill controllava che una data vuota non spegnesse le altre e che la scadenza storica non si perdesse, non il rinnovo con una copia identica.
+
 ### La guida installa un Node troppo vecchio per la dipendenza nuova
 
 - **Data:** 19/10/2026

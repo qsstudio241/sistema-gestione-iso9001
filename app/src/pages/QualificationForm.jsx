@@ -5,6 +5,12 @@
 import React, { useState, useEffect, useRef } from "react";
 import apiService from "../services/apiService";
 import { OCCUPATIONAL_QUALIFICATION_TYPES, isVisionFitnessType } from "../data/occupationalQualificationTypes";
+import {
+  applyVisitDateChange,
+  displayedVisitDate,
+  toIsoDate,
+  visionDatesForSave,
+} from "../utils/visionFitnessDates";
 import { buildWelderDesignation, parseWelderQualificationDesignation, resolvePrintedDesignation } from "../utils/weldingDesignation";
 import { getApplicableWelderFields } from "../data/weldingQualificationRules9606";
 import {
@@ -116,11 +122,14 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
   const certInputRef = useRef(null);
   const [customType, setCustomType] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
+  const [colourOpen, setColourOpen] = useState(false);
+  const [visitDate, setVisitDate] = useState("");
   const verify = useQualificationVerify();
   const formRef = useRef(form);
   formRef.current = form;
 
   const isWelder9606 = (form.qualification_type || "").includes("9606");
+  const isVision = isVisionFitnessType(form.qualification_type);
   const isOperator14732 = (form.qualification_type || "").includes("14732");
   const show9606Dimensions = uses9606DimensionalBlock(form.qualification_type);
   const jointProfile = getJointTypeProfile(form.joint_type, {
@@ -238,12 +247,22 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
       }
       d.welding_process = canonicalizeProcessValue(d.welding_process);
       d.welding_process_test = canonicalizeProcessValue(d.welding_process_test);
+      const shownVisit = displayedVisitDate(d);
+      setVisitDate(shownVisit);
+      setColourOpen(Boolean(
+        toIsoDate(d.colour_vision_expiry_date) && toIsoDate(d.colour_vision_expiry_date) !== shownVisit
+      ));
       setForm(d);
       if (d.qualification_type && !QUAL_TYPES.includes(d.qualification_type)) {
         setCustomType(true);
       }
     } else if (defaultCompanyId) {
+      setColourOpen(false);
+      setVisitDate("");
       setForm((f) => ({ ...f, company_id: String(defaultCompanyId) }));
+    } else {
+      setColourOpen(false);
+      setVisitDate("");
     }
   }, [qualification, defaultCompanyId]);
 
@@ -308,6 +327,7 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
           welding_process_test: canonicalizeProcessValue(payloadFields.welding_process_test),
           company_id: parseInt(form.company_id, 10),
           personnel_id: form.personnel_id ? parseInt(form.personnel_id, 10) : null,
+          ...(isVisionFitnessType(form.qualification_type) ? visionDatesForSave(form, visitDate) : {}),
         };
         if (savedIdRef.current) {
           await apiService.updateQualification(savedIdRef.current, payload);
@@ -329,7 +349,7 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
     }, 800);
     return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form]);
+  }, [form, visitDate]);
 
   function handle(field) {
     return (e) => {
@@ -337,6 +357,19 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
       const value = e.target.type === "checkbox" ? e.target.checked : e.target.value;
       setForm((f) => ({ ...f, [field]: value }));
     };
+  }
+
+  function handleVisitChange(e) {
+    markUserEdit();
+    const value = e.target.value;
+    setVisitDate(value);
+    setForm((f) => applyVisitDateChange(f, value));
+  }
+
+  function handleColourChange(e) {
+    markUserEdit();
+    const value = e.target.value;
+    setForm((f) => ({ ...f, colour_vision_expiry_date: value }));
   }
 
   const lockedCompanyName = companyName
@@ -937,41 +970,57 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
               <label>Data emissione</label>
               <input type="date" value={form.issue_date} onChange={handle("issue_date")} />
             </div>
-            <div className="qf-field">
-              <label>Data scadenza{isWelder9606 && <span className="req"> *</span>}</label>
-              <input type="date" value={form.expiry_date} onChange={handle("expiry_date")} onBlur={handleBlur("expiry_date")} />
-              {fieldErrors.expiry_date && <span className="qf-field-err">{fieldErrors.expiry_date}</span>}
-            </div>
+            {!isVision && (
+              <div className="qf-field">
+                <label>Data scadenza{isWelder9606 && <span className="req"> *</span>}</label>
+                <input type="date" value={form.expiry_date} onChange={handle("expiry_date")} onBlur={handleBlur("expiry_date")} />
+                {fieldErrors.expiry_date && <span className="qf-field-err">{fieldErrors.expiry_date}</span>}
+              </div>
+            )}
             <div className="qf-field">
               <label>Ultimo rinnovo</label>
               <input type="date" value={form.last_renewal_date} onChange={handle("last_renewal_date")} />
             </div>
           </div>
-          {isVisionFitnessType(form.qualification_type) && (
+          {isVision && (
             <div data-testid="qf-vision-clocks">
-              <div className="qf-row">
-                <div className="qf-field">
-                  <label htmlFor="qf-near-vision-expiry">Scadenza visita acuit{"\u00e0"}</label>
-                  <input
-                    id="qf-near-vision-expiry"
-                    type="date"
-                    value={form.near_vision_expiry_date || ""}
-                    onChange={handle("near_vision_expiry_date")}
-                  />
-                </div>
-                <div className="qf-field">
-                  <label htmlFor="qf-colour-vision-expiry">Scadenza test dei colori</label>
-                  <input
-                    id="qf-colour-vision-expiry"
-                    type="date"
-                    value={form.colour_vision_expiry_date || ""}
-                    onChange={handle("colour_vision_expiry_date")}
-                  />
-                </div>
+              <div className="qf-field qf-visit-highlight">
+                <label htmlFor="qf-visit-expiry">Scadenza visita oculistica</label>
+                <input
+                  id="qf-visit-expiry"
+                  data-testid="qf-visit-expiry"
+                  type="date"
+                  value={visitDate}
+                  onChange={handleVisitChange}
+                />
+                <p className="qf-locked-hint">{"Acuit\u00e0, annuale (ISO 9712:2021 \u00a77.4.2)"}</p>
               </div>
-              <p className="qf-locked-hint">
-                {"Per ISO 9712 l\u2019acuit\u00e0 da vicino si rinnova ogni anno; i colori ogni 5. Qui si registrano le due date del certificato: la pi\u00f9 vicina fa il colore in elenco e in Scadenzari compaiono entrambe. Se le lasci vuote resta la data di scadenza unica."}
-              </p>
+              <div className="qf-colour-optional">
+                <button
+                  type="button"
+                  className="qf-section-toggle"
+                  aria-expanded={colourOpen}
+                  data-testid="qf-colour-toggle"
+                  onClick={() => setColourOpen((open) => !open)}
+                >
+                  <span className="qf-colour-toggle-label">
+                    Scadenza test colori (solo se diversa)
+                  </span>
+                  <span className="qf-section-chevron">{colourOpen ? "\u25B2" : "\u25BC"}</span>
+                </button>
+                {colourOpen && (
+                  <div className="qf-field">
+                    <label htmlFor="qf-colour-vision-expiry">Scadenza test colori</label>
+                    <input
+                      id="qf-colour-vision-expiry"
+                      type="date"
+                      value={toIsoDate(form.colour_vision_expiry_date) || ""}
+                      onChange={handleColourChange}
+                    />
+                    <p className="qf-locked-hint">{"vale fino a 5 anni (\u00a77.4.3)"}</p>
+                  </div>
+                )}
+              </div>
             </div>
           )}
           {requiresConfirmation && (

@@ -441,35 +441,70 @@ function mapQualificationDeadlineRows(rows, daysWindow = 365) {
     if (['revocata', 'sospesa'].includes(q.status)) continue;
     const clocks = visionClockDates(q);
     if (clocks.usesSplit) {
+      const visit = clocks.near || clocks.expiry;
+      const colourDistinct = Boolean(clocks.colour && clocks.colour !== visit);
+      if (!colourDistinct) {
+        // Colori vuoti o uguali alla visita: una sola scadenza, la più vicina.
+        // La data storica più vecchia resta quella che conta; non si aggiunge
+        // una seconda riga solo perché colour è vuoto.
+        const date = earliestIsoDate([clocks.expiry, clocks.near]);
+        if (date) {
+          const olderExpiryBinds = Boolean(
+            clocks.expiry && clocks.near && clocks.expiry < clocks.near && date === clocks.expiry
+          );
+          pushDeadlineRow(out, q, date, olderExpiryBinds ? {
+            kind: 'expiry',
+            kindLabel: 'Scadenza certificato',
+            idSuffix: 'expiry',
+            title: `Qualifica: ${q.person_name} (${q.qualification_type || 'n/d'})`,
+            daysWindow,
+            ignoreUpperBound: true,
+          } : {
+            kind: 'near_vision',
+            kindLabel: 'Scadenza visita oculistica',
+            idSuffix: 'near',
+            title: `Visita oculistica: ${q.person_name}`,
+            daysWindow,
+            ignoreUpperBound: true,
+          });
+        }
+        continue;
+      }
       if (clocks.near) {
         pushDeadlineRow(out, q, clocks.near, {
           kind: 'near_vision',
-          kindLabel: 'Scadenza visita acuit\u00e0',
+          kindLabel: 'Scadenza visita oculistica',
           idSuffix: 'near',
-          title: `Visita acuit\u00e0: ${q.person_name}`,
+          title: `Visita oculistica: ${q.person_name}`,
+          daysWindow,
+          ignoreUpperBound: true,
+        });
+      } else if (clocks.expiry) {
+        pushDeadlineRow(out, q, clocks.expiry, {
+          kind: 'near_vision',
+          kindLabel: 'Scadenza visita oculistica',
+          idSuffix: 'near',
+          title: `Visita oculistica: ${q.person_name}`,
           daysWindow,
           ignoreUpperBound: true,
         });
       }
-      if (clocks.colour) {
-        pushDeadlineRow(out, q, clocks.colour, {
-          kind: 'colour_vision',
-          kindLabel: 'Scadenza test dei colori',
-          idSuffix: 'colour',
-          title: `Test dei colori: ${q.person_name}`,
-          daysWindow,
-          ignoreUpperBound: true,
-        });
-      }
-      // Una data vuota non cancella la scadenza unica. Se entrambe le date
-      // nuove ci sono e la unica è più lontana, restano le due righe.
-      const clocksPresent = [clocks.near, clocks.colour].filter(Boolean);
-      const uniqueStillBinds = Boolean(clocks.expiry) && (
-        !clocks.near
-        || !clocks.colour
-        || clocksPresent.every((d) => clocks.expiry < d)
-      );
-      if (uniqueStillBinds) {
+      pushDeadlineRow(out, q, clocks.colour, {
+        kind: 'colour_vision',
+        kindLabel: 'Scadenza test dei colori',
+        idSuffix: 'colour',
+        title: `Test dei colori: ${q.person_name}`,
+        daysWindow,
+        ignoreUpperBound: true,
+      });
+      // La scadenza unica compare solo se è più vicina di visita e colori.
+      // Un colore vuoto non basta a farla uscire come seconda riga.
+      if (
+        clocks.expiry
+        && clocks.near
+        && clocks.expiry < clocks.near
+        && clocks.expiry < clocks.colour
+      ) {
         pushDeadlineRow(out, q, clocks.expiry, {
           kind: 'expiry',
           kindLabel: 'Scadenza certificato',

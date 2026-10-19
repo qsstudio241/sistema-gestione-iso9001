@@ -36,6 +36,15 @@
   background:none; border:none; padding:0; cursor:pointer; text-align:left;
 }
 .qf-section-chevron { color:#9ca3af; font-size:12px; }
+.qf-visit-highlight {
+  border: 1.5px solid #1e3a5f;
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: #f8fafc;
+}
+.qf-visit-highlight label { color: #1e3a5f; font-weight: 700; }
+.qf-colour-optional { margin-top: 8px; }
+.qf-colour-toggle-label { font-size: 13px; font-weight: 600; color: #374151; }
 .qf-semiannual-section { margin-top:8px; }
 .qf-semiannual-body { margin-top:10px; display:flex; flex-direction:column; gap:10px; }
 .qf-semiannual-actions { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }

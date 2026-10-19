@@ -16,7 +16,7 @@ import { ProtectedFileLink } from "../components/ProtectedFile";
 import AskAiButton from "../components/AskAiButton";
 import { saveQualContext } from "../utils/aiAssistantContext";
 import { requiresSemiannualConfirmation } from "../utils/weldingConfirmationRules";
-import { isVisionFitnessType } from "../data/occupationalQualificationTypes";
+import { visionListPresentation } from "../utils/visionFitnessDates";
 import {
     QUALIFICATION_SITUAZIONI,
     STATS_TO_SITUAZIONE,
@@ -213,48 +213,33 @@ export function QualRow({ q, tabKey, onEdit, onHardDelete, onRenew, onHistory, h
     // mostrare entrambe le date, uno stato "Scaduta"/"In scadenza" con
     // certificato ancora lontano nel tempo risulta incomprensibile: rendiamo
     // sempre visibile quale delle due date sta determinando il colore.
-    const nearIso = q.near_vision_expiry_date ? String(q.near_vision_expiry_date).slice(0, 10) : "";
-    const colourIso = q.colour_vision_expiry_date ? String(q.colour_vision_expiry_date).slice(0, 10) : "";
-    const certificateIso = q.expiry_date ? String(q.expiry_date).slice(0, 10) : "";
-    const hasVisionClocks = isVisionFitnessType(q.qualification_type) && (nearIso || colourIso);
     const effectiveIso = q.effective_expiry_date ? String(q.effective_expiry_date).slice(0, 10) : "";
-    const certificateBinds = Boolean(
-        certificateIso
-        && effectiveIso === certificateIso
-        && certificateIso !== nearIso
-        && certificateIso !== colourIso
-    );
+    const visionList = visionListPresentation(q);
     const hasDualExpiry = requiresSemiannualConfirmation(q.qualification_type) && q.next_confirmation_due;
     const confirmationIsBinding = hasDualExpiry && q.effective_expiry_date
         ? String(q.effective_expiry_date).slice(0, 10) === String(q.next_confirmation_due).slice(0, 10)
         : false;
 
-    const expiryCell = hasVisionClocks ? (
+    const expiryCell = visionList?.mode === "single" ? (
+        <td className="sq-col-expiry">
+            <span className={`sq-expiry-date sq-expiry-${q.semaforo}`} title="Scadenza visita oculistica. I colori seguono la visita.">
+                {formatDate(visionList.date)}
+                {visionList.hint ? ` \u00b7 ${visionList.hint}` : ""}
+            </span>
+        </td>
+    ) : visionList?.mode === "split" ? (
         <td className="sq-col-expiry sq-col-expiry--dual">
-            {nearIso && (
+            {visionList.lines.map((line) => (
                 <span
-                    className={`sq-expiry-date sq-expiry-line${effectiveIso === nearIso ? ` sq-expiry-${q.semaforo}` : ""}`}
-                    title="Scadenza della visita di acuit\u00e0"
+                    key={line.key}
+                    className={`sq-expiry-date sq-expiry-line${(effectiveIso || visionList.effective) === line.date ? ` sq-expiry-${q.semaforo}` : ""}`}
+                    title={line.label}
                 >
-                    {"Visita acuit\u00e0: "}{formatDate(nearIso)}
+                    {line.label}
+                    {": "}
+                    {formatDate(line.date)}
                 </span>
-            )}
-            {colourIso && (
-                <span
-                    className={`sq-expiry-date sq-expiry-line${effectiveIso === colourIso ? ` sq-expiry-${q.semaforo}` : ""}`}
-                    title="Scadenza del test dei colori"
-                >
-                    {"Test dei colori: "}{formatDate(colourIso)}
-                </span>
-            )}
-            {certificateBinds && (
-                <span
-                    className={`sq-expiry-date sq-expiry-line sq-expiry-${q.semaforo}`}
-                    title="Scadenza unica del certificato: resta valida anche se è compilata una sola delle due date nuove"
-                >
-                    {"Scadenza certificato: "}{formatDate(certificateIso)}
-                </span>
-            )}
+            ))}
         </td>
     ) : hasDualExpiry ? (
         <td className="sq-col-expiry sq-col-expiry--dual">
