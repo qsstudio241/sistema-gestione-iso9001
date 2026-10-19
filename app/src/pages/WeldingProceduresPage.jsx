@@ -261,6 +261,13 @@ function draftToCreatePayload(draft, companyId, wpsCode) {
     thickness_range_min: draft.thickness_range_min != null ? draft.thickness_range_min : null,
     thickness_range_max: draft.thickness_range_max != null ? draft.thickness_range_max : null,
     qualification_standard: draft.qualification_standard || "ISO 15614-1",
+    wpqr_ref: draft.wpqr_ref || null,
+    parent_material_a: draft.parent_material_a || null,
+    parent_material_b: draft.parent_material_b || null,
+    heat_input: draft.heat_input || null,
+    current_range: draft.current_range || null,
+    voltage_range: draft.voltage_range || null,
+    metal_transfer: draft.metal_transfer || null,
     status: "bozza",
     notes: draft.wpqr_ref
       ? `Generata da WPQR ${draft.wpqr_ref}`

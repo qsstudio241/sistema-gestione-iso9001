@@ -463,6 +463,9 @@ function buildWpsDraft(wpqr, request, groupA, groupB) {
         filler_material: wpqr.filler_material || null,
         shielding_gas: wpqr.shielding_gas || null,
         welding_positions: wpqr.welding_positions || null,
+        heat_input: wpqr.heat_input_note || null,
+        current_range: wpqr.current_type || null,
+        metal_transfer: wpqr.metal_transfer || null,
         status: 'bozza',
     };
 }

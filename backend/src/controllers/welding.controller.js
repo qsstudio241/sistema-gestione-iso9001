@@ -338,6 +338,8 @@ async function createWPS(req, res) {
             thickness_range_min, thickness_range_max, pipe_diameter_min,
             preheat_temp, interpass_temp, pwht, qualification_standard,
             status = 'bozza', notes,
+            wpqr_ref, parent_material_a, parent_material_b,
+            heat_input, current_range, voltage_range, metal_transfer,
         } = req.body;
 
         if (!wps_code) {
@@ -352,6 +354,8 @@ async function createWPS(req, res) {
                 joint_type, position, thickness_range_min, thickness_range_max,
                 pipe_diameter_min, preheat_temp, interpass_temp, pwht,
                 qualification_standard, status, notes,
+                wpqr_ref, parent_material_a, parent_material_b,
+                heat_input, current_range, voltage_range, metal_transfer,
                 created_by, created_at, updated_at
             )
             OUTPUT INSERTED.id
@@ -361,6 +365,8 @@ async function createWPS(req, res) {
                 @joint_type, @position, @thickness_range_min, @thickness_range_max,
                 @pipe_diameter_min, @preheat_temp, @interpass_temp, @pwht,
                 @qualification_standard, @status, @notes,
+                @wpqr_ref, @parent_material_a, @parent_material_b,
+                @heat_input, @current_range, @voltage_range, @metal_transfer,
                 @created_by, GETDATE(), GETDATE()
             )
         `, {
@@ -383,6 +389,13 @@ async function createWPS(req, res) {
             qualification_standard: qualification_standard || null,
             status,
             notes:              notes || null,
+            wpqr_ref:           wpqr_ref || null,
+            parent_material_a:  parent_material_a || null,
+            parent_material_b:  parent_material_b || null,
+            heat_input:         heat_input || null,
+            current_range:      current_range || null,
+            voltage_range:      voltage_range || null,
+            metal_transfer:     metal_transfer || null,
             created_by:         user_id,
         });
 
@@ -429,6 +442,8 @@ async function updateWPS(req, res) {
             'position', 'thickness_range_min', 'thickness_range_max',
             'pipe_diameter_min', 'preheat_temp', 'interpass_temp', 'pwht',
             'qualification_standard', 'status', 'notes',
+            'wpqr_ref', 'parent_material_a', 'parent_material_b',
+            'heat_input', 'current_range', 'voltage_range', 'metal_transfer',
         ];
 
         const updates = [];
