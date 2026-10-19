@@ -1244,8 +1244,23 @@ function WeldingProceduresPage() {
     setExportingWpsId(w.id);
     setError(null);
     try {
-      await exportWpsAnnexADocx(w, {
-        companyName: w.company_name || companyScopeName || "",
+      let record = w;
+      let testRuns = [];
+      try {
+        const detail = await apiService.getWPS(w.id);
+        if (detail?.data) record = detail.data;
+      } catch { /* lista già sufficiente per i campi di testata */ }
+      const linked = Array.isArray(record.wpqr_records) ? record.wpqr_records[0] : null;
+      if (linked?.id) {
+        try {
+          const tr = await apiService.getWpqrTestRuns(linked.id);
+          testRuns = tr?.runs || [];
+        } catch { /* tabella passate resta vuota */ }
+      }
+      await exportWpsAnnexADocx(record, {
+        companyName: record.company_name || w.company_name || companyScopeName || "",
+        wpqrCode: linked?.wpqr_code || linked?.reference_number || "",
+        testRuns,
       });
     } catch (err) {
       setError(err?.message || "Errore export Word WPS");
