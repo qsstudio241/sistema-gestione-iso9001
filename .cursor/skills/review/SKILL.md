@@ -272,6 +272,10 @@ Controllare solo ciò che il diff tocca.
 
 - Accenti veri: è, più. Non `e'`, `piu'`.
 
+**Dipendenze**
+
+- Se un pacchetto alza il Node richiesto, `engines`, la guida di installazione, la CI e il binario del servizio devono dire la stessa versione. Un test locale su un Node più nuovo non vede il `require` che fallisce sul server.
+
 ## Manutenzione
 
 Dopo ogni revisione, se è emerso un **tipo di problema nuovo** o un **falso

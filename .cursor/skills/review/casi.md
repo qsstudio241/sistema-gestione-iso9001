@@ -6,6 +6,17 @@ La skill che lo usa è [`SKILL.md`](SKILL.md): va letto prima del diff.
 
 Per ogni caso: data, PR, area, gravità, cosa è successo, regola generale.
 
+## 19/10/2026
+
+### La guida installa un Node troppo vecchio per la dipendenza nuova
+
+- **Data:** 19/10/2026
+- **PR:** [#841](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/841)
+- **Area:** dipendenze backend, runtime
+- **Gravità:** media
+- **Cosa è successo:** nodemailer 10 richiede Node 20. Il `package.json` diceva ancora Node 18 e la guida di installazione scaricava Node 18. Su quel runtime la libreria non parte: il server si avvia, ma la mail resta muta perché il `require` fallisce ed è ingoiato. VPS e CI erano già su Node 20, quindi il servizio attuale non si rompe. La guida e `engines` sono stati allineati nello stesso commit.
+- **Regola:** se una dipendenza alza la versione di Node, controllare `engines`, la guida di installazione, la CI e il binario del servizio. Non basta il test locale se gira su un Node più nuovo.
+
 ## 18/10/2026
 
 ### La tendina patentini chiama il metodo senza this
