@@ -326,10 +326,20 @@ function dataCell(text, width) {
   });
 }
 
+function rasterSize(buf) {
+  if (!buf || buf.length < 24) return null;
+  const b = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
+  if (b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47) {
+    const dv = new DataView(b.buffer, b.byteOffset, b.byteLength);
+    return { width: dv.getUint32(16), height: dv.getUint32(20) };
+  }
+  return null;
+}
+
 function fitImage(w, h, maxW, maxH) {
   const width = Number(w) || maxW;
   const height = Number(h) || Math.round(maxW * 0.6);
-  const scale = Math.min(maxW / width, maxH / height, 1);
+  const scale = Math.min(maxW / width, maxH / height);
   return {
     width: Math.max(1, Math.round(width * scale)),
     height: Math.max(1, Math.round(height * scale)),
@@ -338,7 +348,13 @@ function fitImage(w, h, maxW, maxH) {
 
 function sketchParagraphs(slot, { maxW, maxH }) {
   if (slot?.data) {
-    const dim = fitImage(slot.widthPx || slot.width, slot.heightPx || slot.height, maxW, maxH);
+    const nat = rasterSize(slot.data);
+    const dim = fitImage(
+      slot.widthPx || slot.width || (nat && nat.width),
+      slot.heightPx || slot.height || (nat && nat.height),
+      maxW,
+      maxH
+    );
     const kids = [
       new Paragraph({
         alignment: AlignmentType.CENTER,
@@ -399,7 +415,7 @@ function buildSketchTable(sketches = {}) {
           span: 2,
           height: bodyH,
           valign: VerticalAlign.CENTER,
-          children: sketchParagraphs(combined, { maxW: 620, maxH: 189 }),
+          children: sketchParagraphs(combined, { maxW: 680, maxH: 210 }),
         }),
       ],
     });
@@ -700,17 +716,9 @@ export function buildWpsAnnexA2019Document(wps, options = {}) {
             new Paragraph({
               alignment: AlignmentType.RIGHT,
               children: [
-                run(
-                  [
-                    f.qualificationStandard,
-                    f.revision ? `Rev. ${f.revision}` : '',
-                    f.date,
-                    f.heatInput ? `HI ${f.heatInput}` : '',
-                    f.currentRange ? `I ${f.currentRange}` : '',
-                    f.voltageRange ? `U ${f.voltageRange}` : '',
-                  ].filter(Boolean).join('   \u00B7   ') || 'ISO 15609-1:2019 Annex A',
-                  { size: 14, color: '888888', italics: true }
-                ),
+                run('ISO 15609-1:2019 Annex A (informative) \u2014 SystemGest', {
+                  size: 14, color: '888888', italics: true,
+                }),
               ],
             }),
           ],

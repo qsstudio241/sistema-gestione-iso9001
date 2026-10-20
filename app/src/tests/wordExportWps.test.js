@@ -30,6 +30,18 @@ function xmlOf(zip) {
     .join('\n');
 }
 
+function headerXml(zip) {
+  return Object.keys(zip.files)
+    .filter((k) => /word\/header\d+\.xml$/.test(k))
+    .map((k) => zip.files[k].asText())
+    .join('\n');
+}
+
+const MIN_PNG = Uint8Array.from(
+  atob("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="),
+  (c) => c.charCodeAt(0)
+);
+
 /** Caso Mason minimo: FW, gruppo 1.2, spessori 5–10 mm */
 const MASON_WPS = {
   id: 42,
@@ -196,9 +208,6 @@ describe("generateWpsAnnexABlob", () => {
     expect(xml).toContain("24-03390-01");
     expect(xml).toContain("S355");
     expect(xml).toContain("S235");
-    expect(xml).toContain("0,8 kJ/mm");
-    expect(xml).toContain("190 A");
-    expect(xml).toContain("24 V");
     expect(xml).toContain("Spray arc");
   });
 
@@ -263,18 +272,33 @@ describe("generateWpsAnnexABlob", () => {
     expect(xml).not.toContain("partly_mechanized");
   });
 
-  it("mostra HI/I/U solo nell'intestazione di pagina, non come sottotitolo", async () => {
+  it("intestazione di pagina: solo riga corta Annex A, senza standard/HI/I/U", async () => {
     const blob = await generateWpsAnnexABlob({
       ...MASON_WPS,
       heat_input: "0,8 kJ/mm",
       current_range: "190 A",
       voltage_range: "24 V",
     });
+    const zip = new PizZip(await blobToArrayBuffer(blob));
+    const header = headerXml(zip);
+    expect(header).toContain("ISO 15609-1:2019 Annex A");
+    expect(header).not.toContain("HI 0,8 kJ/mm");
+    expect(header).not.toContain("I 190 A");
+    expect(header).not.toContain("U 24 V");
+    expect(header).not.toContain("ISO 15614-1");
+    const body = xmlOf(zip);
+    expect(body).not.toContain("Heat input 0,8 kJ/mm");
+  });
+
+  it("schizzo combinato: cella unita e dimensioni native per lo scale-to-fit", async () => {
+    const blob = await generateWpsAnnexABlob(MASON_WPS, {
+      sketches: {
+        combined: { data: MIN_PNG, type: "png", widthPx: 174, heightPx: 231 },
+      },
+    });
     const xml = xmlOf(new PizZip(await blobToArrayBuffer(blob)));
-    expect(xml).toContain("HI 0,8 kJ/mm");
-    expect(xml).toContain("I 190 A");
-    expect(xml).toContain("U 24 V");
-    expect(xml).not.toContain("Heat input 0,8 kJ/mm");
+    expect(xml).toMatch(/w:gridSpan[^>]*w:val="2"/);
+    expect(xml).toContain("w:drawing");
   });
 
   it("formatAnnexEnum traduce gli enum WPQR", () => {
