@@ -433,12 +433,49 @@ async function extractHeaderTextWithOCR(pdfBuffer, options = {}) {
     }
 }
 
+/**
+ * Render pubblica di una pagina PDF in PNG (200 dpi A4 di default).
+ * Usata dalla libreria schizzi: non disegna, solo rasterizza il verbale.
+ */
+async function renderPdfPagePng(pdfBuffer, pageNumber, opts = {}) {
+    const density = opts.density || HEADER_OCR_RENDER.density;
+    const width = opts.width || HEADER_OCR_RENDER.width;
+    const height = opts.height || HEADER_OCR_RENDER.height;
+    return _renderPdfPage(pdfBuffer, pageNumber, { density, width, height });
+}
+
+function pngSize(buf) {
+    return _pngSize(buf);
+}
+
+/**
+ * Ritaglio PNG arbitrario (x, y, width, height in pixel, origine in alto a sinistra).
+ */
+function cropPng(png, rect) {
+    const size = _pngSize(png);
+    if (!size) return Promise.reject(new Error('[OCR] Dimensioni immagine non leggibili per il ritaglio'));
+    const x = Math.max(0, Math.round(Number(rect.x) || 0));
+    const y = Math.max(0, Math.round(Number(rect.y) || 0));
+    const width = Math.max(1, Math.round(Number(rect.width) || size.width));
+    const height = Math.max(1, Math.round(Number(rect.height) || size.height));
+    const gm = require('gm').subClass({ imageMagick: _detectMagickEngine() === 'imagemagick' });
+    return new Promise((resolve, reject) => {
+        gm(png).crop(width, height, x, y).toBuffer('PNG', (err, out) => {
+            if (err) return reject(err);
+            return _isRasterImage(out) ? resolve(out) : reject(new Error('[OCR] Ritaglio PNG non valido'));
+        });
+    });
+}
+
 module.exports = {
     extractTextWithOCR,
     extractTextFromImageBuffer,
     extractHeaderTextWithOCR,
     HEADER_OCR_HEIGHT_FRACTION,
     HEADER_OCR_TIMEOUT_MS,
+    renderPdfPagePng,
+    pngSize,
+    cropPng,
     _detectMagickEngine,
     _isRasterImage,
     _isOcrableImage,

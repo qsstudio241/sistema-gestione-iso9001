@@ -2823,6 +2823,48 @@ class ApiService {
     // `verify` risponde 404 finché la rotta non è su `main`.
     /** Passate di prova della WPQR. Risponde `{ runs, available }`. */
     async getWpqrTestRuns(wpqrId)        { return this.get(`/welding/wpqr/${wpqrId}/test-runs`); }
+    async getWpqrSketches(wpqrId)        { return this.get(`/welding/wpqr/${wpqrId}/sketches`); }
+    async listWeldSketches(params = {}) {
+        const qs = new URLSearchParams();
+        Object.entries(params).forEach(([k, v]) => {
+            if (v != null && v !== '') qs.set(k, String(v));
+        });
+        const q = qs.toString();
+        return this.get(`/welding/sketches${q ? `?${q}` : ''}`);
+    }
+    async confirmWeldSketch(id)         { return this.post(`/welding/sketches/${id}/confirm`, {}); }
+    async getWeldSketchBlob(id) {
+        const url = `${this.baseUrl}/welding/sketches/${id}/content`;
+        const response = await fetch(url, {
+            method: 'GET',
+            cache: 'no-store',
+            credentials: 'include',
+            headers: this.getHeaders(true),
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return response.blob();
+    }
+    async uploadWeldSketch(file, fields = {}) {
+        const form = new FormData();
+        form.append('file', file);
+        Object.entries(fields).forEach(([k, v]) => {
+            if (v != null && v !== '') form.append(k, String(v));
+        });
+        const url = `${this.baseUrl}/welding/sketches/upload`;
+        const token = this.getToken();
+        const response = await fetch(url, {
+            method: 'POST',
+            credentials: 'include',
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+            body: form,
+        });
+        if (!response.ok) {
+            let err = {};
+            try { err = await response.json(); } catch { /* ignore */ }
+            throw new Error(err.error || `Upload schizzo fallito (${response.status})`);
+        }
+        return response.json();
+    }
     /** Replace-set delle passate (stesso contratto del GET). */
     async saveWpqrTestRuns(wpqrId, runs) { return this.put(`/welding/wpqr/${wpqrId}/test-runs`, { runs }); }
     /** Verifica WPQR vs norma: stateless, nessuna scrittura. Risponde `{ verification }`. */

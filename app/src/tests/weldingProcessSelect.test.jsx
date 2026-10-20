@@ -21,11 +21,15 @@ vi.mock("../services/apiService", () => ({
     updateWPQR: vi.fn(),
     updateWPS: vi.fn(),
     getWpqrTestRuns: vi.fn(),
+    getWpqrSketches: vi.fn().mockResolvedValue({ sketches: [] }),
     saveWpqrTestRuns: vi.fn(),
     baseUrl: "",
   },
 }));
-vi.mock("../utils/wordExportWps", () => ({ exportWpsAnnexADocx: vi.fn() }));
+vi.mock("../utils/wordExportWps", async (importOriginal) => {
+  const actual = await importOriginal();
+  return { ...actual, exportWpsAnnexADocx: vi.fn() };
+});
 vi.mock("../components/AskAiButton", () => ({ default: () => null }));
 vi.mock("../components/WpsUploadButton", () => ({ default: () => null }));
 vi.mock("../components/WpqrUploadButton", () => ({ default: () => null }));

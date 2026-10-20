@@ -22,6 +22,7 @@ vi.mock("../services/apiService", () => ({
     getWPQRList: vi.fn(),
     getWPQRStats: vi.fn(),
     getWpqrTestRuns: vi.fn(),
+    getWpqrSketches: vi.fn().mockResolvedValue({ sketches: [] }),
     saveWpqrTestRuns: vi.fn(),
     baseUrl: "",
   },

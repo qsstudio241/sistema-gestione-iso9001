@@ -9,12 +9,16 @@ import {
   MASON_WPS_GENERATE_DEFAULTS,
   WPS_GENERATE_MASON_CHIP,
 } from "../utils/aiAssistantContext";
-import { GenerateWpsModal, draftToCreatePayload } from "../pages/WeldingProceduresPage";
+import { GenerateWpsModal, draftToCreatePayload, loadAnnexASketchBuffers } from "../pages/WeldingProceduresPage";
 
 vi.mock("../services/apiService", () => ({
   default: {
     generateWPS: vi.fn(),
     createWPS: vi.fn(),
+    getWeldSketchBlob: vi.fn(),
+    uploadWeldSketch: vi.fn(),
+    getWpqrSketches: vi.fn().mockResolvedValue({ sketches: [] }),
+    confirmWeldSketch: vi.fn(),
   },
 }));
 
@@ -164,5 +168,44 @@ describe("draftToCreatePayload", () => {
     expect(p.torch_angle_deg).toBe(12);
     expect(p.company_id).toBe(51);
     expect(p.wps_code).toBe("WPS-1");
+  });
+
+  it("persiste gli id schizzo scelti", () => {
+    const p = draftToCreatePayload({
+      joint_sketch_id: 44,
+      sequence_sketch_id: null,
+    }, 51, "WPS-SK");
+    expect(p.joint_sketch_id).toBe(44);
+    expect(p.sequence_sketch_id).toBeNull();
+  });
+});
+
+describe("loadAnnexASketchBuffers", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    apiService.getWeldSketchBlob.mockResolvedValue({
+      type: "image/png",
+      arrayBuffer: async () => new Uint8Array([0x89, 0x50, 0x4e, 0x47]).buffer,
+    });
+  });
+
+  it("unisce le celle solo se joint e sequence hanno lo stesso id", async () => {
+    const combined = await loadAnnexASketchBuffers({
+      joint_sketch_id: 7,
+      sequence_sketch_id: 7,
+    });
+    expect(combined.combined).toBeTruthy();
+    expect(combined.joint).toBeUndefined();
+    expect(apiService.getWeldSketchBlob).toHaveBeenCalledTimes(1);
+  });
+
+  it("schizzo solo giunto lascia la sequenza vuota", async () => {
+    const out = await loadAnnexASketchBuffers({
+      joint_sketch_id: 7,
+      sequence_sketch_id: null,
+    });
+    expect(out.combined).toBeUndefined();
+    expect(out.joint).toBeTruthy();
+    expect(out.sequence).toBeUndefined();
   });
 });

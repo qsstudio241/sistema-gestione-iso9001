@@ -48,6 +48,16 @@ const upload = multer({
     },
 });
 
+const sketchUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 8 * 1024 * 1024, files: 1 },
+    fileFilter(req, file, cb) {
+        const ok = /\.(png|jpg|jpeg)$/i.test(file.originalname || '') ||
+                   ['image/png', 'image/jpeg'].includes(file.mimetype);
+        ok ? cb(null, true) : cb(new Error('Solo PNG o JPEG consentiti'));
+    },
+});
+
 const uploadWps = multer({
     storage: wpsStorage,
     limits: { fileSize: 50 * 1024 * 1024, files: 20 },
@@ -79,7 +89,12 @@ router.delete('/welding/wps/:id/welders/:welderId', ctrl.removeWpsWelder);
 // WPQR — stats e upload-batch PRIMA di /:id
 router.get   ('/welding/wpqr/stats',          ctrl.getWPQRStats);
 router.post  ('/welding/wpqr/upload-batch',   upload.array('files', 20), ctrl.uploadWPQRBatch);
+router.get   ('/welding/sketches',            ctrl.listWeldSketches);
+router.post  ('/welding/sketches/upload',     sketchUpload.single('file'), ctrl.uploadWeldSketch);
+router.get   ('/welding/sketches/:id/content', ctrl.getWeldSketchContent);
+router.post  ('/welding/sketches/:id/confirm', ctrl.confirmWeldSketch);
 router.get   ('/welding/wpqr',                ctrl.listWPQR);
+router.get   ('/welding/wpqr/:id/sketches',   ctrl.listWpqrSketches);
 router.get   ('/welding/wpqr/:id',            ctrl.getWPQR);
 router.post  ('/welding/wpqr',                ctrl.createWPQR);
 router.put   ('/welding/wpqr/:id',            ctrl.updateWPQR);

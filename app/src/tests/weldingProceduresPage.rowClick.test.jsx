@@ -28,15 +28,18 @@ vi.mock("../services/apiService", () => ({
     updateWPS: vi.fn(),
     getWPS: vi.fn(),
     getWpqrTestRuns: vi.fn(),
+    getWpqrSketches: vi.fn().mockResolvedValue({ sketches: [] }),
+    getWeldSketchBlob: vi.fn(),
     saveWpqrTestRuns: vi.fn(),
     fetchProtectedFileBlob: vi.fn(),
     baseUrl: "",
   },
 }));
 
-vi.mock("../utils/wordExportWps", () => ({
-  exportWpsAnnexADocx: vi.fn().mockResolvedValue(undefined),
-}));
+vi.mock("../utils/wordExportWps", async (importOriginal) => {
+  const actual = await importOriginal();
+  return { ...actual, exportWpsAnnexADocx: vi.fn().mockResolvedValue(undefined) };
+});
 vi.mock("../components/AskAiButton", () => ({ default: () => null }));
 vi.mock("../components/WpsUploadButton", () => ({ default: () => null }));
 vi.mock("../components/WpqrUploadButton", () => ({ default: () => null }));

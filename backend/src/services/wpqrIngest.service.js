@@ -990,6 +990,23 @@ async function commitWPQRFromFields(fields, organizationId, companyId, options =
     });
     warnings.push(...linkFlags.map((fl) => fl.message));
 
+    let sketches = [];
+    try {
+        const { extractAfterWpqrCommit } = require('./weldSketches.service');
+        sketches = await extractAfterWpqrCommit({
+            organizationId,
+            companyId,
+            wpqrId,
+            wpqr: { ...mapped, id: wpqrId, test_runs: mapped.test_runs },
+            filePath,
+            userId,
+        });
+    } catch (sketchErr) {
+        logger.warn('[WpqrIngest] estrazione schizzi non bloccante', {
+            wpqrId, error: sketchErr.message,
+        });
+    }
+
     return {
         wpqr_id: wpqrId,
         reference_number: mapped.reference_number,
@@ -998,6 +1015,7 @@ async function commitWPQRFromFields(fields, organizationId, companyId, options =
         thickness_min: mapped.thickness_min,
         thickness_max: mapped.thickness_max,
         warnings,
+        sketches,
     };
 }
 

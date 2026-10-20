@@ -11,6 +11,7 @@ vi.mock("../services/apiService", () => ({
     getWPQRList: vi.fn().mockResolvedValue({ data: [], total: 0 }),
     getWPQRStats: vi.fn().mockResolvedValue({ data: {} }),
     getWpqrTestRuns: vi.fn().mockResolvedValue({ runs: [], available: true }),
+    getWpqrSketches: vi.fn().mockResolvedValue({ sketches: [] }),
     saveWpqrTestRuns: vi.fn(),
   },
 }));
@@ -35,9 +36,10 @@ vi.mock("../utils/aiAssistantContext", async (importOriginal) => {
   };
 });
 
-vi.mock("../utils/wordExportWps", () => ({
-  exportWpsAnnexADocx: vi.fn(),
-}));
+vi.mock("../utils/wordExportWps", async (importOriginal) => {
+  const actual = await importOriginal();
+  return { ...actual, exportWpsAnnexADocx: vi.fn() };
+});
 
 import WeldingProceduresPage from "../pages/WeldingProceduresPage";
 

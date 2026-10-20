@@ -53,15 +53,27 @@ describe('wpsAnnexARanges', () => {
     expect(c.wire).toMatch(/m\/min/);
     expect(c.current).toMatch(/171/);
     expect(c.current).toMatch(/209/);
-    expect(c.speed).toBe('5 mm/s');
-    expect(c.speed).not.toMatch(/4\.5/);
+    expect(c.speed).toMatch(/4\.5/);
+    expect(c.speed).toMatch(/5\.5/);
+    expect(c.speed).toMatch(/mm\/s/);
   });
 
-  it('travel speed resta il misurato (nota ¹, non ±10 %)', () => {
+  it('travel speed usa lo stesso range² ±10 % di I/U/filo', () => {
     const c = annexARunCells({ travel_speed: 5.4, travel_speed_unit: 'mm/s' });
-    expect(c.speed).toBe('5.4 mm/s');
-    expect(c.speed).not.toContain('4.86');
-    expect(c.speed).not.toContain('5.94');
+    expect(c.speed).toContain('4.86');
+    expect(c.speed).toContain('5.94');
+    expect(c.speed).toMatch(/mm\/s/);
+  });
+
+  it('stampa avanzamento filo da alias camelCase / stringa con unità', () => {
+    const fromAlias = annexARunCells({ wireFeedSpeed: 8, wireFeedUnit: 'm/min' });
+    expect(fromAlias.wire).toMatch(/7\.2/);
+    expect(fromAlias.wire).toMatch(/8\.8/);
+    expect(fromAlias.wire).toMatch(/m\/min/);
+    const fromText = annexARunCells({ wire_feed: '8 m/min' });
+    expect(fromText.wire).toMatch(/7\.2/);
+    expect(fromText.wire).toMatch(/8\.8/);
+    expect(fromText.wire).toMatch(/m\/min/);
   });
 
   it('currentRangeFromRuns sul min–max delle passate', () => {

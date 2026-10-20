@@ -2,9 +2,8 @@
  * Range² per la tabella passate WPS (ISO 15609-1:2019 Annex A).
  *
  * Se la passata non ha già min/max, si derivano dal valore misurato WPQR:
- *   corrente / tensione / avanzamento filo: ±10 %
+ *   corrente / tensione / avanzamento filo / velocità di avanzamento: ±10 %
  *   apporto termico / energia d'arco: −25 % / +25 % (ISO 15614-1:2017+A1:2019 §8.4.8)
- *   travel speed: valore singolo (nota ¹ «if required», non range²).
  *
  * Nessun valore inventato: se manca il misurato, la cella resta vuota.
  */
@@ -13,7 +12,7 @@ export const IU_WIRE_PCT = 0.10;
 export const HEAT_PCT = 0.25;
 
 export const ANNEX_A_RANGE_NOTE =
-  'Range\u00B2: corrente, tensione e avanzamento filo \u00B110 % del valore misurato WPQR; apporto termico \u221225 % / +25 % (ISO 15614-1:2017+A1:2019 \u00A78.4.8).';
+  'Range\u00B2: corrente, tensione, avanzamento filo e velocit\u00E0 di avanzamento \u00B110 % del valore misurato WPQR; apporto termico \u221225 % / +25 % (ISO 15614-1:2017+A1:2019 \u00A78.4.8).';
 
 export function isMag135Family(process) {
   const tokens = String(process || '').match(/\d{3}/g) || [];
@@ -38,8 +37,36 @@ export function formatAnnexNum(n) {
 
 function num(v) {
   if (v == null || v === '') return null;
-  const n = Number(v);
-  return Number.isFinite(n) ? n : null;
+  if (typeof v === 'number') return Number.isFinite(v) ? v : null;
+  const s = String(v).trim();
+  if (!s || /^(n\.?a\.?|n\/a|n\.?d\.?|nd|--|-|\/)$/i.test(s)) return null;
+  const normalized = s.replace(',', '.');
+  const direct = Number(normalized);
+  if (Number.isFinite(direct)) return direct;
+  const m = normalized.match(/-?\d+(?:\.\d+)?/);
+  if (!m) return null;
+  const parsed = Number(m[0]);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function firstMeasured(run, keys) {
+  const src = run && typeof run === 'object' ? run : {};
+  for (const k of keys) {
+    const n = num(src[k]);
+    if (n != null) return n;
+  }
+  return null;
+}
+
+function firstText(run, keys) {
+  const src = run && typeof run === 'object' ? run : {};
+  for (const k of keys) {
+    const v = src[k];
+    if (v == null || v === '') continue;
+    const t = String(v).trim();
+    if (t) return t;
+  }
+  return '';
 }
 
 /**
@@ -83,7 +110,7 @@ export function formatAnnexPair(min, max, unit) {
   return formatAnnexRange({ min: num(min), max: num(max) }, unit);
 }
 
-/** Valore misurato senza range² (travel speed Annex A nota ¹). */
+/** Valore misurato senza range². */
 export function formatAnnexMeasured(value, unit) {
   const n = num(value);
   if (n == null) return '';
@@ -94,28 +121,54 @@ export function formatAnnexMeasured(value, unit) {
 
 /**
  * Celle della riga passata Annex A (9 colonne).
- * Polarità e filo restano i valori WPQR (C6 non è ²; C7 sì).
+ * Polarità resta il valore WPQR (C6 non è ²). Filo e travel speed sono ².
  */
 export function annexARunCells(run = {}) {
-  const unitWire = run.wire_feed_unit || '';
-  const unitSpeed = run.travel_speed_unit || '';
-  const unitHeat = run.heat_input_unit || '';
-  const fillerDia = run.filler_diameter_mm;
-  const fillerDes = run.filler_designation;
+  const wireMeasured = firstMeasured(run, [
+    'wire_feed_speed', 'wireFeedSpeed', 'wire_feed', 'wire_speed', 'filler_wire_speed',
+  ]);
+  const travelMeasured = firstMeasured(run, [
+    'travel_speed', 'travelSpeed', 'run_out_speed',
+  ]);
+  const unitWire = firstText(run, ['wire_feed_unit', 'wireFeedUnit'])
+    || (wireMeasured != null ? 'm/min' : '');
+  const unitSpeed = firstText(run, ['travel_speed_unit', 'travelSpeedUnit']);
+  const unitHeat = firstText(run, ['heat_input_unit', 'heatInputUnit']);
+  const fillerDia = firstMeasured(run, ['filler_diameter_mm', 'fillerDiameterMm']);
+  const fillerDes = firstText(run, ['filler_designation', 'fillerDesignation']);
   let filler = '';
   if (fillerDia != null && fillerDes) filler = `${fillerDia} mm ${fillerDes}`;
   else if (fillerDia != null) filler = `${fillerDia} mm`;
-  else filler = fillerDes ? String(fillerDes) : '';
+  else filler = fillerDes;
 
-  const current = formatAnnexRange(rangeFromMeasured(run.current_a, IU_WIRE_PCT), '');
-  const voltage = formatAnnexRange(rangeFromMeasured(run.voltage_v, IU_WIRE_PCT), '');
+  const current = formatAnnexRange(
+    rangeFromMeasured(firstMeasured(run, ['current_a', 'currentA', 'current']), IU_WIRE_PCT, {
+      min: run.current_min, max: run.current_max,
+    }),
+    ''
+  );
+  const voltage = formatAnnexRange(
+    rangeFromMeasured(firstMeasured(run, ['voltage_v', 'voltageV', 'voltage']), IU_WIRE_PCT, {
+      min: run.voltage_min, max: run.voltage_max,
+    }),
+    ''
+  );
   const wire = formatAnnexRange(
-    rangeFromMeasured(run.wire_feed_speed, IU_WIRE_PCT),
+    rangeFromMeasured(wireMeasured, IU_WIRE_PCT, {
+      min: run.wire_feed_speed_min, max: run.wire_feed_speed_max,
+    }),
     unitWire
   );
-  const speed = formatAnnexMeasured(run.travel_speed, unitSpeed);
+  const speed = formatAnnexRange(
+    rangeFromMeasured(travelMeasured, IU_WIRE_PCT, {
+      min: run.travel_speed_min, max: run.travel_speed_max,
+    }),
+    unitSpeed
+  );
   const heat = formatAnnexRange(
-    rangeFromMeasured(run.heat_input_value, HEAT_PCT),
+    rangeFromMeasured(firstMeasured(run, ['heat_input_value', 'heatInputValue', 'heat_input']), HEAT_PCT, {
+      min: run.heat_input_min, max: run.heat_input_max,
+    }),
     unitHeat
   );
 
