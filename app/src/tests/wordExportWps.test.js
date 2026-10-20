@@ -54,6 +54,29 @@ describe("mapWpsToAnnexAFields", () => {
     expect(f.heatInput).toBe("");
     expect(f.currentRange).toBe("");
     expect(f.voltageRange).toBe("");
+    expect(f.parentMaterialA).toBe("");
+    expect(f.parentMaterialB).toBe("");
+    expect(f.metalTransfer).toBe("");
+  });
+
+  it("mappa i sette campi ISO 15609-1 dal record WPS", () => {
+    const f = mapWpsToAnnexAFields({
+      ...MASON_WPS,
+      wpqr_ref: "24-03390-01",
+      parent_material_a: "S355",
+      parent_material_b: "S235",
+      heat_input: "0,8 kJ/mm",
+      current_range: "190 A",
+      voltage_range: "24 V",
+      metal_transfer: "Spray arc",
+    });
+    expect(f.wpqrNo).toBe("24-03390-01");
+    expect(f.parentMaterialA).toBe("S355");
+    expect(f.parentMaterialB).toBe("S235");
+    expect(f.heatInput).toBe("0,8 kJ/mm");
+    expect(f.currentRange).toBe("190 A");
+    expect(f.voltageRange).toBe("24 V");
+    expect(f.metalTransfer).toBe("Spray arc");
   });
 
   it("usa wpqrCode / companyName dagli options se assenti sul record", () => {
@@ -85,8 +108,33 @@ describe("generateWpsAnnexABlob", () => {
     expect(xml).toContain("Mason Srl");
     expect(xml).toMatch(/ISO 15609-1/);
     expect(xml).toContain("SystemGest");
+    expect(xml).toContain("Materiale padre A");
+    expect(xml).toContain("Trasferimento di metallo");
     // Tabella passate vuota presente (etichetta sezione)
     expect(xml).toContain("Passata");
+  });
+
+  it("stampa i sette campi ISO 15609-1 nel documento", async () => {
+    const blob = await generateWpsAnnexABlob({
+      ...MASON_WPS,
+      wpqr_ref: "24-03390-01",
+      parent_material_a: "S355",
+      parent_material_b: "S235",
+      heat_input: "0,8 kJ/mm",
+      current_range: "190 A",
+      voltage_range: "24 V",
+      metal_transfer: "Spray arc",
+    });
+    const ab = await blobToArrayBuffer(blob);
+    const zip = new PizZip(ab);
+    const xml = zip.files["word/document.xml"].asText();
+    expect(xml).toContain("24-03390-01");
+    expect(xml).toContain("S355");
+    expect(xml).toContain("S235");
+    expect(xml).toContain("0,8 kJ/mm");
+    expect(xml).toContain("190 A");
+    expect(xml).toContain("24 V");
+    expect(xml).toContain("Spray arc");
   });
 
   it("riempie la tabella passate dai test_runs della WPQR collegata", async () => {

@@ -25,6 +25,40 @@ const {
     ROLES: WPS_WPQR_ROLES,
 } = require('../services/wpsWpqrLinks.service');
 
+/** Colonne 181 su welding_procedures. INSERT/UPDATE le omettono se la migrazione non è ancora applicata. */
+const ISO15609_WPS_FIELDS = Object.freeze([
+    'wpqr_ref', 'parent_material_a', 'parent_material_b',
+    'heat_input', 'current_range', 'voltage_range', 'metal_transfer',
+]);
+
+async function presentIso15609WpsColumns() {
+    try {
+        const r = await query(`
+            SELECT c.name AS name
+            FROM sys.columns c
+            WHERE c.object_id = OBJECT_ID(N'dbo.welding_procedures')
+              AND c.name IN (N'wpqr_ref', N'parent_material_a', N'parent_material_b',
+                             N'heat_input', N'current_range', N'voltage_range', N'metal_transfer')
+        `);
+        return new Set((r.recordset || []).map((row) => row.name));
+    } catch (err) {
+        logger.warn('ISO 15609 WPS columns probe failed; omit new fields', { error: err.message });
+        return new Set();
+    }
+}
+
+function iso15609WpsValues(body) {
+    return {
+        wpqr_ref: body.wpqr_ref || null,
+        parent_material_a: body.parent_material_a || null,
+        parent_material_b: body.parent_material_b || null,
+        heat_input: body.heat_input || null,
+        current_range: body.current_range || null,
+        voltage_range: body.voltage_range || null,
+        metal_transfer: body.metal_transfer || null,
+    };
+}
+
 /** Utente con user_company_access: 403 fuori dalle aziende consentite.
  *  Studio senza aziende assegnate: lettura libera; scrittura no per il viewer. */
 async function denyOutsideCompany(res, user, companyId, level = 'read') {
@@ -347,6 +381,8 @@ async function createWPS(req, res) {
             thickness_range_min, thickness_range_max, pipe_diameter_min,
             preheat_temp, interpass_temp, pwht, qualification_standard,
             status = 'bozza', notes, wpqr_id,
+            wpqr_ref, parent_material_a, parent_material_b,
+            heat_input, current_range, voltage_range, metal_transfer,
         } = req.body;
 
         if (!wps_code) {
@@ -354,13 +390,24 @@ async function createWPS(req, res) {
         }
         if (await denyOutsideCompany(res, req.user, company_id, 'write')) return;
 
+        const isoPresent = await presentIso15609WpsColumns();
+        const isoCols = ISO15609_WPS_FIELDS.filter((f) => isoPresent.has(f));
+        const isoValues = iso15609WpsValues({
+            wpqr_ref, parent_material_a, parent_material_b,
+            heat_input, current_range, voltage_range, metal_transfer,
+        });
+        const extraCols = isoCols.length ? `,\n                ${isoCols.join(', ')}` : '';
+        const extraVals = isoCols.length ? `,\n                ${isoCols.map((f) => `@${f}`).join(', ')}` : '';
+        const extraParams = {};
+        for (const f of isoCols) extraParams[f] = isoValues[f];
+
         const result = await query(`
             INSERT INTO welding_procedures (
                 organization_id, company_id, wps_code, revision,
                 welding_process, material_group, filler_material, shielding_gas,
                 joint_type, position, thickness_range_min, thickness_range_max,
                 pipe_diameter_min, preheat_temp, interpass_temp, pwht,
-                qualification_standard, status, notes,
+                qualification_standard, status, notes${extraCols},
                 created_by, created_at, updated_at
             )
             OUTPUT INSERTED.id
@@ -369,7 +416,7 @@ async function createWPS(req, res) {
                 @welding_process, @material_group, @filler_material, @shielding_gas,
                 @joint_type, @position, @thickness_range_min, @thickness_range_max,
                 @pipe_diameter_min, @preheat_temp, @interpass_temp, @pwht,
-                @qualification_standard, @status, @notes,
+                @qualification_standard, @status, @notes${extraVals},
                 @created_by, GETDATE(), GETDATE()
             )
         `, {
@@ -393,6 +440,7 @@ async function createWPS(req, res) {
             status,
             notes:              notes || null,
             created_by:         user_id,
+            ...extraParams,
         });
 
         const newId = result.recordset[0].id;
@@ -456,12 +504,14 @@ async function updateWPS(req, res) {
         if (req.body.company_id !== undefined
             && await denyOutsideCompany(res, req.user, req.body.company_id, 'write')) return;
 
+        const isoPresent = await presentIso15609WpsColumns();
         const allowed = [
             'company_id', 'wps_code', 'revision', 'welding_process',
             'material_group', 'filler_material', 'shielding_gas', 'joint_type',
             'position', 'thickness_range_min', 'thickness_range_max',
             'pipe_diameter_min', 'preheat_temp', 'interpass_temp', 'pwht',
             'qualification_standard', 'status', 'notes',
+            ...ISO15609_WPS_FIELDS.filter((f) => isoPresent.has(f)),
         ];
 
         const updates = [];
@@ -1679,4 +1729,5 @@ module.exports = {
     uploadWPSBatch,
     getWpsCoverage,
     WPQR_MANUAL_EDITABLE_FIELDS,
+    ISO15609_WPS_FIELDS,
 };

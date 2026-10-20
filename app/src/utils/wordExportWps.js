@@ -84,9 +84,12 @@ export function mapWpsToAnnexAFields(wps = {}, options = {}) {
     shieldingGas: s(wps.shielding_gas),
     preheatTemp: s(wps.preheat_temp),
     interpassTemp: s(wps.interpass_temp),
+    parentMaterialA: s(wps.parent_material_a),
+    parentMaterialB: s(wps.parent_material_b),
     heatInput: s(wps.heat_input || wps.heat_input_note),
     currentRange: s(wps.current_range || wps.current_type),
     voltageRange: s(wps.voltage_range),
+    metalTransfer: s(wps.metal_transfer),
     pwht: s(wps.pwht),
     notes: s(wps.notes),
   };
@@ -220,6 +223,8 @@ export function buildWpsAnnexADocument(wps, options = {}) {
     columnWidths: [2400, 6960],
     rows: [
       labelValueRow('Gruppo materiale (ISO/TR 15608)', f.materialGroup),
+      labelValueRow('Materiale padre A', f.parentMaterialA),
+      labelValueRow('Materiale padre B', f.parentMaterialB),
       labelValueRow('Spessore (range)', f.thickness),
       labelValueRow('Diametro tubo (min)', f.pipeDiameter),
       labelValueRow('Tipo giunto', f.jointType),
@@ -235,6 +240,7 @@ export function buildWpsAnnexADocument(wps, options = {}) {
       labelValueRow('Posizione (ISO 6947)', f.position),
       labelValueRow('Materiale d\'apporto', f.fillerMaterial),
       labelValueRow('Gas di protezione (ISO 14175)', f.shieldingGas),
+      labelValueRow('Trasferimento di metallo', f.metalTransfer),
     ],
     borders: BORDERS,
   });

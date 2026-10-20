@@ -212,6 +212,18 @@ describe("WeldingProceduresPage — tab WPS: riga cliccabile e Azioni", () => {
     expect(screen.getAllByText("Modifica WPS")).toHaveLength(1);
   });
 
+  it("il form WPS mostra i sette campi ISO 15609-1", async () => {
+    const user = await renderOnTab("wps");
+    await user.click(within(rowOf("WPS-TEST-01")).getByTitle("Modifica"));
+    expect(screen.getByText("Riferimento WPQR")).toBeTruthy();
+    expect(screen.getByText("Materiale padre A")).toBeTruthy();
+    expect(screen.getByText("Materiale padre B")).toBeTruthy();
+    expect(screen.getByText("Apporto termico")).toBeTruthy();
+    expect(screen.getByText("Intervallo corrente")).toBeTruthy();
+    expect(screen.getByText("Intervallo tensione")).toBeTruthy();
+    expect(screen.getByText("Trasferimento di metallo")).toBeTruthy();
+  });
+
   it("Word esporta senza aprire il modal", async () => {
     const user = await renderOnTab("wps");
     await user.click(within(rowOf("WPS-TEST-01")).getByTitle("Esporta Word"));
