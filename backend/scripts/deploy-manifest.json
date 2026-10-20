@@ -217,6 +217,7 @@
         "src/services/wpsGenerator.service.js",
         "src/services/weldSketchPng.js",
         "src/services/weldSketches.service.js",
+        "src/services/wpqrSketchBackfill.service.js",
         "src/services/normBroker.service.js",
         "src/services/librarySourceRequest.service.js",
         "src/services/gapAnalysis.service.js",
@@ -422,7 +423,8 @@
     {
       "name": "scripts",
       "files": [
-        "scripts/reprocess-qualifications.js"
+        "scripts/reprocess-qualifications.js",
+        "scripts/backfill-wpqr-sketches-vps.js"
       ]
     }
   ]
