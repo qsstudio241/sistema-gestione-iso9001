@@ -35,6 +35,16 @@ function makeDb({ wpqr = [], wps = [], links = [], linksTable = true } = {}) {
             if (allowsSameCompany) return row.company_id === params.company_id;
             return true;
         };
+        if (/FROM wpqr_records q WHERE/.test(text) && /^SELECT/.test(text)) {
+            const fromLegacy = db.wpqr.filter((row) => row.wps_id === params.wps_id && row.organization_id === params.organization_id);
+            const fromLinks = db.links
+                .filter((l) => l.wps_id === params.wps_id && l.organization_id === params.organization_id && !l.deleted_at)
+                .map((l) => db.wpqr.find((q) => q.id === l.wpqr_id))
+                .filter(Boolean);
+            const byId = new Map();
+            [...fromLegacy, ...fromLinks].forEach((row) => byId.set(row.id, row));
+            return { recordset: [...byId.values()] };
+        }
         if (/FROM wpqr_records WHERE/.test(text) && /^SELECT/.test(text)) {
             return { recordset: db.wpqr.filter(tenantOk) };
         }
@@ -295,5 +305,32 @@ describe('insertLink / linkWpsToSupportingWpqr / linkWpqrToWps', () => {
         makeDb();
         expect((await svc.insertLink({ organizationId: ORG_A, companyId: 5, wpsId: 'x', wpqrId: 10, role: 'primary' })).created).toBe(false);
         expect(query).not.toHaveBeenCalled();
+    });
+});
+
+describe('listWpqrRecordsForWps', () => {
+    const WPS = { id: 3, organization_id: ORG_A, company_id: 5, wps_code: 'ZZ 01/99' };
+
+    it('unisce wps_id legacy e riga in wps_wpqr_links, senza duplicare', async () => {
+        const linked = { ...WPQR_A, id: 11, wpqr_code: 'LINKED' };
+        const legacy = { ...WPQR_A, id: 12, wpqr_code: 'LEGACY', wps_id: 3 };
+        makeDb({
+            wpqr: [WPQR_A, linked, legacy],
+            wps: [WPS],
+            links: [{ id: 1, organization_id: ORG_A, wps_id: 3, wpqr_id: 11, role: 'primary' }],
+        });
+        const rows = await svc.listWpqrRecordsForWps({ organizationId: ORG_A, wpsId: 3 });
+        expect(rows.map((r) => r.id).sort()).toEqual([11, 12]);
+    });
+
+    it('tabella 174 assente: solo legacy wps_id', async () => {
+        makeDb({
+            wpqr: [{ ...WPQR_A, wps_id: 3 }],
+            wps: [WPS],
+            linksTable: false,
+        });
+        const rows = await svc.listWpqrRecordsForWps({ organizationId: ORG_A, wpsId: 3 });
+        expect(rows).toHaveLength(1);
+        expect(rows[0].id).toBe(10);
     });
 });
