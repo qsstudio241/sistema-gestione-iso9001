@@ -1,0 +1,41 @@
+{
+  "note": "Bounding box derivati da WPQR IIS VB0377-23 (pagina 5 = foglio 3/6 e pagina 2). Il PDF cliente non è in repo.",
+  "page_pt": { "width": 595.276, "height": 841.89 },
+  "page5": {
+    "page": 5,
+    "items_pdfjs": [
+      { "str": "Joint Design and Welding Sequences", "x": 18.3, "y": 600.29 },
+      { "str": "Runs", "x": 240.8, "y": 603.39 },
+      { "str": "Welding Process", "x": 303.3, "y": 595.59 },
+      { "str": "Filler metal", "x": 342.8, "y": 603.39 },
+      { "str": "t1=t2: 30mm - a: 7,5 mm", "x": 18.3, "y": 421.79 },
+      { "str": "PARENT MATERIAL/ MATERIALE DI BASE", "x": 16.2, "y": 379.99 }
+    ],
+    "pdfimages_list": [
+      { "page": 5, "num": 0, "width": 875, "height": 875, "xppi": 1280, "yppi": 1280 },
+      { "page": 5, "num": 1, "width": 1220, "height": 1220, "xppi": 1033, "yppi": 1033 },
+      { "page": 5, "num": 2, "width": 174, "height": 231, "xppi": 122, "yppi": 122 }
+    ],
+    "expect": {
+      "x1_max": 235,
+      "x0_max": 30,
+      "y0_min": 390,
+      "include_caption_y": 421.79,
+      "exclude_runs_x": 240.8,
+      "exclude_parent_y_max": 390,
+      "sketch_raster_num": 2
+    }
+  },
+  "page2": {
+    "page": 2,
+    "items_pdfjs": [
+      { "str": "JOINTS / GIUNTI", "x": 9.5, "y": 717.39 },
+      { "str": "Joint design and Welding sequences", "x": 399.3, "y": 718.29 },
+      { "str": "t1=t2: 30mm - a: 7,5 mm", "x": 399.3, "y": 544.79 }
+    ],
+    "expect": {
+      "x0_min": 360,
+      "x1_min": 520
+    }
+  }
+}

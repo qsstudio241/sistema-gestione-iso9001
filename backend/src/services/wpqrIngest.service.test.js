@@ -474,6 +474,27 @@ describe('commitWPQRFromFields — sanitizzazione numerica', () => {
         expect(insertCall[1].thickness_min).not.toBeNull();
         expect(insertCall[1].thickness_max).not.toBeNull();
     });
+
+    it('passa certificateFileUrl all\'estrazione schizzi (PDF persistito, non solo temp)', async () => {
+        const sketches = require('./weldSketches.service');
+        const spy = jest.spyOn(sketches, 'extractAfterWpqrCommit').mockResolvedValue([]);
+        query.mockResolvedValueOnce({ recordset: [] });
+        query.mockResolvedValueOnce({ recordset: [{ id: 501 }] });
+        await commitWPQRFromFields(
+            { wpqr_number: 'VB0377/23' },
+            1001,
+            51,
+            { filePath: '/tmp/staging-gone.pdf' },
+        );
+        expect(spy).toHaveBeenCalledWith(expect.objectContaining({
+            filePath: '/tmp/staging-gone.pdf',
+            certificateFileUrl: expect.any(String),
+            wpqr: expect.objectContaining({
+                certificate_file_url: expect.any(String),
+            }),
+        }));
+        spy.mockRestore();
+    });
 });
 
 describe('extractWPQRFromPdf — warning di plausibilità propagati', () => {

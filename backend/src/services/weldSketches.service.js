@@ -6,7 +6,11 @@
 
 const crypto = require('crypto');
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
+const { execFile, execFileSync } = require('child_process');
+const { promisify } = require('util');
+const execFileAsync = promisify(execFile);
 const logger = require('../utils/logger');
 const { getUploadRoot, parseUploadsUrl, resolveUploadFile } = require('../utils/uploadsPath');
 
@@ -25,6 +29,10 @@ const KEYWORD_JOINT = /joint\s*design|disegno\s+del\s+giunto|\bschizzo\b/i;
 const KEYWORD_SEQUENCE = /welding\s*sequence|sequenza\s+di\s+saldatura/i;
 const KEYWORD_SKETCH = /\bsketch\b|\bschizzo\b/i;
 const KEYWORD_HARDNESS = /hardness|hv\s*10|location of measurements/i;
+/** Intestazioni della cella/tabella adiacente (IIS: Runs / Welding Process / …). */
+const KEYWORD_RIGHT_BORDER = /\b(runs?|layers|passate|strati|welding\s*process|filler\s*metal|travel\s*speed|heat\s*input)\b/i;
+/** Blocco sotto il disegno nella stessa colonna. */
+const KEYWORD_BOTTOM_BORDER = /parent\s*material|parental\s*metal|materiale\s*di\s*base|welding\s*consumables|filler\s*metal\s*\//i;
 
 const FILLET_PREP = /fillet|filetto|close\s*square\s*t|angolo|t\s*prep/i;
 
@@ -248,18 +256,38 @@ function bboxFromItems(items, pageSlot) {
     const sketchItems = list.filter((it) => KEYWORD_SKETCH.test(it.str || ''));
     const titles = [...jointItems, ...seqItems, ...sketchItems];
     if (!titles.length) {
-        return { x0: 40, y0: 220, x1: 555, y1: 620, split: null };
+        return { x0: 40, y0: 220, x1: 260, y1: 620, split: null };
     }
     const ys = titles.map((it) => Number(it.y)).filter(Number.isFinite);
     const xs = titles.map((it) => Number(it.x)).filter(Number.isFinite);
     const titleY = Math.max(...ys);
     const minX = xs.length ? Math.min(...xs) : 40;
-    const maxX = xs.length ? Math.max(...xs) : 555;
-    const below = Math.max(80, titleY - 280);
-    const x0 = Math.max(20, minX - 20);
-    const x1 = Math.min(PT_PAGE.width - 20, Math.max(maxX + 180, 555));
-    const y0 = Math.max(40, below);
-    const y1 = Math.min(PT_PAGE.height - 40, titleY + 10);
+    const maxX = xs.length ? Math.max(...xs) : minX + 120;
+
+    const rightXs = list
+        .filter((it) => !titles.includes(it) && KEYWORD_RIGHT_BORDER.test(it.str || ''))
+        .map((it) => Number(it.x))
+        .filter((x) => Number.isFinite(x) && x > maxX + 24);
+    const rightStop = rightXs.length ? Math.min(...rightXs) - 10 : null;
+
+    const x0 = Math.max(16, minX - 16);
+    let x1 = rightStop != null
+        ? Math.min(PT_PAGE.width - 16, rightStop)
+        : Math.min(PT_PAGE.width - 16, Math.max(maxX + 36, minX + 200));
+    if (x1 <= x0 + 48) {
+        x1 = Math.min(PT_PAGE.width - 16, x0 + 200);
+    }
+
+    const bottomYs = list
+        .filter((it) => KEYWORD_BOTTOM_BORDER.test(it.str || ''))
+        .map((it) => ({ x: Number(it.x), y: Number(it.y) }))
+        .filter((p) => Number.isFinite(p.x) && Number.isFinite(p.y)
+            && p.x < x1 && p.x + 20 > x0 && p.y < titleY - 40)
+        .map((p) => p.y);
+    const belowDefault = Math.max(80, titleY - 210);
+    const bottomStop = bottomYs.length ? Math.max(...bottomYs) + 12 : null;
+    const y0 = Math.max(40, bottomStop != null ? Math.max(belowDefault, bottomStop) : belowDefault);
+    const y1 = Math.min(PT_PAGE.height - 40, titleY + 12);
 
     let split = null;
     if (pageSlot === 'combined' && jointItems.length && seqItems.length) {
@@ -276,6 +304,121 @@ function bboxFromItems(items, pageSlot) {
 function formatBbox(b) {
     if (!b) return null;
     return [b.x0, b.y0, b.x1, b.y1].map((n) => Math.round(n)).join(',');
+}
+
+let _pdfimagesCache;
+function pdfimagesAvailable() {
+    if (_pdfimagesCache !== undefined) return _pdfimagesCache;
+    try {
+        execFileSync('command', ['-v', 'pdfimages'], { stdio: 'ignore', shell: '/bin/sh' });
+        _pdfimagesCache = true;
+    } catch (_) {
+        _pdfimagesCache = false;
+    }
+    return _pdfimagesCache;
+}
+
+function resetPdfimagesCache() {
+    _pdfimagesCache = undefined;
+}
+
+function parsePdfimagesList(stdout) {
+    const rows = [];
+    for (const line of String(stdout || '').split('\n')) {
+        const parts = line.trim().split(/\s+/);
+        if (parts[2] !== 'image' || parts.length < 14) continue;
+        const page = Number(parts[0]);
+        const num = Number(parts[1]);
+        const width = Number(parts[3]);
+        const height = Number(parts[4]);
+        const xppi = Number(parts[12]);
+        const yppi = Number(parts[13]);
+        if (![page, num, width, height, xppi, yppi].every(Number.isFinite)) continue;
+        rows.push({ page, num, width, height, xppi, yppi });
+    }
+    return rows;
+}
+
+function pickSketchEmbeddedImage(rows, pageNumber) {
+    const page = Number(pageNumber);
+    const candidates = (Array.isArray(rows) ? rows : [])
+        .filter((r) => Number(r.page) === page)
+        .map((r) => {
+            const dw = r.xppi > 0 ? (r.width / r.xppi) * 72 : 0;
+            const dh = r.yppi > 0 ? (r.height / r.yppi) * 72 : 0;
+            const maxSide = Math.max(dw, dh);
+            const minSide = Math.min(dw, dh);
+            const square = maxSide > 0 && minSide / maxSide > 0.85;
+            const stamp = (r.xppi >= 350 && square) || maxSide < 48;
+            return { ...r, dw, dh, area: dw * dh, stamp };
+        })
+        .filter((r) => !r.stamp && r.dw >= 55 && r.dh >= 70 && r.dw <= 420 && r.dh <= 520);
+    candidates.sort((a, b) => b.area - a.area);
+    return candidates[0] || null;
+}
+
+async function tryExtractEmbeddedSketch(pdfBuffer, pageNumber, deps = {}) {
+    const listFn = deps.pdfimagesList;
+    const extractFn = deps.pdfimagesExtract;
+    if (!listFn && !extractFn && !pdfimagesAvailable()) return null;
+
+    let tmpPdf = deps.pdfPath && fs.existsSync(deps.pdfPath) ? deps.pdfPath : null;
+    let tmpCreated = false;
+    const tmpDir = deps.tmpDir || os.tmpdir();
+    try {
+        if (!tmpPdf) {
+            tmpPdf = path.join(tmpDir, `sksrc_${Date.now()}_${crypto.randomBytes(4).toString('hex')}.pdf`);
+            fs.writeFileSync(tmpPdf, pdfBuffer);
+            tmpCreated = true;
+        }
+        const listOut = listFn
+            ? await listFn(tmpPdf)
+            : (await execFileAsync('pdfimages', ['-list', tmpPdf], { timeout: 15000, maxBuffer: 1024 * 1024 })).stdout;
+        const rows = typeof listOut === 'string' ? parsePdfimagesList(listOut) : listOut;
+        const pick = pickSketchEmbeddedImage(rows, pageNumber);
+        if (!pick) return null;
+
+        const prefix = path.join(tmpDir, `skimg_${Date.now()}_${crypto.randomBytes(3).toString('hex')}`);
+        if (extractFn) {
+            await extractFn(tmpPdf, pageNumber, prefix);
+        } else {
+            await execFileAsync(
+                'pdfimages',
+                ['-png', '-f', String(pageNumber), '-l', String(pageNumber), tmpPdf, prefix],
+                { timeout: 20000, maxBuffer: 8 * 1024 * 1024 },
+            );
+        }
+        const dest = `${prefix}-${String(pick.num).padStart(3, '0')}.png`;
+        let png = null;
+        if (fs.existsSync(dest)) {
+            png = fs.readFileSync(dest);
+        } else {
+            const dir = path.dirname(prefix);
+            const base = path.basename(prefix);
+            const found = fs.readdirSync(dir)
+                .filter((n) => n.startsWith(base) && /\.png$/i.test(n))
+                .sort();
+            if (found[pick.num]) png = fs.readFileSync(path.join(dir, found[pick.num]));
+            else if (found.length === 1) png = fs.readFileSync(path.join(dir, found[0]));
+        }
+        try {
+            const dir = path.dirname(prefix);
+            const base = path.basename(prefix);
+            for (const n of fs.readdirSync(dir)) {
+                if (n.startsWith(base)) fs.unlinkSync(path.join(dir, n));
+            }
+        } catch (_) { /* tmp */ }
+        if (!png || png.length < 32) return null;
+        const size = require('../utils/ocrExtractor').pngSize(png) || { width: pick.width, height: pick.height };
+        return { png, width: size.width, height: size.height, bbox: 'embedded' };
+    } catch (err) {
+        logger.info('[weldSketches] pdfimages non usato', { page: pageNumber, error: err.message });
+        return null;
+    } finally {
+        if (tmpCreated && tmpPdf) {
+            try { fs.unlinkSync(tmpPdf); } catch (_) { /* tmp */ }
+        }
+    }
 }
 
 function ptToPx(pt, pagePx, pagePt) {
@@ -343,16 +486,42 @@ function sha256Of(buf) {
 
 function resolveSourcePdfPath(filePath) {
     if (!filePath) return null;
-    if (path.isAbsolute(filePath) && fs.existsSync(filePath)) return filePath;
-    const parsed = parseUploadsUrl(String(filePath).startsWith('/uploads/') ? filePath : null);
+    const raw = String(filePath);
+    if (path.isAbsolute(raw) && fs.existsSync(raw)) return raw;
+    const resolved = path.resolve(raw);
+    if (fs.existsSync(resolved)) return resolved;
+
+    const uploadsIdx = raw.indexOf('/uploads/');
+    const asUploads = raw.startsWith('/uploads/')
+        ? raw
+        : (uploadsIdx >= 0 ? raw.slice(uploadsIdx) : null);
+    const parsed = parseUploadsUrl(asUploads);
     const root = getUploadRoot();
     if (parsed) {
         const abs = path.join(root, parsed.rel);
         if (fs.existsSync(abs)) return abs;
     }
-    const asRel = String(filePath).replace(/^\/?uploads\/?/, '');
+    const asRel = raw.replace(/^\/?uploads\/?/, '');
     const joined = path.join(root, asRel);
-    return fs.existsSync(joined) ? joined : null;
+    if (fs.existsSync(joined)) return joined;
+
+    const base = path.basename(raw);
+    if (base && /\.pdf$/i.test(base)) {
+        const underWpqr = path.join(root, 'wpqr', base);
+        if (fs.existsSync(underWpqr)) return underWpqr;
+    }
+    return null;
+}
+
+function resolveExtractPdfPath(filePath, certificateFileUrl) {
+    const seen = new Set();
+    for (const candidate of [filePath, certificateFileUrl]) {
+        if (!candidate || seen.has(candidate)) continue;
+        seen.add(candidate);
+        const abs = resolveSourcePdfPath(candidate);
+        if (abs) return abs;
+    }
+    return null;
 }
 
 function publicFileUrl(absPath) {
@@ -499,11 +668,27 @@ async function extractAndStoreFromPdf({
     for (const hit of hits) {
         if (seenPages.has(hit.page)) continue;
         seenPages.add(hit.page);
-        const bbox = bboxFromItems(hit.items, hit.slot);
         try {
-            const cropped = await renderAndCrop(pdfBuffer, hit.page, bbox, deps);
+            let png;
+            let width;
+            let height;
+            let bboxStr = null;
+            const embedded = await tryExtractEmbeddedSketch(pdfBuffer, hit.page, deps);
+            if (embedded && embedded.png) {
+                png = embedded.png;
+                width = embedded.width;
+                height = embedded.height;
+                bboxStr = embedded.bbox || 'embedded';
+            } else {
+                const bbox = bboxFromItems(hit.items, hit.slot);
+                bboxStr = formatBbox(bbox);
+                const cropped = await renderAndCrop(pdfBuffer, hit.page, bbox, deps);
+                png = cropped.png;
+                width = cropped.width;
+                height = cropped.height;
+            }
             const file = await writePngFile({
-                organizationId, companyId, slot: hit.slot, png: cropped.png,
+                organizationId, companyId, slot: hit.slot, png,
             });
             const id = await insertSketch({
                 organization_id: organizationId,
@@ -512,11 +697,11 @@ async function extractAndStoreFromPdf({
                 source_kind: 'wpqr_crop',
                 wpqr_id: wpqrId,
                 source_page: hit.page,
-                crop_bbox_pt: formatBbox(bbox),
+                crop_bbox_pt: bboxStr,
                 file_url: file.file_url,
-                width_px: cropped.width,
-                height_px: cropped.height,
-                sha256: sha256Of(cropped.png),
+                width_px: width,
+                height_px: height,
+                sha256: sha256Of(png),
                 ...meta,
                 status: STATUS_DRAFT,
                 created_by: userId,
@@ -531,17 +716,26 @@ async function extractAndStoreFromPdf({
     return stored;
 }
 
-async function extractAfterWpqrCommit({ organizationId, companyId, wpqrId, wpqr, filePath, userId }) {
+async function extractAfterWpqrCommit({
+    organizationId, companyId, wpqrId, wpqr, filePath, userId, certificateFileUrl, deps = {},
+}) {
     try {
         if (!(await sketchesTableAvailable())) return [];
-        const abs = resolveSourcePdfPath(filePath);
+        const persistedUrl = certificateFileUrl
+            || (wpqr && wpqr.certificate_file_url)
+            || null;
+        const resolvePath = deps.resolvePath || resolveExtractPdfPath;
+        const abs = resolvePath(filePath, persistedUrl);
         if (!abs) {
             logger.info('[weldSketches] PDF sorgente assente, skip estrazione', { wpqrId });
             return [];
         }
-        const pdfBuffer = fs.readFileSync(abs);
-        return await extractAndStoreFromPdf({
+        const readFile = deps.readFile || fs.readFileSync;
+        const pdfBuffer = readFile(abs);
+        const extract = deps.extractAndStoreFromPdf || extractAndStoreFromPdf;
+        return await extract({
             pdfBuffer, organizationId, companyId, wpqrId, wpqr, userId,
+            deps: { ...deps, pdfPath: abs },
         });
     } catch (err) {
         logger.warn('[weldSketches] estrazione post-commit non bloccante', {
@@ -751,6 +945,11 @@ module.exports = {
     classifyPageText,
     findSketchPages,
     bboxFromItems,
+    parsePdfimagesList,
+    pickSketchEmbeddedImage,
+    resolveSourcePdfPath,
+    resolveExtractPdfPath,
+    resetPdfimagesCache,
     suggestSketches,
     suggestForWps,
     extractAndStoreFromPdf,

@@ -997,8 +997,9 @@ async function commitWPQRFromFields(fields, organizationId, companyId, options =
             organizationId,
             companyId,
             wpqrId,
-            wpqr: { ...mapped, id: wpqrId, test_runs: mapped.test_runs },
+            wpqr: { ...mapped, id: wpqrId, test_runs: mapped.test_runs, certificate_file_url },
             filePath,
+            certificateFileUrl: certificate_file_url,
             userId,
         });
     } catch (sketchErr) {

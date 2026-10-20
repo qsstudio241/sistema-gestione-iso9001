@@ -4,6 +4,9 @@
 jest.mock('../config/database', () => ({ query: jest.fn() }));
 
 const { query } = require('../config/database');
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
 const {
     scoreSketch,
     preparationEquivalent,
@@ -17,7 +20,13 @@ const {
     detectSketchImageKind,
     listSketches,
     resetTableCache,
+    bboxFromItems,
+    parsePdfimagesList,
+    pickSketchEmbeddedImage,
+    resolveExtractPdfPath,
+    extractAfterWpqrCommit,
 } = require('./weldSketches.service');
+const IIS_BOXES = require('./fixtures/wpqrIisSketchBboxes.json');
 
 describe('weldSketches — scoring ISO 15609 library', () => {
     const fwFillet = {
@@ -152,5 +161,103 @@ describe('weldSketches — JPEG e scope azienda', () => {
         });
         expect(rows).toHaveLength(1);
         expect(rows[0].company_id).toBeNull();
+    });
+});
+
+describe('weldSketches — crop IIS solo disegno (fixture bbox, no PDF cliente)', () => {
+    const p5 = IIS_BOXES.page5;
+    const p2 = IIS_BOXES.page2;
+
+    it('pagina 5: il bbox si ferma prima della tabella Runs e sopra PARENT MATERIAL', () => {
+        const box = bboxFromItems(p5.items_pdfjs, 'combined');
+        expect(box.x1).toBeLessThanOrEqual(p5.expect.x1_max);
+        expect(box.x0).toBeLessThanOrEqual(p5.expect.x0_max);
+        expect(box.x1).toBeLessThan(p5.expect.exclude_runs_x);
+        expect(box.y0).toBeGreaterThan(p5.expect.exclude_parent_y_max);
+        expect(box.y0).toBeLessThan(p5.expect.include_caption_y);
+        expect(box.y1).toBeGreaterThan(p5.expect.include_caption_y);
+        expect(box.x1 - box.x0).toBeLessThan(250);
+    });
+
+    it('pagina 2: schizzo nella colonna destra, non tutta la pagina', () => {
+        const box = bboxFromItems(p2.items_pdfjs, 'combined');
+        expect(box.x0).toBeGreaterThanOrEqual(p2.expect.x0_min);
+        expect(box.x1).toBeGreaterThanOrEqual(p2.expect.x1_min);
+        expect(box.x0).toBeGreaterThan(200);
+    });
+
+    it('non allarga più x1 a 555 pt in assenza di titoli', () => {
+        const box = bboxFromItems([], 'combined');
+        expect(box.x1).toBeLessThan(400);
+    });
+
+    it('pdfimages: sceglie il raster dello schizzo, non logo/QR', () => {
+        const pick = pickSketchEmbeddedImage(p5.pdfimages_list, 5);
+        expect(pick).toBeTruthy();
+        expect(pick.num).toBe(p5.expect.sketch_raster_num);
+        expect(pick.width).toBe(174);
+        expect(pick.height).toBe(231);
+        expect(pickSketchEmbeddedImage(p5.pdfimages_list, 1)).toBeNull();
+    });
+
+    it('parsePdfimagesList legge la tabella -list', () => {
+        const stdout = [
+            'page   num  type   width height color comp bpc  enc interp  object ID x-ppi y-ppi size ratio',
+            '   5     2 image     174   231  rgb     3   8  image  no        44  0   122   122 1610B 1.3%',
+        ].join('\n');
+        const rows = parsePdfimagesList(stdout);
+        expect(rows).toEqual([{ page: 5, num: 2, width: 174, height: 231, xppi: 122, yppi: 122 }]);
+    });
+});
+
+describe('weldSketches — PDF persistito se il temp non c\'è', () => {
+    const origUploads = process.env.UPLOAD_DIR;
+    let root;
+
+    beforeEach(() => {
+        query.mockReset();
+        resetTableCache();
+        root = fs.mkdtempSync(path.join(os.tmpdir(), 'skpersist-'));
+        process.env.UPLOAD_DIR = root;
+        fs.mkdirSync(path.join(root, 'wpqr'), { recursive: true });
+    });
+
+    afterEach(() => {
+        if (origUploads === undefined) delete process.env.UPLOAD_DIR;
+        else process.env.UPLOAD_DIR = origUploads;
+        fs.rmSync(root, { recursive: true, force: true });
+    });
+
+    it('resolveExtractPdfPath usa /uploads/wpqr quando lo staging è già stato cancellato', () => {
+        const persisted = path.join(root, 'wpqr', 'wpqr_123_VB0377-23.pdf');
+        fs.writeFileSync(persisted, Buffer.from('%PDF-1.4 persistito'));
+        const abs = resolveExtractPdfPath(
+            '/tmp/staging-gone-xyz.pdf',
+            '/uploads/wpqr/wpqr_123_VB0377-23.pdf',
+        );
+        expect(abs).toBe(persisted);
+    });
+
+    it('extractAfterWpqrCommit legge il buffer dal PDF persistito, non dal temp mancante', async () => {
+        const persisted = path.join(root, 'wpqr', 'wpqr_999_VB0377-23.pdf');
+        const bytes = Buffer.from('%PDF-1.4 persisted-bytes');
+        fs.writeFileSync(persisted, bytes);
+        query.mockResolvedValue({ recordset: [{ present: 1 }] });
+        const extractAndStoreFromPdf = jest.fn().mockResolvedValue([{ id: 7, slot: 'combined' }]);
+        const out = await extractAfterWpqrCommit({
+            organizationId: 1,
+            companyId: 51,
+            wpqrId: 38,
+            wpqr: { certificate_file_url: '/uploads/wpqr/wpqr_999_VB0377-23.pdf' },
+            filePath: '/tmp/does-not-exist-staging.pdf',
+            certificateFileUrl: '/uploads/wpqr/wpqr_999_VB0377-23.pdf',
+            deps: { extractAndStoreFromPdf },
+        });
+        expect(extractAndStoreFromPdf).toHaveBeenCalledTimes(1);
+        const arg = extractAndStoreFromPdf.mock.calls[0][0];
+        expect(Buffer.isBuffer(arg.pdfBuffer)).toBe(true);
+        expect(arg.pdfBuffer.equals(bytes)).toBe(true);
+        expect(arg.deps.pdfPath).toBe(persisted);
+        expect(out).toEqual([{ id: 7, slot: 'combined' }]);
     });
 });
