@@ -24,9 +24,46 @@ fi
 REMOTE_BASE="${SGQ_REMOTE_BASE:-$(python3 -c "import json; print(json.load(open('${MANIFEST}', encoding='utf-8-sig')).get('remoteBase','/var/www/sgq-backend'))")}"
 SYSTEMD_SERVICE="${SGQ_SYSTEMD_SERVICE:-sgq-backend.service}"
 
+# Isolamento TEST/PROD: un deploy TEST non deve mai toccare sgq-backend, /var/www/sgq-backend o :3000.
+IS_TEST_DEPLOY=0
+if [[ "${REMOTE_BASE}" == *"-test"* ]] \
+    || [[ "${SYSTEMD_SERVICE}" == *"-test"* ]] \
+    || [[ "${HEALTH_URL}" == *"/test-api/"* ]]; then
+    IS_TEST_DEPLOY=1
+fi
+
+if [[ "${IS_TEST_DEPLOY}" == "1" ]]; then
+    if [[ "${REMOTE_BASE}" != "/var/www/sgq-backend-test" ]]; then
+        echo "❌ Deploy TEST: destinazione deve essere /var/www/sgq-backend-test (ora: ${REMOTE_BASE})"
+        exit 1
+    fi
+    if [[ "${SYSTEMD_SERVICE}" != "sgq-backend-test.service" ]]; then
+        echo "❌ Deploy TEST: servizio deve essere sgq-backend-test.service (ora: ${SYSTEMD_SERVICE})"
+        exit 1
+    fi
+    if [[ "${HEALTH_URL}" != *"/test-api/"* ]]; then
+        echo "❌ Deploy TEST: health deve essere test-api (ora: ${HEALTH_URL})"
+        exit 1
+    fi
+    LISTEN_PORT="${SGQ_LISTEN_PORT:-3001}"
+    if [[ "${LISTEN_PORT}" == "3000" ]]; then
+        echo "❌ Deploy TEST: porta 3000 è PROD — rifiutato"
+        exit 1
+    fi
+else
+    if [[ "${REMOTE_BASE}" == *"-test"* ]] || [[ "${SYSTEMD_SERVICE}" == *"-test"* ]]; then
+        echo "❌ Configurazione mista TEST/PROD — abort"
+        exit 1
+    fi
+    LISTEN_PORT="${SGQ_LISTEN_PORT:-3000}"
+fi
+
 echo "=== Deploy SGQ Backend → VPS ==="
 echo "    Backend locale : ${BACKEND_ROOT}"
-echo "    Destinazione   : ${VPS}:${REMOTE_BASE} (porta ${VPS_PORT})"
+echo "    Destinazione   : ${VPS}:${REMOTE_BASE} (porta SSH ${VPS_PORT})"
+echo "    Servizio       : ${SYSTEMD_SERVICE}"
+echo "    Listen         : ${LISTEN_PORT}"
+echo "    Health         : ${HEALTH_URL}"
 echo "    Manifest       : ${MANIFEST}"
 
 # ── Autenticazione SSH ────────────────────────────────────────────────────────
@@ -181,8 +218,12 @@ if [ "$RESTARTED" != "1" ]; then
     }
 fi
 if [ "$RESTARTED" != "1" ]; then
+    if [ "'"${IS_TEST_DEPLOY}"'" = "1" ]; then
+        echo "❌ Restart systemd TEST fallito — nessun fallback fuser (evita porta 3000/PROD)"
+        exit 1
+    fi
     echo deploy_fallback_fuser_nohup
-    fuser -k 3000/tcp 2>/dev/null || true
+    fuser -k '"${LISTEN_PORT}"'/tcp 2>/dev/null || true
     sleep 3
     nohup node src/server.js >> '"${REMOTE_BASE}"'/app.log 2>&1 &
     sleep 4
