@@ -163,13 +163,39 @@ function cropRgba(rgba, width, height, x0, y0, cropW, cropH) {
     return { width: w, height: h, rgba: out };
 }
 
-function rowInkFromRgba(rgba, width, height, threshold = 240) {
+function isDarkPixel(rgba, i, threshold) {
+    return rgba[i] < threshold || rgba[i + 1] < threshold || rgba[i + 2] < threshold;
+}
+
+function darkMaskFromRgba(rgba, width, height, threshold = 240) {
+    const mask = new Uint8Array(width * height);
+    for (let p = 0; p < mask.length; p += 1) {
+        if (isDarkPixel(rgba, p * 4, threshold)) mask[p] = 1;
+    }
+    return mask;
+}
+
+/**
+ * Profilo riga: frazione di pixel scuri.
+ * `maxThinRun` ignora run orizzontali corti (linee di quota verticali da 1–4 px).
+ */
+function rowInkFromRgba(rgba, width, height, threshold = 240, opts = {}) {
+    const maxThinRun = opts.maxThinRun != null ? opts.maxThinRun : 0;
     const rows = new Array(height);
     for (let y = 0; y < height; y += 1) {
         let dark = 0;
-        for (let x = 0; x < width; x += 1) {
+        let x = 0;
+        while (x < width) {
             const i = (y * width + x) * 4;
-            if (rgba[i] < threshold || rgba[i + 1] < threshold || rgba[i + 2] < threshold) dark += 1;
+            if (!isDarkPixel(rgba, i, threshold)) {
+                x += 1;
+                continue;
+            }
+            const runStart = x;
+            x += 1;
+            while (x < width && isDarkPixel(rgba, (y * width + x) * 4, threshold)) x += 1;
+            const runLen = x - runStart;
+            if (runLen > maxThinRun) dark += runLen;
         }
         rows[y] = dark / width;
     }
@@ -195,55 +221,214 @@ function closeSmallGaps(binary, closeW) {
     return out;
 }
 
+function runsOf(binary, value) {
+    const out = [];
+    const n = binary.length;
+    let start = null;
+    for (let i = 0; i < n; i += 1) {
+        if (binary[i] === value) {
+            if (start == null) start = i;
+        } else if (start != null) {
+            out.push({ y0: start, y1: i - 1, h: i - start });
+            start = null;
+        }
+    }
+    if (start != null) out.push({ y0: start, y1: n - 1, h: n - start });
+    return out;
+}
+
+function maxDarkRunWidth(mask, width, y0, y1) {
+    if (!mask) return 0;
+    let maxRun = 0;
+    for (let y = y0; y <= y1; y += 1) {
+        let run = 0;
+        const row = y * width;
+        for (let x = 0; x < width; x += 1) {
+            if (mask[row + x]) {
+                run += 1;
+                if (run > maxRun) maxRun = run;
+            } else {
+                run = 0;
+            }
+        }
+    }
+    return maxRun;
+}
+
+/**
+ * Tratti corti nel gap (linea di quota orizzontale, lettera tipo «g»):
+ * non spezzano la banda a basso inchiostro. Un ponte largo no.
+ */
+function suppressQuoteSpikes(high, rowInk, opts = {}) {
+    const { mask = null, width = 0, height: H = high.length } = opts;
+    const maxSpikeH = opts.maxSpikeH != null ? opts.maxSpikeH : Math.max(16, Math.floor(H * 0.08));
+    const maxLetterW = opts.maxLetterW != null ? opts.maxLetterW : 14;
+    const out = high.slice();
+    const spikes = runsOf(out, 1);
+    for (const s of spikes) {
+        if (s.y0 === 0 || s.y1 === H - 1) continue;
+        if (out[s.y0 - 1] !== 0 || out[s.y1 + 1] !== 0) continue;
+        let suppress = s.h <= 4;
+        if (!suppress && s.h <= maxSpikeH) {
+            let maxInk = 0;
+            for (let y = s.y0; y <= s.y1; y += 1) {
+                if (rowInk[y] > maxInk) maxInk = rowInk[y];
+            }
+            const runW = mask && width
+                ? maxDarkRunWidth(mask, width, s.y0, s.y1)
+                : Math.round(maxInk * (width || 1));
+            if (runW <= maxLetterW && maxInk <= 0.25) suppress = true;
+        }
+        if (suppress) {
+            for (let y = s.y0; y <= s.y1; y += 1) out[y] = 0;
+        }
+    }
+    return out;
+}
+
+function connectedComponents(mask, width, height) {
+    const n = width * height;
+    const seen = new Uint8Array(n);
+    const ccs = [];
+    const stack = [];
+    for (let i = 0; i < n; i += 1) {
+        if (!mask[i] || seen[i]) continue;
+        let area = 0;
+        let x0 = width;
+        let y0 = height;
+        let x1 = 0;
+        let y1 = 0;
+        stack.push(i);
+        seen[i] = 1;
+        while (stack.length) {
+            const p = stack.pop();
+            const x = p % width;
+            const y = (p / width) | 0;
+            area += 1;
+            if (x < x0) x0 = x;
+            if (x > x1) x1 = x;
+            if (y < y0) y0 = y;
+            if (y > y1) y1 = y;
+            if (x > 0 && mask[p - 1] && !seen[p - 1]) {
+                seen[p - 1] = 1;
+                stack.push(p - 1);
+            }
+            if (x + 1 < width && mask[p + 1] && !seen[p + 1]) {
+                seen[p + 1] = 1;
+                stack.push(p + 1);
+            }
+            if (y > 0 && mask[p - width] && !seen[p - width]) {
+                seen[p - width] = 1;
+                stack.push(p - width);
+            }
+            if (y + 1 < height && mask[p + width] && !seen[p + width]) {
+                seen[p + width] = 1;
+                stack.push(p + width);
+            }
+        }
+        ccs.push({
+            area, x0, y0, x1, y1, w: x1 - x0 + 1, h: y1 - y0 + 1,
+        });
+    }
+    return ccs;
+}
+
+function largeComponentCrossesY(ccs, y, opts = {}) {
+    const minWidth = opts.minBlobWidth != null ? opts.minBlobWidth : 8;
+    const minArea = opts.minLargeArea != null ? opts.minLargeArea : 80;
+    for (let i = 0; i < ccs.length; i += 1) {
+        const c = ccs[i];
+        if (c.y0 < y && c.y1 >= y && c.w >= minWidth && c.area >= minArea) return true;
+    }
+    return false;
+}
+
+function pickYInBand(rowInk, band) {
+    let bestY = band.y0;
+    let bestInk = Infinity;
+    let bestCentrality = -1;
+    const mid = (band.y0 + band.y1) / 2;
+    const half = Math.max(1, (band.h - 1) / 2);
+    for (let y = band.y0; y <= band.y1; y += 1) {
+        const ink = rowInk[y];
+        const centrality = 1 - Math.abs(y - mid) / half;
+        if (ink < bestInk - 1e-9 || (Math.abs(ink - bestInk) <= 1e-9 && centrality > bestCentrality)) {
+            bestInk = ink;
+            bestCentrality = centrality;
+            bestY = y;
+        }
+    }
+    return bestY;
+}
+
+function inkMass(rowInk, y0, y1, thresh) {
+    let n = 0;
+    const a = Math.max(0, y0);
+    const b = Math.min(rowInk.length - 1, y1);
+    for (let y = a; y <= b; y += 1) {
+        if (rowInk[y] > thresh) n += 1;
+    }
+    return n;
+}
+
 function findHorizontalSplitY(rowInk, opts = {}) {
     const ink = Array.isArray(rowInk) ? rowInk : [];
     const H = ink.length;
     if (H < 40) return null;
-    const thresh = opts.thresh != null ? opts.thresh : 0.015;
-    const closeW = opts.closeW != null ? opts.closeW : 10;
+    const thresh = opts.thresh != null ? opts.thresh : 0.04;
+    const closeW = opts.closeW != null ? opts.closeW : 2;
     const minGap = opts.minGap != null ? opts.minGap : 6;
     const minBand = opts.minBand != null ? opts.minBand : Math.max(18, Math.floor(H * 0.08));
-    const binary = closeSmallGaps(ink.map((v) => (v > thresh ? 1 : 0)), closeW);
-    const comps = [];
-    let start = null;
-    for (let y = 0; y < H; y += 1) {
-        if (binary[y]) {
-            if (start == null) start = y;
-        } else if (start != null) {
-            comps.push({ y0: start, y1: y - 1, h: y - start });
-            start = null;
-        }
-    }
-    if (start != null) comps.push({ y0: start, y1: H - 1, h: H - start });
-    const big = comps.filter((c) => c.h >= minBand);
-    if (big.length < 2) return null;
+    const { mask = null, width = 0 } = opts;
+    let high = closeSmallGaps(ink.map((v) => (v > thresh ? 1 : 0)), closeW);
+    high = suppressQuoteSpikes(high, ink, {
+        mask, width, height: H, maxSpikeH: opts.maxSpikeH, maxLetterW: opts.maxLetterW,
+    });
+    const bands = runsOf(high, 0);
+    const ccs = mask && width ? connectedComponents(mask, width, H) : null;
     let best = null;
-    for (let i = 0; i < big.length - 1; i += 1) {
-        const gs = big[i].y1 + 1;
-        const ge = big[i + 1].y0 - 1;
-        const gh = ge - gs + 1;
-        const mid = Math.floor((gs + ge) / 2);
-        if (gh < minGap) continue;
+    for (let i = 0; i < bands.length; i += 1) {
+        const band = bands[i];
+        if (band.h < minGap) continue;
+        const mid = Math.floor((band.y0 + band.y1) / 2);
         if (mid < H * 0.18 || mid > H * 0.82) continue;
+        const above = inkMass(ink, 0, band.y0 - 1, thresh);
+        const below = inkMass(ink, band.y1 + 1, H - 1, thresh);
+        if (above < minBand || below < minBand) continue;
         const centrality = 1 - Math.abs(mid - H / 2) / (H / 2);
-        const score = gh * (1 + centrality);
-        if (!best || score > best.score) best = { score, y: mid };
+        const score = band.h * (1 + centrality);
+        if (!best || score > best.score) best = { score, band, centrality };
     }
-    return best ? best.y : null;
+    if (!best) return null;
+    const candidates = [];
+    const yMin = pickYInBand(ink, best.band);
+    candidates.push(yMin);
+    const mid = Math.floor((best.band.y0 + best.band.y1) / 2);
+    if (mid !== yMin) candidates.push(mid);
+    for (let y = best.band.y0; y <= best.band.y1; y += 1) {
+        if (ink[y] <= thresh && y !== yMin && y !== mid) candidates.push(y);
+    }
+    for (let i = 0; i < candidates.length; i += 1) {
+        const y = candidates[i];
+        if (y < 8 || y > H - 8) continue;
+        if (ccs && largeComponentCrossesY(ccs, y, opts)) continue;
+        return y;
+    }
+    return null;
 }
 
 function splitCombinedIfNeeded(pngBuffer) {
     const decoded = decodePng(pngBuffer);
     if (!decoded) return { ok: false, reason: 'decode' };
-    const ink = rowInkFromRgba(decoded.rgba, decoded.width, decoded.height);
-    const y = findHorizontalSplitY(ink);
-    if (y == null || y < 8 || y > decoded.height - 8) {
-        return { ok: false, reason: 'no_gap', width: decoded.width, height: decoded.height };
+    const { width, height, rgba } = decoded;
+    const ink = rowInkFromRgba(rgba, width, height, 240, { maxThinRun: 4 });
+    const mask = darkMaskFromRgba(rgba, width, height);
+    const y = findHorizontalSplitY(ink, { mask, width, height });
+    if (y == null || y < 8 || y > height - 8) {
+        return { ok: false, reason: 'no_gap', width, height };
     }
-    const top = cropRgba(decoded.rgba, decoded.width, decoded.height, 0, 0, decoded.width, y);
-    const bottom = cropRgba(
-        decoded.rgba, decoded.width, decoded.height, 0, y, decoded.width, decoded.height - y,
-    );
+    const top = cropRgba(rgba, width, height, 0, 0, width, y);
+    const bottom = cropRgba(rgba, width, height, 0, y, width, height - y);
     return {
         ok: true,
         y,
@@ -251,8 +436,8 @@ function splitCombinedIfNeeded(pngBuffer) {
         bottom: encodePng(bottom.width, bottom.height, bottom.rgba),
         topSize: { width: top.width, height: top.height },
         bottomSize: { width: bottom.width, height: bottom.height },
-        width: decoded.width,
-        height: decoded.height,
+        width,
+        height,
     };
 }
 
@@ -260,6 +445,7 @@ module.exports = {
     decodePng,
     encodePng,
     cropRgba,
+    darkMaskFromRgba,
     rowInkFromRgba,
     findHorizontalSplitY,
     splitCombinedIfNeeded,

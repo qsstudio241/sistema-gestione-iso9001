@@ -1073,9 +1073,16 @@ async function splitSketchAtY({ id, organizationId, userId, yPx = null, yRatio =
     if (!Number.isFinite(y) && yRatio != null && yRatio !== '') {
         y = Math.round(decoded.height * Number(yRatio));
     }
-    if (!Number.isFinite(y)) y = require('./weldSketchPng').findHorizontalSplitY(
-        require('./weldSketchPng').rowInkFromRgba(decoded.rgba, decoded.width, decoded.height),
-    );
+    if (!Number.isFinite(y)) {
+        const png = require('./weldSketchPng');
+        const ink = png.rowInkFromRgba(
+            decoded.rgba, decoded.width, decoded.height, 240, { maxThinRun: 4 },
+        );
+        const mask = png.darkMaskFromRgba(decoded.rgba, decoded.width, decoded.height);
+        y = png.findHorizontalSplitY(ink, {
+            mask, width: decoded.width, height: decoded.height,
+        });
+    }
     if (!Number.isFinite(y) || y < 8 || y > decoded.height - 8) {
         const err = new Error('Linea di taglio non valida');
         err.code = 'SKETCH_SPLIT_Y';
