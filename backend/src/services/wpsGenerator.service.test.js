@@ -479,3 +479,51 @@ describe('assessJointCoverageInputs / need_input', () => {
         expect(a.resolved.groupB).toBe('1.1');
     });
 });
+
+describe('buildWpsDraft — Annex A (posizione, ampere, carry-over 182)', () => {
+    const { buildWpsDraft } = require('./wpsGenerator.service');
+
+    test('riempie position da welding_positions e non mette DC+ in current_range', () => {
+        const draft = buildWpsDraft({
+            ...WPQR_MASON_DEMO,
+            current_type: 'DC+',
+            welding_positions: 'PB',
+            test_runs: [{ current_a: 190, voltage_v: 24 }],
+        }, MASON_REQUEST, '1.2', '1.1');
+        expect(draft.position).toBe('PB');
+        expect(draft.welding_positions).toBe('PB');
+        expect(draft.current_range).not.toMatch(/DC/);
+        expect(draft.current_range).toMatch(/171/);
+        expect(draft.current_type).toBe('DC+');
+    });
+
+    test('porta i 8 campi WPQR e persiste throat/diametro dalla richiesta', () => {
+        const draft = buildWpsDraft({
+            ...WPQR_MASON_DEMO,
+            joint_preparation: 'square T',
+            cleaning_method: 'grinding',
+            mechanization: 'partly mechanized',
+            shielding_gas_flow_l_min_min: 12,
+            shielding_gas_flow_l_min_max: 15,
+            post_heating: 'none',
+            pwht_details: 'N/A',
+            bead_technique: 'stringer',
+            contact_tube_distance_mm_min: 15,
+            contact_tube_distance_mm_max: 20,
+            torch_angle_deg: 10,
+        }, { ...MASON_REQUEST, throat_mm: 7.5, pipe_diameter_mm: 88.9 }, '1.2', '1.1');
+        expect(draft.joint_preparation).toBe('square T');
+        expect(draft.cleaning_method).toBe('grinding');
+        expect(draft.mechanization).toBe('partly mechanized');
+        expect(draft.shielding_gas_flow_l_min_min).toBe(12);
+        expect(draft.post_heating).toBe('none');
+        expect(draft.pwht_details).toBe('N/A');
+        expect(draft.bead_technique).toBe('stringer');
+        expect(draft.contact_tube_distance_mm_max).toBe(20);
+        expect(draft.torch_angle_deg).toBe(10);
+        expect(draft.throat_mm).toBe(7.5);
+        expect(draft.pipe_diameter_mm).toBe(88.9);
+        expect(draft.pipe_diameter_min).toBe(88.9);
+        expect(draft.pipe_diameter_max).toBe(88.9);
+    });
+});

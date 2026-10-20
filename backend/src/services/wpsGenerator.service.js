@@ -22,6 +22,10 @@ const {
     isIso14555,
     describeQualifiedParentThicknessRange14555,
 } = require('../data/weldingQualificationRules14555');
+const {
+    currentRangeFromRuns,
+    voltageRangeFromRuns,
+} = require('../utils/wpsAnnexARanges');
 
 /** Lazy require: evita process.exit in unit test senza database.json. */
 function getDbQuery() {
@@ -51,7 +55,63 @@ async function loadWpqrRecords(organizationId, companyId = null) {
     }
     sql += ' ORDER BY wq.id DESC';
     const result = await query(sql, params);
-    return result.recordset || [];
+    const rows = result.recordset || [];
+    return attachTestRuns(rows, organizationId);
+}
+
+/**
+ * Passate WPQR per range² I/U della bozza (ISO 15609-1 Annex A).
+ * Senza questo attach, buildWpsDraft vede test_runs assente e current_range resta vuoto.
+ * Tabella assente (migrazione 173 non applicata): array vuoto, nessuna eccezione.
+ */
+async function attachTestRuns(rows, organizationId) {
+    if (!Array.isArray(rows) || rows.length === 0) return rows;
+    const ids = [];
+    const seen = new Set();
+    for (const row of rows) {
+        const id = Number(row.id);
+        if (!Number.isFinite(id) || seen.has(id)) continue;
+        seen.add(id);
+        ids.push(id);
+    }
+    if (ids.length === 0) {
+        for (const row of rows) {
+            if (!Array.isArray(row.test_runs)) row.test_runs = [];
+        }
+        return rows;
+    }
+    const query = getDbQuery();
+    const params = { organization_id: Number(organizationId) };
+    const placeholders = ids.map((id, i) => {
+        params[`wid${i}`] = id;
+        return `@wid${i}`;
+    });
+    try {
+        const result = await query(
+            `SELECT wpqr_id, current_a, voltage_v
+             FROM wpqr_test_runs
+             WHERE organization_id = @organization_id
+               AND deleted_at IS NULL
+               AND wpqr_id IN (${placeholders.join(', ')})
+             ORDER BY wpqr_id, id`,
+            params
+        );
+        const byWpqr = new Map();
+        for (const run of result.recordset || []) {
+            const key = Number(run.wpqr_id);
+            if (!Number.isFinite(key)) continue;
+            if (!byWpqr.has(key)) byWpqr.set(key, []);
+            byWpqr.get(key).push(run);
+        }
+        for (const row of rows) {
+            row.test_runs = byWpqr.get(Number(row.id)) || [];
+        }
+    } catch (_err) {
+        for (const row of rows) {
+            if (!Array.isArray(row.test_runs)) row.test_runs = [];
+        }
+    }
+    return rows;
 }
 
 /**
@@ -435,11 +495,24 @@ function checkThroatCoverage(wpqr, requiredThroatMm) {
 /**
  * Bozza WPS minima allineata a welding_procedures / 15609.
  */
+function numOrNull(v) {
+    if (v == null || v === '') return null;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+}
+
 function buildWpsDraft(wpqr, request, groupA, groupB) {
     const thicknesses = [Number(request.thickness_a_mm), Number(request.thickness_b_mm)]
         .filter((n) => Number.isFinite(n));
     const tMin = thicknesses.length ? Math.min(...thicknesses) : null;
     const tMax = thicknesses.length ? Math.max(...thicknesses) : null;
+    const positions = wpqr.welding_positions || wpqr.position || null;
+    const runs = Array.isArray(wpqr.test_runs) ? wpqr.test_runs : [];
+    const ampereRange = currentRangeFromRuns(runs);
+    const voltRange = voltageRangeFromRuns(runs);
+    const reqPipe = numOrNull(request.pipe_diameter_mm);
+    const pipeMin = numOrNull(wpqr.diameter_min) != null ? numOrNull(wpqr.diameter_min) : reqPipe;
+    const pipeMax = numOrNull(wpqr.diameter_max) != null ? numOrNull(wpqr.diameter_max) : reqPipe;
 
     return {
         welding_process: request.welding_process || wpqr.welding_process || null,
@@ -455,20 +528,39 @@ function buildWpsDraft(wpqr, request, groupA, groupB) {
             : (wpqr.thickness_max != null ? Number(wpqr.thickness_max) : tMax),
         thickness_a_mm: request.thickness_a_mm != null ? Number(request.thickness_a_mm) : null,
         thickness_b_mm: request.thickness_b_mm != null ? Number(request.thickness_b_mm) : null,
-        pipe_diameter_mm: request.pipe_diameter_mm != null ? Number(request.pipe_diameter_mm) : null,
+        pipe_diameter_mm: reqPipe,
+        pipe_diameter_min: pipeMin,
+        pipe_diameter_max: pipeMax,
         throat_mm: request.throat_mm != null ? Number(request.throat_mm) : null,
         qualification_standard: wpqr.standard_reference || 'ISO 15614-1',
         wpqr_ref: wpqr.wpqr_code || null,
         wpqr_id: wpqr.id != null ? wpqr.id : null,
         filler_material: wpqr.filler_material || null,
+        filler_make: wpqr.filler_make || null,
         shielding_gas: wpqr.shielding_gas || null,
-        welding_positions: wpqr.welding_positions || null,
+        welding_positions: positions,
+        position: positions,
         heat_input: wpqr.heat_input_note || null,
-        current_range: wpqr.current_type || null,
+        // Corrente² = ampere (range da passate), non il tipo DC+/DC− (quello è C6).
+        current_range: ampereRange || null,
+        voltage_range: voltRange || wpqr.voltage_range || null,
+        current_type: wpqr.current_type || null,
         metal_transfer: wpqr.metal_transfer || null,
         preheat_temp: wpqr.preheat_temp || null,
         interpass_temp: wpqr.interpass_temp || null,
         pwht: wpqr.pwht || null,
+        joint_preparation: wpqr.joint_preparation || null,
+        cleaning_method: wpqr.cleaning_method || null,
+        mechanization: wpqr.mechanization || null,
+        shielding_gas_flow_l_min_min: numOrNull(wpqr.shielding_gas_flow_l_min_min),
+        shielding_gas_flow_l_min_max: numOrNull(wpqr.shielding_gas_flow_l_min_max),
+        post_heating: wpqr.post_heating || null,
+        pwht_details: wpqr.pwht_details || null,
+        bead_technique: wpqr.bead_technique || null,
+        contact_tube_distance_mm_min: numOrNull(wpqr.contact_tube_distance_mm_min),
+        contact_tube_distance_mm_max: numOrNull(wpqr.contact_tube_distance_mm_max),
+        torch_angle_deg: numOrNull(wpqr.torch_angle_deg),
+        tungsten_electrode: wpqr.tungsten_electrode || null,
         status: 'bozza',
     };
 }

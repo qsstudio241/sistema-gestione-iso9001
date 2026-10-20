@@ -277,9 +277,11 @@ created_by       INT           NULL
 
 > UNIQUE `(wps_id, wpqr_id)`; indice `(organization_id, wpqr_id)`. Nessun backfill; `wpqr_records.wps_id` resta invariata. Poiché le FK non hanno `ON DELETE`, ogni cancellazione di WPS/WPQR/azienda deve eliminare prima i link (e le passate): vedi `deleteWPS` / `deleteWPQR` / `hardDeleteCompany`.
 
-### `welding_procedures` — campi 15609-1 *(migration 181 — PR, apply solo TEST dopo backup)*
+### `welding_procedures` — campi 15609-1 *(migration 181 — su TEST; 182 in PR)*
 
-Colonne additive nullable: `wpqr_ref`, `parent_material_a`, `parent_material_b` (§4.2–4.3.1), `heat_input` (§4.4.17), `current_range` / `voltage_range` (§4.4.9), `metal_transfer` (§4.5). Nessun backfill. Runner: `backend/scripts/run-migration-181-vps.js`. PROD: non applicare.
+181 (nullable): `wpqr_ref`, `parent_material_a`, `parent_material_b` (§4.2–4.3.1), `heat_input` (§4.4.17), `current_range` / `voltage_range` (§4.4.9), `metal_transfer` (§4.5).
+
+182 (nullable, carry-over da WPQR + persistenza richiesta): `joint_preparation`, `cleaning_method`, `mechanization`, `shielding_gas_flow_l_min_min/max`, `post_heating`, `pwht_details`, `bead_technique`, `contact_tube_distance_mm_min/max`, `torch_angle_deg`, `throat_mm`, `pipe_diameter_max`. Nessun backfill. Runner: `backend/scripts/run-migration-182-vps.js`. PROD: non applicare.
 
 ---
 
@@ -302,9 +304,9 @@ Procedura pre-VPS: [`docs/how-to/database-migrations.md`](../how-to/database-mig
 
 | Voce | Stato (13/10/2026) |
 |---|---|
-| Ultimo `NNN` su `origin/main` | **180** (`180_project_inspection_items.sql`) |
-| In PR (file, **non applicate** né su TEST né su PROD) | **181** `181_wps_iso15609_content.sql` (companion verify/rollback, runner `backend/scripts/run-migration-181-vps.js`) |
-| Prossimo libero da riservare | **182** |
+| Ultimo `NNN` su `origin/main` | **181** (`181_wps_iso15609_content.sql`) |
+| In PR (file, **non applicate** né su TEST né su PROD) | **182** `182_wps_iso15609_wpqr_carry.sql` (companion verify/rollback, runner `backend/scripts/run-migration-182-vps.js`) |
+| Prossimo libero da riservare | **183** |
 | Gate intestazione + companion | Obbligatorio da **≥ 169**. Storico grandfathered. |
 | Unicità prefisso | L1 `migrationNumberUniqueness.test.js` da 100 in poi (esclusi `NNN_verify.sql` / `NNN_rollback.sql`) |
 | Intestazione | L1 `migrationHeaderContract.test.js` |

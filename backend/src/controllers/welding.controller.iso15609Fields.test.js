@@ -35,10 +35,18 @@ jest.mock('../services/wpsWpqrLinks.service', () => {
 const { query } = require('../config/database');
 const ctrl = require('./welding.controller');
 
-const ISO_COLS = [
+const ISO_COLS_181 = [
     'wpqr_ref', 'parent_material_a', 'parent_material_b',
     'heat_input', 'current_range', 'voltage_range', 'metal_transfer',
 ];
+const ISO_COLS_182 = [
+    'joint_preparation', 'cleaning_method', 'mechanization',
+    'shielding_gas_flow_l_min_min', 'shielding_gas_flow_l_min_max',
+    'post_heating', 'pwht_details', 'bead_technique',
+    'contact_tube_distance_mm_min', 'contact_tube_distance_mm_max',
+    'torch_angle_deg', 'throat_mm', 'pipe_diameter_max',
+];
+const ISO_COLS = [...ISO_COLS_181, ...ISO_COLS_182];
 
 function createRes() {
     const res = { statusCode: 200, body: null };
@@ -66,10 +74,10 @@ function mockQuery({ columnsPresent, updateExisting = true }) {
     });
 }
 
-describe('createWPS / updateWPS — campi ISO 15609-1 (migrazione 181)', () => {
+describe('createWPS / updateWPS — campi ISO 15609-1 (migrazione 181+182)', () => {
     afterEach(() => jest.clearAllMocks());
 
-    it('il sorgente elenca i sette campi e sonda sys.columns prima di scriverli', () => {
+    it('il sorgente elenca i campi 181+182 e sonda sys.columns prima di scriverli', () => {
         const src = fs.readFileSync(path.join(__dirname, 'welding.controller.js'), 'utf8');
         expect(src).toMatch(/ISO15609_WPS_FIELDS/);
         expect(src).toMatch(/presentIso15609WpsColumns/);
@@ -77,7 +85,7 @@ describe('createWPS / updateWPS — campi ISO 15609-1 (migrazione 181)', () => {
         ISO_COLS.forEach((col) => expect(src).toMatch(new RegExp(`'${col}'`)));
     });
 
-    it('INSERT include i sette campi se le colonne ci sono', async () => {
+    it('INSERT include i campi 181+182 se le colonne ci sono', async () => {
         mockQuery({ columnsPresent: true });
         const res = createRes();
         await ctrl.createWPS({
@@ -92,6 +100,12 @@ describe('createWPS / updateWPS — campi ISO 15609-1 (migrazione 181)', () => {
                 current_range: '190 A',
                 voltage_range: '24 V',
                 metal_transfer: 'Spray',
+                joint_preparation: 'square T',
+                cleaning_method: 'grinding',
+                mechanization: 'partly mechanized',
+                throat_mm: 7.5,
+                pipe_diameter_mm: 88.9,
+                torch_angle_deg: 15,
             },
         }, res);
         expect(res.statusCode).toBe(201);
@@ -101,9 +115,14 @@ describe('createWPS / updateWPS — campi ISO 15609-1 (migrazione 181)', () => {
         expect(insert[1].wpqr_ref).toBe('24-03390-01');
         expect(insert[1].parent_material_a).toBe('S355');
         expect(insert[1].metal_transfer).toBe('Spray');
+        expect(insert[1].joint_preparation).toBe('square T');
+        expect(insert[1].throat_mm).toBe(7.5);
+        expect(insert[1].pipe_diameter_max).toBe(88.9);
+        expect(insert[1].pipe_diameter_min).toBe(88.9);
+        expect(insert[1].torch_angle_deg).toBe(15);
     });
 
-    it('INSERT omette i sette campi se la migrazione 181 non è applicata', async () => {
+    it('INSERT omette i campi 181+182 se le migrazioni non sono applicate', async () => {
         mockQuery({ columnsPresent: false });
         const res = createRes();
         await ctrl.createWPS({
