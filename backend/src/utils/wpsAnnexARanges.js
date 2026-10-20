@@ -3,6 +3,7 @@
 /**
  * Range² passate WPS (ISO 15609-1 Annex A) — copia CJS del helper FE.
  * ±10 % I/U/filo; −25 % / +25 % apporto termico (ISO 15614-1 §8.4.8).
+ * Travel speed: valore singolo (nota ¹), non range².
  */
 
 const IU_WIRE_PCT = 0.10;

@@ -2,8 +2,9 @@
  * Range² per la tabella passate WPS (ISO 15609-1:2019 Annex A).
  *
  * Se la passata non ha già min/max, si derivano dal valore misurato WPQR:
- *   corrente / tensione / avanzamento filo / velocità: ±10 %
+ *   corrente / tensione / avanzamento filo: ±10 %
  *   apporto termico / energia d'arco: −25 % / +25 % (ISO 15614-1:2017+A1:2019 §8.4.8)
+ *   travel speed: valore singolo (nota ¹ «if required», non range²).
  *
  * Nessun valore inventato: se manca il misurato, la cella resta vuota.
  */
@@ -82,6 +83,15 @@ export function formatAnnexPair(min, max, unit) {
   return formatAnnexRange({ min: num(min), max: num(max) }, unit);
 }
 
+/** Valore misurato senza range² (travel speed Annex A nota ¹). */
+export function formatAnnexMeasured(value, unit) {
+  const n = num(value);
+  if (n == null) return '';
+  const body = formatAnnexNum(n);
+  if (!body) return '';
+  return unit ? `${body} ${unit}` : body;
+}
+
 /**
  * Celle della riga passata Annex A (9 colonne).
  * Polarità e filo restano i valori WPQR (C6 non è ²; C7 sì).
@@ -103,10 +113,7 @@ export function annexARunCells(run = {}) {
     rangeFromMeasured(run.wire_feed_speed, IU_WIRE_PCT),
     unitWire
   );
-  const speed = formatAnnexRange(
-    rangeFromMeasured(run.travel_speed, IU_WIRE_PCT),
-    unitSpeed
-  );
+  const speed = formatAnnexMeasured(run.travel_speed, unitSpeed);
   const heat = formatAnnexRange(
     rangeFromMeasured(run.heat_input_value, HEAT_PCT),
     unitHeat

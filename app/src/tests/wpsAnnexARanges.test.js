@@ -53,6 +53,15 @@ describe('wpsAnnexARanges', () => {
     expect(c.wire).toMatch(/m\/min/);
     expect(c.current).toMatch(/171/);
     expect(c.current).toMatch(/209/);
+    expect(c.speed).toBe('5 mm/s');
+    expect(c.speed).not.toMatch(/4\.5/);
+  });
+
+  it('travel speed resta il misurato (nota ¹, non ±10 %)', () => {
+    const c = annexARunCells({ travel_speed: 5.4, travel_speed_unit: 'mm/s' });
+    expect(c.speed).toBe('5.4 mm/s');
+    expect(c.speed).not.toContain('4.86');
+    expect(c.speed).not.toContain('5.94');
   });
 
   it('currentRangeFromRuns sul min–max delle passate', () => {

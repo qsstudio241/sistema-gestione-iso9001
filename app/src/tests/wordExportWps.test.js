@@ -229,6 +229,10 @@ describe("generateWpsAnnexABlob", () => {
     expect(xml).toContain("DC+");
     expect(xml).toContain("2 +n");
     expect(xml).toContain("m/min");
+    expect(xml).toContain("5.4");
+    expect(xml).toContain("3.4");
+    expect(xml).not.toContain("4.86");
+    expect(xml).not.toContain("5.94");
     expect(xml).toMatch(/\u00A78\.4\.8|§8\.4\.8|8.4.8/);
   });
 

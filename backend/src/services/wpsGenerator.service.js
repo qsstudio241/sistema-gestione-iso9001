@@ -55,7 +55,63 @@ async function loadWpqrRecords(organizationId, companyId = null) {
     }
     sql += ' ORDER BY wq.id DESC';
     const result = await query(sql, params);
-    return result.recordset || [];
+    const rows = result.recordset || [];
+    return attachTestRuns(rows, organizationId);
+}
+
+/**
+ * Passate WPQR per range² I/U della bozza (ISO 15609-1 Annex A).
+ * Senza questo attach, buildWpsDraft vede test_runs assente e current_range resta vuoto.
+ * Tabella assente (migrazione 173 non applicata): array vuoto, nessuna eccezione.
+ */
+async function attachTestRuns(rows, organizationId) {
+    if (!Array.isArray(rows) || rows.length === 0) return rows;
+    const ids = [];
+    const seen = new Set();
+    for (const row of rows) {
+        const id = Number(row.id);
+        if (!Number.isFinite(id) || seen.has(id)) continue;
+        seen.add(id);
+        ids.push(id);
+    }
+    if (ids.length === 0) {
+        for (const row of rows) {
+            if (!Array.isArray(row.test_runs)) row.test_runs = [];
+        }
+        return rows;
+    }
+    const query = getDbQuery();
+    const params = { organization_id: Number(organizationId) };
+    const placeholders = ids.map((id, i) => {
+        params[`wid${i}`] = id;
+        return `@wid${i}`;
+    });
+    try {
+        const result = await query(
+            `SELECT wpqr_id, current_a, voltage_v
+             FROM wpqr_test_runs
+             WHERE organization_id = @organization_id
+               AND deleted_at IS NULL
+               AND wpqr_id IN (${placeholders.join(', ')})
+             ORDER BY wpqr_id, id`,
+            params
+        );
+        const byWpqr = new Map();
+        for (const run of result.recordset || []) {
+            const key = Number(run.wpqr_id);
+            if (!Number.isFinite(key)) continue;
+            if (!byWpqr.has(key)) byWpqr.set(key, []);
+            byWpqr.get(key).push(run);
+        }
+        for (const row of rows) {
+            row.test_runs = byWpqr.get(Number(row.id)) || [];
+        }
+    } catch (_err) {
+        for (const row of rows) {
+            if (!Array.isArray(row.test_runs)) row.test_runs = [];
+        }
+    }
+    return rows;
 }
 
 /**
