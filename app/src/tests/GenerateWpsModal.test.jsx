@@ -90,6 +90,12 @@ describe("GenerateWpsModal (P1-B)", () => {
         qualification_standard: "ISO 15614-1",
         wpqr_ref: "WPQR-M1",
         wpqr_id: 1,
+        parent_material_a: "S355",
+        parent_material_b: "S235",
+        heat_input: "0,8 kJ/mm",
+        current_range: "DC+",
+        voltage_range: "24 V",
+        metal_transfer: "Spray",
         preheat_temp: "20 °C",
         interpass_temp: "max 200 °C",
         status: "bozza",
@@ -123,6 +129,13 @@ describe("GenerateWpsModal (P1-B)", () => {
     expect(payload.company_id).toBe(10);
     expect(payload.joint_type).toBe("FW");
     expect(payload.wpqr_id).toBe(1);
+    expect(payload.wpqr_ref).toBe("WPQR-M1");
+    expect(payload.parent_material_a).toBe("S355");
+    expect(payload.parent_material_b).toBe("S235");
+    expect(payload.heat_input).toBe("0,8 kJ/mm");
+    expect(payload.current_range).toBe("DC+");
+    expect(payload.voltage_range).toBe("24 V");
+    expect(payload.metal_transfer).toBe("Spray");
     expect(payload.preheat_temp).toBe("20 °C");
     expect(payload.interpass_temp).toBe("max 200 °C");
     expect(onSaved).toHaveBeenCalled();

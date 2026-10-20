@@ -9,7 +9,9 @@
 -- generatore WPS←WPQR o da modifica manuale dopo il sì del committente.
 -- Nessuna FK e nessun ON DELETE.
 --
--- BOZZA IN ATTESA DI SÌ: non applicare su TEST/PROD da questa PR.
+-- Apply: solo TEST, dopo backup COPY_ONLY + CHECKSUM + VERIFYONLY.
+-- Runner: backend/scripts/run-migration-181-vps.js (SGQ_MIGRATION_TARGET=test).
+-- PROD: non applicare.
 
 SET NOCOUNT ON;
 GO

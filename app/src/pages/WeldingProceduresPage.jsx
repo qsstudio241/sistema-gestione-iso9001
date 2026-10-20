@@ -223,6 +223,34 @@ function WPSFormModal({ wps, defaultCompanyId, onSave, onClose, onSaved }) {
                 <input className="wp-form-input" value={form.qualification_standard || ""} onChange={(e) => set("qualification_standard", e.target.value)} placeholder="es. EN ISO 15614-1" />
               </div>
               <div className="wp-form-group">
+                <label className="wp-form-label">Riferimento WPQR</label>
+                <input className="wp-form-input" value={form.wpqr_ref || ""} onChange={(e) => set("wpqr_ref", e.target.value)} placeholder="es. 24-03390-01" />
+              </div>
+              <div className="wp-form-group">
+                <label className="wp-form-label">Materiale padre A</label>
+                <input className="wp-form-input" value={form.parent_material_a || ""} onChange={(e) => set("parent_material_a", e.target.value)} placeholder="es. S355" />
+              </div>
+              <div className="wp-form-group">
+                <label className="wp-form-label">Materiale padre B</label>
+                <input className="wp-form-input" value={form.parent_material_b || ""} onChange={(e) => set("parent_material_b", e.target.value)} placeholder="es. S355" />
+              </div>
+              <div className="wp-form-group">
+                <label className="wp-form-label">Apporto termico</label>
+                <input className="wp-form-input" value={form.heat_input || ""} onChange={(e) => set("heat_input", e.target.value)} placeholder="es. 0,6–1,3 kJ/mm" />
+              </div>
+              <div className="wp-form-group">
+                <label className="wp-form-label">Intervallo corrente</label>
+                <input className="wp-form-input" value={form.current_range || ""} onChange={(e) => set("current_range", e.target.value)} placeholder="es. 180–220 A" />
+              </div>
+              <div className="wp-form-group">
+                <label className="wp-form-label">Intervallo tensione</label>
+                <input className="wp-form-input" value={form.voltage_range || ""} onChange={(e) => set("voltage_range", e.target.value)} placeholder="es. 22–27 V" />
+              </div>
+              <div className="wp-form-group">
+                <label className="wp-form-label">Trasferimento di metallo</label>
+                <input className="wp-form-input" value={form.metal_transfer || ""} onChange={(e) => set("metal_transfer", e.target.value)} placeholder="es. Spray arc" />
+              </div>
+              <div className="wp-form-group">
                 <label className="wp-form-label">Stato</label>
                 <select className="wp-form-select" value={form.status || "bozza"} onChange={(e) => set("status", e.target.value)}>
                   {WPS_STATUSES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
