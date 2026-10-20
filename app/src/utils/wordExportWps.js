@@ -146,20 +146,49 @@ function sectionTitle(text) {
   });
 }
 
-function emptyRunTable() {
+function runCell(run, key) {
+  if (key === 'passata') return s(run.run_label || run.run_no);
+  if (key === 'processo') return s(run.welding_process);
+  if (key === 'filler') {
+    const d = run.filler_diameter_mm;
+    const des = run.filler_designation;
+    if (d != null && des) return `${d} mm ${des}`;
+    if (d != null) return `${d} mm`;
+    return s(des);
+  }
+  if (key === 'current') return s(run.current_a);
+  if (key === 'voltage') return s(run.voltage_v);
+  if (key === 'speed') {
+    const v = run.travel_speed;
+    const u = run.travel_speed_unit;
+    if (v == null || v === '') return '';
+    return u ? `${v} ${u}` : String(v);
+  }
+  if (key === 'heat') {
+    const v = run.heat_input_value;
+    const u = run.heat_input_unit;
+    if (v == null || v === '') return '';
+    return u ? `${v} ${u}` : String(v);
+  }
+  return '';
+}
+
+function buildRunTable(runs = []) {
   const headers = ['Passata', 'Processo', 'Ø filo / elettrodo', 'Corrente (A)', 'Tensione (V)', 'Velocità', 'Heat input'];
+  const keys = ['passata', 'processo', 'filler', 'current', 'voltage', 'speed', 'heat'];
   const widths = [900, 1200, 1800, 1200, 1200, 1200, 1860];
   const headerRow = new TableRow({
     tableHeader: true,
     children: headers.map((h, i) => cell(h, { bold: true, fill: 'E8EEF4', width: widths[i], fontSize: 16 })),
   });
-  const emptyRows = [1, 2, 3, 4].map(() => new TableRow({
-    children: widths.map((w) => cell('', { width: w, fontSize: 16 })),
+  const source = Array.isArray(runs) && runs.length ? runs : [{}, {}, {}, {}];
+  const dataRows = source.map((run) => new TableRow({
+    children: keys.map((k, i) => cell(runCell(run, k), { width: widths[i], fontSize: 16 })),
   }));
   return new Table({
     width: { size: 9360, type: WidthType.DXA },
     columnWidths: widths,
-    rows: [headerRow, ...emptyRows],
+    rows: [headerRow, ...dataRows],
     borders: BORDERS,
   });
 }
@@ -167,10 +196,11 @@ function emptyRunTable() {
 /**
  * Costruisce il Document docx Annex A (senza download).
  * @param {object} wps — record welding_procedures (+ opz. company_name, wpqr_records)
- * @param {{ manufacturer?: string, companyName?: string, wpqrCode?: string, exportDate?: string }} [options]
+ * @param {{ manufacturer?: string, companyName?: string, wpqrCode?: string, exportDate?: string, testRuns?: object[] }} [options]
  */
 export function buildWpsAnnexADocument(wps, options = {}) {
   const f = mapWpsToAnnexAFields(wps, options);
+  const testRuns = options.testRuns || wps.test_runs || [];
   const wpqrDisplay = f.wpqrNo
     || (f.qualificationStandard ? `(rif. ${f.qualificationStandard})` : '');
 
@@ -314,7 +344,7 @@ export function buildWpsAnnexADocument(wps, options = {}) {
         sectionTitle('4. Sketch giunto / sequenza passate'),
         sketchBox,
         sectionTitle('5. Tabella passate'),
-        emptyRunTable(),
+        buildRunTable(testRuns),
         ...(f.notes
           ? [
             sectionTitle('Note'),
