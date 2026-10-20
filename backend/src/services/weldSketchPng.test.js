@@ -1,10 +1,13 @@
 /**
  * @jest-environment node
+ *
+ * Fixture PNG sintetici (nessun PDF/crop cliente). stackedPng ≈ VB0377 (gap pulito).
  */
 
 const {
     encodePng,
     decodePng,
+    darkMaskFromRgba,
     rowInkFromRgba,
     findHorizontalSplitY,
     splitCombinedIfNeeded,
@@ -22,11 +25,43 @@ function paintBand(rgba, width, y0, y1, rgb) {
     }
 }
 
+function fillRect(rgba, width, x0, y0, x1, y1, rgb) {
+    for (let y = y0; y < y1; y += 1) {
+        for (let x = x0; x < x1; x += 1) {
+            const i = (y * width + x) * 4;
+            rgba[i] = rgb[0];
+            rgba[i + 1] = rgb[1];
+            rgba[i + 2] = rgb[2];
+            rgba[i + 3] = 255;
+        }
+    }
+}
+
 function stackedPng({ width = 60, height = 80, topEnd = 30, botStart = 48 } = {}) {
     const rgba = Buffer.alloc(width * height * 4, 255);
     paintBand(rgba, width, 4, topEnd, [20, 20, 20]);
     paintBand(rgba, width, botStart, height - 4, [20, 20, 20]);
     return { png: encodePng(width, height, rgba), width, height, rgba };
+}
+
+/** Due masse (giunto / sequenza) + quota verticale e «g» nel gap, come VB0387. */
+function dimLineCrossingGapPng() {
+    const width = 120;
+    const height = 160;
+    const rgba = Buffer.alloc(width * height * 4, 255);
+    fillRect(rgba, width, 18, 8, 102, 62, [25, 25, 25]);
+    fillRect(rgba, width, 22, 98, 100, 152, [25, 25, 25]);
+    fillRect(rgba, width, 8, 8, 11, 152, [20, 20, 20]);
+    fillRect(rgba, width, 70, 74, 82, 88, [30, 30, 30]);
+    fillRect(rgba, width, 14, 79, 68, 81, [20, 20, 20]);
+    return {
+        png: encodePng(width, height, rgba),
+        width,
+        height,
+        rgba,
+        gapY0: 62,
+        gapY1: 98,
+    };
 }
 
 describe('weldSketchPng — split orizzontale IIS', () => {
@@ -52,6 +87,17 @@ describe('weldSketchPng — split orizzontale IIS', () => {
         const y = findHorizontalSplitY(ink);
         expect(y).toBeGreaterThanOrEqual(30);
         expect(y).toBeLessThanOrEqual(48);
+    });
+
+    it('maxThinRun azzera le righe con sola linea verticale sottile', () => {
+        const width = 80;
+        const height = 50;
+        const rgba = Buffer.alloc(width * height * 4, 255);
+        fillRect(rgba, width, 10, 0, 13, height, [15, 15, 15]);
+        const raw = rowInkFromRgba(rgba, width, height);
+        const thin = rowInkFromRgba(rgba, width, height, 240, { maxThinRun: 4 });
+        expect(raw[20]).toBeGreaterThan(0.02);
+        expect(thin[20]).toBe(0);
     });
 
     it('splitCombinedIfNeeded salva due PNG (joint sopra, sequenza sotto)', () => {
@@ -121,5 +167,55 @@ describe('weldSketchPng — split orizzontale IIS', () => {
         expect(decoded.rgba[1]).toBe(80);
         expect(decoded.rgba[2]).toBe(80);
         expect(decoded.rgba[3]).toBe(255);
+    });
+
+    it('VB0377-like: gap pulito, split tra le due bande (non regressione)', () => {
+        const { png, height } = stackedPng({ width: 80, height: 100, topEnd: 38, botStart: 58 });
+        const out = splitCombinedIfNeeded(png);
+        expect(out.ok).toBe(true);
+        expect(out.y).toBeGreaterThanOrEqual(38);
+        expect(out.y).toBeLessThanOrEqual(58);
+        expect(decodePng(out.top).height + decodePng(out.bottom).height).toBe(height);
+    });
+
+    it('quota verticale + lettera nel gap: split automatico nel bianco (VB0387-like)', () => {
+        const fx = dimLineCrossingGapPng();
+        const ink = rowInkFromRgba(fx.rgba, fx.width, fx.height, 240, { maxThinRun: 4 });
+        const mask = darkMaskFromRgba(fx.rgba, fx.width, fx.height);
+        const y = findHorizontalSplitY(ink, { mask, width: fx.width, height: fx.height });
+        expect(y).not.toBeNull();
+        expect(y).toBeGreaterThanOrEqual(fx.gapY0);
+        expect(y).toBeLessThanOrEqual(fx.gapY1);
+        const out = splitCombinedIfNeeded(fx.png);
+        expect(out.ok).toBe(true);
+        expect(out.y).toBeGreaterThanOrEqual(fx.gapY0);
+        expect(out.y).toBeLessThanOrEqual(fx.gapY1);
+        expect(out.y).toBeLessThan(74);
+        expect(out.y).toBeGreaterThan(8);
+    });
+
+    it('quota 3px attaccata al giunto (un solo CC): split nel gap, non no_gap', () => {
+        const width = 120;
+        const height = 160;
+        const rgba = Buffer.alloc(width * height * 4, 255);
+        fillRect(rgba, width, 18, 8, 102, 62, [25, 25, 25]);
+        fillRect(rgba, width, 22, 98, 100, 152, [25, 25, 25]);
+        fillRect(rgba, width, 20, 8, 23, 152, [20, 20, 20]);
+        const out = splitCombinedIfNeeded(encodePng(width, height, rgba));
+        expect(out.ok).toBe(true);
+        expect(out.y).toBeGreaterThanOrEqual(62);
+        expect(out.y).toBeLessThanOrEqual(98);
+    });
+
+    it('ponte largo tra giunto e sequenza: non taglia, no_gap', () => {
+        const width = 100;
+        const height = 120;
+        const rgba = Buffer.alloc(width * height * 4, 255);
+        fillRect(rgba, width, 10, 6, 90, 48, [20, 20, 20]);
+        fillRect(rgba, width, 10, 72, 90, 114, [20, 20, 20]);
+        fillRect(rgba, width, 40, 40, 60, 80, [20, 20, 20]);
+        const out = splitCombinedIfNeeded(encodePng(width, height, rgba));
+        expect(out.ok).toBe(false);
+        expect(out.reason).toBe('no_gap');
     });
 });
