@@ -242,6 +242,26 @@ describe("loadAnnexASketchBuffers", () => {
     expect(out.sequencePending).toBe("solo giunto");
   });
 
+  it("solo giunto confermato: la nota sequenza resta via crop_bbox_pt", async () => {
+    apiService.getWpqrSketches.mockResolvedValue({
+      sketches: [{
+        id: 13,
+        slot: "joint_design",
+        status: "confermato",
+        crop_bbox_pt: "embedded:solo-giunto",
+        dimension_text: "t=12 mm",
+      }],
+    });
+    const out = await loadAnnexASketchBuffers({
+      joint_sketch_id: 13,
+      sequence_sketch_id: null,
+      wpqr_id: 28,
+    });
+    expect(out.joint).toBeTruthy();
+    expect(out.sequence).toBeUndefined();
+    expect(out.sequencePending).toBe("solo giunto");
+  });
+
   it("combined da dividere senza sequence_id marca sequencePending", async () => {
     apiService.getWpqrSketches.mockResolvedValue({
       sketches: [{

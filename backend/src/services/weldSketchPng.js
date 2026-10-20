@@ -586,6 +586,7 @@ function clusterMassesAtY(ccs, y, mask, width, opts = {}) {
             const localWaist = isLocalWaist(mask, width, c, y, wideRun);
             if (run >= wideRun) {
                 crossingWide += c.area;
+                continue;
             } else if (localWaist) {
                 const hTop = Math.max(0, y - c.y0);
                 const hBot = Math.max(0, c.y1 - y + 1);
@@ -601,6 +602,7 @@ function clusterMassesAtY(ccs, y, mask, width, opts = {}) {
                 continue;
             } else if (tall && span >= 24) {
                 crossingWide += c.area;
+                continue;
             } else if (span < 24) {
                 const hTop = Math.max(0, y - c.y0);
                 const hBot = Math.max(0, c.y1 - y + 1);
@@ -645,11 +647,13 @@ function scoreSplit({
     top, bot, crossingWide, valleyInk, peakTop, peakBot, clusterGap, minClusterGap, widthRatio,
     crossingSplit = 0,
 }) {
-    const total = top + bot;
+    const total = top + bot + crossingWide;
     if (total < 120) return 0;
+    const assigned = top + bot;
+    if (assigned < 120 && crossingWide > 0) return 0;
     const smaller = Math.min(top, bot);
     if (smaller < 50) return 0;
-    const both = smaller / total;
+    const both = smaller / assigned;
     if (both < 0.06) return 0;
     const bridge = crossingWide / total;
     if (bridge > 0.32) return 0;
@@ -748,8 +752,9 @@ function findHorizontalSplit(rowInk, opts = {}) {
     const masses = clusterMassesAtY(ccs, valley.y, mask, width, { ...opts, height: H });
     const { peakTop, peakBot } = peaksAround(valley.y);
     const massTotal = masses.top + masses.bot;
+    const massWithBridge = massTotal + masses.crossingWide;
     const crossR = massTotal > 0 ? (masses.crossingSplit / massTotal) : 0;
-    const bridgeR = massTotal > 0 ? (masses.crossingWide / massTotal) : 0;
+    const bridgeR = massWithBridge > 0 ? (masses.crossingWide / massWithBridge) : 0;
     const confidence = scoreSplit({
         top: masses.top,
         bot: masses.bot,

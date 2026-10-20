@@ -329,7 +329,9 @@ export async function loadAnnexASketchBuffers(record = {}) {
   };
   const isJointOnly = (id) => {
     const m = metaById[id];
-    return !!(m && m.status === "solo giunto");
+    if (!m) return false;
+    const crop = String(m.crop_bbox_pt || "");
+    return m.status === "solo giunto" || crop.includes("solo-giunto");
   };
   const pickSequenceId = (jointSketchId) => {
     const jointMeta = metaById[jointSketchId];

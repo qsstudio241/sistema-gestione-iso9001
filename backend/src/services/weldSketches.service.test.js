@@ -395,6 +395,7 @@ describe('weldSketches — split combined IIS', () => {
         expect(pieces).toHaveLength(1);
         expect(pieces[0].slot).toBe('joint_design');
         expect(pieces[0].status).toBe(STATUS_JOINT_ONLY);
+        expect(pieces[0].bboxStr).toMatch(/solo-giunto/);
         expect(pieces[0].dimension_text).toBe('t1=t2: 30 mm - a: 7,5 mm');
     });
 

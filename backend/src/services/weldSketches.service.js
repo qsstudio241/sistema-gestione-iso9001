@@ -640,12 +640,13 @@ function planStoredPieces(pageSlot, png, { width, height, bboxStr, meta = {}, sp
         ];
     }
     if (split && split.reason === 'single_joint') {
+        const mark = `${bboxStr || 'embedded'}:solo-giunto`;
         return [{
             slot: 'joint_design',
             png,
             width,
             height,
-            bboxStr,
+            bboxStr: mark,
             status: STATUS_JOINT_ONLY,
             dimension_text: meta.dimension_text || null,
         }];
@@ -939,11 +940,25 @@ async function confirmSketch({ id, organizationId, user }) {
         err.status = 404;
         throw err;
     }
+    const crop = String(row.crop_bbox_pt || '');
+    const keepJointOnly = row.status === STATUS_JOINT_ONLY && !crop.includes('solo-giunto');
+    const cropOut = keepJointOnly ? `${crop || 'embedded'}:solo-giunto` : row.crop_bbox_pt;
     await getQuery()(`
-        UPDATE weld_sketches SET status = @status
+        UPDATE weld_sketches
+        SET status = @status, crop_bbox_pt = @crop_bbox_pt
         WHERE id = @id AND organization_id = @organizationId
-    `, { id, organizationId, status: STATUS_CONFIRMED });
-    return { ...row, status: STATUS_CONFIRMED, confirmed_by: user && user.user_id };
+    `, {
+        id,
+        organizationId,
+        status: STATUS_CONFIRMED,
+        crop_bbox_pt: cropOut == null ? null : cropOut,
+    });
+    return {
+        ...row,
+        status: STATUS_CONFIRMED,
+        crop_bbox_pt: cropOut,
+        confirmed_by: user && user.user_id,
+    };
 }
 
 async function storeUploadedPng({
