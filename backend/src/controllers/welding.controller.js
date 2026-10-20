@@ -25,20 +25,36 @@ const {
     ROLES: WPS_WPQR_ROLES,
 } = require('../services/wpsWpqrLinks.service');
 
-/** Colonne 181 su welding_procedures. INSERT/UPDATE le omettono se la migrazione non è ancora applicata. */
-const ISO15609_WPS_FIELDS = Object.freeze([
+/** Colonne 181+182 su welding_procedures. INSERT/UPDATE le omettono se la migrazione non è ancora applicata. */
+const ISO15609_WPS_FIELDS_181 = Object.freeze([
     'wpqr_ref', 'parent_material_a', 'parent_material_b',
     'heat_input', 'current_range', 'voltage_range', 'metal_transfer',
+]);
+const ISO15609_WPS_FIELDS_182 = Object.freeze([
+    'joint_preparation', 'cleaning_method', 'mechanization',
+    'shielding_gas_flow_l_min_min', 'shielding_gas_flow_l_min_max',
+    'post_heating', 'pwht_details', 'bead_technique',
+    'contact_tube_distance_mm_min', 'contact_tube_distance_mm_max',
+    'torch_angle_deg', 'throat_mm', 'pipe_diameter_max',
+]);
+const ISO15609_WPS_FIELDS = Object.freeze([
+    ...ISO15609_WPS_FIELDS_181,
+    ...ISO15609_WPS_FIELDS_182,
+]);
+const ISO15609_WPS_NUMERIC = Object.freeze([
+    'shielding_gas_flow_l_min_min', 'shielding_gas_flow_l_min_max',
+    'contact_tube_distance_mm_min', 'contact_tube_distance_mm_max',
+    'torch_angle_deg', 'throat_mm', 'pipe_diameter_max',
 ]);
 
 async function presentIso15609WpsColumns() {
     try {
+        const namesSql = ISO15609_WPS_FIELDS.map((n) => `N'${n}'`).join(', ');
         const r = await query(`
             SELECT c.name AS name
             FROM sys.columns c
             WHERE c.object_id = OBJECT_ID(N'dbo.welding_procedures')
-              AND c.name IN (N'wpqr_ref', N'parent_material_a', N'parent_material_b',
-                             N'heat_input', N'current_range', N'voltage_range', N'metal_transfer')
+              AND c.name IN (${namesSql})
         `);
         return new Set((r.recordset || []).map((row) => row.name));
     } catch (err) {
@@ -47,16 +63,30 @@ async function presentIso15609WpsColumns() {
     }
 }
 
+function iso15609Scalar(body, field) {
+    const raw = body[field];
+    if (ISO15609_WPS_NUMERIC.includes(field)) {
+        if (raw == null || raw === '') return null;
+        const n = parseFloat(raw);
+        return Number.isFinite(n) ? n : null;
+    }
+    return raw || null;
+}
+
 function iso15609WpsValues(body) {
-    return {
-        wpqr_ref: body.wpqr_ref || null,
-        parent_material_a: body.parent_material_a || null,
-        parent_material_b: body.parent_material_b || null,
-        heat_input: body.heat_input || null,
-        current_range: body.current_range || null,
-        voltage_range: body.voltage_range || null,
-        metal_transfer: body.metal_transfer || null,
-    };
+    const out = {};
+    for (const field of ISO15609_WPS_FIELDS) {
+        out[field] = iso15609Scalar(body, field);
+    }
+    if (out.pipe_diameter_max == null && body.pipe_diameter_mm != null && body.pipe_diameter_mm !== '') {
+        const n = parseFloat(body.pipe_diameter_mm);
+        if (Number.isFinite(n)) out.pipe_diameter_max = n;
+    }
+    if (out.throat_mm == null && body.throat_mm != null && body.throat_mm !== '') {
+        const n = parseFloat(body.throat_mm);
+        if (Number.isFinite(n)) out.throat_mm = n;
+    }
+    return out;
 }
 
 /** Utente con user_company_access: 403 fuori dalle aziende consentite.
@@ -377,12 +407,10 @@ async function createWPS(req, res) {
         const { organization_id, user_id } = req.user;
         const {
             company_id, wps_code, revision, welding_process, material_group,
-            filler_material, shielding_gas, joint_type, position,
+            filler_material, shielding_gas, joint_type, position, welding_positions,
             thickness_range_min, thickness_range_max, pipe_diameter_min,
             preheat_temp, interpass_temp, pwht, qualification_standard,
             status = 'bozza', notes, wpqr_id,
-            wpqr_ref, parent_material_a, parent_material_b,
-            heat_input, current_range, voltage_range, metal_transfer,
         } = req.body;
 
         if (!wps_code) {
@@ -392,10 +420,7 @@ async function createWPS(req, res) {
 
         const isoPresent = await presentIso15609WpsColumns();
         const isoCols = ISO15609_WPS_FIELDS.filter((f) => isoPresent.has(f));
-        const isoValues = iso15609WpsValues({
-            wpqr_ref, parent_material_a, parent_material_b,
-            heat_input, current_range, voltage_range, metal_transfer,
-        });
+        const isoValues = iso15609WpsValues(req.body);
         const extraCols = isoCols.length ? `,\n                ${isoCols.join(', ')}` : '';
         const extraVals = isoCols.length ? `,\n                ${isoCols.map((f) => `@${f}`).join(', ')}` : '';
         const extraParams = {};
@@ -429,10 +454,14 @@ async function createWPS(req, res) {
             filler_material:    filler_material || null,
             shielding_gas:      shielding_gas || null,
             joint_type:         joint_type || null,
-            position:           position || null,
+            position:           position || welding_positions || null,
             thickness_range_min: thickness_range_min != null ? parseFloat(thickness_range_min) : null,
             thickness_range_max: thickness_range_max != null ? parseFloat(thickness_range_max) : null,
-            pipe_diameter_min:  pipe_diameter_min != null ? parseFloat(pipe_diameter_min) : null,
+            pipe_diameter_min:  pipe_diameter_min != null
+                ? parseFloat(pipe_diameter_min)
+                : (req.body.pipe_diameter_mm != null && req.body.pipe_diameter_mm !== ''
+                    ? parseFloat(req.body.pipe_diameter_mm)
+                    : null),
             preheat_temp:       preheat_temp || null,
             interpass_temp:     interpass_temp || null,
             pwht:               pwht || null,
@@ -508,7 +537,7 @@ async function updateWPS(req, res) {
         const allowed = [
             'company_id', 'wps_code', 'revision', 'welding_process',
             'material_group', 'filler_material', 'shielding_gas', 'joint_type',
-            'position', 'thickness_range_min', 'thickness_range_max',
+            'position', 'welding_positions', 'thickness_range_min', 'thickness_range_max',
             'pipe_diameter_min', 'preheat_temp', 'interpass_temp', 'pwht',
             'qualification_standard', 'status', 'notes',
             ...ISO15609_WPS_FIELDS.filter((f) => isoPresent.has(f)),
@@ -522,8 +551,13 @@ async function updateWPS(req, res) {
                 updates.push(`${field} = @${field}`);
                 if (field === 'company_id') {
                     params[field] = req.body[field] !== null ? parseInt(req.body[field]) : null;
-                } else if (['thickness_range_min', 'thickness_range_max', 'pipe_diameter_min'].includes(field)) {
-                    params[field] = req.body[field] != null ? parseFloat(req.body[field]) : null;
+                } else if ([
+                    'thickness_range_min', 'thickness_range_max', 'pipe_diameter_min',
+                    ...ISO15609_WPS_NUMERIC,
+                ].includes(field)) {
+                    params[field] = req.body[field] != null && req.body[field] !== ''
+                        ? parseFloat(req.body[field])
+                        : null;
                 } else {
                     params[field] = req.body[field] || null;
                 }
@@ -1730,4 +1764,6 @@ module.exports = {
     getWpsCoverage,
     WPQR_MANUAL_EDITABLE_FIELDS,
     ISO15609_WPS_FIELDS,
+    ISO15609_WPS_FIELDS_181,
+    ISO15609_WPS_FIELDS_182,
 };

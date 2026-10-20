@@ -1,6 +1,6 @@
 /**
- * L1 — Export Word WPS (ISO 15609-1 Annex A, programmatico).
- * Verifica OOXML valido + campi Mason (codice, giunto, materiali/spessori).
+ * L1 — Export Word WPS (ISO 15609-1:2019 Annex A, programmatico).
+ * Verifica OOXML valido + campi Mason + tabella 9 colonne + range² + n.a.
  */
 import { describe, it, expect, vi } from "vitest";
 import PizZip from "pizzip";
@@ -19,6 +19,13 @@ function blobToArrayBuffer(blob) {
     reader.onerror = reject;
     reader.readAsArrayBuffer(blob);
   });
+}
+
+function xmlOf(zip) {
+  return Object.keys(zip.files)
+    .filter((k) => /word\/.+\.xml$/.test(k))
+    .map((k) => zip.files[k].asText())
+    .join('\n');
 }
 
 /** Caso Mason minimo: FW, gruppo 1.2, spessori 5–10 mm */
@@ -57,6 +64,33 @@ describe("mapWpsToAnnexAFields", () => {
     expect(f.parentMaterialA).toBe("");
     expect(f.parentMaterialB).toBe("");
     expect(f.metalTransfer).toBe("");
+    expect(f.throat).toBe("");
+    expect(f.bakingDrying).toBe("");
+  });
+
+  it("usa position da welding_positions se position è vuoto", () => {
+    const f = mapWpsToAnnexAFields({
+      ...MASON_WPS,
+      position: "",
+      welding_positions: "PB",
+    });
+    expect(f.position).toBe("PB");
+  });
+
+  it("non usa current_type come current_range (bug DC+ in ampere)", () => {
+    const f = mapWpsToAnnexAFields({
+      ...MASON_WPS,
+      current_type: "DC+",
+      current_range: "",
+    });
+    expect(f.currentRange).toBe("");
+  });
+
+  it("MAG 135: tungsten/oscillation/plasma = n.a.", () => {
+    const f = mapWpsToAnnexAFields(MASON_WPS);
+    expect(f.tungsten).toBe("n.a.");
+    expect(f.oscillation).toBe("n.a.");
+    expect(f.plasma).toBe("n.a.");
   });
 
   it("mappa i sette campi ISO 15609-1 dal record WPS", () => {
@@ -77,6 +111,31 @@ describe("mapWpsToAnnexAFields", () => {
     expect(f.currentRange).toBe("190 A");
     expect(f.voltageRange).toBe("24 V");
     expect(f.metalTransfer).toBe("Spray arc");
+  });
+
+  it("mappa i campi 182 da WPQR (preparazione, portata, torcia)", () => {
+    const f = mapWpsToAnnexAFields({
+      ...MASON_WPS,
+      joint_preparation: "close square T",
+      cleaning_method: "grinding",
+      mechanization: "partly mechanized",
+      shielding_gas_flow_l_min_min: 12,
+      shielding_gas_flow_l_min_max: 15,
+      throat_mm: 7.5,
+      pipe_diameter_min: 60,
+      pipe_diameter_max: 120,
+      torch_angle_deg: 15,
+      bead_technique: "stringer",
+    });
+    expect(f.preparationCleaning).toBe("close square T / grinding");
+    expect(f.mechanization).toBe("partly mechanized");
+    expect(f.shieldingGasFlow).toMatch(/12/);
+    expect(f.shieldingGasFlow).toMatch(/15/);
+    expect(f.throat).toBe("7.5 mm");
+    expect(f.pipeDiameter).toMatch(/60/);
+    expect(f.pipeDiameter).toMatch(/120/);
+    expect(f.torchAngle).toBe("15\u00B0");
+    expect(f.weaving).toBe("stringer");
   });
 
   it("usa wpqrCode / companyName dagli options se assenti sul record", () => {
@@ -101,17 +160,21 @@ describe("generateWpsAnnexABlob", () => {
     expect(zip.files["word/document.xml"]).toBeTruthy();
     expect(zip.files["[Content_Types].xml"]).toBeTruthy();
 
-    const xml = zip.files["word/document.xml"].asText();
+    const xml = xmlOf(zip);
     expect(xml).toContain("WPS-MASON-FW-001");
     expect(xml).toContain("FW");
     expect(xml).toContain("1.2");
     expect(xml).toContain("Mason Srl");
     expect(xml).toMatch(/ISO 15609-1/);
     expect(xml).toContain("SystemGest");
-    expect(xml).toContain("Materiale padre A");
-    expect(xml).toContain("Trasferimento di metallo");
-    // Tabella passate vuota presente (etichetta sezione)
+    expect(xml).toContain("Parent material designation");
+    expect(xml).toContain("Mode(s) of metal transfer");
+    expect(xml).toContain("Joint design");
+    expect(xml).toContain("Welding sequences");
     expect(xml).toContain("Passata");
+    expect(xml).toContain("Type of current/polarity");
+    expect(xml).toContain("Wire feed speed");
+    expect(xml).toContain("n.a.");
   });
 
   it("stampa i sette campi ISO 15609-1 nel documento", async () => {
@@ -127,7 +190,7 @@ describe("generateWpsAnnexABlob", () => {
     });
     const ab = await blobToArrayBuffer(blob);
     const zip = new PizZip(ab);
-    const xml = zip.files["word/document.xml"].asText();
+    const xml = xmlOf(zip);
     expect(xml).toContain("24-03390-01");
     expect(xml).toContain("S355");
     expect(xml).toContain("S235");
@@ -137,29 +200,36 @@ describe("generateWpsAnnexABlob", () => {
     expect(xml).toContain("Spray arc");
   });
 
-  it("riempie la tabella passate dai test_runs della WPQR collegata", async () => {
+  it("riempie la tabella passate a 9 colonne con range² da valori WPQR", async () => {
     const blob = await generateWpsAnnexABlob(MASON_WPS, {
       wpqrCode: "24-03390-01",
       testRuns: [
         {
           run_label: "1", welding_process: "135", filler_diameter_mm: 1,
-          current_a: 190, voltage_v: 23.5, travel_speed: 5.4, heat_input_value: 0.66,
+          current_a: 190, voltage_v: 23.5, current_polarity: "DC+",
+          wire_feed_speed: 8, wire_feed_unit: "m/min",
+          travel_speed: 5.4, heat_input_value: 0.66,
         },
         {
           run_label: "2 +n", welding_process: "135", filler_diameter_mm: 1,
-          current_a: 210, voltage_v: 26.5, travel_speed: 3.4, heat_input_value: 1.31,
+          current_a: 210, voltage_v: 26.5, current_polarity: "DC+",
+          wire_feed_speed: 9, wire_feed_unit: "m/min",
+          travel_speed: 3.4, heat_input_value: 1.31,
         },
       ],
     });
     const ab = await blobToArrayBuffer(blob);
     const zip = new PizZip(ab);
-    const xml = zip.files["word/document.xml"].asText();
+    const xml = xmlOf(zip);
     expect(xml).toContain("24-03390-01");
-    expect(xml).toContain("190");
-    expect(xml).toContain("210");
-    expect(xml).toContain("0.66");
-    expect(xml).toContain("1.31");
+    expect(xml).toContain("171");
+    expect(xml).toContain("209");
+    expect(xml).toContain("189");
+    expect(xml).toContain("231");
+    expect(xml).toContain("DC+");
     expect(xml).toContain("2 +n");
+    expect(xml).toContain("m/min");
+    expect(xml).toMatch(/\u00A78\.4\.8|§8\.4\.8|8.4.8/);
   });
 
   it("exportWpsAnnexADocx chiama saveAs con nome file dal codice", async () => {

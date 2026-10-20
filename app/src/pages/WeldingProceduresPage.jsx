@@ -88,6 +88,7 @@ function WPSFormModal({ wps, defaultCompanyId, onSave, onClose, onSaved }) {
     wps_code: "", revision: "", welding_process: "", material_group: "",
     filler_material: "", shielding_gas: "", joint_type: "", position: "",
     thickness_range_min: "", thickness_range_max: "", pipe_diameter_min: "",
+    pipe_diameter_max: "", throat_mm: "",
     preheat_temp: "", interpass_temp: "", pwht: "",
     qualification_standard: "", status: "bozza", notes: "",
     // company_id: ereditato dall'azienda selezionata nel selettore scope
@@ -202,9 +203,17 @@ function WPSFormModal({ wps, defaultCompanyId, onSave, onClose, onSaved }) {
                 <label className="wp-form-label">Spessore max (mm)</label>
                 <input className="wp-form-input" type="number" step="0.1" value={form.thickness_range_max || ""} onChange={(e) => set("thickness_range_max", e.target.value)} />
               </div>
-              <div className="wp-form-group">
+                <div className="wp-form-group">
                 <label className="wp-form-label">Diametro tubo min (mm)</label>
                 <input className="wp-form-input" type="number" step="0.1" value={form.pipe_diameter_min || ""} onChange={(e) => set("pipe_diameter_min", e.target.value)} />
+              </div>
+              <div className="wp-form-group">
+                <label className="wp-form-label">Diametro tubo max (mm)</label>
+                <input className="wp-form-input" type="number" step="0.1" value={form.pipe_diameter_max || ""} onChange={(e) => set("pipe_diameter_max", e.target.value)} />
+              </div>
+              <div className="wp-form-group">
+                <label className="wp-form-label">Gola a (mm)</label>
+                <input className="wp-form-input" type="number" step="0.1" value={form.throat_mm || ""} onChange={(e) => set("throat_mm", e.target.value)} />
               </div>
               <div className="wp-form-group">
                 <label className="wp-form-label">Temp. preriscaldo</label>
@@ -276,6 +285,12 @@ function WPSFormModal({ wps, defaultCompanyId, onSave, onClose, onSaved }) {
 // ── Genera WPS da WPQR (P1) ───────────────────────────────────────────────────
 
 export function draftToCreatePayload(draft, companyId, wpsCode) {
+  const pipe = draft.pipe_diameter_min != null
+    ? draft.pipe_diameter_min
+    : (draft.pipe_diameter_mm != null ? draft.pipe_diameter_mm : null);
+  const pipeMax = draft.pipe_diameter_max != null
+    ? draft.pipe_diameter_max
+    : (draft.pipe_diameter_mm != null ? draft.pipe_diameter_mm : null);
   return {
     company_id: companyId || null,
     wps_code: wpsCode,
@@ -285,9 +300,14 @@ export function draftToCreatePayload(draft, companyId, wpsCode) {
     filler_material: draft.filler_material || null,
     shielding_gas: draft.shielding_gas || null,
     joint_type: draft.joint_type || null,
-    position: draft.welding_positions || null,
+    position: draft.position || draft.welding_positions || null,
+    welding_positions: draft.welding_positions || draft.position || null,
     thickness_range_min: draft.thickness_range_min != null ? draft.thickness_range_min : null,
     thickness_range_max: draft.thickness_range_max != null ? draft.thickness_range_max : null,
+    pipe_diameter_min: pipe,
+    pipe_diameter_max: pipeMax,
+    pipe_diameter_mm: draft.pipe_diameter_mm != null ? draft.pipe_diameter_mm : null,
+    throat_mm: draft.throat_mm != null ? draft.throat_mm : null,
     preheat_temp: draft.preheat_temp || null,
     interpass_temp: draft.interpass_temp || null,
     pwht: draft.pwht || null,
@@ -300,6 +320,21 @@ export function draftToCreatePayload(draft, companyId, wpsCode) {
     current_range: draft.current_range || null,
     voltage_range: draft.voltage_range || null,
     metal_transfer: draft.metal_transfer || null,
+    joint_preparation: draft.joint_preparation || null,
+    cleaning_method: draft.cleaning_method || null,
+    mechanization: draft.mechanization || null,
+    shielding_gas_flow_l_min_min: draft.shielding_gas_flow_l_min_min != null
+      ? draft.shielding_gas_flow_l_min_min : null,
+    shielding_gas_flow_l_min_max: draft.shielding_gas_flow_l_min_max != null
+      ? draft.shielding_gas_flow_l_min_max : null,
+    post_heating: draft.post_heating || null,
+    pwht_details: draft.pwht_details || null,
+    bead_technique: draft.bead_technique || null,
+    contact_tube_distance_mm_min: draft.contact_tube_distance_mm_min != null
+      ? draft.contact_tube_distance_mm_min : null,
+    contact_tube_distance_mm_max: draft.contact_tube_distance_mm_max != null
+      ? draft.contact_tube_distance_mm_max : null,
+    torch_angle_deg: draft.torch_angle_deg != null ? draft.torch_angle_deg : null,
     status: "bozza",
     notes: draft.wpqr_ref
       ? `Generata da WPQR ${draft.wpqr_ref}`

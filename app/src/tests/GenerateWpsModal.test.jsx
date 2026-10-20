@@ -9,7 +9,7 @@ import {
   MASON_WPS_GENERATE_DEFAULTS,
   WPS_GENERATE_MASON_CHIP,
 } from "../utils/aiAssistantContext";
-import { GenerateWpsModal } from "../pages/WeldingProceduresPage";
+import { GenerateWpsModal, draftToCreatePayload } from "../pages/WeldingProceduresPage";
 
 vi.mock("../services/apiService", () => ({
   default: {
@@ -139,5 +139,30 @@ describe("GenerateWpsModal (P1-B)", () => {
     expect(payload.preheat_temp).toBe("20 °C");
     expect(payload.interpass_temp).toBe("max 200 °C");
     expect(onSaved).toHaveBeenCalled();
+  });
+});
+
+describe("draftToCreatePayload", () => {
+  it("persiste throat, diametro e campi 182, e mappa position da welding_positions", () => {
+    const p = draftToCreatePayload({
+      welding_positions: "PB",
+      throat_mm: 7.5,
+      pipe_diameter_mm: 88.9,
+      joint_preparation: "square T",
+      mechanization: "manual",
+      torch_angle_deg: 12,
+      wpqr_ref: "X",
+      wpqr_id: 3,
+    }, 51, "WPS-1");
+    expect(p.position).toBe("PB");
+    expect(p.welding_positions).toBe("PB");
+    expect(p.throat_mm).toBe(7.5);
+    expect(p.pipe_diameter_min).toBe(88.9);
+    expect(p.pipe_diameter_max).toBe(88.9);
+    expect(p.joint_preparation).toBe("square T");
+    expect(p.mechanization).toBe("manual");
+    expect(p.torch_angle_deg).toBe(12);
+    expect(p.company_id).toBe(51);
+    expect(p.wps_code).toBe("WPS-1");
   });
 });
