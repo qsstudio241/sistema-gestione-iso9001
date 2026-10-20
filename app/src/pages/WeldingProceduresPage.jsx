@@ -328,19 +328,12 @@ export async function loadAnnexASketchBuffers(record = {}) {
     return !!(m && (m.slot === "combined" || m.status === "da dividere"));
   };
   const pickSequenceId = (jointSketchId) => {
-    const sketches = Object.values(metaById);
-    const seqs = sketches.filter((s) => s.slot === "welding_sequence");
-    if (!seqs.length) return null;
     const jointMeta = metaById[jointSketchId];
-    if (jointMeta && jointMeta.crop_bbox_pt) {
-      const match = seqs.find((s) => s.crop_bbox_pt === jointMeta.crop_bbox_pt);
-      if (match) return match.id;
-    }
-    if (jointMeta && jointMeta.source_page != null) {
-      const match = seqs.find((s) => s.source_page === jointMeta.source_page);
-      if (match) return match.id;
-    }
-    return seqs[0].id;
+    if (!jointMeta || !jointMeta.crop_bbox_pt) return null;
+    const match = Object.values(metaById).find((s) => (
+      s.slot === "welding_sequence" && s.crop_bbox_pt === jointMeta.crop_bbox_pt
+    ));
+    return match ? match.id : null;
   };
 
   const sameId = jointId && seqId && Number(seqId) === Number(jointId);

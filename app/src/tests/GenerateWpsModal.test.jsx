@@ -266,4 +266,21 @@ describe("loadAnnexASketchBuffers", () => {
     expect(apiService.getWeldSketchBlob).toHaveBeenCalledWith(7);
     expect(apiService.getWeldSketchBlob).toHaveBeenCalledWith(8);
   });
+
+  it("joint senza sequence_id non prende una sequence estranea della WPQR", async () => {
+    apiService.getWpqrSketches.mockResolvedValue({
+      sketches: [
+        { id: 7, slot: "joint_design", status: "confermato" },
+        { id: 8, slot: "welding_sequence", status: "confermato", crop_bbox_pt: "split:10" },
+      ],
+    });
+    const out = await loadAnnexASketchBuffers({
+      joint_sketch_id: 7,
+      sequence_sketch_id: null,
+      wpqr_id: 38,
+    });
+    expect(out.sequence).toBeUndefined();
+    expect(out.sequencePending).toBeUndefined();
+    expect(apiService.getWeldSketchBlob).toHaveBeenCalledTimes(1);
+  });
 });
