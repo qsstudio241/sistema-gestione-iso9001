@@ -36,9 +36,10 @@ vi.mock("../utils/aiAssistantContext", async (importOriginal) => {
   };
 });
 
-vi.mock("../utils/wordExportWps", () => ({
-  exportWpsAnnexADocx: vi.fn(),
-}));
+vi.mock("../utils/wordExportWps", async (importOriginal) => {
+  const actual = await importOriginal();
+  return { ...actual, exportWpsAnnexADocx: vi.fn() };
+});
 
 import WeldingProceduresPage from "../pages/WeldingProceduresPage";
 

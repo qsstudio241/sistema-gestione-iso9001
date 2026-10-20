@@ -22,7 +22,7 @@ import {
   consumeWpsGenerateIntent,
   MASON_WPS_GENERATE_DEFAULTS,
 } from "../utils/aiAssistantContext";
-import { exportWpsAnnexADocx } from "../utils/wordExportWps";
+import { exportWpsAnnexADocx, pickWpqrTestRuns } from "../utils/wordExportWps";
 import { ProtectedFileLink } from "../components/ProtectedFile";
 import WeldSketchPicker, { WpqrSketchReview } from "../components/WeldSketchPicker";
 import {
@@ -1394,9 +1394,11 @@ function WeldingProceduresPage() {
       if (linked?.id) {
         try {
           const tr = await apiService.getWpqrTestRuns(linked.id);
-          testRuns = tr?.runs || [];
+          testRuns = pickWpqrTestRuns(tr);
         } catch { /* tabella passate resta vuota */ }
       }
+      if (!testRuns.length) testRuns = pickWpqrTestRuns(record);
+      if (!testRuns.length && linked) testRuns = pickWpqrTestRuns(linked);
       const sketches = await loadAnnexASketchBuffers(record);
       await exportWpsAnnexADocx(record, {
         companyName: record.company_name || w.company_name || companyScopeName || "",

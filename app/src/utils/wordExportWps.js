@@ -64,6 +64,41 @@ function s(value) {
   return String(value);
 }
 
+/** Enum WPQR/WPS (snake_case o inglese) → etichetta bilingue Annex A. */
+const ANNEX_ENUM_LABELS = {
+  manual: 'Manuale / Manual',
+  partly_mechanized: 'Parzialmente meccanizzata / Partly mechanized',
+  fully_mechanized: 'Meccanizzata / Fully mechanized',
+  mechanized: 'Meccanizzata / Fully mechanized',
+  automatic: 'Automatica / Automatic',
+  stringer: 'Cordone diritto / Stringer',
+  weave: 'Pendolamento / Weaving',
+  weaving: 'Pendolamento / Weaving',
+  oscillated: 'Pendolamento / Weaving',
+  single: 'Mono-passata / Single run',
+  multi: 'Multi-passata / Multi run',
+};
+
+export function formatAnnexEnum(value) {
+  const raw = s(value).trim();
+  if (!raw) return '';
+  const key = raw.toLowerCase().replace(/[\s-]+/g, '_');
+  return ANNEX_ENUM_LABELS[key] || raw;
+}
+
+/** Accetta `{ runs }`, `{ data: { runs } }`, array, o `test_runs` sul record. */
+export function pickWpqrTestRuns(payload) {
+  if (!payload) return [];
+  if (Array.isArray(payload)) return payload;
+  const nested = payload.runs
+    || payload.test_runs
+    || payload.data?.runs
+    || payload.data?.test_runs;
+  if (Array.isArray(nested)) return nested;
+  if (Array.isArray(payload.data)) return payload.data;
+  return [];
+}
+
 function thicknessRange(wps) {
   const min = wps.thickness_range_min;
   const max = wps.thickness_range_max;
@@ -161,7 +196,7 @@ export function mapWpsToAnnexAFields(wps = {}, options = {}) {
     throat: wps.throat_mm != null && wps.throat_mm !== '' ? `${wps.throat_mm} mm` : '',
     depositedWeldMetal: s(wps.deposited_thickness),
     preparationCleaning: preparationCleaning(wps),
-    mechanization: s(wps.mechanization),
+    mechanization: formatAnnexEnum(wps.mechanization),
     shieldingGasFlow: formatAnnexPair(
       wps.shielding_gas_flow_l_min_min,
       wps.shielding_gas_flow_l_min_max,
@@ -176,7 +211,7 @@ export function mapWpsToAnnexAFields(wps = {}, options = {}) {
     preheatMaintenance: s(wps.preheat_maintenance_temp),
     pwhtDetails: s(wps.pwht_details),
     heatingCoolingRates: s(wps.heating_cooling_rates),
-    weaving: s(wps.bead_technique),
+    weaving: formatAnnexEnum(wps.bead_technique),
     oscillation: naIfMag(mag, wps.oscillation_details),
     pulseDetails: s(wps.pulse_details),
     contactTube: formatAnnexPair(
@@ -406,7 +441,7 @@ function buildRunTable(runs = []) {
     'Voltage\u00B2 V / Tensione\u00B2 V',
     'Type of current/polarity / Tipo di corrente/polarit\u00E0',
     'Wire feed speed\u00B2 / Velocit\u00E0 avanzamento filo\u00B2',
-    'Run out length\u00B9\u00B2 / travel speed\u00B9 / Lunghezza di deposito\u00B9\u00B2 / velocit\u00E0\u00B9',
+    'Run out length\u00B9\u00B2 / travel speed\u00B2 / Lunghezza di deposito\u00B9\u00B2 / velocit\u00E0\u00B2',
     'Arc energy\u00B9\u00B2 / Heat input\u00B9\u00B2 / Energia d\u2019arco\u00B9\u00B2 / Apporto termico\u00B9\u00B2',
   ];
   const keys = ['run', 'process', 'filler', 'current', 'voltage', 'polarity', 'wire', 'speed', 'heat'];
@@ -448,10 +483,8 @@ function captionLine(en, it) {
  */
 export function buildWpsAnnexA2019Document(wps, options = {}) {
   const f = mapWpsToAnnexAFields(wps, options);
-  const testRuns = options.testRuns || wps.test_runs || [];
-  const wpsLine = [f.wpsNo, f.revision ? `Rev. ${f.revision}` : '', f.date]
-    .filter(Boolean)
-    .join(', ');
+  const testRuns = pickWpqrTestRuns(options.testRuns) || [];
+  const fromRecord = testRuns.length ? testRuns : pickWpqrTestRuns(wps);
 
   const headerA = new Table({
     width: { size: PAGE_W, type: WidthType.DXA },
@@ -460,10 +493,18 @@ export function buildWpsAnnexA2019Document(wps, options = {}) {
       fourColRow(
         'Welding Procedure Specification:',
         'Specifica di procedura di saldatura (WPS) n.:',
-        wpsLine,
+        f.wpsNo,
         'Method of preparation and cleaning:',
         'Metodo di preparazione e pulizia:',
         f.preparationCleaning
+      ),
+      fourColRow(
+        'Revision:',
+        'Revisione:',
+        f.revision,
+        'Date:',
+        'Data:',
+        f.date
       ),
       fourColRow(
         'WPQR No.:',
@@ -708,20 +749,6 @@ export function buildWpsAnnexA2019Document(wps, options = {}) {
             italics: true, size: 14, color: '888888',
           })],
         }),
-        ...(f.heatInput || f.currentRange || f.voltageRange
-          ? [new Paragraph({
-            alignment: AlignmentType.CENTER,
-            spacing: { after: 80 },
-            children: [run(
-              [
-                f.heatInput ? `Heat input ${f.heatInput}` : '',
-                f.currentRange ? `I ${f.currentRange}` : '',
-                f.voltageRange ? `U ${f.voltageRange}` : '',
-              ].filter(Boolean).join('   \u00B7   '),
-              { size: 14, color: '555555' }
-            )],
-          })]
-          : []),
         headerA,
         captionLine(
           'Weld preparation details (Sketch)\u00B9',
@@ -729,7 +756,7 @@ export function buildWpsAnnexA2019Document(wps, options = {}) {
         ),
         buildSketchTable(options.sketches || wps.sketches || {}),
         captionLine('Welding details', 'Dettagli di saldatura'),
-        buildRunTable(testRuns),
+        buildRunTable(fromRecord),
         new Paragraph({
           spacing: { before: 80, after: 80 },
           children: [run(ANNEX_A_RANGE_NOTE, { italics: true, size: 14, color: '555555' })],

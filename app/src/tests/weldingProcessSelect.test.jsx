@@ -26,7 +26,10 @@ vi.mock("../services/apiService", () => ({
     baseUrl: "",
   },
 }));
-vi.mock("../utils/wordExportWps", () => ({ exportWpsAnnexADocx: vi.fn() }));
+vi.mock("../utils/wordExportWps", async (importOriginal) => {
+  const actual = await importOriginal();
+  return { ...actual, exportWpsAnnexADocx: vi.fn() };
+});
 vi.mock("../components/AskAiButton", () => ({ default: () => null }));
 vi.mock("../components/WpsUploadButton", () => ({ default: () => null }));
 vi.mock("../components/WpqrUploadButton", () => ({ default: () => null }));

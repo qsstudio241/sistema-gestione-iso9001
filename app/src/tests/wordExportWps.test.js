@@ -8,6 +8,8 @@ import {
   mapWpsToAnnexAFields,
   generateWpsAnnexABlob,
   exportWpsAnnexADocx,
+  formatAnnexEnum,
+  pickWpqrTestRuns,
 } from "../utils/wordExportWps.js";
 
 vi.mock("file-saver", () => ({ saveAs: vi.fn(), default: { saveAs: vi.fn() } }));
@@ -128,14 +130,14 @@ describe("mapWpsToAnnexAFields", () => {
       bead_technique: "stringer",
     });
     expect(f.preparationCleaning).toBe("close square T / grinding");
-    expect(f.mechanization).toBe("partly mechanized");
+    expect(f.mechanization).toBe("Parzialmente meccanizzata / Partly mechanized");
+    expect(f.weaving).toBe("Cordone diritto / Stringer");
     expect(f.shieldingGasFlow).toMatch(/12/);
     expect(f.shieldingGasFlow).toMatch(/15/);
     expect(f.throat).toBe("7.5 mm");
     expect(f.pipeDiameter).toMatch(/60/);
     expect(f.pipeDiameter).toMatch(/120/);
     expect(f.torchAngle).toBe("15\u00B0");
-    expect(f.weaving).toBe("stringer");
   });
 
   it("usa wpqrCode / companyName dagli options se assenti sul record", () => {
@@ -229,11 +231,70 @@ describe("generateWpsAnnexABlob", () => {
     expect(xml).toContain("DC+");
     expect(xml).toContain("2 +n");
     expect(xml).toContain("m/min");
-    expect(xml).toContain("5.4");
-    expect(xml).toContain("3.4");
-    expect(xml).not.toContain("4.86");
-    expect(xml).not.toContain("5.94");
+    expect(xml).toContain("4.86");
+    expect(xml).toContain("5.94");
+    expect(xml).toContain("3.06");
+    expect(xml).toContain("3.74");
     expect(xml).toMatch(/\u00A78\.4\.8|§8\.4\.8|8.4.8/);
+  });
+
+  it("WPS n. è solo il codice; revisione e data sono celle distinte", async () => {
+    const blob = await generateWpsAnnexABlob({
+      ...MASON_WPS,
+      revision: "0",
+      updated_at: "2026-10-20T08:00:00.000Z",
+    });
+    const xml = xmlOf(new PizZip(await blobToArrayBuffer(blob)));
+    expect(xml).toContain("WPS-MASON-FW-001");
+    expect(xml).not.toMatch(/WPS-MASON-FW-001,\s*Rev\./);
+    expect(xml).toContain("Revision");
+    expect(xml).toContain("Revisione");
+    expect(xml).toContain("20/10/2026");
+  });
+
+  it("stampa etichette bilingue per mechanization e non lascia l'enum grezzo", async () => {
+    const blob = await generateWpsAnnexABlob({
+      ...MASON_WPS,
+      mechanization: "partly_mechanized",
+    });
+    const xml = xmlOf(new PizZip(await blobToArrayBuffer(blob)));
+    expect(xml).toContain("Parzialmente meccanizzata");
+    expect(xml).toContain("Partly mechanized");
+    expect(xml).not.toContain("partly_mechanized");
+  });
+
+  it("mostra HI/I/U solo nell'intestazione di pagina, non come sottotitolo", async () => {
+    const blob = await generateWpsAnnexABlob({
+      ...MASON_WPS,
+      heat_input: "0,8 kJ/mm",
+      current_range: "190 A",
+      voltage_range: "24 V",
+    });
+    const xml = xmlOf(new PizZip(await blobToArrayBuffer(blob)));
+    expect(xml).toContain("HI 0,8 kJ/mm");
+    expect(xml).toContain("I 190 A");
+    expect(xml).toContain("U 24 V");
+    expect(xml).not.toContain("Heat input 0,8 kJ/mm");
+  });
+
+  it("formatAnnexEnum traduce gli enum WPQR", () => {
+    expect(formatAnnexEnum("partly_mechanized")).toBe("Parzialmente meccanizzata / Partly mechanized");
+    expect(formatAnnexEnum("partly mechanized")).toBe("Parzialmente meccanizzata / Partly mechanized");
+    expect(formatAnnexEnum("fully_mechanized")).toBe("Meccanizzata / Fully mechanized");
+    expect(formatAnnexEnum("manual")).toBe("Manuale / Manual");
+    expect(formatAnnexEnum("automatic")).toBe("Automatica / Automatic");
+    expect(formatAnnexEnum("stringer")).toBe("Cordone diritto / Stringer");
+    expect(formatAnnexEnum("Spray arc")).toBe("Spray arc");
+    expect(formatAnnexEnum("")).toBe("");
+  });
+
+  it("pickWpqrTestRuns accetta wrappers API", () => {
+    const runs = [{ run_label: "1", wire_feed_speed: 8 }];
+    expect(pickWpqrTestRuns({ runs })).toEqual(runs);
+    expect(pickWpqrTestRuns({ data: { runs } })).toEqual(runs);
+    expect(pickWpqrTestRuns({ test_runs: runs })).toEqual(runs);
+    expect(pickWpqrTestRuns(runs)).toEqual(runs);
+    expect(pickWpqrTestRuns(null)).toEqual([]);
   });
 
   it("exportWpsAnnexADocx chiama saveAs con nome file dal codice", async () => {
