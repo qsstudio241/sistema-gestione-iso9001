@@ -15,6 +15,10 @@ vi.mock("../services/apiService", () => ({
   default: {
     generateWPS: vi.fn(),
     createWPS: vi.fn(),
+    getWeldSketchBlob: vi.fn(),
+    uploadWeldSketch: vi.fn(),
+    getWpqrSketches: vi.fn().mockResolvedValue({ sketches: [] }),
+    confirmWeldSketch: vi.fn(),
   },
 }));
 
@@ -164,5 +168,14 @@ describe("draftToCreatePayload", () => {
     expect(p.torch_angle_deg).toBe(12);
     expect(p.company_id).toBe(51);
     expect(p.wps_code).toBe("WPS-1");
+  });
+
+  it("persiste gli id schizzo scelti", () => {
+    const p = draftToCreatePayload({
+      joint_sketch_id: 44,
+      sequence_sketch_id: null,
+    }, 51, "WPS-SK");
+    expect(p.joint_sketch_id).toBe(44);
+    expect(p.sequence_sketch_id).toBeNull();
   });
 });

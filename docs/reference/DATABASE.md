@@ -277,11 +277,27 @@ created_by       INT           NULL
 
 > UNIQUE `(wps_id, wpqr_id)`; indice `(organization_id, wpqr_id)`. Nessun backfill; `wpqr_records.wps_id` resta invariata. Poiché le FK non hanno `ON DELETE`, ogni cancellazione di WPS/WPQR/azienda deve eliminare prima i link (e le passate): vedi `deleteWPS` / `deleteWPQR` / `hardDeleteCompany`.
 
-### `welding_procedures` — campi 15609-1 *(migration 181 — su TEST; 182 in PR)*
+### `welding_procedures` — campi 15609-1 *(migration 181 — su TEST; 182/183 in PR)*
 
 181 (nullable): `wpqr_ref`, `parent_material_a`, `parent_material_b` (§4.2–4.3.1), `heat_input` (§4.4.17), `current_range` / `voltage_range` (§4.4.9), `metal_transfer` (§4.5).
 
 182 (nullable, carry-over da WPQR + persistenza richiesta): `joint_preparation`, `cleaning_method`, `mechanization`, `shielding_gas_flow_l_min_min/max`, `post_heating`, `pwht_details`, `bead_technique`, `contact_tube_distance_mm_min/max`, `torch_angle_deg`, `throat_mm`, `pipe_diameter_max`. Nessun backfill. Runner: `backend/scripts/run-migration-182-vps.js`. PROD: non applicare.
+
+183 (nullable su WPS): `joint_sketch_id`, `sequence_sketch_id`. Tabella `weld_sketches` (libreria PNG per studio, `organization_id` NOT NULL, status `bozza`/`confermato`). Nessun FK, nessun backfill. Runner: `backend/scripts/run-migration-183-vps.js`. PROD: non applicare.
+
+### `weld_sketches` — libreria schizzi Annex A *(migration 183 in PR)*
+
+```
+id INT IDENTITY PK
+organization_id INT NOT NULL
+company_id INT NULL          -- NULL = libreria di studio
+slot NVARCHAR(20)            -- joint_design | welding_sequence | combined | hardness_map
+source_kind NVARCHAR(20)     -- wpqr_crop | upload | library_std
+wpqr_id INT NULL             -- crop da WPQR (niente FK)
+file_url NVARCHAR(500)       -- PNG in /uploads/sketches/<org>/...
+status NVARCHAR(20)          -- bozza (default) | confermato
++ metadati giunto (joint_type, preparation, product_form, spessori, processo, posizione, run_mode)
+```
 
 ---
 
@@ -305,8 +321,8 @@ Procedura pre-VPS: [`docs/how-to/database-migrations.md`](../how-to/database-mig
 | Voce | Stato (13/10/2026) |
 |---|---|
 | Ultimo `NNN` su `origin/main` | **181** (`181_wps_iso15609_content.sql`) |
-| In PR (file, **non applicate** né su TEST né su PROD) | **182** `182_wps_iso15609_wpqr_carry.sql` (companion verify/rollback, runner `backend/scripts/run-migration-182-vps.js`) |
-| Prossimo libero da riservare | **183** |
+| In PR (file, **non applicate** né su TEST né su PROD) | **182** `182_wps_iso15609_wpqr_carry.sql`; **183** `183_weld_sketches.sql` |
+| Prossimo libero da riservare | **184** |
 | Gate intestazione + companion | Obbligatorio da **≥ 169**. Storico grandfathered. |
 | Unicità prefisso | L1 `migrationNumberUniqueness.test.js` da 100 in poi (esclusi `NNN_verify.sql` / `NNN_rollback.sql`) |
 | Intestazione | L1 `migrationHeaderContract.test.js` |

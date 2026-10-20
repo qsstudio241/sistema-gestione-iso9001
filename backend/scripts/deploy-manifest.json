@@ -215,6 +215,7 @@
         "src/services/wpsIngest.service.js",
         "src/services/wpsWpqrLinks.service.js",
         "src/services/wpsGenerator.service.js",
+        "src/services/weldSketches.service.js",
         "src/services/normBroker.service.js",
         "src/services/librarySourceRequest.service.js",
         "src/services/gapAnalysis.service.js",

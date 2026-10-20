@@ -24,6 +24,7 @@ import {
 } from "../utils/aiAssistantContext";
 import { exportWpsAnnexADocx } from "../utils/wordExportWps";
 import { ProtectedFileLink } from "../components/ProtectedFile";
+import WeldSketchPicker, { WpqrSketchReview } from "../components/WeldSketchPicker";
 import {
   isIso14555,
   describeQualifiedParentThicknessRange14555,
@@ -284,6 +285,36 @@ function WPSFormModal({ wps, defaultCompanyId, onSave, onClose, onSaved }) {
 
 // ── Genera WPS da WPQR (P1) ───────────────────────────────────────────────────
 
+async function sketchBufferFromId(id) {
+  if (id == null || id === "") return null;
+  try {
+    const blob = await apiService.getWeldSketchBlob(id);
+    const data = new Uint8Array(await blob.arrayBuffer());
+    const type = /jpe?g/i.test(blob.type) ? "jpg" : "png";
+    return { data, type };
+  } catch {
+    return null;
+  }
+}
+
+export async function loadAnnexASketchBuffers(record = {}) {
+  const jointId = record.joint_sketch_id;
+  const seqId = record.sequence_sketch_id;
+  if (!jointId && !seqId) return {};
+  if (jointId && (!seqId || Number(seqId) === Number(jointId))) {
+    const combined = await sketchBufferFromId(jointId);
+    return combined ? { combined } : {};
+  }
+  const [joint, sequence] = await Promise.all([
+    sketchBufferFromId(jointId),
+    sketchBufferFromId(seqId),
+  ]);
+  const out = {};
+  if (joint) out.joint = joint;
+  if (sequence) out.sequence = sequence;
+  return out;
+}
+
 export function draftToCreatePayload(draft, companyId, wpsCode) {
   const pipe = draft.pipe_diameter_min != null
     ? draft.pipe_diameter_min
@@ -335,6 +366,8 @@ export function draftToCreatePayload(draft, companyId, wpsCode) {
     contact_tube_distance_mm_max: draft.contact_tube_distance_mm_max != null
       ? draft.contact_tube_distance_mm_max : null,
     torch_angle_deg: draft.torch_angle_deg != null ? draft.torch_angle_deg : null,
+    joint_sketch_id: draft.joint_sketch_id != null ? draft.joint_sketch_id : null,
+    sequence_sketch_id: draft.sequence_sketch_id != null ? draft.sequence_sketch_id : null,
     status: "bozza",
     notes: draft.wpqr_ref
       ? `Generata da WPQR ${draft.wpqr_ref}`
@@ -368,6 +401,10 @@ export function GenerateWpsModal({
   const [error, setError] = useState(null);
   const [result, setResult] = useState(null);
   const [wpsCode, setWpsCode] = useState("");
+  const [sketchPick, setSketchPick] = useState({
+    joint_sketch_id: null,
+    sequence_sketch_id: null,
+  });
 
   const set = (key, val) => setForm((f) => ({ ...f, [key]: val }));
 
@@ -391,6 +428,18 @@ export function GenerateWpsModal({
 
       const res = await apiService.generateWPS(payload);
       setResult(res);
+      const sug = res.sketch_suggestions || {};
+      const ownCombined = (sug.combined || []).find((s) => s.score === 100);
+      const ownJoint = (sug.joint_design || []).find((s) => s.score === 100);
+      const ownSeq = (sug.welding_sequence || []).find((s) => s.score === 100);
+      if (ownCombined) {
+        setSketchPick({ joint_sketch_id: ownCombined.id, sequence_sketch_id: null });
+      } else {
+        setSketchPick({
+          joint_sketch_id: ownJoint ? ownJoint.id : null,
+          sequence_sketch_id: ownSeq ? ownSeq.id : null,
+        });
+      }
       if (res.wps_draft) {
         const jt = res.wps_draft.joint_type || form.joint_type || "GEN";
         const ma = form.parent_material_a.trim() || "A";
@@ -414,7 +463,11 @@ export function GenerateWpsModal({
     setError(null);
     try {
       await apiService.createWPS(
-        draftToCreatePayload(result.wps_draft, defaultCompanyId, wpsCode.trim())
+        draftToCreatePayload({
+          ...result.wps_draft,
+          joint_sketch_id: sketchPick.joint_sketch_id,
+          sequence_sketch_id: sketchPick.sequence_sketch_id,
+        }, defaultCompanyId, wpsCode.trim())
       );
       onSaved();
     } catch (err) {
@@ -607,6 +660,17 @@ export function GenerateWpsModal({
                     </div>
                   )}
                 </div>
+                <WeldSketchPicker
+                  suggestions={result.sketch_suggestions || {}}
+                  selectedJointId={sketchPick.joint_sketch_id}
+                  selectedSequenceId={sketchPick.sequence_sketch_id}
+                  companyId={defaultCompanyId}
+                  jointType={result.wps_draft.joint_type || form.joint_type}
+                  onChange={(next) => setSketchPick({
+                    joint_sketch_id: next.joint_sketch_id,
+                    sequence_sketch_id: next.sequence_sketch_id,
+                  })}
+                />
               </div>
             )}
 
@@ -1116,6 +1180,8 @@ function WPQRFormModal({ wpqr, wpsList, defaultCompanyId, onSave, onClose, onSav
               </div>
             </div>
 
+            <WpqrSketchReview wpqrId={savedIdRef.current} />
+
             <div className="wp-form-section-title">Passate di prova (pag.2 verbale)</div>
             <WpqrTestRunsSection
               wpqrId={savedIdRef.current}
@@ -1331,10 +1397,12 @@ function WeldingProceduresPage() {
           testRuns = tr?.runs || [];
         } catch { /* tabella passate resta vuota */ }
       }
+      const sketches = await loadAnnexASketchBuffers(record);
       await exportWpsAnnexADocx(record, {
         companyName: record.company_name || w.company_name || companyScopeName || "",
         wpqrCode: linked?.wpqr_code || linked?.reference_number || "",
         testRuns,
+        sketches,
       });
     } catch (err) {
       setError(err?.message || "Errore export Word WPS");

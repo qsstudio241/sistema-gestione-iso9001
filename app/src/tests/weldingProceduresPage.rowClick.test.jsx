@@ -28,6 +28,8 @@ vi.mock("../services/apiService", () => ({
     updateWPS: vi.fn(),
     getWPS: vi.fn(),
     getWpqrTestRuns: vi.fn(),
+    getWpqrSketches: vi.fn().mockResolvedValue({ sketches: [] }),
+    getWeldSketchBlob: vi.fn(),
     saveWpqrTestRuns: vi.fn(),
     fetchProtectedFileBlob: vi.fn(),
     baseUrl: "",

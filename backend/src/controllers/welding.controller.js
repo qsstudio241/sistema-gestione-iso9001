@@ -382,12 +382,33 @@ async function generateWPS(req, res) {
             },
         });
 
+        let sketch_suggestions = { joint_design: [], welding_sequence: [], combined: [] };
+        if (result.wpqr_used && result.wpqr_used.id) {
+            try {
+                const { suggestForWps } = require('../services/weldSketches.service');
+                sketch_suggestions = await suggestForWps({
+                    organizationId: organization_id,
+                    companyId: requestedCompany,
+                    wpqr: result.wpqr_used,
+                    request: {
+                        joint_type: joint_type != null ? String(joint_type).trim() : '',
+                        welding_process: welding_process ? String(welding_process).trim() : undefined,
+                        thickness_a_mm: tA,
+                        thickness_b_mm: tB,
+                    },
+                });
+            } catch (sketchErr) {
+                logger.warn('WPS generate: sketch suggestions skipped', { error: sketchErr.message });
+            }
+        }
+
         res.json({
             success: true,
             status: result.status,
             wpqr_used: result.wpqr_used,
             candidates: result.candidates,
             wps_draft: result.wps_draft,
+            sketch_suggestions,
             extensions_needed: result.extensions_needed,
             questions: result.questions || [],
             warnings: result.warnings,
@@ -421,10 +442,22 @@ async function createWPS(req, res) {
         const isoPresent = await presentIso15609WpsColumns();
         const isoCols = ISO15609_WPS_FIELDS.filter((f) => isoPresent.has(f));
         const isoValues = iso15609WpsValues(req.body);
-        const extraCols = isoCols.length ? `,\n                ${isoCols.join(', ')}` : '';
-        const extraVals = isoCols.length ? `,\n                ${isoCols.map((f) => `@${f}`).join(', ')}` : '';
+        let sketchCols = [];
+        try {
+            const { presentWpsSketchColumns } = require('../services/weldSketches.service');
+            const sketchPresent = await presentWpsSketchColumns();
+            sketchCols = ['joint_sketch_id', 'sequence_sketch_id'].filter((f) => sketchPresent.has(f));
+        } catch (_) { sketchCols = []; }
+        const extraColsList = [...isoCols, ...sketchCols];
+        const extraCols = extraColsList.length ? `,\n                ${extraColsList.join(', ')}` : '';
+        const extraVals = extraColsList.length ? `,\n                ${extraColsList.map((f) => `@${f}`).join(', ')}` : '';
         const extraParams = {};
         for (const f of isoCols) extraParams[f] = isoValues[f];
+        for (const f of sketchCols) {
+            const raw = req.body[f];
+            extraParams[f] = raw != null && raw !== '' ? parseInt(raw, 10) : null;
+            if (!Number.isSafeInteger(extraParams[f]) || extraParams[f] <= 0) extraParams[f] = null;
+        }
 
         const result = await query(`
             INSERT INTO welding_procedures (
@@ -534,6 +567,12 @@ async function updateWPS(req, res) {
             && await denyOutsideCompany(res, req.user, req.body.company_id, 'write')) return;
 
         const isoPresent = await presentIso15609WpsColumns();
+        let sketchCols = [];
+        try {
+            const { presentWpsSketchColumns } = require('../services/weldSketches.service');
+            const sketchPresent = await presentWpsSketchColumns();
+            sketchCols = ['joint_sketch_id', 'sequence_sketch_id'].filter((f) => sketchPresent.has(f));
+        } catch (_) { sketchCols = []; }
         const allowed = [
             'company_id', 'wps_code', 'revision', 'welding_process',
             'material_group', 'filler_material', 'shielding_gas', 'joint_type',
@@ -541,6 +580,7 @@ async function updateWPS(req, res) {
             'pipe_diameter_min', 'preheat_temp', 'interpass_temp', 'pwht',
             'qualification_standard', 'status', 'notes',
             ...ISO15609_WPS_FIELDS.filter((f) => isoPresent.has(f)),
+            ...sketchCols,
         ];
 
         const updates = [];
@@ -1738,6 +1778,143 @@ async function getWpsCoverage(req, res) {
     }
 }
 
+function sendSketchError(res, error, fallbackCode, fallbackText) {
+    if (error && error.status) {
+        return res.status(error.status).json({ error: error.message, code: error.code || fallbackCode });
+    }
+    logger.error(fallbackText, { error: error && error.message });
+    return res.status(500).json({ error: fallbackText, code: fallbackCode });
+}
+
+async function listWpqrSketches(req, res) {
+    try {
+        const wpqrId = parseInt(req.params.id, 10);
+        if (!Number.isSafeInteger(wpqrId) || wpqrId <= 0) {
+            return res.status(400).json({ error: 'ID WPQR non valido', code: 'VALIDATION_ERROR' });
+        }
+        const existing = await query(WPQR_SCOPE_SQL, { id: wpqrId, organization_id: req.user.organization_id });
+        if (!existing.recordset.length) {
+            return res.status(404).json({ error: 'WPQR non trovato', code: 'WPQR_NOT_FOUND' });
+        }
+        if (await denyOutsideCompany(res, req.user, wpqrScopeCompany(existing.recordset[0]), 'read')) return;
+        const { listSketches } = require('../services/weldSketches.service');
+        const sketches = await listSketches({
+            organizationId: req.user.organization_id,
+            wpqrId,
+        });
+        res.json({ success: true, sketches });
+    } catch (error) {
+        sendSketchError(res, error, 'WPQR_SKETCHES_LIST_ERROR', 'Errore durante il recupero degli schizzi');
+    }
+}
+
+async function listWeldSketches(req, res) {
+    try {
+        const companyId = req.query.company_id != null && req.query.company_id !== ''
+            ? parseInt(req.query.company_id, 10)
+            : null;
+        if (companyId != null && await denyOutsideCompany(res, req.user, companyId, 'read')) return;
+        const { listSketches } = require('../services/weldSketches.service');
+        const sketches = await listSketches({
+            organizationId: req.user.organization_id,
+            companyId,
+            status: req.query.status || null,
+            slot: req.query.slot || null,
+        });
+        res.json({ success: true, sketches });
+    } catch (error) {
+        sendSketchError(res, error, 'SKETCHES_LIST_ERROR', 'Errore durante il recupero della libreria schizzi');
+    }
+}
+
+async function confirmWeldSketch(req, res) {
+    try {
+        const id = parseInt(req.params.id, 10);
+        if (!Number.isSafeInteger(id) || id <= 0) {
+            return res.status(400).json({ error: 'ID schizzo non valido', code: 'VALIDATION_ERROR' });
+        }
+        const { confirmSketch, getSketchById } = require('../services/weldSketches.service');
+        const existing = await getSketchById({ id, organizationId: req.user.organization_id });
+        if (!existing) {
+            return res.status(404).json({ error: 'Schizzo non trovato', code: 'SKETCH_NOT_FOUND' });
+        }
+        if (await denyOutsideCompany(res, req.user, existing.company_id, 'write')) return;
+        const sketch = await confirmSketch({
+            id,
+            organizationId: req.user.organization_id,
+            user: req.user,
+        });
+        res.json({ success: true, sketch });
+    } catch (error) {
+        sendSketchError(res, error, 'SKETCH_CONFIRM_ERROR', 'Errore durante la conferma dello schizzo');
+    }
+}
+
+async function getWeldSketchContent(req, res) {
+    try {
+        const id = parseInt(req.params.id, 10);
+        if (!Number.isSafeInteger(id) || id <= 0) {
+            return res.status(400).json({ error: 'ID schizzo non valido', code: 'VALIDATION_ERROR' });
+        }
+        const { getSketchById, resolveSketchFile } = require('../services/weldSketches.service');
+        const row = await getSketchById({ id, organizationId: req.user.organization_id });
+        if (!row) return res.status(404).json({ error: 'Schizzo non trovato', code: 'SKETCH_NOT_FOUND' });
+        if (await denyOutsideCompany(res, req.user, row.company_id, 'read')) return;
+        const file = await resolveSketchFile(row);
+        if (!file) return res.status(404).json({ error: 'File schizzo non trovato', code: 'SKETCH_FILE_NOT_FOUND' });
+        res.setHeader('Content-Type', 'image/png');
+        res.setHeader('Content-Disposition', `inline; filename="sketch-${id}.png"`);
+        res.setHeader('X-Content-Type-Options', 'nosniff');
+        res.setHeader('Cache-Control', 'private, no-store');
+        return res.sendFile(file.relReal, {
+            root: file.realRoot,
+            dotfiles: 'allow',
+            etag: false,
+            lastModified: false,
+            cacheControl: false,
+        }, (err) => {
+            if (!err || res.headersSent) return;
+            if (err.code === 'ENOENT' || err.status === 404) {
+                return res.status(404).json({ error: 'File schizzo non trovato', code: 'SKETCH_FILE_NOT_FOUND' });
+            }
+            logger.error('[welding] lettura schizzo', { code: err.code });
+            return res.status(500).json({ error: 'Errore lettura schizzo', code: 'SKETCH_READ_ERROR' });
+        });
+    } catch (error) {
+        sendSketchError(res, error, 'SKETCH_CONTENT_ERROR', 'Errore durante la lettura dello schizzo');
+    }
+}
+
+async function uploadWeldSketch(req, res) {
+    try {
+        if (!req.file || !req.file.buffer) {
+            return res.status(400).json({ error: 'File PNG o JPEG obbligatorio', code: 'VALIDATION_ERROR' });
+        }
+        const companyId = req.body.company_id != null && req.body.company_id !== ''
+            ? parseInt(req.body.company_id, 10)
+            : null;
+        if (await denyOutsideCompany(res, req.user, companyId, 'write')) return;
+        const { storeUploadedPng } = require('../services/weldSketches.service');
+        const sketch = await storeUploadedPng({
+            pngBuffer: req.file.buffer,
+            organizationId: req.user.organization_id,
+            companyId,
+            userId: req.user.user_id,
+            slot: req.body.slot || 'combined',
+            wpqrId: req.body.wpqr_id ? parseInt(req.body.wpqr_id, 10) : null,
+            meta: {
+                joint_type: req.body.joint_type || null,
+                preparation: req.body.preparation || null,
+                product_form: req.body.product_form || null,
+                dimension_text: req.body.dimension_text || null,
+            },
+        });
+        res.status(201).json({ success: true, sketch });
+    } catch (error) {
+        sendSketchError(res, error, 'SKETCH_UPLOAD_ERROR', 'Errore durante il caricamento dello schizzo');
+    }
+}
+
 module.exports = {
     listWPS,
     getWPS,
@@ -1766,4 +1943,9 @@ module.exports = {
     ISO15609_WPS_FIELDS,
     ISO15609_WPS_FIELDS_181,
     ISO15609_WPS_FIELDS_182,
+    listWpqrSketches,
+    listWeldSketches,
+    confirmWeldSketch,
+    getWeldSketchContent,
+    uploadWeldSketch,
 };

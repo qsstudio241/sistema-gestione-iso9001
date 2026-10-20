@@ -84,6 +84,7 @@ describe('limiti di upload invariati', () => {
         ]);
         expect(fileSizeExprs('routes/welding.routes.js')).toEqual([
             '50 * 1024 * 1024',
+            '8 * 1024 * 1024',
             '50 * 1024 * 1024',
         ]);
         expect(fileSizeExprs('routes/materialCertificates.routes.js')).toEqual(['50 * 1024 * 1024']);
