@@ -398,6 +398,7 @@ describe('weldSketches — splitSketchAtY', () => {
             dimension_text: 't1=t2: 30 mm - a: 7,5 mm',
         };
         let updated = false;
+        const order = [];
         query.mockImplementation(async (sql, params) => {
             if (/OBJECT_ID/i.test(String(sql))) return { recordset: [{ present: 1 }] };
             if (/SELECT TOP 1 \* FROM weld_sketches/i.test(String(sql))) {
@@ -424,11 +425,13 @@ describe('weldSketches — splitSketchAtY', () => {
                 }
             }
             if (/INSERT INTO weld_sketches/i.test(String(sql))) {
+                order.push('insert');
                 expect(params.slot).toBe('welding_sequence');
                 expect(params.dimension_text).toBeNull();
                 return { recordset: [{ id: 99 }] };
             }
             if (/UPDATE weld_sketches/i.test(String(sql))) {
+                order.push('update');
                 expect(params.slot).toBe('joint_design');
                 updated = true;
                 return { recordset: [] };
@@ -441,6 +444,8 @@ describe('weldSketches — splitSketchAtY', () => {
         });
         expect(out.joint.slot).toBe('joint_design');
         expect(out.sequence.slot).toBe('welding_sequence');
+        expect(order.indexOf('insert')).toBeGreaterThanOrEqual(0);
+        expect(order.indexOf('insert')).toBeLessThan(order.indexOf('update'));
     });
 });
 

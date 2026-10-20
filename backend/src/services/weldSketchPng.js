@@ -59,8 +59,9 @@ function decodePng(buf) {
         }
         offset += 12 + len;
     }
-    if (!width || !height || bitDepth !== 8 || (colorType !== 2 && colorType !== 6)) return null;
-    const bpp = colorType === 6 ? 4 : 3;
+    const bppByType = { 0: 1, 2: 3, 4: 2, 6: 4 };
+    if (!width || !height || bitDepth !== 8 || !bppByType[colorType]) return null;
+    const bpp = bppByType[colorType];
     let inflated;
     try {
         inflated = zlib.inflateSync(Buffer.concat(idats));
@@ -94,10 +95,22 @@ function decodePng(buf) {
         for (let x = 0; x < width; x += 1) {
             const di = (y * width + x) * 4;
             const si = x * bpp;
-            rgba[di] = recon[si];
-            rgba[di + 1] = recon[si + 1];
-            rgba[di + 2] = recon[si + 2];
-            rgba[di + 3] = bpp === 4 ? recon[si + 3] : 255;
+            if (colorType === 0) {
+                rgba[di] = recon[si];
+                rgba[di + 1] = recon[si];
+                rgba[di + 2] = recon[si];
+                rgba[di + 3] = 255;
+            } else if (colorType === 4) {
+                rgba[di] = recon[si];
+                rgba[di + 1] = recon[si];
+                rgba[di + 2] = recon[si];
+                rgba[di + 3] = recon[si + 1];
+            } else {
+                rgba[di] = recon[si];
+                rgba[di + 1] = recon[si + 1];
+                rgba[di + 2] = recon[si + 2];
+                rgba[di + 3] = colorType === 6 ? recon[si + 3] : 255;
+            }
         }
     }
     return { width, height, rgba };

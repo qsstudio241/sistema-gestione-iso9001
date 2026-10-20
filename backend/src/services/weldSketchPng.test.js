@@ -76,4 +76,50 @@ describe('weldSketchPng — split orizzontale IIS', () => {
         expect(out.ok).toBe(false);
         expect(out.reason).toBe('no_gap');
     });
+
+    it('decodePng accetta grayscale 8-bit (colorType 0)', () => {
+        const zlib = require('zlib');
+        const width = 4;
+        const height = 3;
+        const raw = Buffer.alloc((width + 1) * height, 80);
+        for (let y = 0; y < height; y += 1) raw[y * (width + 1)] = 0;
+        const ihdr = Buffer.alloc(13);
+        ihdr.writeUInt32BE(width, 0);
+        ihdr.writeUInt32BE(height, 4);
+        ihdr[8] = 8;
+        ihdr[9] = 0;
+        const crc32 = (buf) => {
+            let c = 0xffffffff;
+            const table = new Uint32Array(256);
+            for (let n = 0; n < 256; n += 1) {
+                let x = n;
+                for (let k = 0; k < 8; k += 1) x = (x & 1) ? (0xedb88320 ^ (x >>> 1)) : (x >>> 1);
+                table[n] = x >>> 0;
+            }
+            for (let i = 0; i < buf.length; i += 1) c = table[(c ^ buf[i]) & 0xff] ^ (c >>> 8);
+            return (c ^ 0xffffffff) >>> 0;
+        };
+        const chunk = (type, data) => {
+            const typeBuf = Buffer.from(type, 'ascii');
+            const len = Buffer.alloc(4);
+            len.writeUInt32BE(data.length, 0);
+            const crcBuf = Buffer.alloc(4);
+            crcBuf.writeUInt32BE(crc32(Buffer.concat([typeBuf, data])), 0);
+            return Buffer.concat([len, typeBuf, data, crcBuf]);
+        };
+        const png = Buffer.concat([
+            Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+            chunk('IHDR', ihdr),
+            chunk('IDAT', zlib.deflateSync(raw)),
+            chunk('IEND', Buffer.alloc(0)),
+        ]);
+        const decoded = decodePng(png);
+        expect(decoded).toBeTruthy();
+        expect(decoded.width).toBe(4);
+        expect(decoded.height).toBe(3);
+        expect(decoded.rgba[0]).toBe(80);
+        expect(decoded.rgba[1]).toBe(80);
+        expect(decoded.rgba[2]).toBe(80);
+        expect(decoded.rgba[3]).toBe(255);
+    });
 });

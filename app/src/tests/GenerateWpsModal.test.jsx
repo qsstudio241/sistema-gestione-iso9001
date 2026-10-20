@@ -191,7 +191,12 @@ describe("loadAnnexASketchBuffers", () => {
 
   it("stesso id: giunto nella cella sinistra e sequenza da dividere, mai combined", async () => {
     apiService.getWpqrSketches.mockResolvedValue({
-      sketches: [{ id: 7, dimension_text: "t1=t2: 30 mm - a: 7,5 mm" }],
+      sketches: [{
+        id: 7,
+        slot: "combined",
+        status: "da dividere",
+        dimension_text: "t1=t2: 30 mm - a: 7,5 mm",
+      }],
     });
     const out = await loadAnnexASketchBuffers({
       joint_sketch_id: 7,
@@ -235,5 +240,30 @@ describe("loadAnnexASketchBuffers", () => {
     expect(out.joint.caption).toBe("t1=t2: 30 mm - a: 7,5 mm");
     expect(out.sequence).toBeUndefined();
     expect(out.sequencePending).toBe("da dividere");
+  });
+
+  it("dopo Dividi, stesso joint id usa lo schizzo sequence della WPQR", async () => {
+    apiService.getWpqrSketches.mockResolvedValue({
+      sketches: [
+        {
+          id: 7, slot: "joint_design", status: "bozza",
+          crop_bbox_pt: "split:40", source_page: 5,
+          dimension_text: "t1=t2: 30 mm - a: 7,5 mm",
+        },
+        {
+          id: 8, slot: "welding_sequence", status: "bozza",
+          crop_bbox_pt: "split:40", source_page: 5,
+        },
+      ],
+    });
+    const out = await loadAnnexASketchBuffers({
+      joint_sketch_id: 7,
+      sequence_sketch_id: 7,
+      wpqr_id: 38,
+    });
+    expect(out.sequencePending).toBeUndefined();
+    expect(out.sequence).toBeTruthy();
+    expect(apiService.getWeldSketchBlob).toHaveBeenCalledWith(7);
+    expect(apiService.getWeldSketchBlob).toHaveBeenCalledWith(8);
   });
 });

@@ -1016,6 +1016,17 @@ async function resolveSketchFile(row) {
     return resolveUploadFile(parsed.rel);
 }
 
+function jpegToPngBuffer(buf) {
+    const { _detectMagickEngine } = require('../utils/ocrExtractor');
+    const gm = require('gm').subClass({ imageMagick: _detectMagickEngine() === 'imagemagick' });
+    return new Promise((resolve, reject) => {
+        gm(buf).toBuffer('PNG', (err, out) => {
+            if (err || !out) return reject(err || new Error('Conversione JPEG fallita'));
+            resolve(out);
+        });
+    });
+}
+
 async function splitSketchAtY({ id, organizationId, userId, yPx = null, yRatio = null }) {
     if (!(await sketchesTableAvailable())) {
         const err = new Error('Libreria schizzi non disponibile');
@@ -1043,8 +1054,15 @@ async function splitSketchAtY({ id, organizationId, userId, yPx = null, yRatio =
         err.status = 404;
         throw err;
     }
-    const png = fs.readFileSync(file.realFile);
-    const decoded = require('./weldSketchPng').decodePng(png);
+    const raw = fs.readFileSync(file.realFile);
+    let decoded = require('./weldSketchPng').decodePng(raw);
+    if (!decoded && detectSketchImageKind(raw).ext === 'jpg') {
+        try {
+            decoded = require('./weldSketchPng').decodePng(await jpegToPngBuffer(raw));
+        } catch (_) {
+            decoded = null;
+        }
+    }
     if (!decoded) {
         const err = new Error('PNG non leggibile');
         err.code = 'SKETCH_PNG_INVALID';
@@ -1078,22 +1096,6 @@ async function splitSketchAtY({ id, organizationId, userId, yPx = null, yRatio =
     const botFile = await writePngFile({
         organizationId, companyId: row.company_id, slot: 'welding_sequence', png: botPng,
     });
-    await getQuery()(`
-        UPDATE weld_sketches
-        SET slot = @slot, file_url = @file_url, width_px = @width_px, height_px = @height_px,
-            sha256 = @sha256, crop_bbox_pt = @crop_bbox_pt, status = @status
-        WHERE id = @id AND organization_id = @organizationId
-    `, {
-        id,
-        organizationId,
-        slot: 'joint_design',
-        file_url: topFile.file_url,
-        width_px: top.width,
-        height_px: top.height,
-        sha256: sha256Of(topPng),
-        crop_bbox_pt: `split:${y}`,
-        status: STATUS_DRAFT,
-    });
     const seqId = await insertSketch({
         organization_id: organizationId,
         company_id: row.company_id,
@@ -1120,6 +1122,28 @@ async function splitSketchAtY({ id, organizationId, userId, yPx = null, yRatio =
         dimension_text: null,
         status: STATUS_DRAFT,
         created_by: userId,
+    });
+    if (!seqId) {
+        const err = new Error('Impossibile salvare la sequenza');
+        err.code = 'SKETCH_SPLIT_INSERT';
+        err.status = 500;
+        throw err;
+    }
+    await getQuery()(`
+        UPDATE weld_sketches
+        SET slot = @slot, file_url = @file_url, width_px = @width_px, height_px = @height_px,
+            sha256 = @sha256, crop_bbox_pt = @crop_bbox_pt, status = @status
+        WHERE id = @id AND organization_id = @organizationId
+    `, {
+        id,
+        organizationId,
+        slot: 'joint_design',
+        file_url: topFile.file_url,
+        width_px: top.width,
+        height_px: top.height,
+        sha256: sha256Of(topPng),
+        crop_bbox_pt: `split:${y}`,
+        status: STATUS_DRAFT,
     });
     return {
         joint: await getSketchById({ id, organizationId }),

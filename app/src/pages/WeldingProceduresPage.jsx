@@ -327,14 +327,31 @@ export async function loadAnnexASketchBuffers(record = {}) {
     const m = metaById[id];
     return !!(m && (m.slot === "combined" || m.status === "da dividere"));
   };
+  const pickSequenceId = (jointSketchId) => {
+    const sketches = Object.values(metaById);
+    const seqs = sketches.filter((s) => s.slot === "welding_sequence");
+    if (!seqs.length) return null;
+    const jointMeta = metaById[jointSketchId];
+    if (jointMeta && jointMeta.crop_bbox_pt) {
+      const match = seqs.find((s) => s.crop_bbox_pt === jointMeta.crop_bbox_pt);
+      if (match) return match.id;
+    }
+    if (jointMeta && jointMeta.source_page != null) {
+      const match = seqs.find((s) => s.source_page === jointMeta.source_page);
+      if (match) return match.id;
+    }
+    return seqs[0].id;
+  };
 
-  if (jointId && seqId && Number(seqId) === Number(jointId)) {
+  const sameId = jointId && seqId && Number(seqId) === Number(jointId);
+  if ((sameId || !seqId) && isUnsplit(jointId)) {
     const joint = await attach(jointId);
     return joint ? { joint, sequencePending: "da dividere" } : {};
   }
+  const resolvedSeqId = (seqId && !sameId) ? seqId : pickSequenceId(jointId);
   const [joint, sequence] = await Promise.all([
     attach(jointId),
-    attach(seqId),
+    attach(resolvedSeqId),
   ]);
   const out = {};
   if (joint) out.joint = joint;
