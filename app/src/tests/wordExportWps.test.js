@@ -312,6 +312,25 @@ describe("generateWpsAnnexABlob", () => {
     expect(xml).toContain("Welding sequences");
   });
 
+  it("solo giunto: cella sequenza vuota con nota", async () => {
+    const blob = await generateWpsAnnexABlob(MASON_WPS, {
+      sketches: {
+        joint: {
+          data: MIN_PNG,
+          type: "png",
+          widthPx: 174,
+          heightPx: 120,
+        },
+        sequencePending: "solo giunto",
+      },
+    });
+    const xml = xmlOf(new PizZip(await blobToArrayBuffer(blob)));
+    expect(xml).toContain("w:drawing");
+    expect(xml).toContain("Sequenza assente");
+    expect(xml).toContain("caricare a parte");
+    expect(xml).not.toContain("Da dividere");
+  });
+
   it("formatAnnexEnum traduce gli enum WPQR", () => {
     expect(formatAnnexEnum("partly_mechanized")).toBe("Parzialmente meccanizzata / Partly mechanized");
     expect(formatAnnexEnum("partly mechanized")).toBe("Parzialmente meccanizzata / Partly mechanized");

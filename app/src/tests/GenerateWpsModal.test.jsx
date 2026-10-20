@@ -222,6 +222,26 @@ describe("loadAnnexASketchBuffers", () => {
     expect(out.sequencePending).toBeUndefined();
   });
 
+  it("status solo giunto: giunto in cella, sequenza con nota", async () => {
+    apiService.getWpqrSketches.mockResolvedValue({
+      sketches: [{
+        id: 12,
+        slot: "joint_design",
+        status: "solo giunto",
+        dimension_text: "t=12 mm",
+      }],
+    });
+    const out = await loadAnnexASketchBuffers({
+      joint_sketch_id: 12,
+      sequence_sketch_id: null,
+      wpqr_id: 28,
+    });
+    expect(out.joint).toBeTruthy();
+    expect(out.joint.caption).toBe("t=12 mm");
+    expect(out.sequence).toBeUndefined();
+    expect(out.sequencePending).toBe("solo giunto");
+  });
+
   it("combined da dividere senza sequence_id marca sequencePending", async () => {
     apiService.getWpqrSketches.mockResolvedValue({
       sketches: [{

@@ -24,6 +24,7 @@ const SOURCE_KINDS = Object.freeze(['wpqr_crop', 'upload', 'library_std']);
 const STATUS_DRAFT = 'bozza';
 const STATUS_CONFIRMED = 'confermato';
 const STATUS_NEEDS_SPLIT = 'da dividere';
+const STATUS_JOINT_ONLY = 'solo giunto';
 const RENDER = Object.freeze({ density: 200, width: 1654, height: 2339 });
 const PT_PAGE = Object.freeze({ width: 595, height: 842 });
 
@@ -638,6 +639,17 @@ function planStoredPieces(pageSlot, png, { width, height, bboxStr, meta = {}, sp
             },
         ];
     }
+    if (split && split.reason === 'single_joint') {
+        return [{
+            slot: 'joint_design',
+            png,
+            width,
+            height,
+            bboxStr,
+            status: STATUS_JOINT_ONLY,
+            dimension_text: meta.dimension_text || null,
+        }];
+    }
     return [{
         slot: 'combined',
         png,
@@ -1058,7 +1070,9 @@ async function splitSketchAtY({ id, organizationId, userId, yPx = null, yRatio =
         err.status = 404;
         throw err;
     }
-    if (row.slot !== 'combined' && row.status !== STATUS_NEEDS_SPLIT) {
+    if (row.slot !== 'combined'
+        && row.status !== STATUS_NEEDS_SPLIT
+        && row.status !== STATUS_JOINT_ONLY) {
         const err = new Error('Questo schizzo non è da dividere');
         err.code = 'SKETCH_NOT_SPLITTABLE';
         err.status = 400;
@@ -1181,6 +1195,7 @@ module.exports = {
     STATUS_DRAFT,
     STATUS_CONFIRMED,
     STATUS_NEEDS_SPLIT,
+    STATUS_JOINT_ONLY,
     sketchesTableAvailable,
     resetTableCache,
     presentWpsSketchColumns,

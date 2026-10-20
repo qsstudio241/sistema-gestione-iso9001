@@ -671,6 +671,7 @@ function scoreSplit({
  * Split orizzontale robusto: prima il gap bianco classico, poi valle
  * a minimo inchiostro (profilo lisciato, zona 30–70%) + due masse CC.
  * Confidenza bassa → nessun taglio (resta «da dividere»).
+ * Un solo disegno (T/V/piastre) → reason «single_joint».
  */
 function findHorizontalSplit(rowInk, opts = {}) {
     const ink = Array.isArray(rowInk) ? rowInk : [];
@@ -736,20 +737,19 @@ function findHorizontalSplit(rowInk, opts = {}) {
     if (y1 <= y0) return { y: null, confidence: 0, reason: 'no_gap' };
     const valley = findMinValleyY(sm, y0, y1);
     const zoneH = y1 - y0 + 1;
-    if (valley.h > Math.floor(zoneH * 0.70) || valley.h > Math.floor(H * 0.38)) {
-        return { y: null, confidence: 0, reason: 'no_gap' };
-    }
+    const valleyTooWide = valley.h > Math.floor(zoneH * 0.70) || valley.h > Math.floor(H * 0.38);
     const neigh = Math.max(3, Math.floor(valley.h / 3));
     const minBody = Math.max(16, Math.floor(width * 0.12));
     const minDense = Math.max(22, Math.floor(width * 0.08));
-    if (mask && width && (
+    const throughBody = !!(mask && width && (
         sidesHaveWideBody(mask, width, H, valley.y, neigh, minBody)
         || sidesHaveDenseInk(mask, width, H, valley.y, neigh, minDense)
-    )) {
-        return { y: null, confidence: 0, reason: 'no_gap' };
-    }
+    ));
     const masses = clusterMassesAtY(ccs, valley.y, mask, width, { ...opts, height: H });
     const { peakTop, peakBot } = peaksAround(valley.y);
+    const massTotal = masses.top + masses.bot;
+    const crossR = massTotal > 0 ? (masses.crossingSplit / massTotal) : 0;
+    const bridgeR = massTotal > 0 ? (masses.crossingWide / massTotal) : 0;
     const confidence = scoreSplit({
         top: masses.top,
         bot: masses.bot,
@@ -762,22 +762,37 @@ function findHorizontalSplit(rowInk, opts = {}) {
         widthRatio: masses.widthRatio,
         crossingSplit: masses.crossingSplit,
     });
-    if (confidence >= minConf && valley.y >= 8 && valley.y <= H - 8) {
+    const canCut = confidence >= minConf
+        && valley.y >= 8
+        && valley.y <= H - 8
+        && !valleyTooWide
+        && !throughBody
+        && crossR <= 0.50;
+    if (canCut) {
         const hit = { y: valley.y, confidence, reason: 'valley' };
         if (opts.debug) hit.debug = { valley, masses, peakTop, peakBot, minClusterGap };
         return hit;
     }
+    const bothPeaks = Math.min(peakTop, peakBot) >= 0.25
+        && Math.min(peakTop, peakBot) >= Math.max(peakTop, peakBot) * 0.35;
+    let reason = 'single_joint';
+    if (bridgeR > 0.32 && bothPeaks) reason = 'no_gap';
+    else if (crossR > 0.50 || masses.widthRatio < 0.35) reason = 'single_joint';
+    else if (Math.min(peakTop, peakBot) < 0.08) reason = 'single_joint';
+    else if (masses.clusterGap === -Infinity) reason = 'single_joint';
+    else reason = 'no_gap';
     if (opts.debug) {
         return {
             y: null,
             confidence,
-            reason: 'no_gap',
+            reason,
             debug: {
                 valley, masses, peakTop, peakBot, minClusterGap, minConf,
+                valleyTooWide, throughBody, crossR, bridgeR,
             },
         };
     }
-    return { y: null, confidence, reason: 'no_gap' };
+    return { y: null, confidence, reason };
 }
 
 function findHorizontalSplitY(rowInk, opts = {}) {

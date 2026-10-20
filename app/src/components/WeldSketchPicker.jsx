@@ -31,8 +31,10 @@ function SketchThumb({ sketch, selected, onSelect }) {
     ? "Schizzo della WPQR"
     : (sketch.source === "library" ? `Libreria (${sketch.score})` : sketch.slot);
   const statusNote = sketch.status === "da dividere"
-    ? " — da dividere"
-    : (sketch.status === "bozza" ? " — bozza, conferma in Rivedi" : "");
+    ? " \u2014 da dividere"
+    : (sketch.status === "solo giunto"
+      ? " \u2014 solo giunto, sequenza da caricare"
+      : (sketch.status === "bozza" ? " \u2014 bozza, conferma in Rivedi" : ""));
 
   return (
     <button
@@ -129,7 +131,8 @@ export default function WeldSketchPicker({
       <p className="wsk-hint">
         Joint design e Welding sequences restano due celle affiancate. Lo schizzo
         combinato va solo nel giunto; la sequenza resta vuota («Da dividere») finché
-        non lo spezzi in Rivedi. Celle vuote nel Word: «Vedi allegato».
+        non lo spezzi in Rivedi. Solo giunto: sequenza assente, da caricare a parte.
+        Celle vuote nel Word: «Vedi allegato».
       </p>
       {!hasAny && (
         <p className="wsk-empty" data-testid="wsk-empty">Nessuno schizzo in libreria per questo giunto.</p>
@@ -195,7 +198,9 @@ export default function WeldSketchPicker({
 
 function needsHorizontalSplit(sketch) {
   return sketch
-    && (sketch.status === "da dividere" || sketch.slot === "combined");
+    && (sketch.status === "da dividere"
+      || sketch.status === "solo giunto"
+      || sketch.slot === "combined");
 }
 
 function SplitSketchControl({ sketch, busy, onSplit }) {
@@ -306,6 +311,8 @@ export function WpqrSketchReview({ wpqrId }) {
       <p className="wsk-hint">
         Crop dal PDF in stato bozza. Se giunto e sequenza sono in un&apos;unica
         immagine, regola la linea e premi Dividi; poi conferma per la libreria.
+        Solo giunto: lo schizzo è già la cella giunto; lo slider resta se vuoi
+        dividere a mano.
       </p>
       {error && <p className="wsk-err">{error}</p>}
       <div className="wsk-thumbs">

@@ -121,7 +121,7 @@ describe('weldSketchPng — split orizzontale IIS', () => {
         paintBand(rgba, width, 0, height, [30, 30, 30]);
         const out = splitCombinedIfNeeded(encodePng(width, height, rgba));
         expect(out.ok).toBe(false);
-        expect(out.reason).toBe('no_gap');
+        expect(['no_gap', 'single_joint']).toContain(out.reason);
     });
 
     it('decodePng accetta grayscale 8-bit (colorType 0)', () => {
@@ -269,7 +269,7 @@ describe('weldSketchPng — split orizzontale IIS', () => {
         expect(out.confidence).toBeGreaterThanOrEqual(0.55);
     });
 
-    it('rettangolo cavo con vuoto centrale (V-joint-like): no_gap', () => {
+    it('rettangolo cavo con vuoto centrale (V-joint-like): single_joint', () => {
         const width = 120;
         const height = 100;
         const rgba = Buffer.alloc(width * height * 4, 255);
@@ -278,7 +278,7 @@ describe('weldSketchPng — split orizzontale IIS', () => {
         fillRect(rgba, width, 48, 20, 72, 50, [255, 255, 255]);
         const out = splitCombinedIfNeeded(encodePng(width, height, rgba));
         expect(out.ok).toBe(false);
-        expect(out.reason).toBe('no_gap');
+        expect(out.reason).toBe('single_joint');
     });
 
     it('T-joint a linee 2px: non spezza stelo e base', () => {
@@ -291,10 +291,10 @@ describe('weldSketchPng — split orizzontale IIS', () => {
         fillRect(rgba, width, 16, 94, 84, 124, [255, 255, 255]);
         const out = splitCombinedIfNeeded(encodePng(width, height, rgba));
         expect(out.ok).toBe(false);
-        expect(out.reason).toBe('no_gap');
+        expect(out.reason).toBe('single_joint');
     });
 
-    it('T-joint cavo (stelo e base quasi a contatto): no_gap', () => {
+    it('T-joint cavo (stelo e base quasi a contatto): single_joint', () => {
         const width = 100;
         const height = 140;
         const rgba = Buffer.alloc(width * height * 4, 255);
@@ -302,10 +302,10 @@ describe('weldSketchPng — split orizzontale IIS', () => {
         fillRect(rgba, width, 12, 80, 88, 126, [20, 20, 20]);
         const out = splitCombinedIfNeeded(encodePng(width, height, rgba));
         expect(out.ok).toBe(false);
-        expect(out.reason).toBe('no_gap');
+        expect(out.reason).toBe('single_joint');
     });
 
-    it('T-joint unico (stelo+base connessi): confidenza bassa, no_gap', () => {
+    it('T-joint unico (stelo+base connessi): single_joint', () => {
         const width = 100;
         const height = 140;
         const rgba = Buffer.alloc(width * height * 4, 255);
@@ -313,7 +313,7 @@ describe('weldSketchPng — split orizzontale IIS', () => {
         fillRect(rgba, width, 10, 80, 90, 128, [20, 20, 20]);
         const out = splitCombinedIfNeeded(encodePng(width, height, rgba));
         expect(out.ok).toBe(false);
-        expect(out.reason).toBe('no_gap');
+        expect(out.reason).toBe('single_joint');
     });
 
     /** Due piastre cave tratteggiate + V centrale (un solo disegno, come le bozze 31/36). */
@@ -337,11 +337,11 @@ describe('weldSketchPng — split orizzontale IIS', () => {
         return { png: encodePng(width, height, rgba), width, height };
     }
 
-    it('V-groove tratteggiato (un solo disegno): no_gap', () => {
+    it('V-groove tratteggiato (un solo disegno): single_joint', () => {
         const fx = hatchedVGroovePng();
         const out = splitCombinedIfNeeded(fx.png);
         expect(out.ok).toBe(false);
-        expect(out.reason).toBe('no_gap');
+        expect(out.reason).toBe('single_joint');
     });
 
     it('findHorizontalSplit espone y e confidenza', () => {
