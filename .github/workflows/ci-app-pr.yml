@@ -10,6 +10,10 @@ on:
       - 'app/**'
       - 'backend/scripts/check-utf8-encoding.js'
       - 'backend/scripts/repair-utf8-encoding.js'
+      - 'backend/scripts/deploy-to-vps.sh'
+      - 'backend/scripts/deploy-to-vps-test.sh'
+      - 'backend/scripts/check-deploy-test-isolation.js'
+      - 'backend/scripts/check-deploy-test-isolation.test.js'
       - 'backend/src/controllers/**'
       - 'backend/src/services/**'
       - 'backend/src/config/**'
@@ -32,6 +36,10 @@ jobs:
 
       - name: Encoding UTF-8 sorgenti (app + backend ingest)
         run: node backend/scripts/check-utf8-encoding.js --human
+        working-directory: .
+
+      - name: Isolamento deploy TEST (mai porta 3000 / sgq-backend)
+        run: node backend/scripts/check-deploy-test-isolation.js
         working-directory: .
 
       - name: Node.js 20
