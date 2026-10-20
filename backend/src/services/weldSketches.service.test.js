@@ -308,6 +308,41 @@ describe('weldSketches — PDF persistito se il temp non c\'è', () => {
         expect(arg.deps.pdfPath).toBe(persisted);
         expect(out).toEqual([{ id: 7, slot: 'combined' }]);
     });
+
+    it('extractAfterWpqrCommit senza throwOnError ingoia l\'errore (ingest)', async () => {
+        const out = await extractAfterWpqrCommit({
+            organizationId: 1,
+            wpqrId: 1,
+            certificateFileUrl: '/uploads/wpqr/x.pdf',
+            deps: {
+                tableAvailable: async () => true,
+                resolvePath: () => '/tmp/missing.pdf',
+                readFile: () => { throw new Error('ENOENT'); },
+            },
+        });
+        expect(out).toEqual([]);
+    });
+
+    it('extractAfterWpqrCommit con throwOnError propaga PDF assente e I/O', async () => {
+        await expect(extractAfterWpqrCommit({
+            organizationId: 1,
+            wpqrId: 2,
+            throwOnError: true,
+            deps: { tableAvailable: async () => true, resolvePath: () => null },
+        })).rejects.toThrow(/PDF sorgente assente/);
+
+        await expect(extractAfterWpqrCommit({
+            organizationId: 1,
+            wpqrId: 3,
+            throwOnError: true,
+            certificateFileUrl: '/uploads/wpqr/x.pdf',
+            deps: {
+                tableAvailable: async () => true,
+                resolvePath: () => '/tmp/broken.pdf',
+                readFile: () => { throw new Error('ENOENT broken'); },
+            },
+        })).rejects.toThrow(/ENOENT broken/);
+    });
 });
 
 describe('weldSketches — split combined IIS', () => {

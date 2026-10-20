@@ -815,10 +815,21 @@ async function extractAndStoreFromPdf({
 }
 
 async function extractAfterWpqrCommit({
-    organizationId, companyId, wpqrId, wpqr, filePath, userId, certificateFileUrl, deps = {},
+    organizationId, companyId, wpqrId, wpqr, filePath, userId, certificateFileUrl,
+    throwOnError = false, deps = {},
 }) {
     try {
-        if (!(await sketchesTableAvailable())) return [];
+        const tableOk = deps.tableAvailable
+            ? await deps.tableAvailable()
+            : await sketchesTableAvailable();
+        if (!tableOk) {
+            if (throwOnError) {
+                const err = new Error('tabella weld_sketches non disponibile');
+                err.code = 'SKETCH_TABLE_UNAVAILABLE';
+                throw err;
+            }
+            return [];
+        }
         const persistedUrl = certificateFileUrl
             || (wpqr && wpqr.certificate_file_url)
             || null;
@@ -826,6 +837,11 @@ async function extractAfterWpqrCommit({
         const abs = resolvePath(filePath, persistedUrl);
         if (!abs) {
             logger.info('[weldSketches] PDF sorgente assente, skip estrazione', { wpqrId });
+            if (throwOnError) {
+                const err = new Error('PDF sorgente assente');
+                err.code = 'SKETCH_PDF_MISSING';
+                throw err;
+            }
             return [];
         }
         const readFile = deps.readFile || fs.readFileSync;
@@ -836,6 +852,7 @@ async function extractAfterWpqrCommit({
             deps: { ...deps, pdfPath: abs },
         });
     } catch (err) {
+        if (throwOnError) throw err;
         logger.warn('[weldSketches] estrazione post-commit non bloccante', {
             wpqrId, error: err.message,
         });
