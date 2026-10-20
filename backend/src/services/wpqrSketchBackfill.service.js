@@ -186,12 +186,16 @@ async function backfillWpqrSketches({
             continue;
         }
         try {
+            // throwOnError: extractAfterWpqrCommit di default ingoia gli errori
+            // (ingest non bloccante) e restituisce []. Senza questo flag il
+            // backfill classificherebbe PDF/I/O rotto come empty.
             const stored = await extract({
                 organizationId: row.organization_id,
                 companyId: row.company_id,
                 wpqrId: row.id,
                 wpqr: row,
                 certificateFileUrl: row.certificate_file_url,
+                throwOnError: true,
             });
             const kind = classifyStored(stored);
             const slots = (stored || []).map((s) => `${s.slot}:${s.status}`).join(',');

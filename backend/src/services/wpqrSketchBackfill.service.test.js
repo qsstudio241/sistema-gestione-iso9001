@@ -129,6 +129,38 @@ describe('wpqrSketchBackfill', () => {
         expect(kinds.B).toBe('da_dividere');
         expect(kinds.C).toBe('skip');
         expect(kinds.D).toBe('fail');
+        expect(extractFn.mock.calls.every((c) => c[0].throwOnError === true)).toBe(true);
+    });
+
+    it('APPLY: extractAfterWpqrCommit con throwOnError classifica fail, non empty', async () => {
+        const { extractAfterWpqrCommit } = require('./weldSketches.service');
+        const rows = [{
+            id: 11, organization_id: 1, company_id: 51,
+            reference_number: 'FAILPDF', certificate_file_url: '/uploads/wpqr/missing.pdf',
+        }];
+        const extractFn = (args) => extractAfterWpqrCommit({
+            ...args,
+            deps: {
+                tableAvailable: async () => true,
+                resolvePath: () => null,
+                extractAndStoreFromPdf: async () => {
+                    throw new Error('non deve arrivare qui');
+                },
+            },
+        });
+        const out = await backfillWpqrSketches({
+            dryRun: false,
+            queryFn: async (sql) => {
+                if (/SELECT TOP 1 id/.test(sql)) return { recordset: [] };
+                return { recordset: rows };
+            },
+            extractFn,
+            log: { info: () => {}, warn: () => {} },
+        });
+        expect(out.summary.fail).toBe(1);
+        expect(out.summary.empty).toBe(0);
+        expect(out.results[0].kind).toBe('fail');
+        expect(out.results[0].error).toMatch(/PDF sorgente assente/);
     });
 
     it('composeContactSheet produce un PNG valido dalla griglia sintetica', () => {
