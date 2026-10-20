@@ -73,6 +73,50 @@ describe("WeldSketchPicker", () => {
     });
   });
 
+  it("dopo uno schizzo combinato, un solo giunto azzera la sequenza residua", () => {
+    const onChange = vi.fn();
+    render(
+      <WeldSketchPicker
+        suggestions={{
+          combined: [{ id: 2, slot: "combined", score: 50, status: "confermato", source: "library" }],
+          joint_design: [{ id: 9, slot: "joint_design", score: 80, status: "confermato", source: "library" }],
+          welding_sequence: [{ id: 11, slot: "welding_sequence", score: 70, status: "confermato", source: "library" }],
+        }}
+        selectedJointId={2}
+        selectedSequenceId={2}
+        onChange={onChange}
+      />
+    );
+    fireEvent.click(screen.getByTestId("wsk-thumb-9"));
+    expect(onChange).toHaveBeenCalledWith({
+      joint_sketch_id: 9,
+      sequence_sketch_id: null,
+      combined: false,
+    });
+  });
+
+  it("dopo uno schizzo combinato, una sola sequenza azzera il giunto residuo", () => {
+    const onChange = vi.fn();
+    render(
+      <WeldSketchPicker
+        suggestions={{
+          combined: [{ id: 2, slot: "combined", score: 50, status: "confermato", source: "library" }],
+          joint_design: [],
+          welding_sequence: [{ id: 11, slot: "welding_sequence", score: 70, status: "confermato", source: "library" }],
+        }}
+        selectedJointId={2}
+        selectedSequenceId={2}
+        onChange={onChange}
+      />
+    );
+    fireEvent.click(screen.getByTestId("wsk-thumb-11"));
+    expect(onChange).toHaveBeenCalledWith({
+      joint_sketch_id: null,
+      sequence_sketch_id: 11,
+      combined: false,
+    });
+  });
+
   it("stato vuoto se non ci sono match", () => {
     render(
       <WeldSketchPicker

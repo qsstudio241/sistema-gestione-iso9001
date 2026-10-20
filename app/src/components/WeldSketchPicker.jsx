@@ -93,6 +93,9 @@ export default function WeldSketchPicker({
 
   function pick(sketch) {
     if (disabled) return;
+    const leftoverCombined = selectedJointId != null
+      && selectedSequenceId != null
+      && Number(selectedJointId) === Number(selectedSequenceId);
     if (sketch.slot === "combined") {
       onChange({
         joint_sketch_id: sketch.id,
@@ -104,13 +107,13 @@ export default function WeldSketchPicker({
     if (sketch.slot === "joint_design") {
       onChange({
         joint_sketch_id: sketch.id,
-        sequence_sketch_id: selectedSequenceId || null,
+        sequence_sketch_id: leftoverCombined ? null : (selectedSequenceId || null),
         combined: false,
       });
       return;
     }
     onChange({
-      joint_sketch_id: selectedJointId || null,
+      joint_sketch_id: leftoverCombined ? null : (selectedJointId || null),
       sequence_sketch_id: sketch.id,
       combined: false,
     });

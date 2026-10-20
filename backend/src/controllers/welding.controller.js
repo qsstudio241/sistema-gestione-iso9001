@@ -118,9 +118,32 @@ async function denyOutsideCompany(res, user, companyId, level = 'read') {
     return false;
 }
 
-/** Libreria studio (`company_id` NULL): visibile e confermabile nel tenant. */
+/**
+ * Libreria studio (`company_id` NULL): lettura nel tenant;
+ * scrittura solo se il ruolo/permesso lo consente (viewer e sola lettura esclusi).
+ */
 async function denySketchCompany(res, user, companyId, level = 'read') {
-    if (companyId == null || companyId === '') return false;
+    if (companyId == null || companyId === '') {
+        if (level !== 'write') return false;
+        const accessList = await ensureCompanyAccessLoaded(user);
+        if (!hasCompanyAccessRows(accessList)) {
+            const studioDenied = await assertMutatingAllowed(user, {});
+            if (studioDenied) {
+                sendAccessDenied(res, studioDenied);
+                return true;
+            }
+            return false;
+        }
+        const hasWrite = accessList.some((row) => row.permission === 'write');
+        if (!hasWrite) {
+            sendAccessDenied(res, {
+                status: 403,
+                body: { error: 'Permesso negato: sola lettura', code: 'AUTH_FORBIDDEN' },
+            });
+            return true;
+        }
+        return false;
+    }
     return denyOutsideCompany(res, user, companyId, level);
 }
 

@@ -1076,6 +1076,55 @@ describe('A4 company scope', () => {
         expect(http(res)).not.toBe(403);
     });
 
+    test('POST confirm schizzo studio: write azienda ok, sola lettura 403', async () => {
+        query.mockImplementation(async (sql, params) => {
+            const compact = String(sql || '').replace(/\s+/g, ' ');
+            if (/OBJECT_ID/i.test(compact)) return { recordset: [{ present: 1 }] };
+            if (/FROM weld_sketches/i.test(compact)) {
+                return {
+                    recordset: [{
+                        id: 7,
+                        organization_id: ROW_ORG,
+                        company_id: null,
+                        file_url: '/uploads/sketches/1/shared/x.png',
+                    }],
+                };
+            }
+            return route(sql, params || {});
+        });
+        const okRes = mockRes();
+        await welding.confirmWeldSketch({
+            user: userFor('ok'), params: { id: '7' }, query: {}, body: {},
+        }, okRes);
+        expect(http(okRes)).not.toBe(403);
+
+        const readRes = mockRes();
+        await welding.confirmWeldSketch({
+            user: {
+                user_id: 51,
+                organization_id: ROW_ORG,
+                role: 'client',
+                company_access: [{ company_id: ALLOWED, permission: 'read' }],
+            },
+            params: { id: '7' }, query: {}, body: {},
+        }, readRes);
+        expect(http(readRes)).toBe(403);
+        expect(bodyOf(readRes).code).toBe('AUTH_FORBIDDEN');
+
+        const viewerRes = mockRes();
+        await welding.confirmWeldSketch({
+            user: {
+                user_id: 52,
+                organization_id: ROW_ORG,
+                role: 'viewer',
+                company_access: [],
+            },
+            params: { id: '7' }, query: {}, body: {},
+        }, viewerRes);
+        expect(http(viewerRes)).toBe(403);
+        expect(bodyOf(viewerRes).code).toBe('AUTH_FORBIDDEN');
+    });
+
     test('GET lista WPQR — include le schede senza company_id se la WPS è consentita', async () => {
         ctx.forceWpqrCompany = true;
         ctx.wpqrCompanyId = null;
