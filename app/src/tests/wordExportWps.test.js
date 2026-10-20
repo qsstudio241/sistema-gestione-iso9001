@@ -137,6 +137,31 @@ describe("generateWpsAnnexABlob", () => {
     expect(xml).toContain("Spray arc");
   });
 
+  it("riempie la tabella passate dai test_runs della WPQR collegata", async () => {
+    const blob = await generateWpsAnnexABlob(MASON_WPS, {
+      wpqrCode: "24-03390-01",
+      testRuns: [
+        {
+          run_label: "1", welding_process: "135", filler_diameter_mm: 1,
+          current_a: 190, voltage_v: 23.5, travel_speed: 5.4, heat_input_value: 0.66,
+        },
+        {
+          run_label: "2 +n", welding_process: "135", filler_diameter_mm: 1,
+          current_a: 210, voltage_v: 26.5, travel_speed: 3.4, heat_input_value: 1.31,
+        },
+      ],
+    });
+    const ab = await blobToArrayBuffer(blob);
+    const zip = new PizZip(ab);
+    const xml = zip.files["word/document.xml"].asText();
+    expect(xml).toContain("24-03390-01");
+    expect(xml).toContain("190");
+    expect(xml).toContain("210");
+    expect(xml).toContain("0.66");
+    expect(xml).toContain("1.31");
+    expect(xml).toContain("2 +n");
+  });
+
   it("exportWpsAnnexADocx chiama saveAs con nome file dal codice", async () => {
     const { saveAs } = await import("file-saver");
     await exportWpsAnnexADocx(MASON_WPS);

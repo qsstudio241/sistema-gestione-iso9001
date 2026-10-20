@@ -26,6 +26,7 @@ vi.mock("../services/apiService", () => ({
     deleteWPS: vi.fn(),
     updateWPQR: vi.fn(),
     updateWPS: vi.fn(),
+    getWPS: vi.fn(),
     getWpqrTestRuns: vi.fn(),
     saveWpqrTestRuns: vi.fn(),
     fetchProtectedFileBlob: vi.fn(),
@@ -181,6 +182,8 @@ describe("WeldingProceduresPage — tab WPS: riga cliccabile e Azioni", () => {
     apiService.getWPQRList.mockResolvedValue({ data: [WPQR_BOZZA], pagination: { total: 1 } });
     apiService.getWPQRStats.mockResolvedValue({ data: { totale: 1, da_approvare: 1, rifiutate: 0, approvate: 0 } });
     apiService.deleteWPS.mockResolvedValue({});
+    apiService.getWPS.mockResolvedValue({ data: { ...WPS_ROW, wpqr_records: [{ id: 1, wpqr_code: "WPQR-BOZ" }] } });
+    apiService.getWpqrTestRuns.mockResolvedValue({ runs: [{ run_label: "1", current_a: 190 }], available: true });
   });
 
   it("«Azioni» è l'ultima colonna e la riga ha Word/Modifica/Elimina nell'ultima cella", async () => {
@@ -225,6 +228,10 @@ describe("WeldingProceduresPage — tab WPS: riga cliccabile e Azioni", () => {
     const user = await renderOnTab("wps");
     await user.click(within(rowOf("WPS-TEST-01")).getByTitle("Esporta Word"));
     await waitFor(() => expect(exportWpsAnnexADocx).toHaveBeenCalledTimes(1));
+    expect(apiService.getWPS).toHaveBeenCalledWith(7);
+    expect(apiService.getWpqrTestRuns).toHaveBeenCalledWith(1);
+    expect(exportWpsAnnexADocx.mock.calls[0][1].wpqrCode).toBe("WPQR-BOZ");
+    expect(exportWpsAnnexADocx.mock.calls[0][1].testRuns).toEqual([{ run_label: "1", current_a: 190 }]);
     expect(screen.queryByText("Modifica WPS")).toBeNull();
   });
 
