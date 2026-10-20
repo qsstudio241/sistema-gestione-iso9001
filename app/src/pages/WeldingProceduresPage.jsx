@@ -301,7 +301,7 @@ export async function loadAnnexASketchBuffers(record = {}) {
   const jointId = record.joint_sketch_id;
   const seqId = record.sequence_sketch_id;
   if (!jointId && !seqId) return {};
-  if (jointId && (!seqId || Number(seqId) === Number(jointId))) {
+  if (jointId && seqId && Number(seqId) === Number(jointId)) {
     const combined = await sketchBufferFromId(jointId);
     return combined ? { combined } : {};
   }
@@ -433,7 +433,7 @@ export function GenerateWpsModal({
       const ownJoint = (sug.joint_design || []).find((s) => s.score === 100);
       const ownSeq = (sug.welding_sequence || []).find((s) => s.score === 100);
       if (ownCombined) {
-        setSketchPick({ joint_sketch_id: ownCombined.id, sequence_sketch_id: null });
+        setSketchPick({ joint_sketch_id: ownCombined.id, sequence_sketch_id: ownCombined.id });
       } else {
         setSketchPick({
           joint_sketch_id: ownJoint ? ownJoint.id : null,
@@ -668,7 +668,9 @@ export function GenerateWpsModal({
                   jointType={result.wps_draft.joint_type || form.joint_type}
                   onChange={(next) => setSketchPick({
                     joint_sketch_id: next.joint_sketch_id,
-                    sequence_sketch_id: next.sequence_sketch_id,
+                    sequence_sketch_id: next.combined
+                      ? next.joint_sketch_id
+                      : next.sequence_sketch_id,
                   })}
                 />
               </div>

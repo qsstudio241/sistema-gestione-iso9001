@@ -1,6 +1,9 @@
 /**
  * @jest-environment node
  */
+jest.mock('../config/database', () => ({ query: jest.fn() }));
+
+const { query } = require('../config/database');
 const {
     scoreSketch,
     preparationEquivalent,
@@ -11,6 +14,9 @@ const {
     dimensionTextFromWpqr,
     metadataFromWpqr,
     normalizeJointType,
+    detectSketchImageKind,
+    listSketches,
+    resetTableCache,
 } = require('./weldSketches.service');
 
 describe('weldSketches — scoring ISO 15609 library', () => {
@@ -117,5 +123,34 @@ describe('weldSketches — pagine PDF', () => {
         expect(meta.preparation).toBe('fillet');
         expect(meta.n_passes).toBe(3);
         expect(meta.run_mode).toBe('multi');
+    });
+});
+
+describe('weldSketches — JPEG e scope azienda', () => {
+    beforeEach(() => {
+        query.mockReset();
+        resetTableCache();
+    });
+
+    it('riconosce PNG e JPEG dai magic bytes', () => {
+        expect(detectSketchImageKind(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0, 0, 0, 0])).ext).toBe('png');
+        expect(detectSketchImageKind(Buffer.from([0xff, 0xd8, 0xff, 0xe0])).ext).toBe('jpg');
+        expect(detectSketchImageKind(Buffer.from([0xff, 0xd8, 0xff, 0xe0])).mime).toBe('image/jpeg');
+    });
+
+    it('lista: utente per-azienda vede libreria studio e la propria azienda', async () => {
+        query.mockImplementation(async (sql, params) => {
+            if (/OBJECT_ID/i.test(String(sql))) return { recordset: [{ present: 1 }] };
+            expect(String(sql)).toMatch(/company_id IS NULL OR company_id IN/);
+            expect(params.skco_0).toBe(51);
+            expect(params.organizationId).toBe(1);
+            return { recordset: [{ id: 1, organization_id: 1, company_id: null, slot: 'combined' }] };
+        });
+        const rows = await listSketches({
+            organizationId: 1,
+            allowedCompanyIds: [51],
+        });
+        expect(rows).toHaveLength(1);
+        expect(rows[0].company_id).toBeNull();
     });
 });

@@ -45,10 +45,32 @@ describe("WeldSketchPicker", () => {
     fireEvent.click(screen.getByTestId("wsk-thumb-2"));
     expect(onChange).toHaveBeenCalledWith({
       joint_sketch_id: 2,
-      sequence_sketch_id: null,
+      sequence_sketch_id: 2,
       combined: true,
     });
     await waitFor(() => expect(apiService.getWeldSketchBlob).toHaveBeenCalled());
+  });
+
+  it("uno schizzo solo giunto non è combinato", () => {
+    const onChange = vi.fn();
+    render(
+      <WeldSketchPicker
+        suggestions={{
+          combined: [],
+          joint_design: [{ id: 9, slot: "joint_design", score: 80, status: "confermato", source: "library" }],
+          welding_sequence: [],
+        }}
+        selectedJointId={null}
+        selectedSequenceId={null}
+        onChange={onChange}
+      />
+    );
+    fireEvent.click(screen.getByTestId("wsk-thumb-9"));
+    expect(onChange).toHaveBeenCalledWith({
+      joint_sketch_id: 9,
+      sequence_sketch_id: null,
+      combined: false,
+    });
   });
 
   it("stato vuoto se non ci sono match", () => {

@@ -133,7 +133,7 @@ function orgOf(params) {
 }
 
 function companyHidden(params) {
-    const keys = Object.keys(params || {}).filter((k) => /^(att_co_|wpsco_|wpqrco_|wpqrcow_|wpqrstat_|wpqrstatw_|visionCo_|uca_)/.test(k));
+    const keys = Object.keys(params || {}).filter((k) => /^(att_co_|wpsco_|wpqrco_|wpqrcow_|wpqrstat_|wpqrstatw_|visionCo_|uca_|skco_)/.test(k));
     if (!keys.length) return false;
     const rowCompany = ctx.forceWpqrCompany ? ctx.wpqrCompanyId : ctx.rowCompany;
     const direct = keys.filter((k) => !/^wpqrcow_|^wpqrstatw_/.test(k));
@@ -158,7 +158,7 @@ function route(sql, params = {}) {
         return { recordset: [] };
     }
     if (/COL_LENGTH|OBJECT_ID/i.test(compact)) {
-        return { recordset: [{ len: 1, object_id: 1 }] };
+        return { recordset: [{ len: 1, object_id: 1, present: 1 }] };
     }
     if (/^SELECT id FROM wpqr_records WHERE wps_id/i.test(compact)) return emptySet();
     if (/^SELECT id FROM wps_welders/i.test(compact)) return emptySet();
@@ -349,6 +349,13 @@ const endpoints = [
         call: (req, res) => welding.listWPS(req, res),
         req: (mode) => ({ query: { company_id: String(companyOf(mode)), page: '1', limit: '10' } }),
         empty: (res) => expect(bodyOf(res).data).toEqual([]),
+    },
+    {
+        id: 'GET /welding/sketches',
+        kind: 'list',
+        call: (req, res) => welding.listWeldSketches(req, res),
+        req: (mode) => ({ query: { company_id: String(companyOf(mode)) } }),
+        empty: (res) => expect(bodyOf(res).sketches).toEqual([]),
     },
     {
         id: 'GET /welding/wps/:id',
@@ -1033,6 +1040,40 @@ describe('A4 company scope', () => {
         expect(http(res)).toBe(201);
         const insert = query.mock.calls.find((call) => /INSERT\s+INTO\s+project_welders/i.test(String(call[0])));
         expect(insert[1].wid).toBe(12);
+    });
+
+    test('GET /welding/sketches senza company_id limita alle aziende consentite + libreria studio', async () => {
+        const res = mockRes();
+        await welding.listWeldSketches({
+            user: userFor('ok'), params: {}, query: {}, body: {},
+        }, res);
+        expect(http(res)).toBe(200);
+        const sql = query.mock.calls.map((call) => String(call[0])).join('\n');
+        expect(sql).toMatch(/company_id IS NULL OR company_id IN/);
+        expect(sql).toMatch(/@skco_0/);
+    });
+
+    test('GET content schizzo studio (company_id NULL) non è 403 per utente azienda', async () => {
+        query.mockImplementation(async (sql, params) => {
+            const compact = String(sql || '').replace(/\s+/g, ' ');
+            if (/OBJECT_ID/i.test(compact)) return { recordset: [{ present: 1 }] };
+            if (/FROM weld_sketches/i.test(compact)) {
+                return {
+                    recordset: [{
+                        id: 7,
+                        organization_id: ROW_ORG,
+                        company_id: null,
+                        file_url: '/uploads/sketches/1/shared/x.png',
+                    }],
+                };
+            }
+            return route(sql, params || {});
+        });
+        const res = mockRes();
+        await welding.getWeldSketchContent({
+            user: userFor('ok'), params: { id: '7' }, query: {}, body: {},
+        }, res);
+        expect(http(res)).not.toBe(403);
     });
 
     test('GET lista WPQR — include le schede senza company_id se la WPS è consentita', async () => {

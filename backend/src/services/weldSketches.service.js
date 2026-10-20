@@ -367,12 +367,30 @@ function sketchDir(organizationId, companyId) {
     return dir;
 }
 
-async function writePngFile({ organizationId, companyId, slot, png }) {
+const PNG_MAGIC = Buffer.from([0x89, 0x50, 0x4e, 0x47]);
+const JPEG_MAGIC = Buffer.from([0xff, 0xd8, 0xff]);
+
+function detectSketchImageKind(buf) {
+    if (Buffer.isBuffer(buf) && buf.length >= 8 && buf.subarray(0, 4).equals(PNG_MAGIC)) {
+        return { ext: 'png', mime: 'image/png' };
+    }
+    if (Buffer.isBuffer(buf) && buf.length >= 3 && buf.subarray(0, 3).equals(JPEG_MAGIC)) {
+        return { ext: 'jpg', mime: 'image/jpeg' };
+    }
+    return { ext: 'png', mime: 'image/png' };
+}
+
+async function writeSketchFile({ organizationId, companyId, slot, bytes, ext = 'png' }) {
     const dir = sketchDir(organizationId, companyId);
-    const name = `sk_${Date.now()}_${crypto.randomBytes(4).toString('hex')}_${slot}.png`;
+    const safeExt = ext === 'jpg' || ext === 'jpeg' ? 'jpg' : 'png';
+    const name = `sk_${Date.now()}_${crypto.randomBytes(4).toString('hex')}_${slot}.${safeExt}`;
     const abs = path.join(dir, name);
-    fs.writeFileSync(abs, png);
+    fs.writeFileSync(abs, bytes);
     return { abs, file_url: publicFileUrl(abs) };
+}
+
+async function writePngFile({ organizationId, companyId, slot, png }) {
+    return writeSketchFile({ organizationId, companyId, slot, bytes: png, ext: 'png' });
 }
 
 function publicSketch(row) {
@@ -533,10 +551,25 @@ async function extractAfterWpqrCommit({ organizationId, companyId, wpqrId, wpqr,
     }
 }
 
-async function listSketches({ organizationId, companyId = null, wpqrId = null, status = null, slot = null }) {
+async function listSketches({
+    organizationId, companyId = null, wpqrId = null, status = null, slot = null,
+    allowedCompanyIds = null,
+}) {
     if (!(await sketchesTableAvailable())) return [];
     const cond = ['organization_id = @organizationId'];
     const params = { organizationId };
+    if (Array.isArray(allowedCompanyIds)) {
+        if (allowedCompanyIds.length === 0) {
+            cond.push('company_id IS NULL');
+        } else {
+            const parts = allowedCompanyIds.map((id, i) => {
+                const key = `skco_${i}`;
+                params[key] = id;
+                return `@${key}`;
+            });
+            cond.push(`(company_id IS NULL OR company_id IN (${parts.join(', ')}))`);
+        }
+    }
     if (companyId != null) {
         cond.push('(company_id = @companyId OR company_id IS NULL)');
         params.companyId = companyId;
@@ -603,9 +636,12 @@ async function storeUploadedPng({
         throw err;
     }
     const pngSize = require('../utils/ocrExtractor').pngSize;
-    const size = pngSize(pngBuffer) || { width: null, height: null };
-    const file = await writePngFile({
-        organizationId, companyId, slot, png: pngBuffer,
+    const kind = detectSketchImageKind(pngBuffer);
+    const size = kind.ext === 'png'
+        ? (pngSize(pngBuffer) || { width: null, height: null })
+        : { width: null, height: null };
+    const file = await writeSketchFile({
+        organizationId, companyId, slot, bytes: pngBuffer, ext: kind.ext,
     });
     const id = await insertSketch({
         organization_id: organizationId,
@@ -725,4 +761,5 @@ module.exports = {
     storeUploadedPng,
     resolveSketchFile,
     publicSketch,
+    detectSketchImageKind,
 };

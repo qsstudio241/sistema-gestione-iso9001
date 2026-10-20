@@ -80,7 +80,7 @@ export default function WeldSketchPicker({
       if (res?.sketch) {
         onChange({
           joint_sketch_id: res.sketch.id,
-          sequence_sketch_id: null,
+          sequence_sketch_id: res.sketch.id,
           combined: true,
         });
       }
@@ -96,7 +96,7 @@ export default function WeldSketchPicker({
     if (sketch.slot === "combined") {
       onChange({
         joint_sketch_id: sketch.id,
-        sequence_sketch_id: null,
+        sequence_sketch_id: sketch.id,
         combined: true,
       });
       return;
@@ -137,7 +137,7 @@ export default function WeldSketchPicker({
               <SketchThumb
                 key={`c-${s.id}`}
                 sketch={s}
-                selected={selectedJointId === s.id && !selectedSequenceId}
+                selected={Number(selectedJointId) === Number(s.id) && Number(selectedSequenceId) === Number(s.id)}
                 onSelect={pick}
               />
             ))}

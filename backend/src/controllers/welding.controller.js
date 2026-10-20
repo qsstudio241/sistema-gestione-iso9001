@@ -15,6 +15,7 @@ const {
     assertMutatingAllowed,
     assertCompanyRead,
     hasCompanyAccessRows,
+    getAllowedCompanyIds,
     sendAccessDenied,
 } = require('../services/companyAccess.service');
 const {
@@ -115,6 +116,12 @@ async function denyOutsideCompany(res, user, companyId, level = 'read') {
         return true;
     }
     return false;
+}
+
+/** Libreria studio (`company_id` NULL): visibile e confermabile nel tenant. */
+async function denySketchCompany(res, user, companyId, level = 'read') {
+    if (companyId == null || companyId === '') return false;
+    return denyOutsideCompany(res, user, companyId, level);
 }
 
 async function pushCompanyScope(user, alias, conditions, params, prefix) {
@@ -1814,10 +1821,15 @@ async function listWeldSketches(req, res) {
             ? parseInt(req.query.company_id, 10)
             : null;
         if (companyId != null && await denyOutsideCompany(res, req.user, companyId, 'read')) return;
+        const accessList = await ensureCompanyAccessLoaded(req.user);
+        const allowedCompanyIds = hasCompanyAccessRows(accessList)
+            ? getAllowedCompanyIds(accessList)
+            : null;
         const { listSketches } = require('../services/weldSketches.service');
         const sketches = await listSketches({
             organizationId: req.user.organization_id,
             companyId,
+            allowedCompanyIds,
             status: req.query.status || null,
             slot: req.query.slot || null,
         });
@@ -1838,7 +1850,7 @@ async function confirmWeldSketch(req, res) {
         if (!existing) {
             return res.status(404).json({ error: 'Schizzo non trovato', code: 'SKETCH_NOT_FOUND' });
         }
-        if (await denyOutsideCompany(res, req.user, existing.company_id, 'write')) return;
+        if (await denySketchCompany(res, req.user, existing.company_id, 'write')) return;
         const sketch = await confirmSketch({
             id,
             organizationId: req.user.organization_id,
@@ -1859,11 +1871,14 @@ async function getWeldSketchContent(req, res) {
         const { getSketchById, resolveSketchFile } = require('../services/weldSketches.service');
         const row = await getSketchById({ id, organizationId: req.user.organization_id });
         if (!row) return res.status(404).json({ error: 'Schizzo non trovato', code: 'SKETCH_NOT_FOUND' });
-        if (await denyOutsideCompany(res, req.user, row.company_id, 'read')) return;
+        if (await denySketchCompany(res, req.user, row.company_id, 'read')) return;
         const file = await resolveSketchFile(row);
         if (!file) return res.status(404).json({ error: 'File schizzo non trovato', code: 'SKETCH_FILE_NOT_FOUND' });
-        res.setHeader('Content-Type', 'image/png');
-        res.setHeader('Content-Disposition', `inline; filename="sketch-${id}.png"`);
+        const { contentTypeFor } = require('../utils/uploadsPath');
+        const ct = contentTypeFor(file.relReal);
+        const ext = ct.ext || '.png';
+        res.setHeader('Content-Type', ct.type || 'image/png');
+        res.setHeader('Content-Disposition', `inline; filename="sketch-${id}${ext}"`);
         res.setHeader('X-Content-Type-Options', 'nosniff');
         res.setHeader('Cache-Control', 'private, no-store');
         return res.sendFile(file.relReal, {
