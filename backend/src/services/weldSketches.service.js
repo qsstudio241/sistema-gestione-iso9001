@@ -366,6 +366,43 @@ function pickSketchEmbeddedImage(rows, pageNumber) {
     return candidates[0] || null;
 }
 
+/** `pdfimages -list` sul PDF intero: `num` è document-wide; `-f/-l` pagina: riparte da 0. */
+function pageLocalImageIndex(rows, pageNumber, pickNum) {
+    const pageRows = (Array.isArray(rows) ? rows : [])
+        .filter((r) => Number(r.page) === Number(pageNumber))
+        .sort((a, b) => Number(a.num) - Number(b.num));
+    const idx = pageRows.findIndex((r) => Number(r.num) === Number(pickNum));
+    return idx >= 0 ? idx : 0;
+}
+
+function resolveExtractedSketchPng(prefix, pick, pageIndex) {
+    const padded = `${prefix}-${String(pageIndex).padStart(3, '0')}.png`;
+    if (fs.existsSync(padded)) return padded;
+    const dir = path.dirname(prefix);
+    const base = path.basename(prefix);
+    let found = [];
+    try {
+        found = fs.readdirSync(dir)
+            .filter((n) => n.startsWith(`${base}-`) && /\.png$/i.test(n))
+            .sort();
+    } catch (_) {
+        return null;
+    }
+    if (pageIndex != null && found[pageIndex]) return path.join(dir, found[pageIndex]);
+    const pngSize = require('../utils/ocrExtractor').pngSize;
+    if (pick && pick.width && pick.height) {
+        for (const n of found) {
+            const abs = path.join(dir, n);
+            try {
+                const size = pngSize(fs.readFileSync(abs));
+                if (size && size.width === pick.width && size.height === pick.height) return abs;
+            } catch (_) { /* skip */ }
+        }
+    }
+    if (found.length === 1) return path.join(dir, found[0]);
+    return null;
+}
+
 async function tryExtractEmbeddedSketch(pdfBuffer, pageNumber, deps = {}) {
     const listFn = deps.pdfimagesList;
     const extractFn = deps.pdfimagesExtract;
@@ -381,11 +418,16 @@ async function tryExtractEmbeddedSketch(pdfBuffer, pageNumber, deps = {}) {
             tmpCreated = true;
         }
         const listOut = listFn
-            ? await listFn(tmpPdf)
-            : (await execFileAsync('pdfimages', ['-list', tmpPdf], { timeout: 15000, maxBuffer: 1024 * 1024 })).stdout;
+            ? await listFn(tmpPdf, pageNumber)
+            : (await execFileAsync(
+                'pdfimages',
+                ['-list', '-f', String(pageNumber), '-l', String(pageNumber), tmpPdf],
+                { timeout: 15000, maxBuffer: 1024 * 1024 },
+            )).stdout;
         const rows = typeof listOut === 'string' ? parsePdfimagesList(listOut) : listOut;
         const pick = pickSketchEmbeddedImage(rows, pageNumber);
         if (!pick) return null;
+        const pageIndex = pageLocalImageIndex(rows, pageNumber, pick.num);
 
         const prefix = path.join(tmpDir, `skimg_${Date.now()}_${crypto.randomBytes(3).toString('hex')}`);
         if (extractFn) {
@@ -397,19 +439,8 @@ async function tryExtractEmbeddedSketch(pdfBuffer, pageNumber, deps = {}) {
                 { timeout: 20000, maxBuffer: 8 * 1024 * 1024 },
             );
         }
-        const dest = `${prefix}-${String(pick.num).padStart(3, '0')}.png`;
-        let png = null;
-        if (fs.existsSync(dest)) {
-            png = fs.readFileSync(dest);
-        } else {
-            const dir = path.dirname(prefix);
-            const base = path.basename(prefix);
-            const found = fs.readdirSync(dir)
-                .filter((n) => n.startsWith(base) && /\.png$/i.test(n))
-                .sort();
-            if (found[pick.num]) png = fs.readFileSync(path.join(dir, found[pick.num]));
-            else if (found.length === 1) png = fs.readFileSync(path.join(dir, found[0]));
-        }
+        const dest = resolveExtractedSketchPng(prefix, pick, pageIndex);
+        const png = dest && fs.existsSync(dest) ? fs.readFileSync(dest) : null;
         try {
             const dir = path.dirname(prefix);
             const base = path.basename(prefix);
@@ -1119,6 +1150,9 @@ module.exports = {
     bboxFromItems,
     parsePdfimagesList,
     pickSketchEmbeddedImage,
+    pageLocalImageIndex,
+    resolveExtractedSketchPng,
+    tryExtractEmbeddedSketch,
     resolveSourcePdfPath,
     resolveExtractPdfPath,
     resetPdfimagesCache,

@@ -23,6 +23,8 @@ const {
     bboxFromItems,
     parsePdfimagesList,
     pickSketchEmbeddedImage,
+    pageLocalImageIndex,
+    tryExtractEmbeddedSketch,
     resolveExtractPdfPath,
     extractAfterWpqrCommit,
     planStoredPieces,
@@ -215,6 +217,44 @@ describe('weldSketches — crop IIS solo disegno (fixture bbox, no PDF cliente)'
         ].join('\n');
         const rows = parsePdfimagesList(stdout);
         expect(rows).toEqual([{ page: 5, num: 2, width: 174, height: 231, xppi: 122, yppi: 122 }]);
+    });
+
+    it('pageLocalImageIndex converte num document-wide in indice 0-based della pagina', () => {
+        const rows = [
+            { page: 1, num: 0, width: 40, height: 40, xppi: 72, yppi: 72 },
+            { page: 1, num: 1, width: 50, height: 50, xppi: 72, yppi: 72 },
+            { page: 5, num: 2, width: 174, height: 231, xppi: 122, yppi: 122 },
+        ];
+        expect(pageLocalImageIndex(rows, 5, 2)).toBe(0);
+        expect(pageLocalImageIndex([
+            { page: 5, num: 0 }, { page: 5, num: 1 }, { page: 5, num: 2 },
+        ], 5, 2)).toBe(2);
+    });
+
+    it('tryExtractEmbeddedSketch legge prefix-000, non il num document-wide', async () => {
+        const { encodePng } = require('./weldSketchPng');
+        const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'skimg-'));
+        const png = encodePng(8, 8, Buffer.alloc(8 * 8 * 4, 30));
+        try {
+            const out = await tryExtractEmbeddedSketch(Buffer.from('%PDF-1.4'), 5, {
+                tmpDir: dir,
+                pdfimagesList: async () => [
+                    { page: 1, num: 0, width: 40, height: 40, xppi: 72, yppi: 72 },
+                    { page: 1, num: 1, width: 50, height: 50, xppi: 72, yppi: 72 },
+                    { page: 5, num: 2, width: 174, height: 231, xppi: 122, yppi: 122 },
+                ],
+                pdfimagesExtract: async (_pdf, page, prefix) => {
+                    expect(page).toBe(5);
+                    expect(fs.existsSync(`${prefix}-002.png`)).toBe(false);
+                    fs.writeFileSync(`${prefix}-000.png`, png);
+                },
+            });
+            expect(out).toBeTruthy();
+            expect(Buffer.isBuffer(out.png)).toBe(true);
+            expect(out.png.equals(png)).toBe(true);
+        } finally {
+            fs.rmSync(dir, { recursive: true, force: true });
+        }
     });
 });
 
