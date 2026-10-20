@@ -351,6 +351,48 @@ function maxDarkRunOnRow(mask, width, y, x0, x1) {
     return maxRun;
 }
 
+function darkCountOnRow(mask, width, y) {
+    if (!mask || !width) return 0;
+    let n = 0;
+    const row = y * width;
+    for (let x = 0; x < width; x += 1) {
+        if (mask[row + x]) n += 1;
+    }
+    return n;
+}
+
+function sidesHaveWideBody(mask, width, height, y, dist, minRun) {
+    if (!mask || !width) return false;
+    const yA = Math.max(0, y - dist);
+    const yB = Math.min(height - 1, y + dist);
+    return maxDarkRunOnRow(mask, width, yA, 0, width - 1) >= minRun
+        && maxDarkRunOnRow(mask, width, yB, 0, width - 1) >= minRun;
+}
+
+function sidesHaveDenseInk(mask, width, height, y, dist, minCount) {
+    if (!mask || !width) return false;
+    const yA = Math.max(0, y - dist);
+    const yB = Math.min(height - 1, y + dist);
+    return darkCountOnRow(mask, width, yA) >= minCount
+        && darkCountOnRow(mask, width, yB) >= minCount;
+}
+
+function darkSpanOnRow(mask, width, y, x0, x1) {
+    if (!mask || !width) return 0;
+    const row = y * width;
+    const from = Math.max(0, x0);
+    const to = Math.min(width - 1, x1);
+    let first = -1;
+    let last = -1;
+    for (let x = from; x <= to; x += 1) {
+        if (mask[row + x]) {
+            if (first < 0) first = x;
+            last = x;
+        }
+    }
+    return first < 0 ? 0 : (last - first + 1);
+}
+
 /**
  * Non tagliare un disegno largo. Una quota verticale attaccata al giunto è
  * lo stesso CC, ma sulla riga di taglio è sottile: si usa l'inchiostro a Y,
@@ -399,7 +441,7 @@ function inkMass(rowInk, y0, y1, thresh) {
     return n;
 }
 
-function findHorizontalSplitY(rowInk, opts = {}) {
+function findWhiteBandSplitY(rowInk, opts = {}) {
     const ink = Array.isArray(rowInk) ? rowInk : [];
     const H = ink.length;
     if (H < 40) return null;
@@ -445,21 +487,328 @@ function findHorizontalSplitY(rowInk, opts = {}) {
     return null;
 }
 
+function smoothProfile(arr, radius = 2) {
+    const n = arr.length;
+    const out = new Array(n);
+    const r = Math.max(1, radius);
+    for (let i = 0; i < n; i += 1) {
+        let s = 0;
+        let c = 0;
+        for (let j = i - r; j <= i + r; j += 1) {
+            if (j >= 0 && j < n) {
+                s += arr[j];
+                c += 1;
+            }
+        }
+        out[i] = s / c;
+    }
+    return out;
+}
+
+function findMinValleyY(smoothed, y0, y1) {
+    let minV = Infinity;
+    for (let y = y0; y <= y1; y += 1) {
+        if (smoothed[y] < minV) minV = smoothed[y];
+    }
+    const cutoff = minV + Math.max(0.012, (minV * 0.4) + 0.012);
+    const midZone = (y0 + y1) / 2;
+    let best = { y: y0, h: 0, value: smoothed[y0] };
+    let start = null;
+    for (let y = y0; y <= y1 + 1; y += 1) {
+        const inRun = y <= y1 && smoothed[y] <= cutoff;
+        if (inRun && start == null) start = y;
+        if (!inRun && start != null) {
+            const h = y - start;
+            const mid = Math.floor((start + y - 1) / 2);
+            const betterH = h > best.h;
+            const betterC = h === best.h && Math.abs(mid - midZone) < Math.abs(best.y - midZone);
+            if (betterH || betterC) best = { y: mid, h, value: smoothed[mid] };
+            start = null;
+        }
+    }
+    return best;
+}
+
+function thinWaistHeight(mask, width, c, y, wideRun) {
+    if (!mask || !width) return 0;
+    let yA = y;
+    let yB = y;
+    while (yA > c.y0 && maxDarkRunOnRow(mask, width, yA - 1, c.x0, c.x1) < wideRun) yA -= 1;
+    while (yB < c.y1 && maxDarkRunOnRow(mask, width, yB + 1, c.x0, c.x1) < wideRun) yB += 1;
+    return yB - yA + 1;
+}
+
+function isLocalWaist(mask, width, c, y, wideRun) {
+    if (!mask || !width) return false;
+    let wideAbove = false;
+    let wideBelow = false;
+    for (let yy = c.y0; yy < y; yy += 1) {
+        if (maxDarkRunOnRow(mask, width, yy, c.x0, c.x1) >= wideRun) {
+            wideAbove = true;
+            break;
+        }
+    }
+    for (let yy = y + 1; yy <= c.y1; yy += 1) {
+        if (maxDarkRunOnRow(mask, width, yy, c.x0, c.x1) >= wideRun) {
+            wideBelow = true;
+            break;
+        }
+    }
+    return wideAbove && wideBelow;
+}
+
+function clusterMassesAtY(ccs, y, mask, width, opts = {}) {
+    const minArea = opts.minCcArea != null ? opts.minCcArea : 24;
+    const wideRun = opts.wideRun != null ? opts.wideRun : 16;
+    const height = opts.height != null ? opts.height : 0;
+    let top = 0;
+    let bot = 0;
+    let crossingWide = 0;
+    let topY1 = -Infinity;
+    let botY0 = Infinity;
+    let topX0 = Infinity;
+    let topX1 = -Infinity;
+    let botX0 = Infinity;
+    let botX1 = -Infinity;
+    let thinWaist = 0;
+    let wholeTop = 0;
+    let wholeBot = 0;
+    let crossingSplit = 0;
+    for (let i = 0; i < ccs.length; i += 1) {
+        const c = ccs[i];
+        if (c.area < minArea) continue;
+        const crosses = c.y0 < y && c.y1 >= y;
+        if (crosses && mask && width) {
+            const run = maxDarkRunOnRow(mask, width, y, c.x0, c.x1);
+            const span = darkSpanOnRow(mask, width, y, c.x0, c.x1);
+            const tall = (c.h >= Math.floor(height * 0.35)) || (c.h >= 40);
+            const waist = thinWaistHeight(mask, width, c, y, wideRun);
+            const localWaist = isLocalWaist(mask, width, c, y, wideRun);
+            if (run >= wideRun) {
+                crossingWide += c.area;
+            } else if (localWaist) {
+                const hTop = Math.max(0, y - c.y0);
+                const hBot = Math.max(0, c.y1 - y + 1);
+                const h = Math.max(1, hTop + hBot);
+                top += c.area * (hTop / h);
+                bot += c.area * (hBot / h);
+                crossingSplit += c.area;
+                if (waist > thinWaist) thinWaist = waist;
+                if (c.x0 < topX0) topX0 = c.x0;
+                if (c.x1 > topX1) topX1 = c.x1;
+                if (c.x0 < botX0) botX0 = c.x0;
+                if (c.x1 > botX1) botX1 = c.x1;
+                continue;
+            } else if (tall && span >= 24) {
+                crossingWide += c.area;
+            } else if (span < 24) {
+                const hTop = Math.max(0, y - c.y0);
+                const hBot = Math.max(0, c.y1 - y + 1);
+                const h = Math.max(1, hTop + hBot);
+                top += c.area * (hTop / h);
+                bot += c.area * (hBot / h);
+                crossingSplit += c.area;
+                continue;
+            }
+        }
+        const cy = (c.y0 + c.y1) / 2;
+        if (cy < y) {
+            top += c.area;
+            wholeTop += c.area;
+            if (c.y1 > topY1) topY1 = c.y1;
+            if (c.x0 < topX0) topX0 = c.x0;
+            if (c.x1 > topX1) topX1 = c.x1;
+        } else {
+            bot += c.area;
+            wholeBot += c.area;
+            if (c.y0 < botY0) botY0 = c.y0;
+            if (c.x0 < botX0) botX0 = c.x0;
+            if (c.x1 > botX1) botX1 = c.x1;
+        }
+    }
+    const assignedGap = (Number.isFinite(topY1) && Number.isFinite(botY0))
+        ? (botY0 - topY1)
+        : -Infinity;
+    const clusterGap = Math.max(assignedGap, thinWaist || -Infinity);
+    const topW = Number.isFinite(topX1) ? (topX1 - topX0 + 1) : 0;
+    const botW = Number.isFinite(botX1) ? (botX1 - botX0 + 1) : 0;
+    const widthRatio = (topW > 0 && botW > 0)
+        ? (Math.min(topW, botW) / Math.max(topW, botW))
+        : 0;
+    return {
+        top, bot, crossingWide, clusterGap, widthRatio, topW, botW,
+        wholeTop, wholeBot, crossingSplit,
+    };
+}
+
+function scoreSplit({
+    top, bot, crossingWide, valleyInk, peakTop, peakBot, clusterGap, minClusterGap, widthRatio,
+    crossingSplit = 0,
+}) {
+    const total = top + bot;
+    if (total < 120) return 0;
+    const smaller = Math.min(top, bot);
+    if (smaller < 50) return 0;
+    const both = smaller / total;
+    if (both < 0.06) return 0;
+    const bridge = crossingWide / total;
+    if (bridge > 0.32) return 0;
+    /* Un solo disegno (V/T/piastre) ha la massa sulle CC che attraversano il taglio. */
+    if (total > 0 && (crossingSplit / total) > 0.50) return 0;
+    const peakInk = Math.max(peakTop, peakBot);
+    const weakPeak = Math.min(peakTop, peakBot);
+    if (peakInk <= 1e-6 || weakPeak < Math.max(0.03, peakInk * 0.12)) return 0;
+    const depth = Math.max(0, 1 - (valleyInk / peakInk));
+    if (depth < 0.28) return 0;
+    if (clusterGap < minClusterGap) return 0;
+    if (widthRatio < 0.35) return 0;
+    const bothN = Math.min(both / 0.22, 1);
+    const bridgeN = 1 - Math.min(bridge / 0.32, 1);
+    return Math.max(0, Math.min(1, (0.45 * bothN) + (0.35 * depth) + (0.20 * bridgeN)));
+}
+
+/**
+ * Split orizzontale robusto: prima il gap bianco classico, poi valle
+ * a minimo inchiostro (profilo lisciato, zona 30–70%) + due masse CC.
+ * Confidenza bassa → nessun taglio (resta «da dividere»).
+ */
+function findHorizontalSplit(rowInk, opts = {}) {
+    const ink = Array.isArray(rowInk) ? rowInk : [];
+    const H = ink.length;
+    if (H < 40) return { y: null, confidence: 0, reason: 'too_small' };
+    const { mask = null, width = 0 } = opts;
+    const minConf = opts.minConfidence != null ? opts.minConfidence : 0.55;
+    const zone0 = opts.zone0 != null ? opts.zone0 : 0.30;
+    const zone1 = opts.zone1 != null ? opts.zone1 : 0.70;
+    const ccs = mask && width ? connectedComponents(mask, width, H) : [];
+    const profile = ink;
+    const radius = opts.smoothRadius != null ? opts.smoothRadius : Math.max(2, Math.floor(H * 0.012));
+    const sm = smoothProfile(profile, radius);
+    const y0 = Math.max(8, Math.floor(H * zone0));
+    const y1 = Math.min(H - 9, Math.floor(H * zone1));
+    const minClusterGap = opts.minClusterGap != null
+        ? opts.minClusterGap
+        : Math.max(6, Math.floor(H * 0.035));
+
+    const peaksAround = (y) => {
+        let peakTop = 0;
+        let peakBot = 0;
+        for (let i = Math.floor(H * 0.06); i < y; i += 1) {
+            if (sm[i] > peakTop) peakTop = sm[i];
+        }
+        for (let i = y + 1; i <= Math.floor(H * 0.94); i += 1) {
+            if (sm[i] > peakBot) peakBot = sm[i];
+        }
+        return { peakTop, peakBot };
+    };
+
+    const classic = findWhiteBandSplitY(ink, opts);
+    if (classic != null) {
+        if (!mask || !width || !ccs.length) {
+            return { y: classic, confidence: 0.7, reason: 'white_band' };
+        }
+        const masses = clusterMassesAtY(ccs, classic, mask, width, { ...opts, height: H });
+        const { peakTop, peakBot } = peaksAround(classic);
+        const conf = scoreSplit({
+            top: masses.top,
+            bot: masses.bot,
+            crossingWide: masses.crossingWide,
+            valleyInk: sm[classic] != null ? sm[classic] : 0,
+            peakTop,
+            peakBot,
+            clusterGap: masses.clusterGap,
+            minClusterGap,
+            widthRatio: masses.widthRatio,
+            crossingSplit: masses.crossingSplit,
+        });
+        if (conf >= 0.40 || (
+            masses.crossingWide === 0
+            && masses.clusterGap >= minClusterGap
+            && masses.widthRatio >= 0.35
+            && Math.min(masses.top, masses.bot) >= 50
+        )) {
+            const hit = { y: classic, confidence: Math.max(conf, 0.6), reason: 'white_band' };
+            if (opts.debug) hit.debug = { masses, peakTop, peakBot, minClusterGap };
+            return hit;
+        }
+    }
+
+    if (y1 <= y0) return { y: null, confidence: 0, reason: 'no_gap' };
+    const valley = findMinValleyY(sm, y0, y1);
+    const zoneH = y1 - y0 + 1;
+    if (valley.h > Math.floor(zoneH * 0.70) || valley.h > Math.floor(H * 0.38)) {
+        return { y: null, confidence: 0, reason: 'no_gap' };
+    }
+    const neigh = Math.max(3, Math.floor(valley.h / 3));
+    const minBody = Math.max(16, Math.floor(width * 0.12));
+    const minDense = Math.max(22, Math.floor(width * 0.08));
+    if (mask && width && (
+        sidesHaveWideBody(mask, width, H, valley.y, neigh, minBody)
+        || sidesHaveDenseInk(mask, width, H, valley.y, neigh, minDense)
+    )) {
+        return { y: null, confidence: 0, reason: 'no_gap' };
+    }
+    const masses = clusterMassesAtY(ccs, valley.y, mask, width, { ...opts, height: H });
+    const { peakTop, peakBot } = peaksAround(valley.y);
+    const confidence = scoreSplit({
+        top: masses.top,
+        bot: masses.bot,
+        crossingWide: masses.crossingWide,
+        valleyInk: valley.value,
+        peakTop,
+        peakBot,
+        clusterGap: masses.clusterGap,
+        minClusterGap,
+        widthRatio: masses.widthRatio,
+        crossingSplit: masses.crossingSplit,
+    });
+    if (confidence >= minConf && valley.y >= 8 && valley.y <= H - 8) {
+        const hit = { y: valley.y, confidence, reason: 'valley' };
+        if (opts.debug) hit.debug = { valley, masses, peakTop, peakBot, minClusterGap };
+        return hit;
+    }
+    if (opts.debug) {
+        return {
+            y: null,
+            confidence,
+            reason: 'no_gap',
+            debug: {
+                valley, masses, peakTop, peakBot, minClusterGap, minConf,
+            },
+        };
+    }
+    return { y: null, confidence, reason: 'no_gap' };
+}
+
+function findHorizontalSplitY(rowInk, opts = {}) {
+    const found = findHorizontalSplit(rowInk, opts);
+    return found && found.y != null ? found.y : null;
+}
+
 function splitCombinedIfNeeded(pngBuffer) {
     const decoded = decodePng(pngBuffer);
     if (!decoded) return { ok: false, reason: 'decode' };
     const { width, height, rgba } = decoded;
     const ink = rowInkFromRgba(rgba, width, height, 240, { maxThinRun: 4 });
     const mask = darkMaskFromRgba(rgba, width, height);
-    const y = findHorizontalSplitY(ink, { mask, width, height });
+    const found = findHorizontalSplit(ink, { mask, width, height });
+    const y = found && found.y;
     if (y == null || y < 8 || y > height - 8) {
-        return { ok: false, reason: 'no_gap', width, height };
+        return {
+            ok: false,
+            reason: (found && found.reason) || 'no_gap',
+            confidence: found ? found.confidence : 0,
+            width,
+            height,
+        };
     }
     const top = cropRgba(rgba, width, height, 0, 0, width, y);
     const bottom = cropRgba(rgba, width, height, 0, y, width, height - y);
     return {
         ok: true,
         y,
+        confidence: found.confidence,
+        reason: found.reason,
         top: encodePng(top.width, top.height, top.rgba),
         bottom: encodePng(bottom.width, bottom.height, bottom.rgba),
         topSize: { width: top.width, height: top.height },
@@ -475,6 +824,8 @@ module.exports = {
     cropRgba,
     darkMaskFromRgba,
     rowInkFromRgba,
+    findWhiteBandSplitY,
+    findHorizontalSplit,
     findHorizontalSplitY,
     splitCombinedIfNeeded,
 };
