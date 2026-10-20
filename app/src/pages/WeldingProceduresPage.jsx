@@ -301,17 +301,45 @@ export async function loadAnnexASketchBuffers(record = {}) {
   const jointId = record.joint_sketch_id;
   const seqId = record.sequence_sketch_id;
   if (!jointId && !seqId) return {};
+
+  const captions = {};
+  const metaById = {};
+  const wpqrId = record.wpqr_id
+    || (Array.isArray(record.wpqr_records) && record.wpqr_records[0] && record.wpqr_records[0].id);
+  if (wpqrId && typeof apiService.getWpqrSketches === "function") {
+    try {
+      const res = await apiService.getWpqrSketches(wpqrId);
+      for (const s of (res && res.sketches) || []) {
+        if (!s || s.id == null) continue;
+        metaById[s.id] = s;
+        if (s.dimension_text) captions[s.id] = s.dimension_text;
+      }
+    } catch { /* caption opzionale */ }
+  }
+
+  const attach = async (id) => {
+    const buf = await sketchBufferFromId(id);
+    if (!buf) return null;
+    if (captions[id]) buf.caption = captions[id];
+    return buf;
+  };
+  const isUnsplit = (id) => {
+    const m = metaById[id];
+    return !!(m && (m.slot === "combined" || m.status === "da dividere"));
+  };
+
   if (jointId && seqId && Number(seqId) === Number(jointId)) {
-    const combined = await sketchBufferFromId(jointId);
-    return combined ? { combined } : {};
+    const joint = await attach(jointId);
+    return joint ? { joint, sequencePending: "da dividere" } : {};
   }
   const [joint, sequence] = await Promise.all([
-    sketchBufferFromId(jointId),
-    sketchBufferFromId(seqId),
+    attach(jointId),
+    attach(seqId),
   ]);
   const out = {};
   if (joint) out.joint = joint;
   if (sequence) out.sequence = sequence;
+  else if (joint && isUnsplit(jointId)) out.sequencePending = "da dividere";
   return out;
 }
 
@@ -432,13 +460,15 @@ export function GenerateWpsModal({
       const ownCombined = (sug.combined || []).find((s) => s.score === 100);
       const ownJoint = (sug.joint_design || []).find((s) => s.score === 100);
       const ownSeq = (sug.welding_sequence || []).find((s) => s.score === 100);
-      if (ownCombined) {
-        setSketchPick({ joint_sketch_id: ownCombined.id, sequence_sketch_id: ownCombined.id });
-      } else {
+      if (ownJoint || ownSeq) {
         setSketchPick({
           joint_sketch_id: ownJoint ? ownJoint.id : null,
           sequence_sketch_id: ownSeq ? ownSeq.id : null,
         });
+      } else if (ownCombined) {
+        setSketchPick({ joint_sketch_id: ownCombined.id, sequence_sketch_id: null });
+      } else {
+        setSketchPick({ joint_sketch_id: null, sequence_sketch_id: null });
       }
       if (res.wps_draft) {
         const jt = res.wps_draft.joint_type || form.joint_type || "GEN";
@@ -668,9 +698,7 @@ export function GenerateWpsModal({
                   jointType={result.wps_draft.joint_type || form.joint_type}
                   onChange={(next) => setSketchPick({
                     joint_sketch_id: next.joint_sketch_id,
-                    sequence_sketch_id: next.combined
-                      ? next.joint_sketch_id
-                      : next.sequence_sketch_id,
+                    sequence_sketch_id: next.sequence_sketch_id,
                   })}
                 />
               </div>

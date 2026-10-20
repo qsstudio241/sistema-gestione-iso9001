@@ -290,15 +290,26 @@ describe("generateWpsAnnexABlob", () => {
     expect(body).not.toContain("Heat input 0,8 kJ/mm");
   });
 
-  it("schizzo combinato: cella unita e dimensioni native per lo scale-to-fit", async () => {
+  it("schizzo combinato: due celle affiancate, caption sotto il giunto, sequenza da dividere", async () => {
     const blob = await generateWpsAnnexABlob(MASON_WPS, {
       sketches: {
-        combined: { data: MIN_PNG, type: "png", widthPx: 174, heightPx: 231 },
+        combined: {
+          data: MIN_PNG,
+          type: "png",
+          widthPx: 174,
+          heightPx: 231,
+          caption: "t1=t2: 30 mm - a: 7,5 mm",
+        },
+        sequencePending: "da dividere",
       },
     });
     const xml = xmlOf(new PizZip(await blobToArrayBuffer(blob)));
-    expect(xml).toMatch(/w:gridSpan[^>]*w:val="2"/);
+    expect(xml).not.toMatch(/w:gridSpan[^>]*w:val="2"/);
     expect(xml).toContain("w:drawing");
+    expect(xml).toContain("t1=t2: 30 mm - a: 7,5 mm");
+    expect(xml).toContain("Da dividere");
+    expect(xml).toContain("Joint design");
+    expect(xml).toContain("Welding sequences");
   });
 
   it("formatAnnexEnum traduce gli enum WPQR", () => {

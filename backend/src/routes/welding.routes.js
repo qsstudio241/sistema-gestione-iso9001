@@ -93,6 +93,7 @@ router.get   ('/welding/sketches',            ctrl.listWeldSketches);
 router.post  ('/welding/sketches/upload',     sketchUpload.single('file'), ctrl.uploadWeldSketch);
 router.get   ('/welding/sketches/:id/content', ctrl.getWeldSketchContent);
 router.post  ('/welding/sketches/:id/confirm', ctrl.confirmWeldSketch);
+router.post  ('/welding/sketches/:id/split',   ctrl.splitWeldSketch);
 router.get   ('/welding/wpqr',                ctrl.listWPQR);
 router.get   ('/welding/wpqr/:id/sketches',   ctrl.listWpqrSketches);
 router.get   ('/welding/wpqr/:id',            ctrl.getWPQR);

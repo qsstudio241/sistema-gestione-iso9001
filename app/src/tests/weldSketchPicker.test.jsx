@@ -1,11 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import WeldSketchPicker from "../components/WeldSketchPicker";
+import WeldSketchPicker, { WpqrSketchReview } from "../components/WeldSketchPicker";
 
 vi.mock("../services/apiService", () => ({
   default: {
     getWeldSketchBlob: vi.fn().mockResolvedValue(new Blob([new Uint8Array([0x89, 0x50, 0x4e, 0x47])], { type: "image/png" })),
     uploadWeldSketch: vi.fn(),
+    getWpqrSketches: vi.fn(),
+    confirmWeldSketch: vi.fn(),
+    splitWeldSketch: vi.fn(),
   },
 }));
 
@@ -45,8 +48,8 @@ describe("WeldSketchPicker", () => {
     fireEvent.click(screen.getByTestId("wsk-thumb-2"));
     expect(onChange).toHaveBeenCalledWith({
       joint_sketch_id: 2,
-      sequence_sketch_id: 2,
-      combined: true,
+      sequence_sketch_id: null,
+      combined: false,
     });
     await waitFor(() => expect(apiService.getWeldSketchBlob).toHaveBeenCalled());
   });
@@ -127,5 +130,34 @@ describe("WeldSketchPicker", () => {
       />
     );
     expect(screen.getByTestId("wsk-empty")).toBeInTheDocument();
+  });
+});
+
+describe("WpqrSketchReview", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    apiService.getWeldSketchBlob.mockResolvedValue(
+      new Blob([new Uint8Array([0x89, 0x50, 0x4e, 0x47])], { type: "image/png" })
+    );
+  });
+
+  it("mostra slider e Dividi sullo schizzo da dividere", async () => {
+    apiService.getWpqrSketches.mockResolvedValue({
+      sketches: [{
+        id: 4,
+        slot: "combined",
+        status: "da dividere",
+        dimension_text: "t1=t2: 30 mm - a: 7,5 mm",
+      }],
+    });
+    apiService.splitWeldSketch.mockResolvedValue({
+      joint: { id: 4, slot: "joint_design" },
+      sequence: { id: 5, slot: "welding_sequence" },
+    });
+    render(<WpqrSketchReview wpqrId={38} />);
+    await waitFor(() => expect(screen.getByTestId("wsk-split-4")).toBeInTheDocument());
+    fireEvent.change(screen.getByTestId("wsk-split-slider-4"), { target: { value: "40" } });
+    fireEvent.click(screen.getByTestId("wsk-split-btn-4"));
+    await waitFor(() => expect(apiService.splitWeldSketch).toHaveBeenCalledWith(4, { yRatio: 0.4 }));
   });
 });

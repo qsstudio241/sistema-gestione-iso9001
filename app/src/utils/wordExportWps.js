@@ -346,7 +346,7 @@ function fitImage(w, h, maxW, maxH) {
   };
 }
 
-function sketchParagraphs(slot, { maxW, maxH }) {
+function sketchParagraphs(slot, { maxW, maxH, emptyLabel } = {}) {
   if (slot?.data) {
     const nat = rasterSize(slot.data);
     const dim = fitImage(
@@ -386,15 +386,14 @@ function sketchParagraphs(slot, { maxW, maxH }) {
       alignment: AlignmentType.CENTER,
       spacing: { before: 200, after: 200 },
       children: [
-        run('Vedi allegato / see attachment', { italics: true, size: 16, color: '666666' }),
+        run(emptyLabel || 'Vedi allegato / see attachment', { italics: true, size: 16, color: '666666' }),
       ],
     }),
   ];
 }
 
 function buildSketchTable(sketches = {}) {
-  const combined = sketches.combined;
-  const joint = sketches.joint || sketches.joint_design;
+  const joint = sketches.joint || sketches.joint_design || sketches.combined;
   const sequence = sketches.sequence || sketches.welding_sequence;
   const colW = PAGE_W / 2;
   const bodyH = 2268;
@@ -404,42 +403,26 @@ function buildSketchTable(sketches = {}) {
       headerCell('Welding sequences / Sequenza di saldatura', colW),
     ],
   });
-  let body;
-  if (combined?.data && !joint?.data && !sequence?.data) {
-    body = new TableRow({
-      height: { value: bodyH, rule: HeightRule.ATLEAST },
-      children: [
-        openCell({
-          width: PAGE_W,
-          bordered: true,
-          span: 2,
-          height: bodyH,
-          valign: VerticalAlign.CENTER,
-          children: sketchParagraphs(combined, { maxW: 680, maxH: 210 }),
-        }),
-      ],
-    });
-  } else {
-    body = new TableRow({
-      height: { value: bodyH, rule: HeightRule.ATLEAST },
-      children: [
-        openCell({
-          width: colW,
-          bordered: true,
-          height: bodyH,
-          valign: VerticalAlign.CENTER,
-          children: sketchParagraphs(joint, { maxW: 321, maxH: 189 }),
-        }),
-        openCell({
-          width: colW,
-          bordered: true,
-          height: bodyH,
-          valign: VerticalAlign.CENTER,
-          children: sketchParagraphs(sequence, { maxW: 321, maxH: 189 }),
-        }),
-      ],
-    });
-  }
+  const seqEmpty = sketches.sequencePending === 'da dividere' ? 'Da dividere' : undefined;
+  const body = new TableRow({
+    height: { value: bodyH, rule: HeightRule.ATLEAST },
+    children: [
+      openCell({
+        width: colW,
+        bordered: true,
+        height: bodyH,
+        valign: VerticalAlign.CENTER,
+        children: sketchParagraphs(joint, { maxW: 321, maxH: 189 }),
+      }),
+      openCell({
+        width: colW,
+        bordered: true,
+        height: bodyH,
+        valign: VerticalAlign.CENTER,
+        children: sketchParagraphs(sequence, { maxW: 321, maxH: 189, emptyLabel: seqEmpty }),
+      }),
+    ],
+  });
   return new Table({
     width: { size: PAGE_W, type: WidthType.DXA },
     columnWidths: [colW, colW],

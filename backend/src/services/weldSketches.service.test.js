@@ -25,6 +25,9 @@ const {
     pickSketchEmbeddedImage,
     resolveExtractPdfPath,
     extractAfterWpqrCommit,
+    planStoredPieces,
+    STATUS_NEEDS_SPLIT,
+    splitSketchAtY,
 } = require('./weldSketches.service');
 const IIS_BOXES = require('./fixtures/wpqrIisSketchBboxes.json');
 
@@ -91,7 +94,8 @@ describe('weldSketches — scoring ISO 15609 library', () => {
         expect(out.combined[0].score).toBe(100);
         expect(out.combined.slice(1).every((s) => s.id !== 13)).toBe(true);
         expect(out.combined.length).toBeLessThanOrEqual(3);
-        expect(out.joint_design[0].id).toBe(1);
+        expect(out.joint_design).toEqual([]);
+        expect(out.welding_sequence).toEqual([]);
     });
 });
 
@@ -126,7 +130,11 @@ describe('weldSketches — pagine PDF', () => {
             test_runs: [{}, {}, {}],
         };
         expect(dimensionTextFromWpqr(wpqr)).toMatch(/t=30/);
-        expect(dimensionTextFromWpqr(wpqr)).toMatch(/a: 7\.5/);
+        expect(dimensionTextFromWpqr(wpqr)).toMatch(/a: 7,5/);
+        expect(dimensionTextFromWpqr({
+            ...wpqr,
+            thickness_t2_test_mm: 30,
+        })).toBe('t1=t2: 30 mm - a: 7,5 mm - d: 108 mm');
         const meta = metadataFromWpqr(wpqr);
         expect(meta.joint_type).toBe('FW');
         expect(meta.preparation).toBe('fillet');
@@ -261,3 +269,138 @@ describe('weldSketches — PDF persistito se il temp non c\'è', () => {
         expect(out).toEqual([{ id: 7, slot: 'combined' }]);
     });
 });
+
+describe('weldSketches — split combined IIS', () => {
+    it('con gap: due pezzi joint_design + welding_sequence, caption solo sul giunto', () => {
+        const pieces = planStoredPieces('combined', Buffer.from('png'), {
+            width: 174,
+            height: 231,
+            bboxStr: 'embedded',
+            meta: { dimension_text: 't1=t2: 30 mm - a: 7,5 mm' },
+            splitFn: () => ({
+                ok: true,
+                y: 146,
+                top: Buffer.from('top'),
+                bottom: Buffer.from('bot'),
+                topSize: { width: 174, height: 146 },
+                bottomSize: { width: 174, height: 85 },
+            }),
+        });
+        expect(pieces).toHaveLength(2);
+        expect(pieces[0].slot).toBe('joint_design');
+        expect(pieces[0].dimension_text).toBe('t1=t2: 30 mm - a: 7,5 mm');
+        expect(pieces[1].slot).toBe('welding_sequence');
+        expect(pieces[1].dimension_text).toBeNull();
+        expect(pieces[0].bboxStr).toMatch(/split:146/);
+    });
+
+    it('senza gap: combined con status da dividere', () => {
+        const pieces = planStoredPieces('combined', Buffer.from('png'), {
+            width: 174,
+            height: 231,
+            bboxStr: 'embedded',
+            meta: { dimension_text: 't1=t2: 30 mm - a: 7,5 mm' },
+            splitFn: () => ({ ok: false, reason: 'no_gap' }),
+        });
+        expect(pieces).toHaveLength(1);
+        expect(pieces[0].slot).toBe('combined');
+        expect(pieces[0].status).toBe(STATUS_NEEDS_SPLIT);
+        expect(pieces[0].dimension_text).toBe('t1=t2: 30 mm - a: 7,5 mm');
+    });
+
+    it('slot non combined resta un pezzo', () => {
+        const pieces = planStoredPieces('joint_design', Buffer.from('png'), {
+            width: 10, height: 10, meta: { dimension_text: 't=8 mm' },
+        });
+        expect(pieces).toHaveLength(1);
+        expect(pieces[0].slot).toBe('joint_design');
+        expect(pieces[0].status).toBe('bozza');
+    });
+});
+
+describe('weldSketches — splitSketchAtY', () => {
+    const origUploads = process.env.UPLOAD_DIR;
+    let root;
+
+    beforeEach(() => {
+        query.mockReset();
+        resetTableCache();
+        root = fs.mkdtempSync(path.join(os.tmpdir(), 'sksplit-'));
+        process.env.UPLOAD_DIR = root;
+    });
+
+    afterEach(() => {
+        if (origUploads === undefined) delete process.env.UPLOAD_DIR;
+        else process.env.UPLOAD_DIR = origUploads;
+        fs.rmSync(root, { recursive: true, force: true });
+    });
+
+    it('taglia il PNG e salva joint + sequence', async () => {
+        const { encodePng } = require('./weldSketchPng');
+        const w = 40;
+        const h = 80;
+        const rgba = Buffer.alloc(w * h * 4, 255);
+        const png = encodePng(w, h, rgba);
+        const dir = path.join(root, 'sketches', '1', '51');
+        fs.mkdirSync(dir, { recursive: true });
+        const abs = path.join(dir, 'combined.png');
+        fs.writeFileSync(abs, png);
+        const fileUrl = '/uploads/sketches/1/51/combined.png';
+        const row = {
+            id: 9,
+            organization_id: 1,
+            company_id: 51,
+            slot: 'combined',
+            status: 'da dividere',
+            file_url: fileUrl,
+            source_kind: 'wpqr_crop',
+            wpqr_id: 38,
+            dimension_text: 't1=t2: 30 mm - a: 7,5 mm',
+        };
+        let updated = false;
+        query.mockImplementation(async (sql, params) => {
+            if (/OBJECT_ID/i.test(String(sql))) return { recordset: [{ present: 1 }] };
+            if (/SELECT TOP 1 \* FROM weld_sketches/i.test(String(sql))) {
+                if (params.id === 9) {
+                    return {
+                        recordset: [{
+                            ...row,
+                            slot: updated ? 'joint_design' : 'combined',
+                            status: updated ? 'bozza' : 'da dividere',
+                        }],
+                    };
+                }
+                if (params.id === 99) {
+                    return {
+                        recordset: [{
+                            id: 99,
+                            organization_id: 1,
+                            company_id: 51,
+                            slot: 'welding_sequence',
+                            status: 'bozza',
+                            file_url: '/uploads/sketches/1/51/seq.png',
+                        }],
+                    };
+                }
+            }
+            if (/INSERT INTO weld_sketches/i.test(String(sql))) {
+                expect(params.slot).toBe('welding_sequence');
+                expect(params.dimension_text).toBeNull();
+                return { recordset: [{ id: 99 }] };
+            }
+            if (/UPDATE weld_sketches/i.test(String(sql))) {
+                expect(params.slot).toBe('joint_design');
+                updated = true;
+                return { recordset: [] };
+            }
+            return { recordset: [] };
+        });
+
+        const out = await splitSketchAtY({
+            id: 9, organizationId: 1, userId: 2, yPx: 40,
+        });
+        expect(out.joint.slot).toBe('joint_design');
+        expect(out.sequence.slot).toBe('welding_sequence');
+    });
+});
+

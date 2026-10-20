@@ -13,6 +13,7 @@ const { promisify } = require('util');
 const execFileAsync = promisify(execFile);
 const logger = require('../utils/logger');
 const { getUploadRoot, parseUploadsUrl, resolveUploadFile } = require('../utils/uploadsPath');
+const { splitCombinedIfNeeded } = require('./weldSketchPng');
 
 function getQuery() {
     return require('../config/database').query;
@@ -22,6 +23,7 @@ const SLOTS = Object.freeze(['joint_design', 'welding_sequence', 'combined', 'ha
 const SOURCE_KINDS = Object.freeze(['wpqr_crop', 'upload', 'library_std']);
 const STATUS_DRAFT = 'bozza';
 const STATUS_CONFIRMED = 'confermato';
+const STATUS_NEEDS_SPLIT = 'da dividere';
 const RENDER = Object.freeze({ density: 200, width: 1654, height: 2339 });
 const PT_PAGE = Object.freeze({ width: 595, height: 842 });
 
@@ -181,20 +183,27 @@ function scoreSketch(sketch, request = {}) {
     return score;
 }
 
+function formatMmNumber(n) {
+    const num = Number(n);
+    if (!Number.isFinite(num)) return String(n);
+    return String(num).replace('.', ',');
+}
+
 function dimensionTextFromWpqr(wpqr = {}) {
     const bits = [];
     const t1 = wpqr.thickness_tested != null ? wpqr.thickness_tested : wpqr.thickness_t1_test_mm;
     const t2 = wpqr.thickness_t2_test_mm;
-    if (t1 != null && t2 != null && Number(t1) !== Number(t2)) {
-        bits.push(`t1=${Number(t1)} mm; t2=${Number(t2)} mm`);
+    if (t1 != null && t2 != null) {
+        if (Number(t1) === Number(t2)) bits.push(`t1=t2: ${formatMmNumber(t1)} mm`);
+        else bits.push(`t1=${formatMmNumber(t1)} mm; t2=${formatMmNumber(t2)} mm`);
     } else if (t1 != null) {
-        bits.push(`t=${Number(t1)} mm`);
+        bits.push(`t=${formatMmNumber(t1)} mm`);
     }
     if (wpqr.throat_test_mm != null && wpqr.throat_test_mm !== '') {
-        bits.push(`a: ${Number(wpqr.throat_test_mm)} mm`);
+        bits.push(`a: ${formatMmNumber(wpqr.throat_test_mm)} mm`);
     }
     const d = wpqr.diameter_test_mm != null ? wpqr.diameter_test_mm : wpqr.diameter_min;
-    if (d != null && d !== '') bits.push(`d: ${Number(d)} mm`);
+    if (d != null && d !== '') bits.push(`d: ${formatMmNumber(d)} mm`);
     return bits.join(' - ').slice(0, 200) || null;
 }
 
@@ -562,6 +571,53 @@ async function writePngFile({ organizationId, companyId, slot, png }) {
     return writeSketchFile({ organizationId, companyId, slot, bytes: png, ext: 'png' });
 }
 
+function planStoredPieces(pageSlot, png, { width, height, bboxStr, meta = {}, splitFn } = {}) {
+    if (pageSlot !== 'combined') {
+        return [{
+            slot: pageSlot,
+            png,
+            width,
+            height,
+            bboxStr,
+            status: STATUS_DRAFT,
+            dimension_text: meta.dimension_text || null,
+        }];
+    }
+    const split = (splitFn || splitCombinedIfNeeded)(png);
+    if (split && split.ok) {
+        const mark = `${bboxStr || 'embedded'}:split:${split.y}`;
+        return [
+            {
+                slot: 'joint_design',
+                png: split.top,
+                width: split.topSize.width,
+                height: split.topSize.height,
+                bboxStr: mark,
+                status: STATUS_DRAFT,
+                dimension_text: meta.dimension_text || null,
+            },
+            {
+                slot: 'welding_sequence',
+                png: split.bottom,
+                width: split.bottomSize.width,
+                height: split.bottomSize.height,
+                bboxStr: mark,
+                status: STATUS_DRAFT,
+                dimension_text: null,
+            },
+        ];
+    }
+    return [{
+        slot: 'combined',
+        png,
+        width,
+        height,
+        bboxStr,
+        status: STATUS_NEEDS_SPLIT,
+        dimension_text: meta.dimension_text || null,
+    }];
+}
+
 function publicSketch(row) {
     if (!row) return null;
     return {
@@ -687,26 +743,37 @@ async function extractAndStoreFromPdf({
                 width = cropped.width;
                 height = cropped.height;
             }
-            const file = await writePngFile({
-                organizationId, companyId, slot: hit.slot, png,
+            const pieces = planStoredPieces(hit.slot, png, {
+                width, height, bboxStr, meta, splitFn: deps.splitCombinedIfNeeded,
             });
-            const id = await insertSketch({
-                organization_id: organizationId,
-                company_id: companyId,
-                slot: hit.slot,
-                source_kind: 'wpqr_crop',
-                wpqr_id: wpqrId,
-                source_page: hit.page,
-                crop_bbox_pt: bboxStr,
-                file_url: file.file_url,
-                width_px: width,
-                height_px: height,
-                sha256: sha256Of(png),
-                ...meta,
-                status: STATUS_DRAFT,
-                created_by: userId,
-            });
-            if (id) stored.push({ id, slot: hit.slot, page: hit.page, file_url: file.file_url, status: STATUS_DRAFT });
+            for (const piece of pieces) {
+                const file = await writePngFile({
+                    organizationId, companyId, slot: piece.slot, png: piece.png,
+                });
+                const id = await insertSketch({
+                    organization_id: organizationId,
+                    company_id: companyId,
+                    slot: piece.slot,
+                    source_kind: 'wpqr_crop',
+                    wpqr_id: wpqrId,
+                    source_page: hit.page,
+                    crop_bbox_pt: piece.bboxStr,
+                    file_url: file.file_url,
+                    width_px: piece.width,
+                    height_px: piece.height,
+                    sha256: sha256Of(piece.png),
+                    ...meta,
+                    dimension_text: piece.dimension_text,
+                    status: piece.status,
+                    created_by: userId,
+                });
+                if (id) {
+                    stored.push({
+                        id, slot: piece.slot, page: hit.page,
+                        file_url: file.file_url, status: piece.status,
+                    });
+                }
+            }
         } catch (err) {
             logger.warn('[weldSketches] crop pagina fallito', {
                 wpqrId, page: hit.page, error: err.message,
@@ -879,17 +946,9 @@ function suggestSketches({ own = [], library = [], request = {} }) {
 
     for (const item of ownFirst) {
         pushUnique(item.slot, item);
-        if (item.slot === 'combined') {
-            if (!bySlot.joint_design.length) pushUnique('joint_design', item);
-            if (!bySlot.welding_sequence.length) pushUnique('welding_sequence', item);
-        }
     }
     for (const item of scored) {
         pushUnique(item.slot, item);
-        if (item.slot === 'combined') {
-            if (bySlot.joint_design.length < 3) pushUnique('joint_design', item);
-            if (bySlot.welding_sequence.length < 3) pushUnique('welding_sequence', item);
-        }
     }
     for (const slot of Object.keys(bySlot)) {
         bySlot[slot] = bySlot[slot].slice(0, 3);
@@ -926,11 +985,123 @@ async function resolveSketchFile(row) {
     return resolveUploadFile(parsed.rel);
 }
 
+async function splitSketchAtY({ id, organizationId, userId, yPx = null, yRatio = null }) {
+    if (!(await sketchesTableAvailable())) {
+        const err = new Error('Libreria schizzi non disponibile');
+        err.code = 'SKETCHES_UNAVAILABLE';
+        err.status = 404;
+        throw err;
+    }
+    const row = await getSketchById({ id, organizationId });
+    if (!row) {
+        const err = new Error('Schizzo non trovato');
+        err.code = 'SKETCH_NOT_FOUND';
+        err.status = 404;
+        throw err;
+    }
+    if (row.slot !== 'combined' && row.status !== STATUS_NEEDS_SPLIT) {
+        const err = new Error('Questo schizzo non è da dividere');
+        err.code = 'SKETCH_NOT_SPLITTABLE';
+        err.status = 400;
+        throw err;
+    }
+    const file = await resolveSketchFile(row);
+    if (!file) {
+        const err = new Error('File schizzo non trovato');
+        err.code = 'SKETCH_FILE_NOT_FOUND';
+        err.status = 404;
+        throw err;
+    }
+    const png = fs.readFileSync(file.realFile);
+    const decoded = require('./weldSketchPng').decodePng(png);
+    if (!decoded) {
+        const err = new Error('PNG non leggibile');
+        err.code = 'SKETCH_PNG_INVALID';
+        err.status = 400;
+        throw err;
+    }
+    let y = yPx != null && yPx !== '' ? Number(yPx) : null;
+    if (!Number.isFinite(y) && yRatio != null && yRatio !== '') {
+        y = Math.round(decoded.height * Number(yRatio));
+    }
+    if (!Number.isFinite(y)) y = require('./weldSketchPng').findHorizontalSplitY(
+        require('./weldSketchPng').rowInkFromRgba(decoded.rgba, decoded.width, decoded.height),
+    );
+    if (!Number.isFinite(y) || y < 8 || y > decoded.height - 8) {
+        const err = new Error('Linea di taglio non valida');
+        err.code = 'SKETCH_SPLIT_Y';
+        err.status = 400;
+        throw err;
+    }
+    y = Math.round(y);
+    const { encodePng, cropRgba } = require('./weldSketchPng');
+    const top = cropRgba(decoded.rgba, decoded.width, decoded.height, 0, 0, decoded.width, y);
+    const bottom = cropRgba(
+        decoded.rgba, decoded.width, decoded.height, 0, y, decoded.width, decoded.height - y,
+    );
+    const topPng = encodePng(top.width, top.height, top.rgba);
+    const botPng = encodePng(bottom.width, bottom.height, bottom.rgba);
+    const topFile = await writePngFile({
+        organizationId, companyId: row.company_id, slot: 'joint_design', png: topPng,
+    });
+    const botFile = await writePngFile({
+        organizationId, companyId: row.company_id, slot: 'welding_sequence', png: botPng,
+    });
+    await getQuery()(`
+        UPDATE weld_sketches
+        SET slot = @slot, file_url = @file_url, width_px = @width_px, height_px = @height_px,
+            sha256 = @sha256, crop_bbox_pt = @crop_bbox_pt, status = @status
+        WHERE id = @id AND organization_id = @organizationId
+    `, {
+        id,
+        organizationId,
+        slot: 'joint_design',
+        file_url: topFile.file_url,
+        width_px: top.width,
+        height_px: top.height,
+        sha256: sha256Of(topPng),
+        crop_bbox_pt: `split:${y}`,
+        status: STATUS_DRAFT,
+    });
+    const seqId = await insertSketch({
+        organization_id: organizationId,
+        company_id: row.company_id,
+        slot: 'welding_sequence',
+        source_kind: row.source_kind || 'wpqr_crop',
+        wpqr_id: row.wpqr_id,
+        source_page: row.source_page,
+        crop_bbox_pt: `split:${y}`,
+        file_url: botFile.file_url,
+        width_px: bottom.width,
+        height_px: bottom.height,
+        sha256: sha256Of(botPng),
+        joint_type: row.joint_type,
+        preparation: row.preparation,
+        product_form: row.product_form,
+        thickness_min_mm: row.thickness_min_mm,
+        thickness_max_mm: row.thickness_max_mm,
+        throat_mm: row.throat_mm,
+        outside_diameter_mm: row.outside_diameter_mm,
+        process_iso4063: row.process_iso4063,
+        position_iso6947: row.position_iso6947,
+        run_mode: row.run_mode,
+        n_passes: row.n_passes,
+        dimension_text: null,
+        status: STATUS_DRAFT,
+        created_by: userId,
+    });
+    return {
+        joint: await getSketchById({ id, organizationId }),
+        sequence: seqId ? await getSketchById({ id: seqId, organizationId }) : null,
+    };
+}
+
 module.exports = {
     SLOTS,
     SOURCE_KINDS,
     STATUS_DRAFT,
     STATUS_CONFIRMED,
+    STATUS_NEEDS_SPLIT,
     sketchesTableAvailable,
     resetTableCache,
     presentWpsSketchColumns,
@@ -940,6 +1111,7 @@ module.exports = {
     normalizeProductForm,
     processFamily,
     scoreSketch,
+    formatMmNumber,
     dimensionTextFromWpqr,
     metadataFromWpqr,
     classifyPageText,
@@ -957,6 +1129,8 @@ module.exports = {
     listSketches,
     getSketchById,
     confirmSketch,
+    splitSketchAtY,
+    planStoredPieces,
     storeUploadedPng,
     resolveSketchFile,
     publicSketch,
