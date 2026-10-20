@@ -2833,6 +2833,12 @@ class ApiService {
         return this.get(`/welding/sketches${q ? `?${q}` : ''}`);
     }
     async confirmWeldSketch(id)         { return this.post(`/welding/sketches/${id}/confirm`, {}); }
+    async splitWeldSketch(id, { yPx, yRatio } = {}) {
+        const body = {};
+        if (yPx != null && yPx !== '') body.y_px = yPx;
+        if (yRatio != null && yRatio !== '') body.y_ratio = yRatio;
+        return this.post(`/welding/sketches/${id}/split`, body);
+    }
     async getWeldSketchBlob(id) {
         const url = `${this.baseUrl}/welding/sketches/${id}/content`;
         const response = await fetch(url, {

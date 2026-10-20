@@ -30,7 +30,9 @@ function SketchThumb({ sketch, selected, onSelect }) {
   const label = sketch.score === 100
     ? "Schizzo della WPQR"
     : (sketch.source === "library" ? `Libreria (${sketch.score})` : sketch.slot);
-  const statusNote = sketch.status === "bozza" ? " — bozza, conferma in Rivedi" : "";
+  const statusNote = sketch.status === "da dividere"
+    ? " — da dividere"
+    : (sketch.status === "bozza" ? " — bozza, conferma in Rivedi" : "");
 
   return (
     <button
@@ -80,8 +82,8 @@ export default function WeldSketchPicker({
       if (res?.sketch) {
         onChange({
           joint_sketch_id: res.sketch.id,
-          sequence_sketch_id: res.sketch.id,
-          combined: true,
+          sequence_sketch_id: null,
+          combined: false,
         });
       }
     } catch (err) {
@@ -99,8 +101,8 @@ export default function WeldSketchPicker({
     if (sketch.slot === "combined") {
       onChange({
         joint_sketch_id: sketch.id,
-        sequence_sketch_id: sketch.id,
-        combined: true,
+        sequence_sketch_id: null,
+        combined: false,
       });
       return;
     }
@@ -125,22 +127,23 @@ export default function WeldSketchPicker({
     <div className="wsk-picker" data-testid="wsk-picker">
       <div className="wp-form-section-title">Schizzi Annex A</div>
       <p className="wsk-hint">
-        Lo schizzo della WPQR viene prima; poi fino a 3 della libreria dello studio
-        (stesso tipo giunto). Non viene mai disegnato dall&apos;AI. Celle vuote nel Word:
-        «Vedi allegato».
+        Joint design e Welding sequences restano due celle affiancate. Lo schizzo
+        combinato va solo nel giunto; la sequenza resta vuota («Da dividere») finché
+        non lo spezzi in Rivedi. Celle vuote nel Word: «Vedi allegato».
       </p>
       {!hasAny && (
         <p className="wsk-empty" data-testid="wsk-empty">Nessuno schizzo in libreria per questo giunto.</p>
       )}
       {combined.length > 0 && (
         <div className="wsk-row">
-          <span className="wsk-row-label">Combinato (giunto + sequenza)</span>
+          <span className="wsk-row-label">Combinato (solo cella giunto, sequenza da dividere)</span>
           <div className="wsk-thumbs">
             {combined.map((s) => (
               <SketchThumb
                 key={`c-${s.id}`}
                 sketch={s}
-                selected={Number(selectedJointId) === Number(s.id) && Number(selectedSequenceId) === Number(s.id)}
+                selected={Number(selectedJointId) === Number(s.id)
+                  && (selectedSequenceId == null || Number(selectedSequenceId) === Number(s.id))}
                 onSelect={pick}
               />
             ))}
@@ -190,6 +193,70 @@ export default function WeldSketchPicker({
   );
 }
 
+function needsHorizontalSplit(sketch) {
+  return sketch
+    && (sketch.status === "da dividere" || sketch.slot === "combined");
+}
+
+function SplitSketchControl({ sketch, busy, onSplit }) {
+  const [url, setUrl] = useState(null);
+  const [ratio, setRatio] = useState(0.5);
+
+  useEffect(() => {
+    let revoked = false;
+    let objectUrl = null;
+    if (!sketch?.id) return undefined;
+    Promise.resolve()
+      .then(() => (typeof apiService.getWeldSketchBlob === "function"
+        ? apiService.getWeldSketchBlob(sketch.id)
+        : null))
+      .then((blob) => {
+        if (revoked || !blob) return;
+        objectUrl = URL.createObjectURL(blob);
+        setUrl(objectUrl);
+      })
+      .catch(() => {
+        if (!revoked) setUrl(null);
+      });
+    return () => {
+      revoked = true;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [sketch?.id]);
+
+  return (
+    <div className="wsk-split" data-testid={`wsk-split-${sketch.id}`}>
+      <div className="wsk-split-preview">
+        {url
+          ? <img src={url} alt={sketch.dimension_text || "Schizzo combinato"} />
+          : <span className="wsk-thumb-fallback">PNG</span>}
+        <span className="wsk-split-line" style={{ top: `${Math.round(ratio * 100)}%` }} />
+      </div>
+      <label className="wsk-split-label">
+        Linea di taglio (giunto sopra, sequenza sotto)
+        <input
+          type="range"
+          min="10"
+          max="90"
+          step="1"
+          value={Math.round(ratio * 100)}
+          onChange={(e) => setRatio(Number(e.target.value) / 100)}
+          data-testid={`wsk-split-slider-${sketch.id}`}
+        />
+      </label>
+      <button
+        type="button"
+        className="wp-btn-save"
+        disabled={busy}
+        onClick={() => onSplit(sketch.id, ratio)}
+        data-testid={`wsk-split-btn-${sketch.id}`}
+      >
+        {busy ? "Divisione\u2026" : "Dividi"}
+      </button>
+    </div>
+  );
+}
+
 export function WpqrSketchReview({ wpqrId }) {
   const [sketches, setSketches] = useState([]);
   const [busyId, setBusyId] = useState(null);
@@ -217,6 +284,19 @@ export function WpqrSketchReview({ wpqrId }) {
     }
   }
 
+  async function split(id, yRatio) {
+    setBusyId(id);
+    setError(null);
+    try {
+      await apiService.splitWeldSketch(id, { yRatio });
+      load();
+    } catch (err) {
+      setError(err.message || "Divisione schizzo fallita");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   if (!wpqrId) return null;
   if (!sketches.length) return null;
 
@@ -224,13 +304,24 @@ export function WpqrSketchReview({ wpqrId }) {
     <div className="wsk-review" data-testid="wsk-review">
       <div className="wp-form-section-title">Schizzi estratti (Rivedi)</div>
       <p className="wsk-hint">
-        Crop dal PDF in stato bozza. Confermali per riusarli in libreria e nel Word.
+        Crop dal PDF in stato bozza. Se giunto e sequenza sono in un&apos;unica
+        immagine, regola la linea e premi Dividi; poi conferma per la libreria.
       </p>
       {error && <p className="wsk-err">{error}</p>}
       <div className="wsk-thumbs">
         {sketches.map((s) => (
           <div key={s.id} className="wsk-review-item">
-            <SketchThumb sketch={s} selected={s.status === "confermato"} onSelect={() => {}} />
+            {needsHorizontalSplit(s)
+              ? (
+                <SplitSketchControl
+                  sketch={s}
+                  busy={busyId === s.id}
+                  onSplit={split}
+                />
+              )
+              : (
+                <SketchThumb sketch={s} selected={s.status === "confermato"} onSelect={() => {}} />
+              )}
             {s.status !== "confermato" && (
               <button
                 type="button"
@@ -239,7 +330,7 @@ export function WpqrSketchReview({ wpqrId }) {
                 onClick={() => confirm(s.id)}
                 data-testid={`wsk-confirm-${s.id}`}
               >
-                {busyId === s.id ? "Conferma…" : "Conferma"}
+                {busyId === s.id ? "Conferma\u2026" : "Conferma"}
               </button>
             )}
             {s.status === "confermato" && <span className="wsk-ok">Confermato</span>}

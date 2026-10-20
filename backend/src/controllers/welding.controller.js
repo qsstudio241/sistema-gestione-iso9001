@@ -1885,6 +1885,32 @@ async function confirmWeldSketch(req, res) {
     }
 }
 
+async function splitWeldSketch(req, res) {
+    try {
+        const id = parseInt(req.params.id, 10);
+        if (!Number.isSafeInteger(id) || id <= 0) {
+            return res.status(400).json({ error: 'ID schizzo non valido', code: 'VALIDATION_ERROR' });
+        }
+        const { splitSketchAtY, getSketchById } = require('../services/weldSketches.service');
+        const existing = await getSketchById({ id, organizationId: req.user.organization_id });
+        if (!existing) {
+            return res.status(404).json({ error: 'Schizzo non trovato', code: 'SKETCH_NOT_FOUND' });
+        }
+        if (await denySketchCompany(res, req.user, existing.company_id, 'write')) return;
+        const body = req.body || {};
+        const result = await splitSketchAtY({
+            id,
+            organizationId: req.user.organization_id,
+            userId: req.user.user_id,
+            yPx: body.y_px,
+            yRatio: body.y_ratio,
+        });
+        res.json({ success: true, joint: result.joint, sequence: result.sequence });
+    } catch (error) {
+        sendSketchError(res, error, 'SKETCH_SPLIT_ERROR', 'Errore durante la divisione dello schizzo');
+    }
+}
+
 async function getWeldSketchContent(req, res) {
     try {
         const id = parseInt(req.params.id, 10);
@@ -1984,6 +2010,7 @@ module.exports = {
     listWpqrSketches,
     listWeldSketches,
     confirmWeldSketch,
+    splitWeldSketch,
     getWeldSketchContent,
     uploadWeldSketch,
 };
