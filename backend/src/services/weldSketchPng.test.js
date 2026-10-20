@@ -194,6 +194,19 @@ describe('weldSketchPng — split orizzontale IIS', () => {
         expect(out.y).toBeGreaterThan(8);
     });
 
+    it('quota 3px attaccata al giunto (un solo CC): split nel gap, non no_gap', () => {
+        const width = 120;
+        const height = 160;
+        const rgba = Buffer.alloc(width * height * 4, 255);
+        fillRect(rgba, width, 18, 8, 102, 62, [25, 25, 25]);
+        fillRect(rgba, width, 22, 98, 100, 152, [25, 25, 25]);
+        fillRect(rgba, width, 20, 8, 23, 152, [20, 20, 20]);
+        const out = splitCombinedIfNeeded(encodePng(width, height, rgba));
+        expect(out.ok).toBe(true);
+        expect(out.y).toBeGreaterThanOrEqual(62);
+        expect(out.y).toBeLessThanOrEqual(98);
+    });
+
     it('ponte largo tra giunto e sequenza: non taglia, no_gap', () => {
         const width = 100;
         const height = 120;

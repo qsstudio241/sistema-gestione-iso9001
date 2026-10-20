@@ -333,12 +333,40 @@ function connectedComponents(mask, width, height) {
     return ccs;
 }
 
+function maxDarkRunOnRow(mask, width, y, x0, x1) {
+    if (!mask || !width) return 0;
+    let maxRun = 0;
+    let run = 0;
+    const row = y * width;
+    const from = Math.max(0, x0);
+    const to = Math.min(width - 1, x1);
+    for (let x = from; x <= to; x += 1) {
+        if (mask[row + x]) {
+            run += 1;
+            if (run > maxRun) maxRun = run;
+        } else {
+            run = 0;
+        }
+    }
+    return maxRun;
+}
+
+/**
+ * Non tagliare un disegno largo. Una quota verticale attaccata al giunto è
+ * lo stesso CC, ma sulla riga di taglio è sottile: si usa l'inchiostro a Y,
+ * non il bounding-box dell'intero blob.
+ */
 function largeComponentCrossesY(ccs, y, opts = {}) {
     const minWidth = opts.minBlobWidth != null ? opts.minBlobWidth : 8;
     const minArea = opts.minLargeArea != null ? opts.minLargeArea : 80;
+    const { mask = null, width = 0 } = opts;
     for (let i = 0; i < ccs.length; i += 1) {
         const c = ccs[i];
-        if (c.y0 < y && c.y1 >= y && c.w >= minWidth && c.area >= minArea) return true;
+        if (!(c.y0 < y && c.y1 >= y && c.area >= minArea)) continue;
+        const atCut = mask && width
+            ? maxDarkRunOnRow(mask, width, y, c.x0, c.x1)
+            : c.w;
+        if (atCut >= minWidth) return true;
     }
     return false;
 }
@@ -411,7 +439,7 @@ function findHorizontalSplitY(rowInk, opts = {}) {
     for (let i = 0; i < candidates.length; i += 1) {
         const y = candidates[i];
         if (y < 8 || y > H - 8) continue;
-        if (ccs && largeComponentCrossesY(ccs, y, opts)) continue;
+        if (ccs && largeComponentCrossesY(ccs, y, { ...opts, mask, width })) continue;
         return y;
     }
     return null;
