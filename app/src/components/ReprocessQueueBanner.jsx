@@ -30,8 +30,10 @@
  *    ciascuno confermabile/scartabile singolarmente (endpoint invariati,
  *    nessuna scrittura batch — resta un aggiornamento mirato per campo).
  */
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import apiService from "../services/apiService";
+import { useCompanyScope } from "../contexts/CompanyScopeContext";
+import { numericCompanyScopeId } from "../utils/appCompanyScope";
 import { getSchemaForDocType } from "../data/documentTypeSchemas";
 import IngestDialogShell from "./IngestDialogShell";
 import IngestSourcePreview from "./IngestSourcePreview";
@@ -132,7 +134,7 @@ function groupDisplayName(group) {
 }
 
 /** Una riga = una proposta (un campo). Conferma/scarto restano per-campo — solo la finestra è condivisa. */
-function ReprocessFieldRow({ item, docType, onDone }) {
+function ReprocessFieldRow({ item, docType, onDone, companyId = null }) {
   const field = item.field_scope;
   const originalValue = item.fields?.[field];
   const fieldDef = useMemo(() => resolveFieldDef(docType, field, originalValue), [docType, field, originalValue]);
@@ -160,7 +162,11 @@ function ReprocessFieldRow({ item, docType, onDone }) {
         setBusy(false);
         return;
       }
-      await apiService.confirmIngestStaging(item.id, payload);
+      await apiService.confirmIngestStaging(
+        item.id,
+        payload,
+        ...(companyId ? [{ company_id: companyId }] : []),
+      );
       onDone(item.id);
     } catch (e) {
       setErr(e?.data?.error || e.message || "Conferma fallita");
@@ -172,7 +178,10 @@ function ReprocessFieldRow({ item, docType, onDone }) {
     setBusy(true);
     setErr(null);
     try {
-      await apiService.rejectIngestStaging(item.id);
+      await apiService.rejectIngestStaging(
+        item.id,
+        ...(companyId ? [{ company_id: companyId }] : []),
+      );
       onDone(item.id);
     } catch (e) {
       setErr(e?.data?.error || e.message || "Scarto fallito");
@@ -224,7 +233,7 @@ function ReprocessFieldRow({ item, docType, onDone }) {
 }
 
 /** Una finestra per documento: tutti i campi pendenti di quel documento, un'unica anteprima condivisa. */
-function ReprocessGroupDialog({ group, onClose, onFieldDone }) {
+function ReprocessGroupDialog({ group, onClose, onFieldDone, companyId = null }) {
   if (!group) return null;
 
   const firstItem = group.items[0];
@@ -257,7 +266,7 @@ function ReprocessGroupDialog({ group, onClose, onFieldDone }) {
             confermali (o scartali) uno per uno.
           </p>
           {group.items.map((item) => (
-            <ReprocessFieldRow key={item.id} item={item} docType={group.docType} onDone={onFieldDone} />
+            <ReprocessFieldRow key={item.id} item={item} docType={group.docType} onDone={onFieldDone} companyId={companyId} />
           ))}
         </>
       )}
@@ -271,26 +280,50 @@ function ReprocessGroupDialog({ group, onClose, onFieldDone }) {
 }
 
 export default function ReprocessQueueBanner({ module = "qualifiche" }) {
+  const { companyId } = useCompanyScope();
+  const scopeCompanyId = numericCompanyScopeId(companyId);
   const [items, setItems] = useState([]);
   const [expanded, setExpanded] = useState(false);
   const [reviewGroupKey, setReviewGroupKey] = useState(null);
   const [loading, setLoading] = useState(true);
+  const loadSeq = useRef(0);
 
   const load = useCallback(async () => {
+    const seq = ++loadSeq.current;
     setLoading(true);
+    let next = [];
     try {
-      const res = await apiService.listIngestStaging({ module, reprocessOnly: true, reviewStatus: "pending" });
-      setItems(res?.items || []);
+      const res = await apiService.listIngestStaging({
+        module,
+        reprocessOnly: true,
+        reviewStatus: "pending",
+        ...(scopeCompanyId ? { company_id: scopeCompanyId } : {}),
+      });
+      next = res?.items || [];
+      if (scopeCompanyId) {
+        next = next.filter((i) => String(i.company_id) === String(scopeCompanyId));
+      }
     } catch {
-      setItems([]);
-    } finally {
-      setLoading(false);
+      next = [];
     }
-  }, [module]);
+    // Solo l'ultima richiesta vale: una risposta piu' lenta non deve
+    // rimettere in coda rielaborazioni di un altro Ambito.
+    if (seq !== loadSeq.current) return;
+    setItems(next);
+    setLoading(false);
+  }, [module, scopeCompanyId]);
 
   useEffect(() => { load(); }, [load]);
 
-  const removeItem = useCallback((id) => setItems((prev) => prev.filter((i) => i.id !== id)), []);
+  useEffect(() => {
+    setReviewGroupKey(null);
+  }, [scopeCompanyId]);
+
+  const removeItem = useCallback((id) => {
+    loadSeq.current += 1;
+    setItems((prev) => prev.filter((i) => i.id !== id));
+    setLoading(false);
+  }, []);
 
   const groups = useMemo(() => groupItems(items), [items]);
   // Il gruppo aperto è derivato dai groups correnti (non uno snapshot): quando
@@ -344,6 +377,7 @@ export default function ReprocessQueueBanner({ module = "qualifiche" }) {
         group={reviewGroup}
         onClose={() => setReviewGroupKey(null)}
         onFieldDone={removeItem}
+        companyId={scopeCompanyId}
       />
     </div>
   );

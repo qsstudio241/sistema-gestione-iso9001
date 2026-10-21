@@ -2056,22 +2056,29 @@ class ApiService {
         }
     }
 
-    async getIngestStaging(stagingId) {
-        return this.get(`/ingest-staging/${stagingId}`);
+    async getIngestStaging(stagingId, { company_id } = {}) {
+        const params = new URLSearchParams();
+        if (company_id != null && company_id !== '') params.set('company_id', String(company_id));
+        const qs = params.toString();
+        return this.get(`/ingest-staging/${stagingId}${qs ? `?${qs}` : ''}`);
     }
 
     /** Coda revisione (upload pending + proposte di rielaborazione, migrazione 137). */
-    async listIngestStaging({ module: moduleKey, docType, reviewStatus = 'pending', reprocessOnly = false } = {}) {
+    async listIngestStaging({ module: moduleKey, docType, reviewStatus = 'pending', reprocessOnly = false, company_id } = {}) {
         const params = new URLSearchParams();
         if (moduleKey) params.set('module', moduleKey);
         if (docType) params.set('doc_type', docType);
         if (reviewStatus) params.set('review_status', reviewStatus);
         if (reprocessOnly) params.set('reprocess_only', 'true');
+        if (company_id != null && company_id !== '') params.set('company_id', String(company_id));
         return this.get(`/ingest-staging?${params.toString()}`);
     }
 
-    async getIngestStagingFileBlob(stagingId) {
-        const url = `${this.baseUrl}/ingest-staging/${stagingId}/file`;
+    async getIngestStagingFileBlob(stagingId, { company_id } = {}) {
+        const params = new URLSearchParams();
+        if (company_id != null && company_id !== '') params.set('company_id', String(company_id));
+        const qs = params.toString();
+        const url = `${this.baseUrl}/ingest-staging/${stagingId}/file${qs ? `?${qs}` : ''}`;
         const response = await fetch(url, {
             method: 'GET',
             headers: this.getHeaders(true),
@@ -2082,12 +2089,16 @@ class ApiService {
         return response.blob();
     }
 
-    async confirmIngestStaging(stagingId, fields = {}) {
-        return this.post(`/ingest-staging/${stagingId}/confirm`, { fields });
+    async confirmIngestStaging(stagingId, fields = {}, { company_id } = {}) {
+        const body = { fields };
+        if (company_id != null && company_id !== '') body.company_id = Number(company_id);
+        return this.post(`/ingest-staging/${stagingId}/confirm`, body);
     }
 
-    async rejectIngestStaging(stagingId) {
-        return this.post(`/ingest-staging/${stagingId}/reject`, {});
+    async rejectIngestStaging(stagingId, { company_id } = {}) {
+        const body = {};
+        if (company_id != null && company_id !== '') body.company_id = Number(company_id);
+        return this.post(`/ingest-staging/${stagingId}/reject`, body);
     }
 
     async commitImportJobFileToQualification(jobId, fileId, data = {}) {

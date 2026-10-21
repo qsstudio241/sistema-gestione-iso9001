@@ -30,6 +30,13 @@ jest.mock('../services/companyAccess.service', () => ({
     getAllowedCompanyIds: jest.fn((list) => (
         Array.isArray(list) && list.length ? list.map((a) => a.company_id) : null
     )),
+    resolveScopedCompanyIds: jest.fn((allowed, requested) => {
+        if (requested == null || requested === '') return allowed;
+        const requestedId = Number(requested);
+        if (!Number.isFinite(requestedId)) return [];
+        if (allowed == null) return [requestedId];
+        return allowed.some((id) => Number(id) === requestedId) ? [requestedId] : [];
+    }),
     assertMutatingAllowed: jest.fn().mockResolvedValue(null),
     assertCompanyRead: jest.fn().mockResolvedValue(null),
 }));
@@ -186,6 +193,104 @@ describe('listStagingHandler — filtro ?module=', () => {
         expect(listStaging).toHaveBeenCalledWith(expect.objectContaining({
             allowedCompanyIds: null,
         }));
+    });
+
+    it('admin/superadmin con Ambito: lista solo quella azienda', async () => {
+        getModuleForDocType.mockReturnValue('qualifiche');
+        getLicensedModuleKeysForOrg.mockResolvedValue(['qualifiche']);
+        listStaging.mockResolvedValue([]);
+        getAllowedCompanyIds.mockReturnValue(null);
+
+        for (const role of ['admin', 'superadmin']) {
+            const req = {
+                query: { module: 'qualifiche', company_id: '49' },
+                user: { organization_id: 1001, role },
+            };
+            const res = mockRes();
+            await listStagingHandler(req, res);
+            expect(assertCompanyRead).toHaveBeenCalledWith(req.user, 49);
+            expect(listStaging).toHaveBeenCalledWith(expect.objectContaining({
+                allowedCompanyIds: [49],
+            }));
+            expect(res.status).not.toHaveBeenCalledWith(403);
+        }
+    });
+
+    it('admin senza Ambito: nessuna restrizione company_id', async () => {
+        getModuleForDocType.mockReturnValue('saldatura');
+        getLicensedModuleKeysForOrg.mockResolvedValue(['saldatura']);
+        listStaging.mockResolvedValue([]);
+        getAllowedCompanyIds.mockReturnValue(null);
+
+        const req = { query: { module: 'saldatura' }, user: { organization_id: 1001, role: 'admin' } };
+        const res = mockRes();
+        await listStagingHandler(req, res);
+
+        expect(listStaging).toHaveBeenCalledWith(expect.objectContaining({
+            allowedCompanyIds: null,
+        }));
+    });
+
+    it('cliente: company_id di un\'altra azienda -> 403, nessuna riga', async () => {
+        getModuleForDocType.mockReturnValue('qualifiche');
+        getLicensedModuleKeysForOrg.mockResolvedValue(['qualifiche']);
+        getAllowedCompanyIds.mockReturnValue([48]);
+        assertCompanyRead.mockResolvedValueOnce({
+            status: 403,
+            body: { error: 'Azienda non accessibile', code: 'FORBIDDEN' },
+        });
+
+        const req = {
+            query: { module: 'qualifiche', company_id: '50' },
+            user: {
+                organization_id: 1001,
+                role: 'utente',
+                company_access: [{ company_id: 48, permission: 'write' }],
+            },
+        };
+        const res = mockRes();
+        await listStagingHandler(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(403);
+        expect(listStaging).not.toHaveBeenCalled();
+    });
+
+    it('cliente: company_id della propria azienda resta nel filtro', async () => {
+        getModuleForDocType.mockReturnValue('qualifiche');
+        getLicensedModuleKeysForOrg.mockResolvedValue(['qualifiche']);
+        listStaging.mockResolvedValue([]);
+        getAllowedCompanyIds.mockReturnValue([48]);
+
+        const req = {
+            query: { module: 'qualifiche', company_id: '48' },
+            user: {
+                organization_id: 1001,
+                role: 'utente',
+                company_access: [{ company_id: 48, permission: 'write' }],
+            },
+        };
+        const res = mockRes();
+        await listStagingHandler(req, res);
+
+        expect(listStaging).toHaveBeenCalledWith(expect.objectContaining({
+            allowedCompanyIds: [48],
+        }));
+        expect(res.status).not.toHaveBeenCalledWith(403);
+    });
+
+    it('company_id non numerico -> 400 senza query lista', async () => {
+        getModuleForDocType.mockReturnValue('qualifiche');
+        getLicensedModuleKeysForOrg.mockResolvedValue(['qualifiche']);
+
+        const req = {
+            query: { module: 'qualifiche', company_id: 'studio' },
+            user: { organization_id: 1001, role: 'admin' },
+        };
+        const res = mockRes();
+        await listStagingHandler(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(listStaging).not.toHaveBeenCalled();
     });
 });
 
@@ -432,6 +537,25 @@ describe('confirmStagingHandler — RBAC company su conferma norma (IA-12)', () 
         expect(confirmStaging).not.toHaveBeenCalled();
         expect(res.status).toHaveBeenCalledWith(403);
     });
+
+    it('admin con Ambito: conferma staging di un\'altra azienda -> 404', async () => {
+        getStagingById.mockResolvedValue({
+            id: 87, doc_type: 'patentino_saldatore', review_status: 'pending', company_id: 50,
+        });
+        getModuleForDocType.mockReturnValue('qualifiche');
+        getLicensedModuleKeysForOrg.mockResolvedValue(['qualifiche']);
+
+        const req = {
+            params: { id: '87' },
+            body: { company_id: 49, fields: {} },
+            user: { organization_id: 1001, user_id: 9, role: 'admin' },
+        };
+        const res = mockRes();
+        await confirmStagingHandler(req, res);
+
+        expect(confirmStaging).not.toHaveBeenCalled();
+        expect(res.status).toHaveBeenCalledWith(404);
+    });
 });
 
 describe('rejectStagingHandler — RBAC', () => {
@@ -460,6 +584,25 @@ describe('rejectStagingHandler — RBAC', () => {
         expect(res.status).toHaveBeenCalledWith(403);
         expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ code: 'AUTH_FORBIDDEN' }));
     });
+
+    it('admin con Ambito: scarto staging di un\'altra azienda -> 404', async () => {
+        getStagingById.mockResolvedValue({
+            id: 88, doc_type: 'wpqr', review_status: 'pending', company_id: 50,
+        });
+        getModuleForDocType.mockReturnValue('saldatura');
+        getLicensedModuleKeysForOrg.mockResolvedValue(['saldatura']);
+
+        const req = {
+            params: { id: '88' },
+            body: { company_id: 49 },
+            user: { organization_id: 1001, user_id: 9, role: 'admin' },
+        };
+        const res = mockRes();
+        await rejectStagingHandler(req, res);
+
+        expect(rejectStaging).not.toHaveBeenCalled();
+        expect(res.status).toHaveBeenCalledWith(404);
+    });
 });
 
 describe('getStaging — isolamento azienda', () => {
@@ -487,5 +630,70 @@ describe('getStaging — isolamento azienda', () => {
 
         expect(res.status).toHaveBeenCalledWith(403);
         expect(assertCompanyRead).not.toHaveBeenCalled();
+    });
+
+    it('admin con Ambito: dettaglio di un\'altra azienda -> 404', async () => {
+        getStagingById.mockResolvedValue({
+            id: 84, doc_type: 'patentino_saldatore', review_status: 'pending', company_id: 50,
+        });
+        getModuleForDocType.mockReturnValue('qualifiche');
+        getLicensedModuleKeysForOrg.mockResolvedValue(['qualifiche']);
+
+        const req = {
+            params: { id: '84' },
+            query: { company_id: '49' },
+            user: { organization_id: 1001, role: 'admin' },
+        };
+        const res = mockRes();
+        await getStaging(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(404);
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ code: 'NOT_FOUND' }));
+    });
+
+    it('admin con Ambito: dettaglio della stessa azienda ok', async () => {
+        getStagingById.mockResolvedValue({
+            id: 85, doc_type: 'patentino_saldatore', review_status: 'pending', company_id: 49,
+            staged_fields_json: {}, field_confidence_json: {}, warnings_json: [],
+        });
+        getModuleForDocType.mockReturnValue('qualifiche');
+        getLicensedModuleKeysForOrg.mockResolvedValue(['qualifiche']);
+
+        const req = {
+            params: { id: '85' },
+            query: { company_id: '49' },
+            user: { organization_id: 1001, role: 'admin' },
+        };
+        const res = mockRes();
+        await getStaging(req, res);
+
+        expect(res.status).not.toHaveBeenCalledWith(404);
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ id: 85, company_id: 49 }));
+    });
+
+    it('cliente: company_id arbitrario sul dettaglio -> 403', async () => {
+        getStagingById.mockResolvedValue({
+            id: 86, doc_type: 'patentino_saldatore', review_status: 'pending', company_id: 50,
+        });
+        getModuleForDocType.mockReturnValue('qualifiche');
+        getLicensedModuleKeysForOrg.mockResolvedValue(['qualifiche']);
+        assertCompanyRead.mockResolvedValueOnce({
+            status: 403,
+            body: { error: 'Azienda non accessibile', code: 'FORBIDDEN' },
+        });
+
+        const req = {
+            params: { id: '86' },
+            query: { company_id: '50' },
+            user: {
+                organization_id: 1001,
+                role: 'utente',
+                company_access: [{ company_id: 48, permission: 'read' }],
+            },
+        };
+        const res = mockRes();
+        await getStaging(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(403);
     });
 });

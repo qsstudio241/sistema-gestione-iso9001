@@ -12,6 +12,8 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import apiService from "../services/apiService";
 import { useAuth } from "../contexts/AuthContext";
+import { useCompanyScope } from "../contexts/CompanyScopeContext";
+import { numericCompanyScopeId } from "../utils/appCompanyScope";
 import IngestReviewDialog from "./IngestReviewDialog";
 import "./ReprocessQueueBanner.css";
 
@@ -36,6 +38,13 @@ export default function PendingIngestQueue({ module = "qualifiche", onChanged, r
     auth = {};
   }
   const { user, canWriteModule } = auth;
+  let scope = {};
+  try {
+    scope = useCompanyScope();
+  } catch {
+    scope = {};
+  }
+  const scopeCompanyId = numericCompanyScopeId(scope.companyId);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(false);
@@ -53,8 +62,15 @@ export default function PendingIngestQueue({ module = "qualifiche", onChanged, r
     if (!loadedOnce.current) setLoading(true);
     let next = [];
     try {
-      const res = await apiService.listIngestStaging({ module, reviewStatus: "pending" });
+      const res = await apiService.listIngestStaging({
+        module,
+        reviewStatus: "pending",
+        ...(scopeCompanyId ? { company_id: scopeCompanyId } : {}),
+      });
       next = (res?.items || []).filter((i) => !i.is_reprocess);
+      if (scopeCompanyId) {
+        next = next.filter((i) => String(i.company_id) === String(scopeCompanyId));
+      }
     } catch {
       next = [];
     }
@@ -63,9 +79,13 @@ export default function PendingIngestQueue({ module = "qualifiche", onChanged, r
     setItems(next);
     loadedOnce.current = true;
     setLoading(false);
-  }, [module]);
+  }, [module, scopeCompanyId]);
 
   useEffect(() => { load(); }, [load, refreshKey]);
+
+  useEffect(() => {
+    setReviewItem(null);
+  }, [scopeCompanyId]);
 
   const removeItem = useCallback((id) => {
     loadSeq.current += 1;
@@ -77,7 +97,10 @@ export default function PendingIngestQueue({ module = "qualifiche", onChanged, r
     setOpeningId(item.id);
     setError(null);
     try {
-      const detail = await apiService.getIngestStaging(item.id);
+      const detail = await apiService.getIngestStaging(
+        item.id,
+        ...(scopeCompanyId ? [{ company_id: scopeCompanyId }] : []),
+      );
       setReviewItem({
         id: item.id,
         fileName: detail.original_name || item.original_name,
@@ -92,14 +115,18 @@ export default function PendingIngestQueue({ module = "qualifiche", onChanged, r
     } finally {
       setOpeningId(null);
     }
-  }, []);
+  }, [scopeCompanyId]);
 
   const handleConfirm = useCallback(async (fields) => {
     if (!reviewItem) return;
     setBusy(true);
     try {
       const stagingId = reviewItem.id;
-      await apiService.confirmIngestStaging(stagingId, fields);
+      await apiService.confirmIngestStaging(
+        stagingId,
+        fields,
+        ...(scopeCompanyId ? [{ company_id: scopeCompanyId }] : []),
+      );
       removeItem(stagingId);
       setReviewItem(null);
       if (onChanged) onChanged({ stagingId, status: "confirmed" });
@@ -108,14 +135,17 @@ export default function PendingIngestQueue({ module = "qualifiche", onChanged, r
     } finally {
       setBusy(false);
     }
-  }, [reviewItem, removeItem, onChanged]);
+  }, [reviewItem, removeItem, onChanged, scopeCompanyId]);
 
   const handleReject = useCallback(async () => {
     if (!reviewItem) return;
     setBusy(true);
     try {
       const stagingId = reviewItem.id;
-      await apiService.rejectIngestStaging(stagingId);
+      await apiService.rejectIngestStaging(
+        stagingId,
+        ...(scopeCompanyId ? [{ company_id: scopeCompanyId }] : []),
+      );
       removeItem(stagingId);
       setReviewItem(null);
       if (onChanged) onChanged({ stagingId, status: "rejected" });
@@ -124,7 +154,7 @@ export default function PendingIngestQueue({ module = "qualifiche", onChanged, r
     } finally {
       setBusy(false);
     }
-  }, [reviewItem, removeItem, onChanged]);
+  }, [reviewItem, removeItem, onChanged, scopeCompanyId]);
 
   const canReviewItem = (item) => {
     if (typeof canWriteModule === "function") return canWriteModule(item.company_id);

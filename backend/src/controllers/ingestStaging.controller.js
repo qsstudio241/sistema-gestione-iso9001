@@ -19,9 +19,29 @@ const {
     ensureCompanyAccessLoaded,
     hasCompanyAccessRows,
     getAllowedCompanyIds,
+    resolveScopedCompanyIds,
     assertMutatingAllowed,
     assertCompanyRead,
 } = require('../services/companyAccess.service');
+
+/** company_id da query/body: vuoto = nessun filtro Ambito; non numerico = errore. */
+function parseCompanyIdParam(raw) {
+    const text = raw === undefined || raw === null ? '' : String(raw).trim();
+    if (!text) return { value: null };
+    if (!/^\d{1,9}$/.test(text)) return { error: true };
+    return { value: parseInt(text, 10) };
+}
+
+function parseRequestedCompanyId(req) {
+    const parsed = parseCompanyIdParam(req.query?.company_id ?? req.body?.company_id);
+    if (parsed.error) {
+        const err = new Error('company_id non valido.');
+        err.status = 400;
+        err.code = 'INVALID_COMPANY_ID';
+        throw err;
+    }
+    return parsed.value;
+}
 
 function throwDenied(denied) {
     const err = new Error(denied.body.error);
@@ -31,7 +51,17 @@ function throwDenied(denied) {
 }
 
 /** Lettura: cliente azienda solo le proprie; scrittura: niente viewer, niente altra azienda. */
-async function assertStagingAccess(user, row, level) {
+async function assertStagingAccess(user, row, level, requestedCompanyId) {
+    if (requestedCompanyId != null) {
+        const deniedRequested = await assertCompanyRead(user, requestedCompanyId);
+        if (deniedRequested) throwDenied(deniedRequested);
+        if (Number(row.company_id) !== Number(requestedCompanyId)) {
+            const err = new Error('Staging non trovato');
+            err.status = 404;
+            err.code = 'NOT_FOUND';
+            throw err;
+        }
+    }
     if (level === 'write') {
         const denied = await assertMutatingAllowed(user, { companyId: row.company_id });
         if (denied) throwDenied(denied);
@@ -70,13 +100,14 @@ async function assertModuleAccess(req, docType) {
 async function getStaging(req, res) {
     try {
         const stagingId = parseInt(req.params.id, 10);
+        const requestedCompanyId = parseRequestedCompanyId(req);
         const row = await getStagingById(stagingId, req.user.organization_id);
         if (!row) {
             return res.status(404).json({ error: 'Staging non trovato', code: 'NOT_FOUND' });
         }
 
         await assertModuleAccess(req, row.doc_type);
-        await assertStagingAccess(req.user, row, 'read');
+        await assertStagingAccess(req.user, row, 'read', requestedCompanyId);
 
         res.json({
             id: row.id,
@@ -125,6 +156,12 @@ async function listStagingHandler(req, res) {
         }
         await assertModuleAccess(req, docType || docTypes[0]);
 
+        const requestedCompanyId = parseRequestedCompanyId(req);
+        if (requestedCompanyId != null) {
+            const denied = await assertCompanyRead(req.user, requestedCompanyId);
+            if (denied) return res.status(denied.status).json(denied.body);
+        }
+
         const accessList = await ensureCompanyAccessLoaded(req.user);
         const items = await listStaging({
             organizationId: req.user.organization_id,
@@ -132,7 +169,10 @@ async function listStagingHandler(req, res) {
             docType: docType || null,
             docTypes,
             reprocessOnly: reprocessOnly === 'true' || reprocessOnly === '1',
-            allowedCompanyIds: getAllowedCompanyIds(accessList),
+            allowedCompanyIds: resolveScopedCompanyIds(
+                getAllowedCompanyIds(accessList),
+                requestedCompanyId,
+            ),
             limit: 200,
         });
 
@@ -146,12 +186,13 @@ async function listStagingHandler(req, res) {
 async function confirmStagingHandler(req, res) {
     try {
         const stagingId = parseInt(req.params.id, 10);
+        const requestedCompanyId = parseRequestedCompanyId(req);
         const row = await getStagingById(stagingId, req.user.organization_id);
         if (!row) {
             return res.status(404).json({ error: 'Staging non trovato', code: 'NOT_FOUND' });
         }
         await assertModuleAccess(req, row.doc_type);
-        await assertStagingAccess(req.user, row, 'write');
+        await assertStagingAccess(req.user, row, 'write', requestedCompanyId);
 
         const result = await confirmStaging(
             stagingId,
@@ -185,12 +226,13 @@ async function confirmStagingHandler(req, res) {
 async function rejectStagingHandler(req, res) {
     try {
         const stagingId = parseInt(req.params.id, 10);
+        const requestedCompanyId = parseRequestedCompanyId(req);
         const row = await getStagingById(stagingId, req.user.organization_id);
         if (!row) {
             return res.status(404).json({ error: 'Staging non trovato', code: 'NOT_FOUND' });
         }
         await assertModuleAccess(req, row.doc_type);
-        await assertStagingAccess(req.user, row, 'write');
+        await assertStagingAccess(req.user, row, 'write', requestedCompanyId);
 
         const result = await rejectStaging(
             stagingId,
@@ -212,13 +254,14 @@ async function rejectStagingHandler(req, res) {
 async function getStagingFile(req, res) {
     try {
         const stagingId = parseInt(req.params.id, 10);
+        const requestedCompanyId = parseRequestedCompanyId(req);
         const row = await getStagingById(stagingId, req.user.organization_id);
         if (!row) {
             return res.status(404).json({ error: 'Staging non trovato', code: 'NOT_FOUND' });
         }
 
         await assertModuleAccess(req, row.doc_type);
-        await assertStagingAccess(req.user, row, 'read');
+        await assertStagingAccess(req.user, row, 'read', requestedCompanyId);
 
         const filePath = resolveStagingFilePath(row.storage_path);
         const mime = row.mime_type || 'application/octet-stream';

@@ -58,6 +58,7 @@ const PENDING_ITEM = {
   doc_type: "patentino_saldatore",
   original_name: "ZZ_batch.pdf",
   is_reprocess: false,
+  company_id: 10,
   fields: { person_name: "ZZ_Nuovo" },
   warnings: [],
 };
@@ -89,6 +90,7 @@ describe("QualificationsPage — refresh coda pending dopo batch", () => {
     expect(apiService.listIngestStaging).toHaveBeenLastCalledWith({
       module: "qualifiche",
       reviewStatus: "pending",
+      company_id: "10",
     });
     expect(screen.getByText(/in attesa di revisione/i)).toBeTruthy();
     fireEvent.click(screen.getByText("Vedi elenco"));

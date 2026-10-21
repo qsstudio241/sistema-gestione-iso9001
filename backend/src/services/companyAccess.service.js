@@ -48,6 +48,22 @@ function getAllowedCompanyIds(accessList) {
   return accessList.map((a) => a.company_id);
 }
 
+/**
+ * Interseca il filtro Ambito (company_id richiesto) con i permessi utente.
+ * - allowed null (studio/admin): senza Ambito → null (tutte); con Ambito → [requested]
+ * - allowed array (cliente): senza Ambito → allowed; con Ambito consentito → [requested];
+ *   Ambito di un'altra azienda → [] (nessuna riga, non un allargamento)
+ */
+function resolveScopedCompanyIds(allowedCompanyIds, requestedCompanyId) {
+  if (requestedCompanyId == null || requestedCompanyId === '') {
+    return allowedCompanyIds;
+  }
+  const requested = Number(requestedCompanyId);
+  if (!Number.isFinite(requested)) return [];
+  if (allowedCompanyIds == null) return [requested];
+  return allowedCompanyIds.some((id) => Number(id) === requested) ? [requested] : [];
+}
+
 async function getAllowedCompanyIdsForUser(user) {
   const accessList = await ensureCompanyAccessLoaded(user);
   return getAllowedCompanyIds(accessList);
@@ -165,6 +181,7 @@ module.exports = {
   isCompanyClient,
   findCompanyPermission,
   getAllowedCompanyIds,
+  resolveScopedCompanyIds,
   getAllowedCompanyIdsForUser,
   companyAccessSqlFilter,
   assertCompanyAccess,
