@@ -310,7 +310,7 @@ describe("ReprocessQueueBanner — filtro Ambito", () => {
         company_id: "49",
       }));
     });
-    expect(screen.getByText(/1 documento/i)).toBeTruthy();
+    expect(screen.getByText(/con dati aggiornati da rivedere/i).textContent).toMatch(/1\s*documento/i);
     fireEvent.click(screen.getByText(/Vedi elenco/i));
     expect(screen.getByText("WPQR-49")).toBeTruthy();
     expect(screen.queryByText("WPQR-50")).toBeNull();

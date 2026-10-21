@@ -210,7 +210,7 @@ describe("PendingIngestQueue", () => {
     fireEvent.click(screen.getByText("Vedi elenco"));
     expect(screen.getByText("ZZ_Persona")).toBeTruthy();
     expect(screen.queryByText("ZZ_Altra")).toBeNull();
-    expect(screen.getByText(/1 documento caricato/i)).toBeTruthy();
+    expect(screen.getByTestId("pending-ingest-queue").textContent).toMatch(/1\s*documento caricato/i);
   });
 
   it("admin senza Ambito: non passa company_id e mostra tutte le aziende", async () => {

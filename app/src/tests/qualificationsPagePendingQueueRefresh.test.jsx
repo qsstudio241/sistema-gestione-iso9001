@@ -58,6 +58,7 @@ const PENDING_ITEM = {
   doc_type: "patentino_saldatore",
   original_name: "ZZ_batch.pdf",
   is_reprocess: false,
+  company_id: 10,
   fields: { person_name: "ZZ_Nuovo" },
   warnings: [],
 };
