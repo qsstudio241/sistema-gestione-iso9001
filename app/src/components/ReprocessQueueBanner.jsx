@@ -30,7 +30,7 @@
  *    ciascuno confermabile/scartabile singolarmente (endpoint invariati,
  *    nessuna scrittura batch — resta un aggiornamento mirato per campo).
  */
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import apiService from "../services/apiService";
 import { useCompanyScope } from "../contexts/CompanyScopeContext";
 import { numericCompanyScopeId } from "../utils/appCompanyScope";
@@ -286,9 +286,12 @@ export default function ReprocessQueueBanner({ module = "qualifiche" }) {
   const [expanded, setExpanded] = useState(false);
   const [reviewGroupKey, setReviewGroupKey] = useState(null);
   const [loading, setLoading] = useState(true);
+  const loadSeq = useRef(0);
 
   const load = useCallback(async () => {
+    const seq = ++loadSeq.current;
     setLoading(true);
+    let next = [];
     try {
       const res = await apiService.listIngestStaging({
         module,
@@ -296,16 +299,18 @@ export default function ReprocessQueueBanner({ module = "qualifiche" }) {
         reviewStatus: "pending",
         ...(scopeCompanyId ? { company_id: scopeCompanyId } : {}),
       });
-      let next = res?.items || [];
+      next = res?.items || [];
       if (scopeCompanyId) {
         next = next.filter((i) => String(i.company_id) === String(scopeCompanyId));
       }
-      setItems(next);
     } catch {
-      setItems([]);
-    } finally {
-      setLoading(false);
+      next = [];
     }
+    // Solo l'ultima richiesta vale: una risposta piu' lenta non deve
+    // rimettere in coda rielaborazioni di un altro Ambito.
+    if (seq !== loadSeq.current) return;
+    setItems(next);
+    setLoading(false);
   }, [module, scopeCompanyId]);
 
   useEffect(() => { load(); }, [load]);
@@ -314,7 +319,11 @@ export default function ReprocessQueueBanner({ module = "qualifiche" }) {
     setReviewGroupKey(null);
   }, [scopeCompanyId]);
 
-  const removeItem = useCallback((id) => setItems((prev) => prev.filter((i) => i.id !== id)), []);
+  const removeItem = useCallback((id) => {
+    loadSeq.current += 1;
+    setItems((prev) => prev.filter((i) => i.id !== id));
+    setLoading(false);
+  }, []);
 
   const groups = useMemo(() => groupItems(items), [items]);
   // Il gruppo aperto è derivato dai groups correnti (non uno snapshot): quando

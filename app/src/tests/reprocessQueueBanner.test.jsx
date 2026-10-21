@@ -327,4 +327,38 @@ describe("ReprocessQueueBanner — filtro Ambito", () => {
       });
     });
   });
+
+  it("risposta lenta del vecchio Ambito non sovrascrive la coda nuova (Bugbot loadSeq)", async () => {
+    const item49 = {
+      id: 1, doc_type: "wpqr", original_name: "az49.pdf", company_id: 49,
+      field_scope: "preheat_temp", target_wpqr_id: 7,
+      fields: { wpqr_code: "WPQR-49", preheat_temp: "100" },
+    };
+    const item50 = {
+      id: 2, doc_type: "wpqr", original_name: "az50.pdf", company_id: 50,
+      field_scope: "preheat_temp", target_wpqr_id: 8,
+      fields: { wpqr_code: "WPQR-50", preheat_temp: "80" },
+    };
+    const resolvers = [];
+    apiService.listIngestStaging.mockImplementation(() => new Promise((res) => { resolvers.push(res); }));
+
+    scopeState.companyId = "49";
+    const { rerender } = render(<ReprocessQueueBanner module="saldatura" />);
+    await waitFor(() => expect(resolvers).toHaveLength(1));
+
+    scopeState.companyId = "50";
+    rerender(<ReprocessQueueBanner module="saldatura" />);
+    await waitFor(() => expect(resolvers).toHaveLength(2));
+
+    resolvers[1]({ items: [item50] });
+    await waitFor(() => expect(screen.getByText(/con dati aggiornati da rivedere/i)).toBeTruthy());
+    fireEvent.click(screen.getByText(/Vedi elenco/i));
+    expect(screen.getByText("WPQR-50")).toBeTruthy();
+    expect(screen.queryByText("WPQR-49")).toBeNull();
+
+    resolvers[0]({ items: [item49] });
+    await new Promise((r) => setTimeout(r, 20));
+    expect(screen.getByText("WPQR-50")).toBeTruthy();
+    expect(screen.queryByText("WPQR-49")).toBeNull();
+  });
 });
