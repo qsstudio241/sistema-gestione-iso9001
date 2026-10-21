@@ -12,6 +12,7 @@ import {
   buildScopeMenuOptions,
   filterScopeMenuOptions,
   findSelectedScopeOption,
+  numericCompanyScopeId,
   STUDIO_PATRIMONIO_LABEL,
   STUDIO_PATRIMONIO_SCOPE,
 } from "../utils/appCompanyScope";
@@ -251,6 +252,14 @@ describe("appCompanyScope", () => {
     ]);
     expect(filterScopeMenuOptions(opts, "   ")).toEqual(opts);
     expect(filterScopeMenuOptions(opts, "xyz")).toEqual([]);
+  });
+
+  it("numericCompanyScopeId accetta solo id azienda numerici", () => {
+    expect(numericCompanyScopeId("49")).toBe("49");
+    expect(numericCompanyScopeId(49)).toBe("49");
+    expect(numericCompanyScopeId("")).toBeNull();
+    expect(numericCompanyScopeId("studio")).toBeNull();
+    expect(numericCompanyScopeId("49a")).toBeNull();
   });
 
   it("ignora chiavi legacy vuote o 'studio' e prende il primo id numerico", () => {

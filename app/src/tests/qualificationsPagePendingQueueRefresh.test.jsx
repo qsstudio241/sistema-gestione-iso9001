@@ -89,6 +89,7 @@ describe("QualificationsPage — refresh coda pending dopo batch", () => {
     expect(apiService.listIngestStaging).toHaveBeenLastCalledWith({
       module: "qualifiche",
       reviewStatus: "pending",
+      company_id: "10",
     });
     expect(screen.getByText(/in attesa di revisione/i)).toBeTruthy();
     fireEvent.click(screen.getByText("Vedi elenco"));

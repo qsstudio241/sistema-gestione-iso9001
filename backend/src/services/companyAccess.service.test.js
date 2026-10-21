@@ -76,6 +76,24 @@ describe('companyAccess.service Fase 4.1', () => {
     expect(denied?.status).toBe(403);
   });
 
+  it('resolveScopedCompanyIds: admin senza Ambito vede tutte', () => {
+    expect(svc.resolveScopedCompanyIds(null, null)).toBeNull();
+  });
+
+  it('resolveScopedCompanyIds: admin con Ambito solo quella azienda', () => {
+    expect(svc.resolveScopedCompanyIds(null, 49)).toEqual([49]);
+    expect(svc.resolveScopedCompanyIds(null, '49')).toEqual([49]);
+  });
+
+  it('resolveScopedCompanyIds: cliente senza Ambito resta sulle proprie', () => {
+    expect(svc.resolveScopedCompanyIds([48], null)).toEqual([48]);
+  });
+
+  it('resolveScopedCompanyIds: cliente non allarga con company_id arbitrario', () => {
+    expect(svc.resolveScopedCompanyIds([48], 50)).toEqual([]);
+    expect(svc.resolveScopedCompanyIds([48], 48)).toEqual([48]);
+  });
+
   it('companyAccessSqlFilter genera IN clause', () => {
     const f = svc.companyAccessSqlFilter([{ company_id: 11 }, { company_id: 12 }], 'q');
     expect(f.clause).toContain('q.company_id IN');

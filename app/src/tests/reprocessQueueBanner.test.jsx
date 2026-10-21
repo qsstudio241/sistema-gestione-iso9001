@@ -8,6 +8,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 
+const scopeState = { companyId: "" };
+vi.mock("../contexts/CompanyScopeContext", () => ({
+  useCompanyScope: () => scopeState,
+}));
 vi.mock("../services/apiService", () => ({
   default: {
     listIngestStaging: vi.fn(),
@@ -20,9 +24,14 @@ vi.mock("../services/apiService", () => ({
 import apiService from "../services/apiService";
 import ReprocessQueueBanner from "../components/ReprocessQueueBanner";
 
+beforeEach(() => {
+  scopeState.companyId = "";
+});
+
 describe("ReprocessQueueBanner — parametro module", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    scopeState.companyId = "";
   });
 
   it("default (nessuna prop): interroga il modulo 'qualifiche'", async () => {
@@ -267,6 +276,55 @@ describe("ReprocessQueueBanner — fix rilievi Bugbot 09/08/2026 (campo vuoto, a
 
     await waitFor(() => {
       expect(apiService.confirmIngestStaging).toHaveBeenCalledWith(72, { throat_test_mm: 7.5 });
+    });
+  });
+});
+
+describe("ReprocessQueueBanner — filtro Ambito", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    scopeState.companyId = "";
+  });
+
+  it("admin con Ambito: passa company_id e nasconde documenti di altre aziende", async () => {
+    scopeState.companyId = "49";
+    apiService.listIngestStaging.mockResolvedValue({
+      items: [
+        {
+          id: 1, doc_type: "wpqr", original_name: "az49.pdf", company_id: 49,
+          field_scope: "preheat_temp", target_wpqr_id: 7,
+          fields: { wpqr_code: "WPQR-49", preheat_temp: "100" },
+        },
+        {
+          id: 2, doc_type: "wpqr", original_name: "az50.pdf", company_id: 50,
+          field_scope: "preheat_temp", target_wpqr_id: 8,
+          fields: { wpqr_code: "WPQR-50", preheat_temp: "80" },
+        },
+      ],
+    });
+    render(<ReprocessQueueBanner module="saldatura" />);
+    await waitFor(() => {
+      expect(apiService.listIngestStaging).toHaveBeenCalledWith(expect.objectContaining({
+        module: "saldatura",
+        reprocessOnly: true,
+        company_id: "49",
+      }));
+    });
+    expect(screen.getByText(/1 documento/i)).toBeTruthy();
+    fireEvent.click(screen.getByText(/Vedi elenco/i));
+    expect(screen.getByText("WPQR-49")).toBeTruthy();
+    expect(screen.queryByText("WPQR-50")).toBeNull();
+  });
+
+  it("admin senza Ambito: non passa company_id", async () => {
+    apiService.listIngestStaging.mockResolvedValue({ items: [] });
+    render(<ReprocessQueueBanner module="saldatura" />);
+    await waitFor(() => {
+      expect(apiService.listIngestStaging).toHaveBeenCalledWith({
+        module: "saldatura",
+        reprocessOnly: true,
+        reviewStatus: "pending",
+      });
     });
   });
 });

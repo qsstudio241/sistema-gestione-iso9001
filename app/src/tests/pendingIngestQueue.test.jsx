@@ -9,8 +9,12 @@ const authState = {
   user: { role: "auditor" },
   canWriteModule: () => true,
 };
+const scopeState = { companyId: "" };
 vi.mock("../contexts/AuthContext", () => ({
   useAuth: () => authState,
+}));
+vi.mock("../contexts/CompanyScopeContext", () => ({
+  useCompanyScope: () => scopeState,
 }));
 
 vi.mock("../services/apiService", () => ({
@@ -38,7 +42,11 @@ import PendingIngestQueue from "../components/PendingIngestQueue";
 
 const PENDING = {
   id: 5, doc_type: "patentino_saldatore", original_name: "ZZ_a.pdf", is_reprocess: false,
-  fields: { person_name: "ZZ_Persona" }, warnings: [],
+  company_id: 49, fields: { person_name: "ZZ_Persona" }, warnings: [],
+};
+const PENDING_OTHER = {
+  id: 7, doc_type: "patentino_saldatore", original_name: "ZZ_altra.pdf", is_reprocess: false,
+  company_id: 50, fields: { person_name: "ZZ_Altra" }, warnings: [],
 };
 const REPROCESS = { id: 6, doc_type: "patentino_saldatore", original_name: "ZZ_b.pdf", is_reprocess: true, fields: {} };
 
@@ -46,6 +54,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   authState.user = { role: "auditor" };
   authState.canWriteModule = () => true;
+  scopeState.companyId = "";
   apiService.listIngestStaging.mockResolvedValue({ items: [PENDING, REPROCESS] });
   apiService.getIngestStaging.mockResolvedValue({
     id: 5, doc_type: "patentino_saldatore", original_name: "ZZ_a.pdf", fields: { person_name: "ZZ_Persona" },
@@ -186,6 +195,51 @@ describe("PendingIngestQueue", () => {
     await waitFor(() => expect(apiService.rejectIngestStaging).toHaveBeenCalledWith(5));
     await waitFor(() => expect(screen.queryByTestId("pending-ingest-queue")).toBeNull());
     expect(onChanged).toHaveBeenCalled();
+  });
+
+  it("admin con Ambito: passa company_id e nasconde i PDF di altre aziende", async () => {
+    scopeState.companyId = "49";
+    apiService.listIngestStaging.mockResolvedValue({ items: [PENDING, PENDING_OTHER] });
+    render(<PendingIngestQueue />);
+    await screen.findByTestId("pending-ingest-queue");
+    expect(apiService.listIngestStaging).toHaveBeenCalledWith({
+      module: "qualifiche",
+      reviewStatus: "pending",
+      company_id: "49",
+    });
+    fireEvent.click(screen.getByText("Vedi elenco"));
+    expect(screen.getByText("ZZ_Persona")).toBeTruthy();
+    expect(screen.queryByText("ZZ_Altra")).toBeNull();
+    expect(screen.getByText(/1 documento caricato/i)).toBeTruthy();
+  });
+
+  it("admin senza Ambito: non passa company_id e mostra tutte le aziende", async () => {
+    apiService.listIngestStaging.mockResolvedValue({ items: [PENDING, PENDING_OTHER] });
+    render(<PendingIngestQueue />);
+    await screen.findByTestId("pending-ingest-queue");
+    expect(apiService.listIngestStaging).toHaveBeenCalledWith({
+      module: "qualifiche",
+      reviewStatus: "pending",
+    });
+    fireEvent.click(screen.getByText("Vedi elenco"));
+    expect(screen.getByText("ZZ_Persona")).toBeTruthy();
+    expect(screen.getByText("ZZ_Altra")).toBeTruthy();
+  });
+
+  it("Ambito attivo: conferma e scarto inviano company_id", async () => {
+    scopeState.companyId = "49";
+    apiService.confirmIngestStaging.mockResolvedValue({ success: true });
+    render(<PendingIngestQueue />);
+    fireEvent.click(await screen.findByText("Vedi elenco"));
+    fireEvent.click(screen.getByText("Rivedi"));
+    await screen.findByTestId("review-dialog");
+    expect(apiService.getIngestStaging).toHaveBeenCalledWith(5, { company_id: "49" });
+    fireEvent.click(screen.getByText("conferma"));
+    await waitFor(() => expect(apiService.confirmIngestStaging).toHaveBeenCalledWith(
+      5,
+      { person_name: "ZZ_Corretto" },
+      { company_id: "49" },
+    ));
   });
 
   it("viewer: Rivedi resta visibile ma disabilitato (sola lettura)", async () => {

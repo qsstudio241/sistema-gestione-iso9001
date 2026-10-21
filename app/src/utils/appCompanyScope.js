@@ -38,6 +38,16 @@ export function isStudioPatrimonioScope(companyId) {
   return String(companyId || "") === STUDIO_PATRIMONIO_SCOPE;
 }
 
+/**
+ * Ambito numerico (azienda cliente). "" / "studio" / valori non numerici
+ * non sono un filtro company_id per le API.
+ */
+export function numericCompanyScopeId(companyId) {
+  const text = String(companyId ?? "").trim();
+  if (!/^\d{1,9}$/.test(text)) return null;
+  return text;
+}
+
 function normalizeOrgName(name) {
   return String(name || "")
     .trim()
