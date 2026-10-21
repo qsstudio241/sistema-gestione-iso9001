@@ -562,10 +562,19 @@ async function deleteWpsLinks({ organizationId, wpsId, actorUserId = null }) {
     }
 }
 
+function isValidityRangeRun(row) {
+    return Boolean(row && typeof row === 'object' && row.run_label && (
+        row.current_a_min != null || row.voltage_v_min != null
+        || row.travel_speed_min != null || row.heat_input_value_min != null
+    ));
+}
+
 /**
  * Ingest / rielaborazione: inserisce le passate AI solo se la WPQR non ne ha già
  * (mai sovrascrive passate manuali). Un'unica transazione + lucchetto sulla WPQR:
  * se una riga fallisce non restano mezze passate; due conferme vicine non duplicano.
+ * Senza le colonne 184 le passate di sola validità non si scrivono: un'etichetta
+ * salvata senza range bloccherebbe il recupero successivo.
  * Ritorna il numero di righe inserite.
  */
 async function insertAiTestRunsIfEmpty({ wpqrId, organizationId, companyId = null, runs = [] }) {
@@ -599,14 +608,21 @@ async function insertAiTestRunsIfEmpty({ wpqrId, organizationId, companyId = nul
             return 0;
         }
 
-        const writeColumns = columnsForWrite(await rangeColumnsAvailable());
+        const rangesOn = await rangeColumnsAvailable();
+        const writeList = rangesOn ? list : list.filter((row) => !isValidityRangeRun(row));
+        if (!writeList.length) {
+            await tx.commit();
+            return 0;
+        }
+
+        const writeColumns = columnsForWrite(rangesOn);
         const columns = ['organization_id', 'company_id', 'wpqr_id', ...writeColumns, 'created_at', 'updated_at'];
         const values = [
             '@organization_id', '@company_id', '@wpqr_id',
             ...writeColumns.map((c) => `@${c}`), 'GETDATE()', 'GETDATE()',
         ];
         let inserted = 0;
-        for (const raw of list) {
+        for (const raw of writeList) {
             const row = { ...raw, source: 'ai' };
             for (const col of writeColumns) {
                 if (row[col] === undefined) row[col] = null;
@@ -628,13 +644,6 @@ async function insertAiTestRunsIfEmpty({ wpqrId, organizationId, companyId = nul
         await tx.rollback().catch(() => {});
         throw err;
     }
-}
-
-function isValidityRangeRun(row) {
-    return Boolean(row && typeof row === 'object' && row.run_label && (
-        row.current_a_min != null || row.voltage_v_min != null
-        || row.travel_speed_min != null || row.heat_input_value_min != null
-    ));
 }
 
 /**

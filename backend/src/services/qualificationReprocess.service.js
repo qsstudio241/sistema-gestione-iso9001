@@ -127,11 +127,25 @@ function resolveExtractedReprocessValue(fieldKey, reviewFields = {}, config = {}
     return v == null || v === '' ? null : v;
 }
 
+/**
+ * `candidateWhere` che cita `current_a_min` non è eseguibile prima della
+ * migrazione 184: SQL Server compila l'intero batch, quindi un AND su
+ * COL_LENGTH nello stesso statement non evita l'errore. Si sonda prima.
+ */
+async function rangeMarkerColumnReady() {
+    const probe = await query(`SELECT COL_LENGTH(N'dbo.wpqr_test_runs', N'current_a_min') AS len`);
+    const row = probe && probe.recordset && probe.recordset[0];
+    return Boolean(row && row.len != null);
+}
+
 async function selectReprocessCandidates(field, config, { orgId = null } = {}) {
     const table = config.table || 'qualifications';
     const writeWhitelist = WRITE_WHITELISTS[table];
     if (!writeWhitelist || !writeWhitelist[field]) {
         throw new Error(`Campo non rielaborabile: ${field} (aggiungilo alla whitelist di scrittura di "${table}")`);
+    }
+    if (typeof config.candidateWhere === 'string' && /\bcurrent_a_min\b/.test(config.candidateWhere)) {
+        if (!(await rangeMarkerColumnReady())) return [];
     }
     const adapter = getTableAdapter(table);
     const fromTable = adapter.candidateFrom || table;

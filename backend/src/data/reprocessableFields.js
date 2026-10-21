@@ -490,8 +490,9 @@ const REPROCESSABLE_FIELD_REGISTRY = {
         module: 'saldatura',
         table: 'wpqr_test_runs',
         processWhitelist: null,
-        // Richiede la migrazione 184 (current_a_min). Candidati: WPQR che hanno
-        // già passate di prova ma nessun range di validità archiviato.
+        // Richiede la migrazione 184 (current_a_min). Il conteggio non lancia
+        // questo SQL finché la colonna non c'è (selectReprocessCandidates).
+        // Candidati: WPQR che hanno già passate di prova ma nessun range archiviato.
         candidateWhere: 'EXISTS (SELECT 1 FROM wpqr_test_runs r WHERE r.wpqr_id = wpqr_records.id AND r.deleted_at IS NULL) AND NOT EXISTS (SELECT 1 FROM wpqr_test_runs r WHERE r.wpqr_id = wpqr_records.id AND r.deleted_at IS NULL AND r.current_a_min IS NOT NULL)',
     },
 

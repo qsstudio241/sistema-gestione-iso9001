@@ -439,6 +439,42 @@ describe('insertAiTestRunsIfEmpty — transazione e lucchetto', () => {
         expect(db.statements.some((s) => /UPDLOCK/.test(s.text) && /wpqr_records/.test(s.text))).toBe(true);
     });
 
+    it('senza le colonne 184 non salva la passata di validità, con le colonne scrive il range', async () => {
+        const without = makeDb({ columns: false });
+        without.db.wpqr.push({ id: 11, organization_id: ORG_A, company_id: 5 });
+        const skipped = await svc.insertAiTestRunsIfEmpty({
+            wpqrId: 11, organizationId: ORG_A, companyId: 5,
+            runs: [
+                { run_label: '1', current_a: 100 },
+                { run_label: '4R', current_a: null, current_a_min: 140, current_a_max: 160 },
+            ],
+        });
+        expect(skipped).toBe(1);
+        const saved = without.db.runs.filter((r) => r.wpqr_id === 11);
+        expect(saved.map((r) => r.run_label)).toEqual(['1']);
+        expect(saved[0].current_a).toBe(100);
+        const insertSql = without.db.statements.filter((s) => /^INSERT INTO wpqr_test_runs/.test(s.text));
+        expect(insertSql).toHaveLength(1);
+        expect(insertSql[0].text).not.toMatch(/current_a_min/);
+
+        const withRanges = makeDb({ columns: true });
+        withRanges.db.wpqr.push({ id: 12, organization_id: ORG_A, company_id: 5 });
+        const inserted = await svc.insertAiTestRunsIfEmpty({
+            wpqrId: 12, organizationId: ORG_A, companyId: 5,
+            runs: [
+                { run_label: '1', current_a: 100 },
+                { run_label: '4R', current_a: null, current_a_min: 140, current_a_max: 160 },
+            ],
+        });
+        expect(inserted).toBe(2);
+        const validity = withRanges.db.runs.find((r) => r.wpqr_id === 12 && r.run_label === '4R');
+        expect(validity.current_a).toBeNull();
+        expect(validity.current_a_min).toBe(140);
+        expect(withRanges.db.statements.some((s) => (
+            /^INSERT INTO wpqr_test_runs/.test(s.text) && /current_a_min/.test(s.text) && s.params.run_label === '4R'
+        ))).toBe(true);
+    });
+
     it('se una riga fallisce, le precedenti non restano', async () => {
         const { db, tx } = makeDb({ failOnNthInsert: 2 });
         db.wpqr.push({ id: 11, organization_id: ORG_A, company_id: 5 });

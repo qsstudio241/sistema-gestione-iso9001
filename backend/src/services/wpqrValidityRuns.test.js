@@ -89,4 +89,40 @@ describe('passate solo in tabella di validità', () => {
         const runs = [{ run_label: '1', current_a: 100 }];
         expect(mergeValidityOnlyRuns(runs, [])).toBe(runs);
     });
+
+    it('i range parsati completano lo stub AI e lasciano intatti i puntuali di prova', () => {
+        const point = { run_label: '1', welding_process: '135', current_a: 100 };
+        const stub = { run_label: '4R', welding_process: '141-S', current_a: null, current_a_min: null };
+        const before = { ...point };
+        const parsed = extractValidityRuns(SYNTHETIC).filter((row) => {
+            const key = normRunLabel(row.run_label);
+            return key === normRunLabel('1') || key === normRunLabel('4R');
+        });
+        const merged = mergeValidityOnlyRuns([point, stub], parsed);
+
+        expect(merged).toHaveLength(2);
+        expect(merged[0]).toBe(point);
+        expect(merged[0]).toEqual(before);
+        expect(merged[0].current_a_min).toBeUndefined();
+        expect(merged[1]).not.toBe(stub);
+        expect(merged[1].voltage_v).toBeUndefined();
+        expect(merged[1].travel_speed).toBeUndefined();
+        expect(merged[1]).toEqual(expect.objectContaining({
+            run_label: '4R',
+            welding_process: '141-S',
+            filler_diameter_mm: 1.6,
+            current_polarity: 'DC EP',
+            current_a: null,
+            current_a_min: 140,
+            current_a_max: 160,
+            voltage_v_min: 26,
+            voltage_v_max: 28,
+            travel_speed_min: 200,
+            travel_speed_max: 220,
+            travel_speed_unit: 'mm/min',
+            heat_input_value_min: 0.8,
+            heat_input_value_max: 0.95,
+            heat_input_unit: 'kJ/mm',
+        }));
+    });
 });

@@ -190,22 +190,84 @@ function extractValidityRuns(text) {
     return runs;
 }
 
+const POINT_FIELDS = ['current_a', 'voltage_v', 'travel_speed', 'heat_input_value'];
+const STUB_TEXT_FIELDS = [
+    'run_no', 'welding_process', 'filler_diameter_mm', 'current_polarity',
+    'travel_speed_unit', 'heat_input_unit',
+];
+
+function isBlank(value) {
+    return value == null || value === '';
+}
+
+/** Valore misurato in tabella di prova: quella riga non si completa coi range. */
+function hasPointValue(row) {
+    return POINT_FIELDS.some((key) => row && !isBlank(row[key]));
+}
+
 /**
- * Accoda le passate di validità la cui etichetta non è già nella tabella di prova.
- * Gli oggetti di prova restano gli stessi (niente sostituzione dei puntuali).
+ * Lo stub AI ha l'etichetta ma non i limiti. Si riempiono solo i campi vuoti:
+ * un min/max già presente e ogni valore puntuale restano quelli dello stub.
+ */
+function completeStubFromParsed(stub, parsed) {
+    const next = { ...stub };
+    let changed = false;
+    for (const [minKey, maxKey] of RANGE_FIELDS) {
+        if (isBlank(next[minKey]) && !isBlank(parsed[minKey])) {
+            next[minKey] = parsed[minKey];
+            changed = true;
+        }
+        if (isBlank(next[maxKey]) && !isBlank(parsed[maxKey])) {
+            next[maxKey] = parsed[maxKey];
+            changed = true;
+        }
+    }
+    for (const key of STUB_TEXT_FIELDS) {
+        if (isBlank(next[key]) && !isBlank(parsed[key])) {
+            next[key] = parsed[key];
+            changed = true;
+        }
+    }
+    return changed ? next : stub;
+}
+
+/**
+ * Accoda le passate di validità assenti in prova.
+ * Se l'etichetta c'è già solo come stub (niente ampere/volt/velocità/apporto
+ * puntuali), i range letti dal testo completano i campi mancanti.
+ * Una riga con valori di prova resta lo stesso oggetto.
  */
 function mergeValidityOnlyRuns(testRuns, validityRuns) {
     const base = Array.isArray(testRuns) ? testRuns : [];
-    const seen = new Set(base.map((row) => normRunLabel(row && row.run_label)).filter(Boolean));
+    const indexByLabel = new Map();
+    base.forEach((row, index) => {
+        const key = normRunLabel(row && row.run_label);
+        if (key && !indexByLabel.has(key)) indexByLabel.set(key, index);
+    });
     const extra = [];
+    const filled = new Map();
     for (const row of Array.isArray(validityRuns) ? validityRuns : []) {
         const key = normRunLabel(row && row.run_label);
-        if (!key || seen.has(key)) continue;
-        seen.add(key);
-        extra.push(row);
+        if (!key) continue;
+        if (!indexByLabel.has(key)) {
+            indexByLabel.set(key, -1);
+            extra.push(row);
+            continue;
+        }
+        const index = indexByLabel.get(key);
+        if (index < 0) continue;
+        const existing = filled.get(index) || base[index];
+        if (!existing || typeof existing !== 'object' || hasPointValue(existing)) continue;
+        const next = completeStubFromParsed(existing, row);
+        if (next !== existing) filled.set(index, next);
     }
-    if (!extra.length) return base;
-    return [...base.filter((row) => row && typeof row === 'object'), ...extra];
+    if (!extra.length && filled.size === 0) return base;
+    const head = [];
+    base.forEach((row, index) => {
+        if (!row || typeof row !== 'object') return;
+        head.push(filled.has(index) ? filled.get(index) : row);
+    });
+    return [...head, ...extra];
 }
 
 function withValidityRuns(review, text) {
