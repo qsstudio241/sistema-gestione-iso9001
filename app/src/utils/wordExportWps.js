@@ -403,7 +403,11 @@ function buildSketchTable(sketches = {}) {
       headerCell('Welding sequences / Sequenza di saldatura', colW),
     ],
   });
-  const seqEmpty = sketches.sequencePending === 'da dividere' ? 'Da dividere' : undefined;
+  const seqEmpty = sketches.sequencePending === 'da dividere'
+    ? 'Da dividere'
+    : (sketches.sequencePending === 'solo giunto'
+      ? 'Sequenza assente \u2014 caricare a parte'
+      : undefined);
   const body = new TableRow({
     height: { value: bodyH, rule: HeightRule.ATLEAST },
     children: [

@@ -327,6 +327,12 @@ export async function loadAnnexASketchBuffers(record = {}) {
     const m = metaById[id];
     return !!(m && (m.slot === "combined" || m.status === "da dividere"));
   };
+  const isJointOnly = (id) => {
+    const m = metaById[id];
+    if (!m) return false;
+    const crop = String(m.crop_bbox_pt || "");
+    return m.status === "solo giunto" || crop.includes("solo-giunto");
+  };
   const pickSequenceId = (jointSketchId) => {
     const jointMeta = metaById[jointSketchId];
     if (!jointMeta || !jointMeta.crop_bbox_pt) return null;
@@ -337,6 +343,10 @@ export async function loadAnnexASketchBuffers(record = {}) {
   };
 
   const sameId = jointId && seqId && Number(seqId) === Number(jointId);
+  if ((sameId || !seqId) && isJointOnly(jointId)) {
+    const joint = await attach(jointId);
+    return joint ? { joint, sequencePending: "solo giunto" } : {};
+  }
   if ((sameId || !seqId) && isUnsplit(jointId)) {
     const joint = await attach(jointId);
     return joint ? { joint, sequencePending: "da dividere" } : {};
@@ -349,6 +359,7 @@ export async function loadAnnexASketchBuffers(record = {}) {
   const out = {};
   if (joint) out.joint = joint;
   if (sequence) out.sequence = sequence;
+  else if (joint && isJointOnly(jointId)) out.sequencePending = "solo giunto";
   else if (joint && isUnsplit(jointId)) out.sequencePending = "da dividere";
   return out;
 }

@@ -160,4 +160,18 @@ describe("WpqrSketchReview", () => {
     fireEvent.click(screen.getByTestId("wsk-split-btn-4"));
     await waitFor(() => expect(apiService.splitWeldSketch).toHaveBeenCalledWith(4, { yRatio: 0.4 }));
   });
+
+  it("mostra slider anche sullo schizzo solo giunto", async () => {
+    apiService.getWpqrSketches.mockResolvedValue({
+      sketches: [{
+        id: 6,
+        slot: "joint_design",
+        status: "solo giunto",
+        dimension_text: "t=12 mm",
+      }],
+    });
+    render(<WpqrSketchReview wpqrId={28} />);
+    await waitFor(() => expect(screen.getByTestId("wsk-split-6")).toBeInTheDocument());
+    expect(screen.getByTestId("wsk-split-slider-6")).toBeInTheDocument();
+  });
 });

@@ -42,7 +42,7 @@ describe('wpqrSketchBackfill', () => {
         expect(REGENERATE_SQL).not.toMatch(/\bDELETE\s+FROM\b/i);
     });
 
-    it('classifyStored: auto_split vs da dividere vs empty', () => {
+    it('classifyStored: auto_split vs da dividere vs solo giunto vs empty', () => {
         expect(classifyStored([])).toBe('empty');
         expect(classifyStored([
             { slot: 'joint_design', status: 'bozza' },
@@ -51,6 +51,9 @@ describe('wpqrSketchBackfill', () => {
         expect(classifyStored([
             { slot: 'combined', status: 'da dividere' },
         ])).toBe('da_dividere');
+        expect(classifyStored([
+            { slot: 'joint_design', status: 'solo giunto' },
+        ])).toBe('solo_giunto');
         expect(wpqrLabel({ reference_number: 'VB0377' })).toBe('VB0377');
         expect(wpqrLabel({ id: 9 })).toBe('#9');
     });

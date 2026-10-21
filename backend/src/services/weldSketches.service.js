@@ -24,6 +24,7 @@ const SOURCE_KINDS = Object.freeze(['wpqr_crop', 'upload', 'library_std']);
 const STATUS_DRAFT = 'bozza';
 const STATUS_CONFIRMED = 'confermato';
 const STATUS_NEEDS_SPLIT = 'da dividere';
+const STATUS_JOINT_ONLY = 'solo giunto';
 const RENDER = Object.freeze({ density: 200, width: 1654, height: 2339 });
 const PT_PAGE = Object.freeze({ width: 595, height: 842 });
 
@@ -638,6 +639,18 @@ function planStoredPieces(pageSlot, png, { width, height, bboxStr, meta = {}, sp
             },
         ];
     }
+    if (split && split.reason === 'single_joint') {
+        const mark = `${bboxStr || 'embedded'}:solo-giunto`;
+        return [{
+            slot: 'joint_design',
+            png,
+            width,
+            height,
+            bboxStr: mark,
+            status: STATUS_JOINT_ONLY,
+            dimension_text: meta.dimension_text || null,
+        }];
+    }
     return [{
         slot: 'combined',
         png,
@@ -927,11 +940,25 @@ async function confirmSketch({ id, organizationId, user }) {
         err.status = 404;
         throw err;
     }
+    const crop = String(row.crop_bbox_pt || '');
+    const keepJointOnly = row.status === STATUS_JOINT_ONLY && !crop.includes('solo-giunto');
+    const cropOut = keepJointOnly ? `${crop || 'embedded'}:solo-giunto` : row.crop_bbox_pt;
     await getQuery()(`
-        UPDATE weld_sketches SET status = @status
+        UPDATE weld_sketches
+        SET status = @status, crop_bbox_pt = @crop_bbox_pt
         WHERE id = @id AND organization_id = @organizationId
-    `, { id, organizationId, status: STATUS_CONFIRMED });
-    return { ...row, status: STATUS_CONFIRMED, confirmed_by: user && user.user_id };
+    `, {
+        id,
+        organizationId,
+        status: STATUS_CONFIRMED,
+        crop_bbox_pt: cropOut == null ? null : cropOut,
+    });
+    return {
+        ...row,
+        status: STATUS_CONFIRMED,
+        crop_bbox_pt: cropOut,
+        confirmed_by: user && user.user_id,
+    };
 }
 
 async function storeUploadedPng({
@@ -1058,7 +1085,9 @@ async function splitSketchAtY({ id, organizationId, userId, yPx = null, yRatio =
         err.status = 404;
         throw err;
     }
-    if (row.slot !== 'combined' && row.status !== STATUS_NEEDS_SPLIT) {
+    if (row.slot !== 'combined'
+        && row.status !== STATUS_NEEDS_SPLIT
+        && row.status !== STATUS_JOINT_ONLY) {
         const err = new Error('Questo schizzo non è da dividere');
         err.code = 'SKETCH_NOT_SPLITTABLE';
         err.status = 400;
@@ -1181,6 +1210,7 @@ module.exports = {
     STATUS_DRAFT,
     STATUS_CONFIRMED,
     STATUS_NEEDS_SPLIT,
+    STATUS_JOINT_ONLY,
     sketchesTableAvailable,
     resetTableCache,
     presentWpsSketchColumns,

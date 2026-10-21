@@ -29,6 +29,7 @@ const {
     extractAfterWpqrCommit,
     planStoredPieces,
     STATUS_NEEDS_SPLIT,
+    STATUS_JOINT_ONLY,
     splitSketchAtY,
 } = require('./weldSketches.service');
 const IIS_BOXES = require('./fixtures/wpqrIisSketchBboxes.json');
@@ -380,6 +381,21 @@ describe('weldSketches — split combined IIS', () => {
         expect(pieces).toHaveLength(1);
         expect(pieces[0].slot).toBe('combined');
         expect(pieces[0].status).toBe(STATUS_NEEDS_SPLIT);
+        expect(pieces[0].dimension_text).toBe('t1=t2: 30 mm - a: 7,5 mm');
+    });
+
+    it('un solo disegno: joint_design con status solo giunto', () => {
+        const pieces = planStoredPieces('combined', Buffer.from('png'), {
+            width: 174,
+            height: 231,
+            bboxStr: 'embedded',
+            meta: { dimension_text: 't1=t2: 30 mm - a: 7,5 mm' },
+            splitFn: () => ({ ok: false, reason: 'single_joint' }),
+        });
+        expect(pieces).toHaveLength(1);
+        expect(pieces[0].slot).toBe('joint_design');
+        expect(pieces[0].status).toBe(STATUS_JOINT_ONLY);
+        expect(pieces[0].bboxStr).toMatch(/solo-giunto/);
         expect(pieces[0].dimension_text).toBe('t1=t2: 30 mm - a: 7,5 mm');
     });
 

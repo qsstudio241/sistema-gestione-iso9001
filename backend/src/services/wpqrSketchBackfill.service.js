@@ -111,6 +111,10 @@ function classifyStored(stored) {
     const list = Array.isArray(stored) ? stored : [];
     if (!list.length) return 'empty';
     if (list.some((s) => s.status === 'da dividere' || s.slot === 'combined')) return 'da_dividere';
+    if (list.some((s) => s.status === 'solo giunto')
+        && !list.some((s) => s.slot === 'welding_sequence')) {
+        return 'solo_giunto';
+    }
     if (list.some((s) => s.slot === 'joint_design' || s.slot === 'welding_sequence')) return 'auto_split';
     return 'draft';
 }
@@ -206,6 +210,7 @@ function scaleRgba(rgba, srcW, srcH, dstW, dstH) {
 
 function barColor(kind) {
     if (kind === 'auto_split') return [34, 139, 34];
+    if (kind === 'solo_giunto') return [40, 90, 180];
     if (kind === 'da_dividere') return [201, 140, 0];
     return [90, 90, 90];
 }
@@ -352,6 +357,7 @@ async function backfillWpqrSketches({
         candidates: candidates.length,
         processed: results.filter((r) => r.kind !== 'dry_run' && r.kind !== 'skip' && r.kind !== 'skip_confirmed').length,
         auto_split: results.filter((r) => r.kind === 'auto_split').length,
+        solo_giunto: results.filter((r) => r.kind === 'solo_giunto').length,
         da_dividere: results.filter((r) => r.kind === 'da_dividere').length,
         draft: results.filter((r) => r.kind === 'draft').length,
         empty: results.filter((r) => r.kind === 'empty').length,
