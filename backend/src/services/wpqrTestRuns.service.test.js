@@ -439,6 +439,66 @@ describe('insertAiTestRunsIfEmpty — transazione e lucchetto', () => {
         expect(db.statements.some((s) => /UPDLOCK/.test(s.text) && /wpqr_records/.test(s.text))).toBe(true);
     });
 
+    it('senza le colonne 184 non salva la passata di validità, con le colonne scrive il range', async () => {
+        const without = makeDb({ columns: false });
+        without.db.wpqr.push({ id: 11, organization_id: ORG_A, company_id: 5 });
+        const skipped = await svc.insertAiTestRunsIfEmpty({
+            wpqrId: 11, organizationId: ORG_A, companyId: 5,
+            runs: [
+                { run_label: '1', current_a: 100 },
+                { run_label: '4R', current_a: null, current_a_min: 140, current_a_max: 160 },
+            ],
+        });
+        expect(skipped).toBe(1);
+        const saved = without.db.runs.filter((r) => r.wpqr_id === 11);
+        expect(saved.map((r) => r.run_label)).toEqual(['1']);
+        expect(saved[0].current_a).toBe(100);
+        const insertSql = without.db.statements.filter((s) => /^INSERT INTO wpqr_test_runs/.test(s.text));
+        expect(insertSql).toHaveLength(1);
+        expect(insertSql[0].text).not.toMatch(/current_a_min/);
+
+        const withRanges = makeDb({ columns: true });
+        withRanges.db.wpqr.push({ id: 12, organization_id: ORG_A, company_id: 5 });
+        const inserted = await svc.insertAiTestRunsIfEmpty({
+            wpqrId: 12, organizationId: ORG_A, companyId: 5,
+            runs: [
+                { run_label: '1', current_a: 100 },
+                { run_label: '4R', current_a: null, current_a_min: 140, current_a_max: 160 },
+            ],
+        });
+        expect(inserted).toBe(2);
+        const validity = withRanges.db.runs.find((r) => r.wpqr_id === 12 && r.run_label === '4R');
+        expect(validity.current_a).toBeNull();
+        expect(validity.current_a_min).toBe(140);
+        expect(withRanges.db.statements.some((s) => (
+            /^INSERT INTO wpqr_test_runs/.test(s.text) && /current_a_min/.test(s.text) && s.params.run_label === '4R'
+        ))).toBe(true);
+    });
+
+    it('senza le colonne 184 tiene il puntuale anche se la stessa riga ha un range', async () => {
+        const { db } = makeDb({ columns: false });
+        db.wpqr.push({ id: 13, organization_id: ORG_A, company_id: 5 });
+        const n = await svc.insertAiTestRunsIfEmpty({
+            wpqrId: 13, organizationId: ORG_A, companyId: 5,
+            runs: [
+                {
+                    run_label: '1', current_a: 100, voltage_v: 20,
+                    current_a_min: 90, current_a_max: 110, voltage_v_min: 18, voltage_v_max: 22,
+                },
+                { run_label: '4R', current_a: null, current_a_min: 140, current_a_max: 160 },
+            ],
+        });
+        expect(n).toBe(1);
+        const saved = db.runs.filter((r) => r.wpqr_id === 13);
+        expect(saved.map((r) => r.run_label)).toEqual(['1']);
+        expect(saved[0].current_a).toBe(100);
+        expect(saved[0].voltage_v).toBe(20);
+        const insertSql = db.statements.filter((s) => /^INSERT INTO wpqr_test_runs/.test(s.text));
+        expect(insertSql).toHaveLength(1);
+        expect(insertSql[0].text).not.toMatch(/current_a_min/);
+        expect(insertSql[0].text).toMatch(/current_a/);
+    });
+
     it('se una riga fallisce, le precedenti non restano', async () => {
         const { db, tx } = makeDb({ failOnNthInsert: 2 });
         db.wpqr.push({ id: 11, organization_id: ORG_A, company_id: 5 });
@@ -448,5 +508,43 @@ describe('insertAiTestRunsIfEmpty — transazione e lucchetto', () => {
         })).rejects.toThrow('boom');
         expect(tx.rollback).toHaveBeenCalled();
         expect(db.runs.filter((r) => r.wpqr_id === 11)).toHaveLength(0);
+    });
+});
+
+describe('insertMissingValidityRuns', () => {
+    it('accoda solo l\'etichetta assente e non modifica il valore puntuale già salvato', async () => {
+        const { db } = makeDb();
+        const before = db.runs.find((r) => r.wpqr_id === 10);
+        const n = await svc.insertMissingValidityRuns({
+            wpqrId: 10, organizationId: ORG_A, companyId: 5,
+            runs: [
+                { run_label: '1', current_a: 999, current_a_min: 90, current_a_max: 110 },
+                {
+                    run_label: '4R', welding_process: '141-S', filler_diameter_mm: 1.6,
+                    current_polarity: 'DC EP', current_a: null,
+                    current_a_min: 140, current_a_max: 160,
+                    voltage_v_min: 26, voltage_v_max: 28,
+                    travel_speed_min: 200, travel_speed_max: 220, travel_speed_unit: 'mm/min',
+                    heat_input_value_min: 0.8, heat_input_value_max: 0.95, heat_input_unit: 'kJ/mm',
+                },
+            ],
+        });
+        expect(n).toBe(1);
+        expect(before.current_a).toBe(120);
+        const added = db.runs.filter((r) => r.wpqr_id === 10 && r.run_label === '4R');
+        expect(added).toHaveLength(1);
+        expect(added[0].current_a).toBeNull();
+        expect(added[0].current_a_min).toBe(140);
+        expect(added[0].welding_process).toBe('141-S');
+    });
+
+    it('senza le colonne 184 non scrive', async () => {
+        const { db } = makeDb({ columns: false });
+        const n = await svc.insertMissingValidityRuns({
+            wpqrId: 10, organizationId: ORG_A, companyId: 5,
+            runs: [{ run_label: '4R', current_a_min: 1, current_a_max: 2 }],
+        });
+        expect(n).toBe(0);
+        expect(db.statements.some((s) => /^INSERT INTO wpqr_test_runs/.test(s.text))).toBe(false);
     });
 });

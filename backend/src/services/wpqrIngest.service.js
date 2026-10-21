@@ -26,6 +26,7 @@ const { normalizeJointTypeCode } = require('../utils/textEncodingRepair');
 const { splitRefList, normalizeWpqrRef } = require('../utils/wpqrSupportRefs');
 const wpsWpqrLinks = require('./wpsWpqrLinks.service');
 const wpqrTestRuns = require('./wpqrTestRuns.service');
+const { withValidityRuns } = require('./wpqrValidityRuns');
 
 /**
  * Hint stud/prigioniero (STUD-2). Non usare `\bstud\b` da solo: eviterebbe
@@ -347,6 +348,12 @@ const RUN_TEXT = [
     'current_polarity', 'wire_feed_unit', 'travel_speed_unit', 'heat_input_unit',
     'metal_transfer', 'remarks',
 ];
+const RUN_RANGE = [
+    'current_a_min', 'current_a_max',
+    'voltage_v_min', 'voltage_v_max',
+    'travel_speed_min', 'travel_speed_max',
+    'heat_input_value_min', 'heat_input_value_max',
+];
 
 function isBlankToken(v) {
     return v === null || v === undefined || String(v).trim() === '';
@@ -415,9 +422,12 @@ function mapTestRun(raw) {
     const out = {};
     for (const k of RUN_TEXT) out[k] = emptyTokenToNull(raw[k]);
     for (const k of RUN_NUMERIC) out[k] = toNumericOrNull(raw[k]);
+    for (const k of RUN_RANGE) out[k] = toNumericOrNull(raw[k]);
     out.run_no = raw.run_no != null && raw.run_no !== '' ? toNumericOrNull(raw.run_no) : runNoFromLabel(out.run_label);
     out.source = 'ai';
-    const hasData = RUN_TEXT.some((k) => out[k] != null) || RUN_NUMERIC.some((k) => out[k] != null);
+    const hasData = RUN_TEXT.some((k) => out[k] != null)
+        || RUN_NUMERIC.some((k) => out[k] != null)
+        || RUN_RANGE.some((k) => out[k] != null);
     return hasData ? out : null;
 }
 
@@ -455,7 +465,7 @@ function mapResultFields(f) {
     return out;
 }
 
-function mapPipelineFieldsToReview(f) {
+function mapPipelineFieldsToReview(f, text) {
     const referenceNumber = normalizeWpqrNumber(f.wpqr_number, f.reference_number, f.wpqr_code);
     const supportingRefs = resolveSupportingRefs(f.supporting_wpqr_refs, referenceNumber);
 
@@ -481,7 +491,7 @@ function mapPipelineFieldsToReview(f) {
         legacyUnlimited = dual.thickness_t1_max_unlimited;
     }
 
-    return {
+    const review = {
         wpqr_number: referenceNumber,
         reference_number: referenceNumber,
         qualification_level: f.qualification_level || null,
@@ -540,6 +550,7 @@ function mapPipelineFieldsToReview(f) {
         ...mapPage2HeaderFields(f),
         ...mapResultFields(f),
     };
+    return withValidityRuns(review, text);
 }
 
 function normalizeQualifyingElement(val) {
@@ -689,7 +700,7 @@ async function extractWPQRFromPdf(pdfBuffer, fileName, organizationId, companyId
         organizationId,
     });
     const warnings = [...pipeline.warnings];
-    const reviewFields = mapPipelineFieldsToReview(pipeline.fields || {});
+    const reviewFields = mapPipelineFieldsToReview(pipeline.fields || {}, pipeline.text);
     const page2 = findWpqrPage2Header(pipeline.text);
     if (page2) reviewFields.page2_header = page2;
     if (pipeline.ocrUsed) {
@@ -983,6 +994,12 @@ async function commitWPQRFromFields(fields, organizationId, companyId, options =
             companyId,
             runs: mapped.test_runs,
         });
+        await wpqrTestRuns.insertMissingValidityRuns({
+            wpqrId,
+            organizationId,
+            companyId,
+            runs: mapped.test_runs,
+        });
     }
 
     const linkFlags = await linkWpqrAfterInsert({
@@ -1146,6 +1163,7 @@ const WPQR_REPROCESSABLE_FIELDS = {
 
 const WPQR_TEST_RUNS_REPROCESSABLE_FIELDS = {
     wpqr_test_runs: { column: 'id', insertIfEmpty: true },
+    wpqr_validity_runs: { column: 'id', insertIfEmpty: true },
 };
 
 /**
@@ -1179,7 +1197,7 @@ async function applyFieldReprocessUpdate(targetWpqrId, organizationId, fieldScop
     const updatable = [];
     const insertedKeys = [];
     for (const key of scopeFields) {
-        if (key === 'wpqr_test_runs') {
+        if (key === 'wpqr_test_runs' || key === 'wpqr_validity_runs') {
             const runs = testRunsFromReprocessFields(fields);
             if (runs.length) {
                 const inserted = await wpqrTestRuns.insertAiTestRunsIfEmpty({
@@ -1188,7 +1206,13 @@ async function applyFieldReprocessUpdate(targetWpqrId, organizationId, fieldScop
                     companyId: parentCompanyId,
                     runs,
                 });
-                if (inserted > 0) insertedKeys.push(key);
+                const added = await wpqrTestRuns.insertMissingValidityRuns({
+                    wpqrId: targetWpqrId,
+                    organizationId,
+                    companyId: parentCompanyId,
+                    runs,
+                });
+                if (inserted > 0 || added > 0) insertedKeys.push(key);
             }
             continue;
         }

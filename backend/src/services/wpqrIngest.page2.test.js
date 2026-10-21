@@ -309,4 +309,23 @@ describe('mapTestRuns', () => {
     it('scarta token non oggetto (sentinella array di stringhe)', () => {
         expect(mapTestRuns(['SENTINEL_test_runs_1'])).toEqual([]);
     });
+
+    it('conserva i range e, dal testo, accoda solo la passata assente in prova', () => {
+        const text = [
+            'Range of qualification',
+            'Run Process Electrode size mm Polarity Current A Voltage V Travel speed mm/min Heat input kJ/mm',
+            '1 135 1.0 DC-EP 90÷110 18÷22 150÷170 0.40÷0.55',
+            '4R 141-S 1.6 DC EP 140÷160 26÷28 200÷220 0.80÷0.95',
+        ].join('\n');
+        const review = mapPipelineFieldsToReview({
+            test_runs: [{ run_label: '1', current_a: 100, voltage_v: 20 }],
+        }, text);
+        expect(review.test_runs[0].current_a).toBe(100);
+        expect(review.test_runs.map((row) => row.run_label)).toEqual(['1', '4R']);
+        const kept = mapTestRuns([review.test_runs[1]]);
+        expect(kept[0].current_a).toBeNull();
+        expect(kept[0].current_a_min).toBe(140);
+        expect(kept[0].welding_process).toBe('141-S');
+        expect(kept[0].heat_input_value_max).toBe(0.95);
+    });
 });

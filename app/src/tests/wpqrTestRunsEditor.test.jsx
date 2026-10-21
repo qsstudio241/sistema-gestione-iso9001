@@ -9,6 +9,7 @@ import WpqrTestRunsEditor, {
   TEST_RUNS_EMPTY,
   parseDecimal,
   runNoFromLabel,
+  formatRangePlaceholder,
 } from "../components/WpqrTestRunsEditor";
 import apiService from "../services/apiService";
 
@@ -66,6 +67,34 @@ describe("WpqrTestRunsEditor — render e righe", () => {
     expect(screen.getByLabelText("Corrente (A) — riga 1")).toHaveValue("220");
     expect(screen.getByLabelText("Avanzamento unità — riga 1")).toHaveValue("mm/s");
     expect(screen.getByLabelText("Apporto termico unità — riga 1")).toHaveValue("kJ/mm");
+  });
+
+  it("passata solo di validità: mostra il range e non sostituisce il puntuale assente", () => {
+    const onChange = vi.fn();
+    const run = {
+      run_label: "4R",
+      welding_process: "141-S",
+      filler_diameter_mm: 1.6,
+      current_a: null,
+      current_a_min: 140,
+      current_a_max: 160,
+      voltage_v: null,
+      travel_speed: null,
+      travel_speed_min: 200,
+      travel_speed_max: 220,
+      travel_speed_unit: "mm/min",
+      heat_input_value: null,
+      current_polarity: "DC EP",
+    };
+    render(<WpqrTestRunsEditor value={[run]} onChange={onChange} />);
+    const current = screen.getByLabelText("Corrente (A) — riga 1");
+    expect(current).toHaveValue("");
+    expect(current).toHaveAttribute("placeholder", "140÷160");
+    expect(formatRangePlaceholder(run, "travel_speed")).toBe("200÷220");
+    fireEvent.blur(current);
+    expect(onChange).not.toHaveBeenCalled();
+    expect(screen.getByLabelText("Processo — riga 1")).toHaveValue("141-S");
+    expect(screen.getByLabelText("Avanzamento unità — riga 1")).toHaveValue("mm/min");
   });
 
   it("aggiunge una passata (etichetta proposta) e la rimuove", () => {

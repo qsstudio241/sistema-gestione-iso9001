@@ -46,9 +46,9 @@ const TABLE_ADAPTERS = {
         excludeCondition: null,
         candidateSelectColumns: 'id, organization_id, company_id, wpqr_code, welding_process, product_type, joint_type, welding_positions, thickness_tested, certificate_file_url',
         resolveDocType: () => 'wpqr',
-        // wpqrIngest.mapPipelineFieldsToReview(f) non usa ne' il testo pipeline ne' il nome file
-        // (il numero WPQR non deriva mai dal nome file) — parametri ignorati per uniformare la firma comune.
-        mapPipelineFieldsToReview: (fields) => mapWpqrFields(fields),
+        // Il secondo argomento è il testo del PDF: serve a leggere le passate
+        // presenti solo nella tabella di validità. Il nome file non entra nel numero WPQR.
+        mapPipelineFieldsToReview: (fields, text) => mapWpqrFields(fields, text),
         buildStagingDisplayFields: (reviewFields) => ({
             wpqr_code: reviewFields.wpqr_number || reviewFields.reference_number,
             certificate_number: reviewFields.certificate_number,
@@ -61,7 +61,7 @@ const TABLE_ADAPTERS = {
         candidateFrom: 'wpqr_records',
         candidateSelectColumns: 'id, organization_id, company_id, wpqr_code, welding_process, product_type, joint_type, welding_positions, thickness_tested, certificate_file_url',
         resolveDocType: () => 'wpqr',
-        mapPipelineFieldsToReview: (fields) => mapWpqrFields(fields),
+        mapPipelineFieldsToReview: (fields, text) => mapWpqrFields(fields, text),
         buildStagingDisplayFields: (reviewFields) => ({
             wpqr_code: reviewFields.wpqr_number || reviewFields.reference_number,
             certificate_number: reviewFields.certificate_number,

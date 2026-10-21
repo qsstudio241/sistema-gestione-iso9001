@@ -178,6 +178,38 @@ describe('resolveExtractedReprocessValue — tabella wpqr_records', () => {
     });
 });
 
+describe('selectReprocessCandidates — wpqr_validity_runs e migrazione 184', () => {
+    afterEach(() => jest.clearAllMocks());
+
+    it('senza current_a_min non esegue il filtro e restituisce zero candidati', async () => {
+        query.mockResolvedValueOnce({ recordset: [{ len: null }] });
+        const config = getReprocessableField('wpqr_validity_runs');
+
+        const rows = await selectReprocessCandidates('wpqr_validity_runs', config, {});
+
+        expect(rows).toEqual([]);
+        expect(query).toHaveBeenCalledTimes(1);
+        expect(query.mock.calls[0][0]).toMatch(/COL_LENGTH/);
+        expect(query.mock.calls[0][0]).toMatch(/current_a_min/);
+        expect(query.mock.calls[0][0]).not.toMatch(/FROM wpqr_records/);
+        expect(query.mock.calls[0][0]).not.toMatch(/r\.current_a_min/);
+    });
+
+    it('con la colonna presente conta le WPQR che hanno passate ma nessun range', async () => {
+        query.mockResolvedValueOnce({ recordset: [{ len: 8 }] });
+        query.mockResolvedValueOnce({ recordset: [] });
+        const config = getReprocessableField('wpqr_validity_runs');
+
+        const rows = await selectReprocessCandidates('wpqr_validity_runs', config, {});
+
+        expect(rows).toEqual([]);
+        expect(query).toHaveBeenCalledTimes(2);
+        const sql = query.mock.calls[1][0];
+        expect(sql).toMatch(/FROM wpqr_records/);
+        expect(sql).toMatch(/r\.current_a_min IS NOT NULL/);
+    });
+});
+
 describe('selectReprocessCandidates — tabella wpqr_records', () => {
     afterEach(() => jest.clearAllMocks());
 
