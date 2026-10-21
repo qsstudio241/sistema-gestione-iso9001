@@ -483,6 +483,17 @@ const REPROCESSABLE_FIELD_REGISTRY = {
         processWhitelist: null,
         candidateWhere: 'NOT EXISTS (SELECT 1 FROM wpqr_test_runs r WHERE r.wpqr_id = wpqr_records.id AND r.deleted_at IS NULL)',
     },
+    wpqr_validity_runs: {
+        key: 'wpqr_validity_runs',
+        column: 'id',
+        label: 'Passate solo in tabella di validità — WPQR',
+        module: 'saldatura',
+        table: 'wpqr_test_runs',
+        processWhitelist: null,
+        // Richiede la migrazione 184 (current_a_min). Candidati: WPQR che hanno
+        // già passate di prova ma nessun range di validità archiviato.
+        candidateWhere: 'EXISTS (SELECT 1 FROM wpqr_test_runs r WHERE r.wpqr_id = wpqr_records.id AND r.deleted_at IS NULL) AND NOT EXISTS (SELECT 1 FROM wpqr_test_runs r WHERE r.wpqr_id = wpqr_records.id AND r.deleted_at IS NULL AND r.current_a_min IS NOT NULL)',
+    },
 
     // ============================================================
     // Voci di VERIFICA (kind: 'verify') — sola lettura, vedi header.

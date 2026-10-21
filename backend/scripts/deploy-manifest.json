@@ -202,6 +202,7 @@
         "src/services/ndtReportRegistryPose.service.js",
         "src/services/wpqrIngest.service.js",
         "src/services/wpqrTestRuns.service.js",
+        "src/services/wpqrValidityRuns.js",
         "src/services/qualificationDocTypeClassifier.service.js",
         "src/services/qualificationIngest.service.js",
         "src/services/certificateFileUrl.service.js",

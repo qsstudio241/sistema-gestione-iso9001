@@ -217,10 +217,15 @@ Seconda pagina e dati di prova (riconoscere la pagina dall'intestazione, non dal
 - test_date: data di SALDATURA ("Date of welding"), YYYY-MM-DD. MAI copiare la data di emissione/approvazione
 - test_runs: array delle passate (tabella pag. 2). Ogni elemento: run_label (testo, es. "2 +n"),
   welding_process, filler_diameter_mm, filler_designation, filler_make, current_a, voltage_v
-  (valori singoli), current_polarity, wire_feed_speed, wire_feed_unit, travel_speed, travel_speed_unit,
+  (valori singoli della tabella di prova), current_polarity, wire_feed_speed, wire_feed_unit, travel_speed, travel_speed_unit,
   heat_input_value, heat_input_unit, metal_transfer, remarks. Unita come scritte (kJ/mm, J/mm, kJ/cm,
   mm/s, cm/min). "N.A." / "n.a." → null. Per stud (14555): current_a, weld_time_ms, protrusion_mm, lift_mm
-  e se c'e scarica capacitiva capacitance_mf, charging_voltage_v, gap_lift_mm, spring_force_n
+  e se c'e scarica capacitiva capacitance_mf, charging_voltage_v, gap_lift_mm, spring_force_n.
+  Se una passata sta SOLO nella tabella dei campi di validità (range min÷max) e non nella tabella di prova,
+  includila lo stesso: processo, diametro filo e polarità come scritti; current_a, voltage_v, travel_speed
+  e heat_input_value null; i limiti in current_a_min/current_a_max, voltage_v_min/voltage_v_max,
+  travel_speed_min/travel_speed_max, heat_input_value_min/heat_input_value_max.
+  Non duplicare un'etichetta già presente in tabella di prova e non sostituire i suoi valori puntuali col range.
 - welding_position_test, diameter_test_mm, deposited_thickness_mm, thickness_t2_test_mm
 - filler_make, filler_size, backing_gas ("none" SOLO se il certificato scrive None/Nessuno)
 - heat_input_kind ("heat_input" o "arc_energy" solo se dichiarato), heat_input_range_min/max,

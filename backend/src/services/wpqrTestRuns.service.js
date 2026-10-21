@@ -27,6 +27,7 @@ const {
     assertMutatingAllowed,
 } = require('../services/companyAccess.service');
 const { toNumericOrNull } = require('../utils/numericSanitizer');
+const { normRunLabel } = require('./wpqrValidityRuns');
 
 const MAX_RUNS = 60;
 const SOURCES = ['ai', 'manual'];
@@ -47,10 +48,18 @@ const UNIT_PAIRS = [
 const NUMERIC_FIELDS = {
     filler_diameter_mm: { min: 0, max: 50 },
     current_a: { min: 0, max: 5000 },
+    current_a_min: { min: 0, max: 5000 },
+    current_a_max: { min: 0, max: 5000 },
     voltage_v: { min: 0, max: 1000 },
+    voltage_v_min: { min: 0, max: 1000 },
+    voltage_v_max: { min: 0, max: 1000 },
     wire_feed_speed: { min: 0, max: 1000 },
     travel_speed: { min: 0, max: 100000 },
+    travel_speed_min: { min: 0, max: 100000 },
+    travel_speed_max: { min: 0, max: 100000 },
     heat_input_value: { min: 0, max: 100000 },
+    heat_input_value_min: { min: 0, max: 100000 },
+    heat_input_value_max: { min: 0, max: 100000 },
     weld_time_ms: { min: 0, max: 1000000 },
     protrusion_mm: { min: 0, max: 100 },
     lift_mm: { min: 0, max: 100 },
@@ -83,6 +92,20 @@ const WRITABLE_COLUMNS = [
 ];
 
 const READ_COLUMNS = ['id', 'wpqr_id', ...WRITABLE_COLUMNS];
+
+/** Migrazione 184. Fuori da WRITABLE_COLUMNS: quel elenco resta allineato alla 173. */
+const RANGE_COLUMNS = [
+    'current_a_min', 'current_a_max',
+    'voltage_v_min', 'voltage_v_max',
+    'travel_speed_min', 'travel_speed_max',
+    'heat_input_value_min', 'heat_input_value_max',
+];
+const RANGE_PAIRS = [
+    ['current_a_min', 'current_a_max'],
+    ['voltage_v_min', 'voltage_v_max'],
+    ['travel_speed_min', 'travel_speed_max'],
+    ['heat_input_value_min', 'heat_input_value_max'],
+];
 
 class TestRunsError extends Error {
     constructor(status, code, message, details) {
@@ -193,6 +216,12 @@ function normalizeRun(raw) {
     if (value.run_no === null) {
         const m = /\d+/.exec(value.run_label || '');
         value.run_no = m ? Number(m[0]) : null;
+    }
+
+    for (const [lo, hi] of RANGE_PAIRS) {
+        if (value[lo] != null && value[hi] != null && value[lo] > value[hi]) {
+            errors.push({ field: hi, message: 'Il massimo deve essere maggiore o uguale al minimo.' });
+        }
     }
 
     value.source = SOURCES.includes(raw.source) ? raw.source : 'manual';
@@ -335,6 +364,18 @@ async function tableExists(name) {
     return Boolean(row && row.object_id);
 }
 
+/** `true` solo dopo la migrazione 184. Senza le colonne le passate di prova si salvano comunque. */
+async function rangeColumnsAvailable() {
+    if (!(await tableExists('wpqr_test_runs'))) return false;
+    const r = await query(`SELECT COL_LENGTH(N'dbo.wpqr_test_runs', N'current_a_min') AS len`);
+    const row = r && r.recordset && r.recordset[0];
+    return Boolean(row && row.len != null);
+}
+
+function columnsForWrite(withRanges) {
+    return withRanges ? [...WRITABLE_COLUMNS, ...RANGE_COLUMNS] : [...WRITABLE_COLUMNS];
+}
+
 /** WPQR del tenant (mai un id dal client senza scope). `null` se non esiste o appartiene ad altro tenant. */
 async function findWpqrInTenant(wpqrId, organizationId) {
     const r = await query(
@@ -386,8 +427,10 @@ async function listTestRuns({ wpqrId, organizationId, user }) {
     if (!wpqr) throw new TestRunsError(404, 'WPQR_NOT_FOUND', 'WPQR non trovato');
     await assertWpqrCompany(user, wpqr, 'read');
     if (!(await tableExists('wpqr_test_runs'))) return { runs: [], available: false };
+    const withRanges = await rangeColumnsAvailable();
+    const selected = withRanges ? [...READ_COLUMNS, ...RANGE_COLUMNS] : READ_COLUMNS;
     const r = await query(
-        `SELECT ${READ_COLUMNS.join(', ')}
+        `SELECT ${selected.join(', ')}
          FROM wpqr_test_runs
          WHERE wpqr_id = @wpqr_id AND organization_id = @organization_id AND deleted_at IS NULL
          ORDER BY id`,
@@ -441,10 +484,11 @@ async function replaceTestRuns({ wpqrId, organizationId, runs, user }) {
              WHERE wpqr_id = @wpqr_id AND organization_id = @organization_id AND deleted_at IS NULL`,
             { wpqr_id: wpqrId, organization_id: organizationId }
         );
-        const columns = ['organization_id', 'company_id', 'wpqr_id', ...WRITABLE_COLUMNS, 'created_at', 'updated_at'];
+        const writeColumns = columnsForWrite(await rangeColumnsAvailable());
+        const columns = ['organization_id', 'company_id', 'wpqr_id', ...writeColumns, 'created_at', 'updated_at'];
         const values = [
             '@organization_id', '@company_id', '@wpqr_id',
-            ...WRITABLE_COLUMNS.map((c) => `@${c}`), 'GETDATE()', 'GETDATE()',
+            ...writeColumns.map((c) => `@${c}`), 'GETDATE()', 'GETDATE()',
         ];
         for (const row of rows) {
             await run(
@@ -555,15 +599,95 @@ async function insertAiTestRunsIfEmpty({ wpqrId, organizationId, companyId = nul
             return 0;
         }
 
-        const columns = ['organization_id', 'company_id', 'wpqr_id', ...WRITABLE_COLUMNS, 'created_at', 'updated_at'];
+        const writeColumns = columnsForWrite(await rangeColumnsAvailable());
+        const columns = ['organization_id', 'company_id', 'wpqr_id', ...writeColumns, 'created_at', 'updated_at'];
         const values = [
             '@organization_id', '@company_id', '@wpqr_id',
-            ...WRITABLE_COLUMNS.map((c) => `@${c}`), 'GETDATE()', 'GETDATE()',
+            ...writeColumns.map((c) => `@${c}`), 'GETDATE()', 'GETDATE()',
         ];
         let inserted = 0;
         for (const raw of list) {
             const row = { ...raw, source: 'ai' };
-            for (const col of WRITABLE_COLUMNS) {
+            for (const col of writeColumns) {
+                if (row[col] === undefined) row[col] = null;
+            }
+            await run(
+                `INSERT INTO wpqr_test_runs (${columns.join(', ')}) VALUES (${values.join(', ')})`,
+                {
+                    ...row,
+                    organization_id: organizationId,
+                    company_id: companyId == null ? null : companyId,
+                    wpqr_id: wpqrId,
+                }
+            );
+            inserted += 1;
+        }
+        await tx.commit();
+        return inserted;
+    } catch (err) {
+        await tx.rollback().catch(() => {});
+        throw err;
+    }
+}
+
+function isValidityRangeRun(row) {
+    return Boolean(row && typeof row === 'object' && row.run_label && (
+        row.current_a_min != null || row.voltage_v_min != null
+        || row.travel_speed_min != null || row.heat_input_value_min != null
+    ));
+}
+
+/**
+ * Inserisce solo passate di validità (hanno un range) la cui etichetta non c'è già.
+ * Non aggiorna le righe esistenti e non inserisce valori puntuali nuovi.
+ */
+async function insertMissingValidityRuns({ wpqrId, organizationId, companyId = null, runs = [] }) {
+    requireTenant(organizationId);
+    const incoming = (Array.isArray(runs) ? runs : []).filter(isValidityRangeRun);
+    if (!incoming.length) return 0;
+    if (!(await rangeColumnsAvailable())) return 0;
+
+    const pool = await getPool();
+    const tx = pool.transaction();
+    await tx.begin();
+    try {
+        const run = async (sqlText, params) => {
+            const request = tx.request();
+            Object.entries(params).forEach(([k, v]) => request.input(k, v));
+            return request.query(sqlText);
+        };
+        await run(
+            `SELECT id FROM wpqr_records WITH (UPDLOCK, HOLDLOCK)
+             WHERE id = @wpqr_id AND organization_id = @organization_id`,
+            { wpqr_id: wpqrId, organization_id: organizationId }
+        );
+        const existing = await run(
+            `SELECT run_label FROM wpqr_test_runs WITH (UPDLOCK, HOLDLOCK)
+             WHERE wpqr_id = @wpqr_id AND organization_id = @organization_id AND deleted_at IS NULL`,
+            { wpqr_id: wpqrId, organization_id: organizationId }
+        );
+        const seen = new Set((existing.recordset || []).map((row) => normRunLabel(row.run_label)).filter(Boolean));
+        const missing = incoming.filter((row) => {
+            const key = normRunLabel(row.run_label);
+            if (!key || seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        });
+        if (!missing.length) {
+            await tx.commit();
+            return 0;
+        }
+
+        const writeColumns = columnsForWrite(true);
+        const columns = ['organization_id', 'company_id', 'wpqr_id', ...writeColumns, 'created_at', 'updated_at'];
+        const values = [
+            '@organization_id', '@company_id', '@wpqr_id',
+            ...writeColumns.map((c) => `@${c}`), 'GETDATE()', 'GETDATE()',
+        ];
+        let inserted = 0;
+        for (const raw of missing) {
+            const row = { ...raw, source: 'ai' };
+            for (const col of writeColumns) {
                 if (row[col] === undefined) row[col] = null;
             }
             await run(
@@ -604,4 +728,6 @@ module.exports = {
     deleteWpqrDependents,
     deleteWpsLinks,
     insertAiTestRunsIfEmpty,
+    insertMissingValidityRuns,
+    RANGE_COLUMNS,
 };

@@ -450,3 +450,41 @@ describe('insertAiTestRunsIfEmpty — transazione e lucchetto', () => {
         expect(db.runs.filter((r) => r.wpqr_id === 11)).toHaveLength(0);
     });
 });
+
+describe('insertMissingValidityRuns', () => {
+    it('accoda solo l\'etichetta assente e non modifica il valore puntuale già salvato', async () => {
+        const { db } = makeDb();
+        const before = db.runs.find((r) => r.wpqr_id === 10);
+        const n = await svc.insertMissingValidityRuns({
+            wpqrId: 10, organizationId: ORG_A, companyId: 5,
+            runs: [
+                { run_label: '1', current_a: 999, current_a_min: 90, current_a_max: 110 },
+                {
+                    run_label: '4R', welding_process: '141-S', filler_diameter_mm: 1.6,
+                    current_polarity: 'DC EP', current_a: null,
+                    current_a_min: 140, current_a_max: 160,
+                    voltage_v_min: 26, voltage_v_max: 28,
+                    travel_speed_min: 200, travel_speed_max: 220, travel_speed_unit: 'mm/min',
+                    heat_input_value_min: 0.8, heat_input_value_max: 0.95, heat_input_unit: 'kJ/mm',
+                },
+            ],
+        });
+        expect(n).toBe(1);
+        expect(before.current_a).toBe(120);
+        const added = db.runs.filter((r) => r.wpqr_id === 10 && r.run_label === '4R');
+        expect(added).toHaveLength(1);
+        expect(added[0].current_a).toBeNull();
+        expect(added[0].current_a_min).toBe(140);
+        expect(added[0].welding_process).toBe('141-S');
+    });
+
+    it('senza le colonne 184 non scrive', async () => {
+        const { db } = makeDb({ columns: false });
+        const n = await svc.insertMissingValidityRuns({
+            wpqrId: 10, organizationId: ORG_A, companyId: 5,
+            runs: [{ run_label: '4R', current_a_min: 1, current_a_max: 2 }],
+        });
+        expect(n).toBe(0);
+        expect(db.statements.some((s) => /^INSERT INTO wpqr_test_runs/.test(s.text))).toBe(false);
+    });
+});

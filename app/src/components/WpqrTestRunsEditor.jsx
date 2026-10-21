@@ -25,6 +25,25 @@ const UNIT_PAIRS = {
   wire_feed_speed: { unitField: "wire_feed_unit", units: WIRE_FEED_UNITS, label: "Velocità filo" },
 };
 
+const RANGE_OF = {
+  current_a: ["current_a_min", "current_a_max"],
+  voltage_v: ["voltage_v_min", "voltage_v_max"],
+  travel_speed: ["travel_speed_min", "travel_speed_max"],
+  heat_input_value: ["heat_input_value_min", "heat_input_value_max"],
+};
+
+/** Testo «min÷max» per una cella senza valore puntuale. Stringa vuota se il range non c'è. */
+export function formatRangePlaceholder(run, field) {
+  const pair = RANGE_OF[field];
+  if (!pair || !run) return "";
+  const left = run[pair[0]];
+  const right = run[pair[1]];
+  if (left == null || left === "" || right == null || right === "") return "";
+  const a = String(left).replace(".", ",");
+  const b = String(right).replace(".", ",");
+  return a === b ? a : `${a}÷${b}`;
+}
+
 const ARC_NUMERIC = ["filler_diameter_mm", "current_a", "voltage_v"];
 const ARC_TEXT = ["run_label", "welding_process", "current_polarity", "metal_transfer", "remarks"];
 const STUD_NUMERIC = [
@@ -328,6 +347,7 @@ export default function WpqrTestRunsEditor({
             inputMode="decimal"
             className="sq-search wtr-input wtr-num"
             value={row.draft[col.field]}
+            placeholder={formatRangePlaceholder(row.data, col.field)}
             {...inputProps}
             onChange={(e) => setDraft(row.key, col.field, e.target.value)}
             onBlur={() => handleBlur(row.key, col.field)}
@@ -346,6 +366,7 @@ export default function WpqrTestRunsEditor({
             inputMode="decimal"
             className="sq-search wtr-input wtr-num"
             value={row.draft[col.field]}
+            placeholder={formatRangePlaceholder(row.data, col.field)}
             {...inputProps}
             onChange={(e) => setDraft(row.key, col.field, e.target.value)}
             onBlur={() => handleBlur(row.key, col.field)}
