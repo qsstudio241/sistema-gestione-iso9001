@@ -475,6 +475,30 @@ describe('insertAiTestRunsIfEmpty — transazione e lucchetto', () => {
         ))).toBe(true);
     });
 
+    it('senza le colonne 184 tiene il puntuale anche se la stessa riga ha un range', async () => {
+        const { db } = makeDb({ columns: false });
+        db.wpqr.push({ id: 13, organization_id: ORG_A, company_id: 5 });
+        const n = await svc.insertAiTestRunsIfEmpty({
+            wpqrId: 13, organizationId: ORG_A, companyId: 5,
+            runs: [
+                {
+                    run_label: '1', current_a: 100, voltage_v: 20,
+                    current_a_min: 90, current_a_max: 110, voltage_v_min: 18, voltage_v_max: 22,
+                },
+                { run_label: '4R', current_a: null, current_a_min: 140, current_a_max: 160 },
+            ],
+        });
+        expect(n).toBe(1);
+        const saved = db.runs.filter((r) => r.wpqr_id === 13);
+        expect(saved.map((r) => r.run_label)).toEqual(['1']);
+        expect(saved[0].current_a).toBe(100);
+        expect(saved[0].voltage_v).toBe(20);
+        const insertSql = db.statements.filter((s) => /^INSERT INTO wpqr_test_runs/.test(s.text));
+        expect(insertSql).toHaveLength(1);
+        expect(insertSql[0].text).not.toMatch(/current_a_min/);
+        expect(insertSql[0].text).toMatch(/current_a/);
+    });
+
     it('se una riga fallisce, le precedenti non restano', async () => {
         const { db, tx } = makeDb({ failOnNthInsert: 2 });
         db.wpqr.push({ id: 11, organization_id: ORG_A, company_id: 5 });

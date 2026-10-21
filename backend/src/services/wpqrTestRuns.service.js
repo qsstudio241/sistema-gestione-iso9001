@@ -569,12 +569,24 @@ function isValidityRangeRun(row) {
     ));
 }
 
+/** Valore misurato in tabella di prova. Lo zero conta: non è un campo vuoto. */
+function hasPointValue(row) {
+    return ['current_a', 'voltage_v', 'travel_speed', 'heat_input_value']
+        .some((key) => row && !isBlank(row[key]));
+}
+
+/** Range senza alcun puntuale: va scritta solo quando le colonne 184 ci sono. */
+function isValidityOnlyRun(row) {
+    return isValidityRangeRun(row) && !hasPointValue(row);
+}
+
 /**
  * Ingest / rielaborazione: inserisce le passate AI solo se la WPQR non ne ha già
  * (mai sovrascrive passate manuali). Un'unica transazione + lucchetto sulla WPQR:
  * se una riga fallisce non restano mezze passate; due conferme vicine non duplicano.
- * Senza le colonne 184 le passate di sola validità non si scrivono: un'etichetta
- * salvata senza range bloccherebbe il recupero successivo.
+ * Senza le colonne 184 si saltano solo le passate di sola validità (range e
+ * nessun puntuale). Una riga con valore di prova si salva comunque: i range
+ * restano fuori finché la 184 non c'è, i puntuali no.
  * Ritorna il numero di righe inserite.
  */
 async function insertAiTestRunsIfEmpty({ wpqrId, organizationId, companyId = null, runs = [] }) {
@@ -609,7 +621,7 @@ async function insertAiTestRunsIfEmpty({ wpqrId, organizationId, companyId = nul
         }
 
         const rangesOn = await rangeColumnsAvailable();
-        const writeList = rangesOn ? list : list.filter((row) => !isValidityRangeRun(row));
+        const writeList = rangesOn ? list : list.filter((row) => !isValidityOnlyRun(row));
         if (!writeList.length) {
             await tx.commit();
             return 0;
