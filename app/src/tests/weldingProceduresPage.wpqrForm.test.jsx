@@ -96,6 +96,19 @@ describe("WeldingProceduresPage — form WPQR", () => {
     expect(screen.queryByText("-- Seleziona WPS --")).toBeNull();
   });
 
+  it("senza azienda non chiama il salvataggio e avvisa di scegliere l'Ambito", async () => {
+    scopeState.companyId = "studio";
+    await openWpqrTab();
+    fireEvent.click(screen.getByRole("button", { name: "+ Nuovo WPQR" }));
+    expect(await screen.findByText(/Seleziona un.azienda nell.Ambito in alto prima di creare una WPQR/)).toBeTruthy();
+    const codeLabel = screen.getByText("Codice WPQR");
+    const codeInput = codeLabel.parentElement.querySelector("input");
+    fireEvent.change(codeInput, { target: { value: "SENZA-AZ" } });
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    expect(apiService.createWPQR).not.toHaveBeenCalled();
+    expect(screen.queryByText(/Errore salvataggio/)).toBeNull();
+  });
+
   it("modifica: mostra la pWPS salvata e non la WPS collegata", async () => {
     await openWpqrTab();
     fireEvent.click(await screen.findByText("PWPS-TEST"));

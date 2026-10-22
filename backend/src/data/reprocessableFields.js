@@ -57,6 +57,8 @@ const { CERTIFICATE_FRAGMENT_SQL } = require('../utils/ruleFieldExtractors');
  *   proposta in coda. Campi: `verifyFamily` (famiglia norma del registry di verifica,
  *   `qualificationVerify`), `qualTypeLike`. Il conteggio non entra nel totale «dati AI mancanti»
  *   e non scende dopo l'esecuzione: si azzera correggendo i record in Qualifiche.
+ * - `applyVia` (opzionale): `'script'` = la voce resta nel registro (candidati visibili) ma non è un
+ *   lancio AI. Non entra nel totale «dati AI mancanti» e il pannello non offre «Lancia».
  */
 const { CONTINUOUS_WIRE_ARC_PROCESSES } = require('./weldingQualificationRules9606');
 

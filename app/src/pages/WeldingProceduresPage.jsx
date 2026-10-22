@@ -909,17 +909,20 @@ function WPQRFormModal({ wpqr, defaultCompanyId, onSave, onClose, onSaved }) {
     ? "ISO 14555 \u00A710.2.8.6 (tutti gli spessori)"
     : "ISO 15614";
 
-  // Auto-save con debounce 800ms
+  const creatingWithoutCompany = !wpqr?.id && !numericCompanyScopeId(defaultCompanyId);
+
+  // Auto-save con debounce 800ms. Senza azienda il create è rifiutato: non chiamare l'API.
   useEffect(() => {
     if (isFirstRender.current) { isFirstRender.current = false; return; }
     if (!form.wpqr_code?.trim()) return;
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
     autoSaveTimer.current = setTimeout(async () => {
+      const payload = buildWpqrSavePayload(form, defaultCompanyId);
+      if (!savedIdRef.current && payload.company_id == null) return;
       setSaving(true);
       setAutoSaveStatus('saving');
       setError(null);
       try {
-        const payload = buildWpqrSavePayload(form, defaultCompanyId);
         if (savedIdRef.current) {
           await apiService.updateWPQR(savedIdRef.current, payload);
         } else {
@@ -969,6 +972,11 @@ function WPQRFormModal({ wpqr, defaultCompanyId, onSave, onClose, onSaved }) {
         <form onSubmit={e => e.preventDefault()}>
           <div className="wp-modal-body">
             {error && <div className="wp-error">{error}</div>}
+            {creatingWithoutCompany && (
+              <div className="wp-warn-no-company">
+                {"\u26A0\uFE0F Seleziona un\u2019azienda nell\u2019Ambito in alto prima di creare una WPQR."}
+              </div>
+            )}
             <div className="wp-form-grid">
               <div className="wp-form-group">
                 <label className="wp-form-label">pWPS di riferimento</label>

@@ -36,6 +36,7 @@ async function listReprocessTasks(req, res) {
                 return {
                     key: fieldDef.key,
                     kind,
+                    apply_via: fieldDef.applyVia || null,
                     label: fieldDef.label,
                     module: fieldDef.module,
                     table: fieldDef.table,
@@ -47,6 +48,7 @@ async function listReprocessTasks(req, res) {
                 return {
                     key: fieldDef.key,
                     kind,
+                    apply_via: fieldDef.applyVia || null,
                     label: fieldDef.label,
                     module: fieldDef.module,
                     table: fieldDef.table,
@@ -57,10 +59,10 @@ async function listReprocessTasks(req, res) {
             }
         }));
 
-        // Le voci di verifica sono uno stato dei record, non un backlog di dati AI mancanti:
+        // Verifica e ricalcoli da script non sono un backlog di dati AI mancanti:
         // non entrano nel totale (il banner «dati AI mancanti» resta vero).
         const totalCandidates = tasks
-            .filter((t) => t.kind !== 'verify')
+            .filter((t) => t.kind !== 'verify' && t.apply_via !== 'script')
             .reduce((sum, t) => sum + (t.candidate_count || 0), 0);
         res.json({ success: true, tasks, total_candidates: totalCandidates });
     } catch (error) {
@@ -93,6 +95,13 @@ async function runReprocessTask(req, res) {
 
         res.json({ success: true, ...summary });
     } catch (error) {
+        if (error.code === 'REPROCESS_VIA_SCRIPT') {
+            return res.status(400).json({
+                success: false,
+                error: error.message,
+                code: 'REPROCESS_VIA_SCRIPT',
+            });
+        }
         logger.error('[ReprocessTasks] runReprocessTask error', { error: error.message });
         res.status(500).json({ success: false, error: error.message || 'Errore durante la rielaborazione' });
     }
