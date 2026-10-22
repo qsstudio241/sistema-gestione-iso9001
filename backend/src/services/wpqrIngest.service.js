@@ -27,6 +27,14 @@ const { splitRefList, normalizeWpqrRef } = require('../utils/wpqrSupportRefs');
 const wpsWpqrLinks = require('./wpsWpqrLinks.service');
 const wpqrTestRuns = require('./wpqrTestRuns.service');
 const { withValidityRuns } = require('./wpqrValidityRuns');
+const { isFragmentCertificateNumber, CERTIFICATE_FRAGMENT_SQL } = require('../utils/ruleFieldExtractors');
+
+/** Un frammento («ifica», «o.», «Risultati») non si salva: il numero vero o null. */
+function persistCertificateNumber(value) {
+    if (value == null || value === '') return null;
+    if (isFragmentCertificateNumber(value)) return null;
+    return value;
+}
 
 /**
  * Hint stud/prigioniero (STUD-2). Non usare `\bstud\b` da solo: eviterebbe
@@ -510,7 +518,7 @@ function mapPipelineFieldsToReview(f, text) {
         welding_positions: normalizePositions(f.welding_positions),
         examiner_body: f.issuing_body || f.examiner_body || f.testing_body || null,
         welder_name: f.welder_name || null,
-        certificate_number: f.certificate_number || null,
+        certificate_number: persistCertificateNumber(f.certificate_number),
         pwht: f.pwht === true || f.pwht === 1 || f.pwht === '1',
         wps_ref: f.wps_ref || null,
         supporting_wpqr_refs: supportingRefs.length ? supportingRefs.join(', ') : null,
@@ -620,7 +628,7 @@ function mapReviewFieldsToDb(f) {
         examiner_body: f.examiner_body || f.issuing_body || f.testing_body || null,
         welder_name: f.welder_name || null,
         issue_date: f.approval_date || f.issue_date || null,
-        certificate_number: f.certificate_number || null,
+        certificate_number: persistCertificateNumber(f.certificate_number),
         pwht: f.pwht === true || f.pwht === 1 || f.pwht === '1' ? 1 : 0,
         wps_ref: f.wps_ref || null,
         supporting_wpqr_refs: resolveSupportingRefs(f.supporting_wpqr_refs, referenceNumber),
@@ -649,22 +657,8 @@ function mapReviewFieldsToDb(f) {
  */
 async function previewLinksForWpqr(reviewFields, organizationId, companyId) {
     const flags = [];
-    let wpsMatch = null;
-    try {
-        const wps = await wpsWpqrLinks.resolveWpsRef({ organizationId, companyId, ref: reviewFields.wps_ref });
-        wpsMatch = wps.match;
-        flags.push(...wps.flags);
-    } catch (err) {
-        logger.warn('WPQR: ricerca WPS non riuscita', { organizationId, error: err.message });
-        const ref = reviewFields.wps_ref && String(reviewFields.wps_ref).trim();
-        flags.push({
-            ref: ref || null,
-            status: 'resolve_error',
-            message: ref
-                ? `WPS ${ref}: verifica non riuscita — da verificare.`
-                : 'Verifica del legame con la WPS non riuscita — da verificare.',
-        });
-    }
+    // La pWPS è testo (wps_ref): non si cerca né si lega una WPS.
+    const wpsMatch = null;
     const supportingRefs = splitRefList(reviewFields.supporting_wpqr_refs);
     if (supportingRefs.length > 0) {
         try {
@@ -787,29 +781,9 @@ async function extractWPQRFromPdf(pdfBuffer, fileName, organizationId, companyId
     };
 }
 
-/** Dopo l'INSERT: legame `primary` verso la WPS citata solo se univoca nel tenant; il resto resta «da verificare». */
-async function linkWpqrAfterInsert({ wpqrId, organizationId, companyId, userId, wpsRef }) {
-    try {
-        const resolved = await wpsWpqrLinks.resolveWpsRef({ organizationId, companyId, ref: wpsRef });
-        const flags = [...resolved.flags];
-        const linked = await wpsWpqrLinks.linkWpqrToWps({
-            organizationId, companyId, wpqrId, match: resolved.match, userId,
-        });
-        flags.push(...linked.flags);
-        if (linked.linked.length > 0) {
-            logger.info('WPQR: legame con la WPS creato', { wpqrId, organizationId });
-        }
-        return flags;
-    } catch (err) {
-        logger.warn('WPQR: scrittura legame con la WPS non riuscita', { wpqrId, organizationId, error: err.message });
-        return [{
-            ref: wpsRef || null,
-            status: 'resolve_error',
-            message: wpsRef
-                ? `WPS ${wpsRef}: legame non salvato — da verificare.`
-                : 'Legame con la WPS non salvato — da verificare.',
-        }];
-    }
+/** La pWPS resta testo sulla WPQR: nessun legame verso una WPS in archivio. */
+async function linkWpqrAfterInsert() {
+    return [];
 }
 
 async function commitWPQRFromFields(fields, organizationId, companyId, options = {}) {
@@ -1158,6 +1132,12 @@ const WPQR_REPROCESSABLE_FIELDS = {
             column,
             writeGuard: `${column} IS NULL`,
         })),
+    },
+    // Frammenti («ifica», «o.»): li ricalcola lo script, non l'AI. Il writeGuard
+    // impedisce a una conferma staging di toccare un numero già valido.
+    wpqr_certificate_number: {
+        column: 'certificate_number',
+        writeGuard: CERTIFICATE_FRAGMENT_SQL,
     },
 };
 

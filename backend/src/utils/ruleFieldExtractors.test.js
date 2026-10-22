@@ -4,6 +4,8 @@
 
 const {
     extractFieldsByRules,
+    extractCertificateNumber,
+    isFragmentCertificateNumber,
     extractQualifica14732Fields,
     extractCertNdtFields,
     extractWpqrFields,
@@ -107,7 +109,13 @@ describe('extractWpqrFields (DEPUTYTASK1 25/07/2026 — campi copertura pag.1/pa
         const out = extractWpqrFields(noNumber, 'ZZROSSI_ZZMARIO_ACMEZZ.pdf');
         expect(out.wpqr_number).toBeNull();
         expect(out.reference_number).toBeNull();
+        expect(out.certificate_number).toBeNull();
         expect(JSON.stringify(out)).not.toContain('ZZROSSI');
+    });
+
+    it('Test certificate No: tiene il numero, non il frammento', () => {
+        const out = extractWpqrFields(sample, '24-03390-01.pdf');
+        expect(out.certificate_number).toBe('24-03390-01');
     });
 
     it('extractFieldsByRules: testo quasi vuoto su wpqr non ricava il numero dal nome file', () => {
@@ -230,5 +238,39 @@ describe('extractFieldsByRules — dispatch per docType', () => {
         expect(out.qualification_designation).toMatch(/135S P FW/);
         expect(out.qualification_designation).not.toMatch(/2017/);
         expect(out.thickness_t_test_mm).toBe(12);
+    });
+});
+
+describe('extractCertificateNumber — frammenti No. / certifica', () => {
+    it.each([
+        ['Si certifica che il procedimento è qualificato', null],
+        ['certifica', null],
+        ['Certificate', null],
+        ['Certificate No.   ', null],
+        ['Certificate No. Risultati', null],
+        ['Risultati', null],
+        ['CERTIFICATION BODY', null],
+        ['Certificate No. 16VE01735PO1/A', '16VE01735PO1/A'],
+        ['Certificate No. / Certificato No. 24-03390-01', '24-03390-01'],
+        ['Certificato N° E-00951-UT-2 R', 'E-00951-UT-2 R'],
+        ['N. 24-03390-01', '24-03390-01'],
+        ['N. Certificato 24-03390-01', '24-03390-01'],
+        ['Page No. 2', null],
+        ['N. 2 of 4', null],
+    ])('%s → %s', (text, expected) => {
+        expect(extractCertificateNumber(text)).toBe(expected);
+    });
+
+    it('riconosce i frammenti già salvati e non un numero vero', () => {
+        expect(isFragmentCertificateNumber('ifica')).toBe(true);
+        expect(isFragmentCertificateNumber('ificate')).toBe(true);
+        expect(isFragmentCertificateNumber('o.')).toBe(true);
+        expect(isFragmentCertificateNumber('o. 16VE01735PO1/A')).toBe(true);
+        expect(isFragmentCertificateNumber('o. Risultati')).toBe(true);
+        expect(isFragmentCertificateNumber('Risultati')).toBe(true);
+        expect(isFragmentCertificateNumber('16VE01735PO1/A')).toBe(false);
+        expect(isFragmentCertificateNumber('VB0377/23 rev.0')).toBe(false);
+        expect(isFragmentCertificateNumber(null)).toBe(false);
+        expect(isFragmentCertificateNumber('')).toBe(false);
     });
 });

@@ -365,14 +365,9 @@ const NC_ORG = 'COALESCE(nc.organization_id, au.organization_id) = @organization
 /** Il figlio non torna in elenco finché il padre è nel cestino. */
 async function parentStillTrashed(entity, id, organizationId) {
     const sqlByEntity = {
-        wpqr_records: `SELECT w.deleted_at AS parent_deleted
-            FROM wpqr_records t
-            INNER JOIN welding_procedures w ON w.id = t.wps_id AND w.organization_id = t.organization_id
-            WHERE t.id = @id AND t.organization_id = @organization_id`,
-        wpqr_test_runs: `SELECT COALESCE(wq.deleted_at, w.deleted_at) AS parent_deleted
+        wpqr_test_runs: `SELECT wq.deleted_at AS parent_deleted
             FROM wpqr_test_runs t
             INNER JOIN wpqr_records wq ON wq.id = t.wpqr_id AND wq.organization_id = t.organization_id
-            LEFT JOIN welding_procedures w ON w.id = wq.wps_id AND w.organization_id = wq.organization_id
             WHERE t.id = @id AND t.organization_id = @organization_id`,
         wps_wpqr_links: `SELECT w.deleted_at AS parent_deleted
             FROM wps_wpqr_links t
@@ -444,12 +439,6 @@ function childRestoreSql(entity) {
     }
     if (entity === 'welding_procedures') {
         return [
-            `UPDATE wpqr_records SET deleted_at = NULL, deleted_by = NULL
-             WHERE wps_id = @id AND organization_id = @organization_id AND deleted_at IS NOT NULL`,
-            `UPDATE r SET deleted_at = NULL, deleted_by = NULL
-             FROM wpqr_test_runs r
-             INNER JOIN wpqr_records wq ON wq.id = r.wpqr_id AND wq.organization_id = r.organization_id
-             WHERE wq.wps_id = @id AND r.organization_id = @organization_id AND r.deleted_at IS NOT NULL`,
             restoreOneTrashedSlot('wps_wpqr_links', 'wps_id', ['wps_id', 'wpqr_id']),
             restoreOneTrashedSlot('wps_welders', 'wps_id', ['wps_id', 'qualification_id']),
         ];

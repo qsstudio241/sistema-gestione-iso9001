@@ -817,13 +817,34 @@ function calcThicknessRangeForStandard(t, standardReference) {
   return { ...calcThicknessRangeUI(t), thickness_max_unlimited: false };
 }
 
-function WPQRFormModal({ wpqr, wpsList, defaultCompanyId, onSave, onClose, onSaved }) {
+/** Payload di salvataggio: la pWPS è testo. Nessun wps_id. */
+export function buildWpqrSavePayload(form, scopeCompanyId) {
+  const companyText = numericCompanyScopeId(scopeCompanyId)
+    || numericCompanyScopeId(form && form.company_id);
+  const payload = { ...(form || {}) };
+  delete payload.wps_id;
+  delete payload.wps_code;
+  delete payload.wps_company_id;
+  delete payload.linked_wps_id;
+  delete payload.linked_wps_code;
+  delete payload.company_name;
+  payload.company_id = companyText ? Number(companyText) : null;
+  payload.wps_ref = payload.wps_ref ? String(payload.wps_ref).trim() : null;
+  return payload;
+}
+
+function WPQRFormModal({ wpqr, defaultCompanyId, onSave, onClose, onSaved }) {
   const [autoSaveStatus, setAutoSaveStatus] = useState(null); // null | 'saving' | 'saved' | 'error'
   const savedIdRef    = useRef(wpqr?.id || null);
   const isFirstRender = useRef(true);
   const autoSaveTimer = useRef(null);
+  const seeded = { ...(wpqr || {}) };
+  delete seeded.wps_id;
+  delete seeded.wps_code;
+  delete seeded.wps_company_id;
+  delete seeded.linked_wps_id;
   const [form, setForm] = useState({
-    wps_id: "", wpqr_code: "", test_date: "", testing_body: "", examiner_body: "",
+    wpqr_code: "", test_date: "", testing_body: "", examiner_body: "",
     welder_name: "", welding_process: "", base_material_group: "", welding_positions: "",
     thickness_tested: "", thickness_min: "", thickness_max: "", thickness_max_unlimited: false,
     thickness_t1_min: "", thickness_t1_max: "", thickness_t1_max_unlimited: false,
@@ -833,7 +854,6 @@ function WPQRFormModal({ wpqr, wpsList, defaultCompanyId, onSave, onClose, onSav
     vt_result: "NA", rt_result: "NA", ut_result: "NA", mt_result: "NA", pt_result: "NA",
     tensile_result: "NA", bend_result: "NA", impact_result: "NA", hardness_result: "NA",
     macro_result: "NA", issue_date: "", certificate_number: "", notes: "",
-    company_id: defaultCompanyId || null,
     // Parametri prova avanzati (pag.2 del verbale) — prima estratti solo dall'AI,
     // invisibili/non correggibili qui (gap segnalato dal committente 08/08/2026).
     base_material_spec: "", shielding_gas: "", current_type: "", metal_transfer: "",
@@ -843,7 +863,10 @@ function WPQRFormModal({ wpqr, wpsList, defaultCompanyId, onSave, onClose, onSav
     throat_test_mm: "", product_type: "", rotated_position: false,
     // STUD-1: stud/prigioniero + Parent Metal 2
     qualifying_element: "", base_material_group_2: "", base_material_spec_2: "",
-    ...(wpqr || {}),
+    ...seeded,
+    company_id: numericCompanyScopeId(defaultCompanyId)
+      ? Number(numericCompanyScopeId(defaultCompanyId))
+      : (numericCompanyScopeId(seeded.company_id) ? Number(numericCompanyScopeId(seeded.company_id)) : null),
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -896,10 +919,11 @@ function WPQRFormModal({ wpqr, wpsList, defaultCompanyId, onSave, onClose, onSav
       setAutoSaveStatus('saving');
       setError(null);
       try {
+        const payload = buildWpqrSavePayload(form, defaultCompanyId);
         if (savedIdRef.current) {
-          await apiService.updateWPQR(savedIdRef.current, form);
+          await apiService.updateWPQR(savedIdRef.current, payload);
         } else {
-          const res = await apiService.createWPQR(form);
+          const res = await apiService.createWPQR(payload);
           savedIdRef.current = res?.data?.id || null;
         }
         setAutoSaveStatus('saved');
@@ -947,11 +971,8 @@ function WPQRFormModal({ wpqr, wpsList, defaultCompanyId, onSave, onClose, onSav
             {error && <div className="wp-error">{error}</div>}
             <div className="wp-form-grid">
               <div className="wp-form-group">
-                <label className="wp-form-label">WPS di riferimento *</label>
-                <select className="wp-form-select" value={form.wps_id || ""} onChange={(e) => set("wps_id", e.target.value)} required>
-                  <option value="">-- Seleziona WPS --</option>
-                  {wpsList.map((w) => <option key={w.id} value={w.id}>{w.wps_code}{w.revision ? ` (Rev. ${w.revision})` : ""}</option>)}
-                </select>
+                <label className="wp-form-label">pWPS di riferimento</label>
+                <input className="wp-form-input" value={form.wps_ref || ""} onChange={(e) => set("wps_ref", e.target.value)} placeholder="es. 002p_24 rev.0" />
               </div>
               <div className="wp-form-group">
                 <label className="wp-form-label">Codice WPQR</label>
@@ -1075,10 +1096,6 @@ function WPQRFormModal({ wpqr, wpsList, defaultCompanyId, onSave, onClose, onSav
               <div className="wp-form-group">
                 <label className="wp-form-label">Materiale d'apporto</label>
                 <input className="wp-form-input" value={form.filler_material || ""} onChange={(e) => set("filler_material", e.target.value)} placeholder="es. G 42 4 M21 4Si1" />
-              </div>
-              <div className="wp-form-group">
-                <label className="wp-form-label">WPS di riferimento (testo)</label>
-                <input className="wp-form-input" value={form.wps_ref || ""} onChange={(e) => set("wps_ref", e.target.value)} placeholder="es. 002p_24 rev.0" />
               </div>
               <div className="wp-form-group">
                 <label className="wp-form-label">Spessore testato (mm)</label>
@@ -1500,10 +1517,6 @@ function WeldingProceduresPage() {
     }
   }
 
-  function handleGoToWps() {
-    setActiveTab("wps");
-  }
-
   async function handleApproveWpqr(id) {
     setApprovingId(id);
     try {
@@ -1820,7 +1833,7 @@ function WeldingProceduresPage() {
                   <tr>
                     <th></th>
                     <th>Rif. WPQR</th>
-                    <th>WPS rif.</th>
+                    <th>pWPS</th>
                     <th>Processo</th>
                     <th>Spessore range</th>
                     <th>Data prova</th>
@@ -1835,13 +1848,7 @@ function WeldingProceduresPage() {
                     <tr key={wq.id} className="wp-row-click" onClick={() => handleEditWpqr(wq)}>
                       <td><SemaforoDot approvalStatus={wq.approval_status} /></td>
                       <td><strong>{wq.reference_number || wq.wpqr_code || "-"}</strong></td>
-                      <td>
-                        {wq.wps_code ? (
-                          <span className="wp-link" onClick={(e) => { e.stopPropagation(); handleGoToWps(); }}>
-                            {wq.wps_code}
-                          </span>
-                        ) : "-"}
-                      </td>
+                      <td>{wq.wps_ref || "-"}</td>
                       <td>{wq.welding_process || wq.wps_welding_process || "-"}</td>
                       <td>
                         {wq.thickness_min != null && wq.thickness_max != null
@@ -1923,7 +1930,6 @@ function WeldingProceduresPage() {
       {wpqrFormOpen && (
         <WPQRFormModal
           wpqr={editingWpqr}
-          wpsList={allWps}
           defaultCompanyId={companyScopeId || null}
           onSave={handleWpqrSaved}
           onSaved={() => { loadWPQR(); loadWPS(); loadWPQRStats(); }}

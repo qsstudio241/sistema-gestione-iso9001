@@ -91,6 +91,22 @@ describe('Registro campi rielaborabili — sincronia con le whitelist di scrittu
         expect(mismatches).toEqual([]);
     });
 
+    it('wpqr_certificate_number è un backfill da script, non un campo AI', async () => {
+        const { CERTIFICATE_FRAGMENT_SQL } = require('../utils/ruleFieldExtractors');
+        const def = BACKFILL_REGISTRY.wpqr_certificate_number;
+        expect(def).toMatchObject({
+            column: 'certificate_number',
+            table: 'wpqr_records',
+            applyVia: 'script',
+        });
+        expect(def.kind === undefined || def.kind === 'backfill').toBe(true);
+        expect(def.candidateWhere).toBe(CERTIFICATE_FRAGMENT_SQL);
+        expect(WPQR_REPROCESSABLE_FIELDS.wpqr_certificate_number.column).toBe('certificate_number');
+        expect(WPQR_REPROCESSABLE_FIELDS.wpqr_certificate_number.writeGuard).toBe(CERTIFICATE_FRAGMENT_SQL);
+        const { runReprocessForField } = require('../services/qualificationReprocess.service');
+        await expect(runReprocessForField('wpqr_certificate_number')).rejects.toMatchObject({ code: 'REPROCESS_VIA_SCRIPT' });
+    });
+
     it('wpqr_test_results: NA è un valore vero, candidato solo se vt_result è NULL', () => {
         expect(BACKFILL_REGISTRY.wpqr_test_results.candidateWhere).toBe('vt_result IS NULL');
         expect(WPQR_REPROCESSABLE_FIELDS.wpqr_test_results.writeGuard).toBe('vt_result IS NULL');

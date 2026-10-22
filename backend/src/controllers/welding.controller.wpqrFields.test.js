@@ -33,13 +33,15 @@ describe('createWPQR — campi estensione ISO 15614-1', () => {
     afterEach(() => jest.clearAllMocks());
 
     it('inserisce thickness_max_unlimited/preheat_temp/interpass_temp/throat_test_mm/product_type/rotated_position', async () => {
-        query.mockResolvedValueOnce({ recordset: [{ id: 1 }] }); // check WPS exists
+        query.mockResolvedValueOnce({ recordset: [{ id: 5 }] }); // azienda
         query.mockResolvedValueOnce({ recordset: [{ id: 42 }] }); // INSERT
 
         const req = {
             user: { organization_id: 1001, user_id: 5 },
             body: {
+                company_id: 5,
                 wps_id: 1,
+                wps_ref: '002p_24 rev.0',
                 wpqr_code: 'WPQR-EXT-01',
                 thickness_max_unlimited: true,
                 preheat_temp: 'min 100 C',
@@ -62,15 +64,39 @@ describe('createWPQR — campi estensione ISO 15614-1', () => {
         expect(params.throat_test_mm).toBe(6.5);
         expect(params.product_type).toBe('P');
         expect(params.rotated_position).toBe(1);
+        expect(params.company_id).toBe(5);
+        expect(params.wps_ref).toBe('002p_24 rev.0');
+        expect(insertCall[0]).not.toMatch(/\bwps_id\b/);
+        expect(params.wps_id).toBeUndefined();
+    });
+
+    it('senza company_id non inserisce', async () => {
+        const res = createRes();
+        await createWPQR({
+            user: { organization_id: 1001, user_id: 5 },
+            body: { wps_id: 9, wpqr_code: 'WPQR-NO-CO', wps_ref: 'pWPS-1' },
+        }, res);
+        expect(res.statusCode).toBe(400);
+        expect(query).not.toHaveBeenCalled();
+    });
+
+    it('company_id non numerico è 400', async () => {
+        const res = createRes();
+        await createWPQR({
+            user: { organization_id: 1001, user_id: 5 },
+            body: { company_id: 'studio', wpqr_code: 'WPQR-STUDIO' },
+        }, res);
+        expect(res.statusCode).toBe(400);
+        expect(query).not.toHaveBeenCalled();
     });
 
     it('senza i campi estensione, li salva come null/0 (nessun crash, retrocompatibile)', async () => {
-        query.mockResolvedValueOnce({ recordset: [{ id: 1 }] });
+        query.mockResolvedValueOnce({ recordset: [{ id: 5 }] });
         query.mockResolvedValueOnce({ recordset: [{ id: 43 }] });
 
         const req = {
             user: { organization_id: 1001, user_id: 5 },
-            body: { wps_id: 1, wpqr_code: 'WPQR-EXT-02' },
+            body: { company_id: 5, wps_id: 1, wpqr_code: 'WPQR-EXT-02' },
         };
         const res = createRes();
         await createWPQR(req, res);

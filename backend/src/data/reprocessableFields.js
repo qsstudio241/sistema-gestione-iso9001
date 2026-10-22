@@ -1,5 +1,7 @@
 'use strict';
 
+const { CERTIFICATE_FRAGMENT_SQL } = require('../utils/ruleFieldExtractors');
+
 /**
  * reprocessableFields.js — registro centralizzato dei campi AI-estraibili che
  * possono richiedere un "backfill" (rielaborazione) su record già presenti in
@@ -8,7 +10,9 @@
  * Nato dal pattern one-off `backend/scripts/reprocess-qualifications.js`
  * (28/07/2026, campo `transfer_mode`, 15 qualifiche). Da quella sessione in poi,
  * per aggiungere un nuovo campo rielaborabile **non serve un nuovo script**:
- * basta una nuova voce qui sotto. Il registro è l'unica fonte usata sia dallo
+ * basta una nuova voce qui sotto. Eccezione: i frammenti di `certificate_number`
+ * sulle WPQR non passano dall'AI (`applyVia: 'script'`,
+ * `scripts/recalc-wpqr-certificate-fragments.js`). Il registro è l'unica fonte usata sia dallo
  * script CLI (`reprocess-qualifications.js`) sia dall'endpoint superadmin
  * (`GET/POST /admin/reprocess-tasks`, `reprocessTasks.controller.js`).
  *
@@ -494,6 +498,16 @@ const REPROCESSABLE_FIELD_REGISTRY = {
         // questo SQL finché la colonna non c'è (selectReprocessCandidates).
         // Candidati: WPQR che hanno già passate di prova ma nessun range archiviato.
         candidateWhere: 'EXISTS (SELECT 1 FROM wpqr_test_runs r WHERE r.wpqr_id = wpqr_records.id AND r.deleted_at IS NULL) AND NOT EXISTS (SELECT 1 FROM wpqr_test_runs r WHERE r.wpqr_id = wpqr_records.id AND r.deleted_at IS NULL AND r.current_a_min IS NOT NULL)',
+    },
+    wpqr_certificate_number: {
+        key: 'wpqr_certificate_number',
+        column: 'certificate_number',
+        label: 'Numero certificato — WPQR (solo frammenti)',
+        module: 'saldatura',
+        table: 'wpqr_records',
+        processWhitelist: null,
+        applyVia: 'script',
+        candidateWhere: CERTIFICATE_FRAGMENT_SQL,
     },
 
     // ============================================================

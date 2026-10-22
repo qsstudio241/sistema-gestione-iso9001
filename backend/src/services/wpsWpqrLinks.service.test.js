@@ -35,15 +35,12 @@ function makeDb({ wpqr = [], wps = [], links = [], linksTable = true } = {}) {
             if (allowsSameCompany) return row.company_id === params.company_id;
             return true;
         };
-        if (/FROM wpqr_records q WHERE/.test(text) && /^SELECT/.test(text)) {
-            const fromLegacy = db.wpqr.filter((row) => row.wps_id === params.wps_id && row.organization_id === params.organization_id);
+        if (/FROM wpqr_records q/.test(text) && /wps_wpqr_links/.test(text) && /^SELECT/.test(text)) {
             const fromLinks = db.links
                 .filter((l) => l.wps_id === params.wps_id && l.organization_id === params.organization_id && !l.deleted_at)
                 .map((l) => db.wpqr.find((q) => q.id === l.wpqr_id))
                 .filter(Boolean);
-            const byId = new Map();
-            [...fromLegacy, ...fromLinks].forEach((row) => byId.set(row.id, row));
-            return { recordset: [...byId.values()] };
+            return { recordset: fromLinks };
         }
         if (/FROM wpqr_records WHERE/.test(text) && /^SELECT/.test(text)) {
             return { recordset: db.wpqr.filter(tenantOk) };
@@ -311,26 +308,25 @@ describe('insertLink / linkWpsToSupportingWpqr / linkWpqrToWps', () => {
 describe('listWpqrRecordsForWps', () => {
     const WPS = { id: 3, organization_id: ORG_A, company_id: 5, wps_code: 'ZZ 01/99' };
 
-    it('unisce wps_id legacy e riga in wps_wpqr_links, senza duplicare', async () => {
+    it('elenca solo le WPQR collegate in wps_wpqr_links', async () => {
         const linked = { ...WPQR_A, id: 11, wpqr_code: 'LINKED' };
         const legacy = { ...WPQR_A, id: 12, wpqr_code: 'LEGACY', wps_id: 3 };
         makeDb({
             wpqr: [WPQR_A, linked, legacy],
             wps: [WPS],
-            links: [{ id: 1, organization_id: ORG_A, wps_id: 3, wpqr_id: 11, role: 'primary' }],
+            links: [{ id: 1, organization_id: ORG_A, wps_id: 3, wpqr_id: 11, role: 'supporting' }],
         });
         const rows = await svc.listWpqrRecordsForWps({ organizationId: ORG_A, wpsId: 3 });
-        expect(rows.map((r) => r.id).sort()).toEqual([11, 12]);
+        expect(rows.map((r) => r.id)).toEqual([11]);
     });
 
-    it('tabella 174 assente: solo legacy wps_id', async () => {
+    it('tabella 174 assente: elenco vuoto, senza la colonna della WPQR', async () => {
         makeDb({
             wpqr: [{ ...WPQR_A, wps_id: 3 }],
             wps: [WPS],
             linksTable: false,
         });
         const rows = await svc.listWpqrRecordsForWps({ organizationId: ORG_A, wpsId: 3 });
-        expect(rows).toHaveLength(1);
-        expect(rows[0].id).toBe(10);
+        expect(rows).toEqual([]);
     });
 });

@@ -44,7 +44,7 @@ function createRes() {
 describe('createWPS — legame WPQR', () => {
     afterEach(() => jest.clearAllMocks());
 
-    it('con wpqr_id chiama insertLink primary dopo l\'INSERT', async () => {
+    it('con wpqr_id chiama insertLink supporting dopo l\'INSERT', async () => {
         query.mockResolvedValue({ recordset: [{ id: 77 }] });
         insertLink.mockResolvedValue({ created: true, available: true });
         const res = createRes();
@@ -63,7 +63,7 @@ describe('createWPS — legame WPQR', () => {
             companyId: 50,
             wpsId: 77,
             wpqrId: 31,
-            role: 'primary',
+            role: 'supporting',
             userId: 9,
         }));
         expect(res.body.data.wpqr_id).toBe(31);

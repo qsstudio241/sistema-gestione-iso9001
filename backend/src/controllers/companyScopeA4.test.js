@@ -408,7 +408,7 @@ const endpoints = [
         id: 'POST /welding/wpqr',
         kind: 'byId',
         call: (req, res) => welding.createWPQR(req, res),
-        req: () => ({ body: { wps_id: 7, wpqr_code: 'WPQR-1' }, params: {} }),
+        req: (mode) => ({ body: { company_id: companyOf(mode), wpqr_code: 'WPQR-1', wps_id: 7, wps_ref: 'pWPS-1' }, params: {} }),
     },
     {
         id: 'PUT /welding/wpqr/:id',
@@ -765,7 +765,7 @@ describe('A4 company scope', () => {
         expect(bodyOf(res).history.map((row) => row.id)).toEqual([7, 8]);
     });
 
-    test('GET WPQR — company_id nullo segue l\'azienda della WPS consentita', async () => {
+    test('GET WPQR — company_id nullo non eredita l\'azienda di una WPS', async () => {
         ctx.forceWpqrCompany = true;
         ctx.wpqrCompanyId = null;
         ctx.wpsCompanyId = ALLOWED;
@@ -773,7 +773,8 @@ describe('A4 company scope', () => {
         await welding.getWPQR({
             user: userFor('ok'), params: { id: '7' }, query: {}, body: {},
         }, res);
-        expect(http(res)).toBe(200);
+        expect(http(res)).toBe(403);
+        expect(bodyOf(res).code).toBe('FORBIDDEN');
     });
 
     test('GET WPQR — company_id nullo e WPS di altra azienda è 403', async () => {
@@ -788,7 +789,7 @@ describe('A4 company scope', () => {
         expect(bodyOf(res).code).toBe('FORBIDDEN');
     });
 
-    test('GET test-runs — company_id nullo e WPS consentita resta leggibile', async () => {
+    test('GET test-runs — company_id nullo non è leggibile tramite la WPS', async () => {
         ctx.forceWpqrCompany = true;
         ctx.wpqrCompanyId = null;
         ctx.wpsCompanyId = ALLOWED;
@@ -796,20 +797,19 @@ describe('A4 company scope', () => {
         await welding.listWpqrTestRuns({
             user: userFor('ok'), params: { id: '7' }, query: {}, body: {},
         }, res);
-        expect(http(res)).toBe(200);
+        expect(http(res)).toBe(403);
     });
 
-    test('PUT WPQR — non sposta la scheda su una WPS di un\'altra azienda', async () => {
+    test('PUT WPQR — company_id nullo non si aggiorna e wps_id è ignorato', async () => {
         ctx.forceWpqrCompany = true;
         ctx.wpqrCompanyId = null;
         ctx.wpsCompanyId = ALLOWED;
-        ctx.nextWpsCompany = OTHER_CO;
         const res = mockRes();
         await welding.updateWPQR({
             user: userFor('ok'),
             params: { id: '7' },
             query: {},
-            body: { wps_id: 99 },
+            body: { wps_id: 99, notes: 'n' },
         }, res);
         expect(http(res)).toBe(403);
         expect(bodyOf(res).code).toBe('FORBIDDEN');
@@ -817,81 +817,22 @@ describe('A4 company scope', () => {
         expect(wrote).toBe(false);
     });
 
-    test('PUT WPQR — "1e2" non aggira il controllo: 400 e nessun UPDATE sulla WPS 100', async () => {
-        ctx.forceWpqrCompany = true;
-        ctx.wpqrCompanyId = null;
-        ctx.wpsCompanyId = ALLOWED;
-        ctx.nextWpsCompany = ALLOWED;
+    test('PUT WPQR — un wps_id non numerico non blocca la nota e non cerca la WPS', async () => {
         const res = mockRes();
         await welding.updateWPQR({
             user: userFor('ok'),
             params: { id: '7' },
             query: {},
-            body: { wps_id: '1e2' },
+            body: { wps_id: '1e2', notes: 'n' },
         }, res);
-        expect(http(res)).toBe(400);
-        expect(bodyOf(res).code).toBe('VALIDATION_ERROR');
-        const wrote = query.mock.calls.some((call) => /^UPDATE/i.test(String(call[0]).trim()));
-        expect(wrote).toBe(false);
+        expect(http(res)).toBe(200);
         const lookedUp = query.mock.calls
-            .filter((call) => /FROM welding_procedures/i.test(String(call[0])) && /@wps_id/.test(String(call[0])))
-            .map((call) => call[1].wps_id);
+            .filter((call) => /FROM welding_procedures/i.test(String(call[0])) && /@wps_id/.test(String(call[0])));
         expect(lookedUp).toEqual([]);
-    });
-
-    test('PUT WPQR — "12.5" non è un id e non aggiorna', async () => {
-        ctx.forceWpqrCompany = true;
-        ctx.wpqrCompanyId = null;
-        ctx.wpsCompanyId = ALLOWED;
-        const res = mockRes();
-        await welding.updateWPQR({
-            user: userFor('ok'),
-            params: { id: '7' },
-            query: {},
-            body: { wps_id: '12.5' },
-        }, res);
-        expect(http(res)).toBe(400);
-        expect(bodyOf(res).code).toBe('VALIDATION_ERROR');
-        const wrote = query.mock.calls.some((call) => /^UPDATE/i.test(String(call[0]).trim()));
-        expect(wrote).toBe(false);
-    });
-
-    test('PUT WPQR — la stringa "12" controlla e scrive la stessa WPS', async () => {
-        ctx.forceWpqrCompany = true;
-        ctx.wpqrCompanyId = null;
-        ctx.wpsCompanyId = ALLOWED;
-        ctx.nextWpsCompany = ALLOWED;
-        const res = mockRes();
-        await welding.updateWPQR({
-            user: userFor('ok'),
-            params: { id: '7' },
-            query: {},
-            body: { wps_id: '12' },
-        }, res);
-        expect(http(res)).toBe(200);
-        const lookedUp = query.mock.calls
-            .filter((call) => /FROM welding_procedures/i.test(String(call[0])) && /@wps_id/.test(String(call[0])))
-            .map((call) => call[1].wps_id);
-        expect(lookedUp).toEqual([12]);
-        const update = query.mock.calls.find((call) => /^UPDATE/i.test(String(call[0]).trim()));
-        expect(update[1].wps_id).toBe(12);
-    });
-
-    test('PUT WPQR — sposta la scheda su una WPS della stessa azienda consentita', async () => {
-        ctx.forceWpqrCompany = true;
-        ctx.wpqrCompanyId = null;
-        ctx.wpsCompanyId = ALLOWED;
-        ctx.nextWpsCompany = ALLOWED;
-        const res = mockRes();
-        await welding.updateWPQR({
-            user: userFor('ok'),
-            params: { id: '7' },
-            query: {},
-            body: { wps_id: 12 },
-        }, res);
-        expect(http(res)).toBe(200);
-        const wrote = query.mock.calls.some((call) => /^UPDATE/i.test(String(call[0]).trim()));
-        expect(wrote).toBe(true);
+        const update = query.mock.calls.find((call) => /^UPDATE wpqr_records/i.test(String(call[0]).trim()));
+        expect(update[0]).not.toMatch(/wps_id/);
+        expect(update[1].notes).toBe('n');
+        expect(update[1].wps_id).toBeUndefined();
     });
 
     test('PUT commessa — non collega una WPS di un\'altra azienda', async () => {
@@ -1163,7 +1104,7 @@ describe('A4 company scope', () => {
         expect(bodyOf(readRes).code).toBe('AUTH_FORBIDDEN');
     });
 
-    test('GET lista WPQR — include le schede senza company_id se la WPS è consentita', async () => {
+    test('GET lista WPQR — il filtro azienda non passa dalla WPS', async () => {
         ctx.forceWpqrCompany = true;
         ctx.wpqrCompanyId = null;
         ctx.wpsCompanyId = ALLOWED;
@@ -1172,9 +1113,10 @@ describe('A4 company scope', () => {
             user: userFor('ok'), params: {}, query: { page: '1', limit: '10' }, body: {},
         }, res);
         expect(http(res)).toBe(200);
-        expect(bodyOf(res).data).toHaveLength(1);
         const sql = query.mock.calls.map((call) => String(call[0])).join('\n');
-        expect(sql).toContain('wq.company_id IS NULL');
+        expect(sql).not.toContain('wq.company_id IS NULL');
+        expect(sql).not.toMatch(/w\.company_id/);
+        expect(sql).toContain('wq.company_id');
     });
 
     test('GET vision-fitness-gaps — utente per-azienda senza company_id limita alle aziende consentite', async () => {
