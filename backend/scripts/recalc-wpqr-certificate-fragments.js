@@ -111,6 +111,13 @@ function resolveRuntime(args, env = process.env) {
     };
 }
 
+function resolveUploadDir(uploadDirEnv, backendRoot) {
+    if (!uploadDirEnv) return path.resolve(backendRoot, 'uploads');
+    return path.isAbsolute(uploadDirEnv)
+        ? uploadDirEnv
+        : path.resolve(backendRoot, uploadDirEnv);
+}
+
 function certificateFilePath(url, uploadDir) {
     if (!url) return null;
     const rel = String(url).replace(/^\//, '').replace(/^uploads\//, '');
@@ -160,9 +167,7 @@ async function main() {
         )).length;
         console.log(`wpqr_vive=${rows.length} company_null_con_wps_id=${nullCompanyWithWps}`);
 
-        const uploadDir = process.env.UPLOAD_DIR
-            ? path.resolve(process.env.UPLOAD_DIR)
-            : path.resolve(cfg.backendRoot, 'uploads');
+        const uploadDir = resolveUploadDir(process.env.UPLOAD_DIR, cfg.backendRoot);
 
         const plans = [];
         for (const row of rows) {
@@ -264,6 +269,7 @@ module.exports = {
     assertApplyAllowed,
     parseArgs,
     resolveRuntime,
+    resolveUploadDir,
     EXCLUDED_CERTIFICATE_IDS,
     TEST_DB,
     PROD_DB,

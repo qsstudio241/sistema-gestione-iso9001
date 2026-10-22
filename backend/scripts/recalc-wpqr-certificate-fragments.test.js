@@ -5,6 +5,7 @@ const {
     planCompanyBackfill,
     assertApplyAllowed,
     resolveRuntime,
+    resolveUploadDir,
     EXCLUDED_CERTIFICATE_IDS,
     TEST_DB,
     PROD_DB,
@@ -67,6 +68,15 @@ describe('apply e backfill azienda', () => {
         expect(test.apply).toBe(true);
         expect(test.expectedDb).toBe(TEST_DB);
         expect(test.nodeEnv).toBe('test');
+    });
+
+    it('cerca gli upload nella cartella del bersaglio, non in quella da cui parte il comando', () => {
+        const path = require('path');
+        expect(resolveUploadDir(undefined, '/var/www/sgq-backend'))
+            .toBe(path.resolve('/var/www/sgq-backend', 'uploads'));
+        expect(resolveUploadDir('uploads', '/var/www/sgq-backend'))
+            .toBe(path.resolve('/var/www/sgq-backend', 'uploads'));
+        expect(resolveUploadDir('/data/uploads', '/var/www/sgq-backend')).toBe('/data/uploads');
     });
 
     it('copia company_id solo se manca e la WPS ne ha uno', () => {
