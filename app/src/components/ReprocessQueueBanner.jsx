@@ -57,7 +57,14 @@ function resolveSchemaField(docType, fieldKey) {
   return schema?.fields?.find((f) => f.key === fieldKey || f.key === strippedKey) || null;
 }
 
+const REPROCESS_FIELD_LABELS = {
+  wpqr_test_date: "Data prova",
+  wpqr_test_results: "Risultati prove",
+  wpqr_test_runs: "Passate di prova",
+};
+
 function fieldLabel(docType, fieldKey) {
+  if (REPROCESS_FIELD_LABELS[fieldKey]) return REPROCESS_FIELD_LABELS[fieldKey];
   if (fieldKey === "wpqr_thickness_t1_t2") {
     return "Range spessore duali t1/t2 (FW)";
   }

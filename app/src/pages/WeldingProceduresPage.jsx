@@ -10,6 +10,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import apiService from "../services/apiService";
 import { useCompanyScope } from "../contexts/CompanyScopeContext";
+import { numericCompanyScopeId } from "../utils/appCompanyScope";
 import { formatDate } from "../utils/dateHelpers";
 import WpqrUploadButton from "../components/WpqrUploadButton";
 import WpsUploadButton from "../components/WpsUploadButton";
@@ -1273,6 +1274,8 @@ function WPQRFormModal({ wpqr, wpsList, defaultCompanyId, onSave, onClose, onSav
 
 function WeldingProceduresPage() {
   const { companyId: companyScopeId, scopeCompanyName: companyScopeName } = useCompanyScope();
+  // Tutto lo studio ("") e Patrimonio ("studio") non sono un company_id.
+  const listCompanyId = numericCompanyScopeId(companyScopeId);
   const [activeTab, setActiveTab] = useState("wps");
   /** P2b: upload PDF WPS non e' piu' il flusso primario — visibile solo su richiesta. */
   const [showLegacyWpsUpload, setShowLegacyWpsUpload] = useState(false);
@@ -1325,7 +1328,7 @@ function WeldingProceduresPage() {
   useEffect(() => {
     setWpsPage(1);
     setWpqrPage(1);
-  }, [companyScopeId]);
+  }, [listCompanyId]);
 
   // ?? Load WPQR stats 
 
@@ -1333,7 +1336,7 @@ function WeldingProceduresPage() {
     setStatsLoading(true);
     try {
       const params = {};
-      if (companyScopeId) params.company_id = companyScopeId;
+      if (listCompanyId) params.company_id = listCompanyId;
       const res = await apiService.getWPQRStats(params);
       setWpqrStats(res.data || null);
     } catch {
@@ -1341,7 +1344,7 @@ function WeldingProceduresPage() {
     } finally {
       setStatsLoading(false);
     }
-  }, [companyScopeId]);
+  }, [listCompanyId]);
 
   // ?? Load WPS ??
 
@@ -1353,7 +1356,7 @@ function WeldingProceduresPage() {
       if (wpsFilters.welding_process) params.welding_process = wpsFilters.welding_process;
       if (wpsFilters.status) params.status = wpsFilters.status;
       if (wpsFilters.search) params.search = wpsFilters.search;
-      if (companyScopeId) params.company_id = companyScopeId;
+      if (listCompanyId) params.company_id = listCompanyId;
 
       const res = await apiService.getWPSList(params);
       setWpsList(res.data || []);
@@ -1363,18 +1366,18 @@ function WeldingProceduresPage() {
     } finally {
       setWpsLoading(false);
     }
-  }, [wpsPage, wpsFilters, companyScopeId]);
+  }, [wpsPage, wpsFilters, listCompanyId]);
 
   const loadAllWps = useCallback(async () => {
     try {
       const params = { limit: 500 };
-      if (companyScopeId) params.company_id = companyScopeId;
+      if (listCompanyId) params.company_id = listCompanyId;
       const res = await apiService.getWPSList(params);
       setAllWps(res.data || []);
     } catch {
       // non bloccante
     }
-  }, [companyScopeId]);
+  }, [listCompanyId]);
 
   // ?? Load WPQR ?
 
@@ -1386,7 +1389,7 @@ function WeldingProceduresPage() {
       if (wpqrFilterWpsId) params.wps_id = wpqrFilterWpsId;
       if (wpqrFilters.approval_status) params.approval_status = wpqrFilters.approval_status;
       if (wpqrFilters.search) params.search = wpqrFilters.search;
-      if (companyScopeId) params.company_id = companyScopeId;
+      if (listCompanyId) params.company_id = listCompanyId;
 
       const res = await apiService.getWPQRList(params);
       setWpqrList(res.data || []);
@@ -1396,14 +1399,13 @@ function WeldingProceduresPage() {
     } finally {
       setWpqrLoading(false);
     }
-  }, [wpqrPage, wpqrFilterWpsId, wpqrFilters, companyScopeId]);
+  }, [wpqrPage, wpqrFilterWpsId, wpqrFilters, listCompanyId]);
 
   useEffect(() => { loadWPQRStats(); }, [loadWPQRStats]);
   useEffect(() => { loadWPS(); }, [loadWPS]);
   useEffect(() => { loadAllWps(); }, [loadAllWps]);
-  useEffect(() => {
-    if (activeTab === "wpqr") loadWPQR();
-  }, [activeTab, loadWPQR]);
+  // Il conteggio del tab deve essere vero anche mentre è aperto l'altro tab.
+  useEffect(() => { loadWPQR(); }, [loadWPQR]);
 
   // Chip AskAi / deep-link: apri Genera WPS precompilato (caso Mason)
   useEffect(() => {
