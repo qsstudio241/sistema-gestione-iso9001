@@ -46,7 +46,8 @@ function planCertificateRecalc({
     const pdfNumber = (!readError && extracted && isPlausibleCertificateNumber(extracted) && !isFragmentCertificateNumber(extracted))
         ? extracted
         : null;
-    const reportCode = readError ? null : iisReportCertificateCandidate(wpqrCode, referenceNumber);
+    // Il codice rapporto non sta nel PDF: un file illeggibile non blocca la proposta.
+    const reportCode = iisReportCertificateCandidate(wpqrCode, referenceNumber);
 
     const row = (extra) => ({ id, before: current, wpqrCode: wpqrCode || null, ...extra });
 

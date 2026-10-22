@@ -103,10 +103,21 @@ describe('planCertificateRecalc', () => {
         });
     });
 
-    it('un PDF illeggibile non cancella il frammento', () => {
+    it('un PDF illeggibile non cancella il frammento e propone comunque il codice rapporto', () => {
         expect(planCertificateRecalc({
             id: 14, before: 'ifica', extracted: null, hasFile: true, readError: true,
         })).toMatchObject({ action: 'unchanged', after: 'ifica', reason: 'read_error' });
+        expect(planCertificateRecalc({
+            id: 16, before: 'ifica', extracted: '24-03390-01', hasFile: true, readError: true, wpqrCode: '25-03776-01',
+        })).toMatchObject({
+            action: 'propose_confirm',
+            after: 'ifica',
+            proposed: '25-03776-01',
+            source: 'codice rapporto da confermare',
+        });
+        expect(planCertificateRecalc({
+            id: 38, before: 'o.', extracted: null, hasFile: true, readError: true, wpqrCode: '25-03776-01',
+        })).toMatchObject({ action: 'skip_excluded', after: 'o.', proposed: '25-03776-01' });
     });
 });
 
