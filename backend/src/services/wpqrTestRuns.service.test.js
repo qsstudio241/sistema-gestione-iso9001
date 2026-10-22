@@ -40,7 +40,7 @@ function makeDb({ tables = ['wpqr_test_runs', 'wps_wpqr_links'], failOnInsert = 
             return { recordset: [{ object_id: tables.includes(m[1]) ? 1 : null }] };
         }
         if (/^SELECT COL_LENGTH/.test(text)) return { recordset: [{ len: columns ? 500 : null }] };
-        if (/wps_company_id/.test(text) && /FROM wpqr_records/.test(text)) {
+        if (/FROM wpqr_records wq/.test(text) && /@wpqr_id/.test(text)) {
             const rows = db.wpqr.filter((w) => w.id === params.wpqr_id && (!scoped(text) || w.organization_id === params.organization_id));
             return { recordset: rows };
         }

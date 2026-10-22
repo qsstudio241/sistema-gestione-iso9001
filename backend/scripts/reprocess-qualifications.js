@@ -80,6 +80,10 @@ async function main() {
         console.error(`"${field}" è una voce di VERIFICA (sola lettura), non un backfill: non eseguibile da questo script. Usare Fatturazione → Rielaborazioni (superadmin).`);
         process.exit(1);
     }
+    if (FIELD_CONFIGS[field].applyVia === 'script') {
+        console.error(`"${field}" si ricalcola con scripts/recalc-wpqr-certificate-fragments.js, non con l'AI.`);
+        process.exit(1);
+    }
 
     await getPool();
     console.log(`=== Rielaborazione campo "${field}"${dryRun ? ' (DRY-RUN, nessuna scrittura)' : ''} ===`);

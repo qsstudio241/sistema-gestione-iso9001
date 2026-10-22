@@ -108,25 +108,64 @@ function extractWpqrReference(text, fileName) {
     return extractWpqrNumberFromText(text) || extractReferenceFromFileName(fileName);
 }
 
-function extractCertificateNumber(text) {
-    // Preferisci etichette esplicite "CERTIFICATO N° …" / "CERTIFICATE N° …"
-    // (formati NDT tipo E-00951-UT-2 R — evita il falso positivo su "CERTIFICATION BODY"
-    // che produceva "IFICATION", visto su TEC-Eurolab 02/08/2026).
-    const labeled = text.match(
-        /\b(?:CERTIFICATO|CERTIFICATE)\s*N[°º.]?\s*([A-Z0-9][A-Z0-9./\- ]{3,}?)\s*$/im,
-    ) || text.match(
-        /\b(?:CERTIFICATO|CERTIFICATE)\s*N[°º.]?\s*([A-Z0-9][A-Z0-9./\-]+(?:\s+[A-Z])?)\b/i,
-    );
-    if (labeled) {
-        const val = labeled[1].trim().replace(/\s{2,}/g, ' ');
-        if (!/^(ificato|ification|ication|body)$/i.test(val)) return val;
-    }
-    const m = text.match(/\b(?:cert(?:[\s\r\n]*ificato)?|certificate|n[°º.])\s*[:.]?\s*([A-Z0-9][A-Z0-9./\-]{4,})\b/i);
-    if (!m) return null;
-    const val = m[1].trim();
-    // Scarta frammenti di "certificato"/"certification" (artefatto split PDF / OCR)
-    if (/^(ificato|ification|ication|body)$/i.test(val)) return null;
+const CERTIFICATE_FRAGMENT_TOKENS = new Set([
+    'o', 'o.', 'ifica', 'ificate', 'ificato', 'ification', 'ication', 'body', 'risultati',
+]);
+
+/**
+ * Frammenti già scritti in `certificate_number` (es. «ifica», «o.», «o. 16VE…», «Risultati»).
+ * Il vuoto non è un frammento: non si ricalcola.
+ */
+function isFragmentCertificateNumber(value) {
+    if (value == null) return false;
+    const text = String(value).trim();
+    if (!text) return false;
+    if (CERTIFICATE_FRAGMENT_TOKENS.has(text.toLowerCase())) return true;
+    if (!/\d/.test(text)) return true;
+    if (/^o\./i.test(text)) return true;
+    if (/certificato\s+no/i.test(text)) return true;
+    return false;
+}
+
+/** Stesso criterio di isFragmentCertificateNumber, per il registro rielaborazioni. */
+const CERTIFICATE_FRAGMENT_SQL = '(certificate_number IS NOT NULL AND LTRIM(RTRIM(certificate_number)) <> N\'\' AND (certificate_number NOT LIKE N\'%[0-9]%\' OR LOWER(LTRIM(RTRIM(certificate_number))) IN (N\'ifica\', N\'ificate\', N\'ificato\', N\'ification\', N\'ication\', N\'body\', N\'risultati\', N\'o.\', N\'o\') OR certificate_number LIKE N\'o.%\' OR certificate_number LIKE N\'%Certificato No%\'))';
+
+function cleanCapturedCertificate(raw, { strictId = false } = {}) {
+    if (raw == null) return null;
+    let val = String(raw).split(/\r?\n/)[0].trim().replace(/\s{2,}/g, ' ');
+    val = val.replace(/\s+page\s+\d+\s*\/\s*\d+\s*$/i, '').trim();
+    val = val.replace(/^o\.\s+/i, '').trim();
+    if (!val) return null;
+    if (CERTIFICATE_FRAGMENT_TOKENS.has(val.toLowerCase())) return null;
+    if (/\bof\b/i.test(val)) return null;
+    if (!/\d/.test(val)) return null;
+    if (strictId && !/[A-Za-z]|[-/]/.test(val)) return null;
     return val;
+}
+
+function extractCertificateNumber(text) {
+    // Etichetta esplicita: «Certificate No.» / «Certificato No.» / «N°».
+    // Non consumare solo la N di «No.» (produceva «o.») e non ricadere su
+    // «certifica» (produceva «ifica»). Un'etichetta senza numero resta null.
+    const src = String(text || '');
+    const labelRe = /\b(?:certificate|certificato)\s+n(?:o\.?|umber|[°º.])\s*[:.]?\s*([^\r\n]*)/gi;
+    let foundLabel = false;
+    let match;
+    while ((match = labelRe.exec(src))) {
+        foundLabel = true;
+        let chunk = match[1] || '';
+        const bilingual = chunk.match(/^\s*\/\s*(?:certificate|certificato)\s+n(?:o\.?|umber|[°º.])\s*[:.]?\s*(.*)$/i);
+        if (bilingual) chunk = bilingual[1];
+        const cleaned = cleanCapturedCertificate(chunk);
+        if (cleaned) return cleaned;
+    }
+    if (foundLabel) return null;
+    const lineRe = /(?:^|[\r\n])\s*(?:certificato\s+)?N(?:o\.?|[°º.])\s*(?:certificato\s+)?[:.]?\s*([^\r\n]+)/gi;
+    while ((match = lineRe.exec(src))) {
+        const cleaned = cleanCapturedCertificate(match[1], { strictId: true });
+        if (cleaned) return cleaned;
+    }
+    return null;
 }
 
 function extractThicknessMm(text) {
@@ -362,7 +401,7 @@ function extractCertificateNumberFromFileName(fileName) {
     return m ? m[1] : null;
 }
 
-const CERTIFICATE_NUMBER_LABEL_RE = /(?:(?:qualification\s+)?certificate\s*(?:no|n[°º]|nr|number)\b\.?|n[°º]\s*(?:del\s+)?certificat[oi]|numero\s+(?:del\s+)?certificato|certificato\s+n[°º.])\s*[:.\-]?\s*([A-Z0-9][A-Z0-9/.\-]{3,}(?:\s?[A-Z0-9][A-Z0-9/.\-]*)?)/i;
+const CERTIFICATE_NUMBER_LABEL_RE = /(?:(?:qualification\s+)?certificate\s*(?:no|n[°º]|nr|number)\b\.?|n[°º]\s*(?:del\s+)?certificat[oi]|numero\s+(?:del\s+)?certificato|certificato\s+n[°º.]|certificato\b)\s*[:.\-]?\s*([A-Z0-9][A-Z0-9/.\-]{3,}(?:\s?[A-Z0-9][A-Z0-9/.\-]*)?)/i;
 
 /**
  * Numero certificato per patentini/14732: etichetta esplicita nel testo, poi legacy purche' contenga cifre,
@@ -1128,6 +1167,9 @@ module.exports = {
     extractQualificationMethod14732FromLayout,
     extractQualificationDates,
     extractQualificationCertificateNumber,
+    extractCertificateNumber,
+    isFragmentCertificateNumber,
+    CERTIFICATE_FRAGMENT_SQL,
     extractMaterialGroupLabeled,
     extractMaterialGroup,
     extractWpqrReference,

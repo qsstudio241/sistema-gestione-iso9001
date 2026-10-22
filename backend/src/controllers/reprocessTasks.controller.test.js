@@ -150,6 +150,50 @@ describe('runReprocessTask — POST /admin/reprocess-tasks/:key/run', () => {
     });
 });
 
+describe('voci applyVia script', () => {
+    const SCRIPT_FIELD = {
+        key: 'wpqr_certificate_number',
+        label: 'Numero certificato — WPQR (solo frammenti)',
+        module: 'saldatura',
+        table: 'wpqr_records',
+        applyVia: 'script',
+    };
+
+    it('GET espone apply_via e non somma i frammenti nel totale AI', async () => {
+        listReprocessableFields.mockReturnValue([TRANSFER_MODE_FIELD, SCRIPT_FIELD]);
+        countReprocessCandidates
+            .mockResolvedValueOnce({ total: 4, byOrganization: [] })
+            .mockResolvedValueOnce({ total: 10, byOrganization: [] });
+
+        const res = mockRes();
+        await listReprocessTasks({ query: {} }, res);
+
+        const payload = res.json.mock.calls[0][0];
+        expect(payload.total_candidates).toBe(4);
+        expect(payload.tasks[1]).toEqual(expect.objectContaining({
+            key: 'wpqr_certificate_number',
+            apply_via: 'script',
+            candidate_count: 10,
+        }));
+    });
+
+    it('POST run risponde 400 REPROCESS_VIA_SCRIPT, non 500', async () => {
+        getReprocessableField.mockReturnValue(SCRIPT_FIELD);
+        const err = new Error('Campo ricalcolabile solo da script');
+        err.code = 'REPROCESS_VIA_SCRIPT';
+        runReprocessForField.mockRejectedValueOnce(err);
+
+        const res = mockRes();
+        await runReprocessTask({ params: { key: 'wpqr_certificate_number' }, body: {}, user: { user_id: 1 } }, res);
+
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+            success: false,
+            code: 'REPROCESS_VIA_SCRIPT',
+        }));
+    });
+});
+
 describe('voci kind:verify (sola lettura)', () => {
     const VERIFY_FIELD = {
         key: 'verify_9606_1',

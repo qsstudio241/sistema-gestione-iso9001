@@ -378,7 +378,9 @@ function useReprocessTasks(enabled) {
     }
   }, []);
 
-  const totalCandidates = backfillTasks.reduce((sum, t) => sum + (t.candidate_count || 0), 0);
+  const totalCandidates = backfillTasks
+    .filter((t) => t.apply_via !== "script")
+    .reduce((sum, t) => sum + (t.candidate_count || 0), 0);
 
   return {
     tasks,
@@ -453,14 +455,18 @@ function ReprocessTasksSection({ reprocess }) {
                       </span>
                     </td>
                     <td>
-                      <button
-                        type="button"
-                        className="btn-primary billing-reprocess-run-btn"
-                        onClick={() => run(task.key)}
-                        disabled={anyRunning}
-                      >
-                        {isRunning ? "Rielaborazione in corso…" : "Lancia rielaborazione"}
-                      </button>
+                      {task.apply_via === "script" ? (
+                        <span className="billing-muted">Si ricalcola con lo script sul server, non da qui.</span>
+                      ) : (
+                        <button
+                          type="button"
+                          className="btn-primary billing-reprocess-run-btn"
+                          onClick={() => run(task.key)}
+                          disabled={anyRunning}
+                        >
+                          {isRunning ? "Rielaborazione in corso…" : "Lancia rielaborazione"}
+                        </button>
+                      )}
                     </td>
                     <td className="billing-reprocess-result">
                       {result?.ok && (

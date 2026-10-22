@@ -26,7 +26,15 @@ describe('loadWpqrRecords — cestino', () => {
         const [sql, params] = query.mock.calls[0];
         expect(sql).toMatch(/wq\.deleted_at IS NULL/);
         expect(sql).toMatch(/wq\.company_id = @company_id/);
+        expect(sql).not.toMatch(/wq\.wps_id|w\.company_id/);
         expect(params).toEqual({ organization_id: 1001, company_id: 48 });
+    });
+
+    it('il suggerimento filtra solo company_id, senza la WPS', async () => {
+        await loadWpqrRecords(1005, 49);
+        const [sql] = query.mock.calls[0];
+        expect(sql).toMatch(/wq\.company_id = @company_id/);
+        expect(sql).not.toMatch(/JOIN welding_procedures|wq\.wps_id/);
     });
 
     it('generateWpsFromWpqr senza elenco iniettato non legge WPQR cestinate', async () => {

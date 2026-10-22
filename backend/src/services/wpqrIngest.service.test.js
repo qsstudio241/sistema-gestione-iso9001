@@ -759,6 +759,13 @@ This WPQR is supported by NDT and mechanical tests related to the WPQR n. XX0001
         });
     }
 
+    it('un certificate_number frammento non viene proposto in revisione', async () => {
+        routeQuery();
+        mockPipeline({ certificate_number: 'ifica' });
+        const out = await extractWPQRFromPdf(Buffer.from('%PDF'), 'x.pdf', 1001, 2001);
+        expect(out.fields.certificate_number).toBeNull();
+    });
+
     it('classificata WPQR (ha prove ed esaminatore): nessun wrong_module; supporto in revisione, escluso il numero proprio', async () => {
         routeQuery({
             wps: [{ id: 3, organization_id: 1001, company_id: 2001, wps_code: 'ZZ 01/99' }],
@@ -769,7 +776,8 @@ This WPQR is supported by NDT and mechanical tests related to the WPQR n. XX0001
         expect(out.status).toBe('pending_review');
         expect(out.fields.reference_number).toBe('XX0002/99');
         expect(out.fields.supporting_wpqr_refs).toBe('XX0001/99');
-        expect(out.wps_match).toEqual({ ref: 'ZZ 01/99', wps_id: 3 });
+        expect(out.wps_match).toBeNull();
+        expect(out.fields.wps_ref).toBe('ZZ 01/99');
         expect(out.verification_flags).toEqual([]);
     });
 
@@ -786,10 +794,10 @@ This WPQR is supported by NDT and mechanical tests related to the WPQR n. XX0001
         const out = await extractWPQRFromPdf(Buffer.from('%PDF'), 'x.pdf', 1001, 2001);
         expect(out.status).toBe('pending_review');
         expect(out.wps_match).toBeNull();
-        expect(out.verification_flags.map((f) => f.status)).toEqual(['not_found', 'not_found']);
+        expect(out.verification_flags.map((f) => f.status)).toEqual(['not_found']);
     });
 
-    it('commit: WPQR di supporto conservata in notes; legame primary con la WPS univoca del tenant', async () => {
+    it('commit: la pWPS resta testo e non nasce un legame verso la WPS', async () => {
         const log = routeQuery({ wps: [{ id: 3, organization_id: 1001, company_id: 2001, wps_code: 'ZZ 01/99' }] });
         const res = await commitWPQRFromFields({
             wpqr_number: 'XX0002/99', wps_ref: 'ZZ 01/99', supporting_wpqr_refs: 'XX0001/99, XX0002/99',
@@ -797,18 +805,20 @@ This WPQR is supported by NDT and mechanical tests related to the WPQR n. XX0001
         expect(res.wpqr_id).toBe(700);
         const ins = log.find((s) => /^INSERT INTO wpqr_records/.test(s.text));
         expect(ins.params.notes).toBe('WPQR di supporto: XX0001/99');
-        const link = log.find((s) => /^INSERT INTO wps_wpqr_links/.test(s.text));
-        expect(link.params).toMatchObject({ organization_id: 1001, wps_id: 3, wpqr_id: 700, role: 'primary', created_by: 4 });
+        expect(ins.params.wps_ref).toBe('ZZ 01/99');
+        expect(log.some((s) => /^INSERT INTO wps_wpqr_links/.test(s.text))).toBe(false);
     });
 
-    it('commit cross-tenant: la WPS omonima di un altro tenant non viene legata', async () => {
+    it('commit: la pWPS non genera un avviso di WPS da verificare', async () => {
         const log = routeQuery({ wps: [{ id: 30, organization_id: 2002, company_id: 2001, wps_code: 'ZZ 01/99' }] });
         const res = await commitWPQRFromFields({ wpqr_number: 'XX0002/99', wps_ref: 'ZZ 01/99' }, 1001, 2001, {});
         expect(log.some((s) => /^INSERT INTO wps_wpqr_links/.test(s.text))).toBe(false);
-        expect(res.warnings.some((w) => w.includes('da verificare'))).toBe(true);
+        expect(res.warnings.some((w) => /WPS/i.test(w) && w.includes('da verificare'))).toBe(false);
+        const ins = log.find((s) => /^INSERT INTO wpqr_records/.test(s.text));
+        expect(ins.params.wps_ref).toBe('ZZ 01/99');
     });
 
-    it('commit con WPS ambigua: nessun legame', async () => {
+    it('commit con più WPS omonime: nessun legame e nessun avviso di ambiguità', async () => {
         const log = routeQuery({
             wps: [
                 { id: 3, organization_id: 1001, company_id: 2001, wps_code: 'ZZ 01/99' },
@@ -817,10 +827,10 @@ This WPQR is supported by NDT and mechanical tests related to the WPQR n. XX0001
         });
         const res = await commitWPQRFromFields({ wpqr_number: 'XX0002/99', wps_ref: 'ZZ 01/99' }, 1001, 2001, {});
         expect(log.some((s) => /^INSERT INTO wps_wpqr_links/.test(s.text))).toBe(false);
-        expect(res.warnings.some((w) => w.includes('record corrispondenti'))).toBe(true);
+        expect(res.warnings.some((w) => w.includes('record corrispondenti'))).toBe(false);
     });
 
-    it('migrazione 174 non applicata: WPQR creata comunque, avviso esplicito', async () => {
+    it('la pWPS non dipende dalla tabella dei legami: WPQR creata e wps_ref salvato', async () => {
         const log = routeQuery({
             wps: [{ id: 3, organization_id: 1001, company_id: 2001, wps_code: 'ZZ 01/99' }],
             linksTable: false,
@@ -828,7 +838,9 @@ This WPQR is supported by NDT and mechanical tests related to the WPQR n. XX0001
         const res = await commitWPQRFromFields({ wpqr_number: 'XX0002/99', wps_ref: 'ZZ 01/99' }, 1001, 2001, {});
         expect(res.wpqr_id).toBe(700);
         expect(log.some((s) => /^INSERT INTO wps_wpqr_links/.test(s.text))).toBe(false);
-        expect(res.warnings.some((w) => w.includes('migrazione database non applicata'))).toBe(true);
+        expect(res.warnings.some((w) => w.includes('migrazione database non applicata'))).toBe(false);
+        const ins = log.find((s) => /^INSERT INTO wpqr_records/.test(s.text));
+        expect(ins.params.wps_ref).toBe('ZZ 01/99');
     });
 
     it('senza wps_ref né supporto: nessuna query di legame, notes null', async () => {
@@ -845,7 +857,7 @@ This WPQR is supported by NDT and mechanical tests related to the WPQR n. XX0001
         const out = await extractWPQRFromPdf(Buffer.from('%PDF'), 'x.pdf', 1001, 2001);
         expect(out.fields.supporting_wpqr_refs).toBe('XX0001/99, YY0202/98');
         expect(out.fields.supporting_wpqr_refs).not.toMatch(/10\/08/);
-        expect(out.verification_flags.map((f) => f.ref).sort()).toEqual(['XX0001/99', 'YY0202/98', 'ZZ 01/99']);
+        expect(out.verification_flags.map((f) => f.ref).sort()).toEqual(['XX0001/99', 'YY0202/98']);
         const log = routeQuery();
         const res = await commitWPQRFromFields({
             wpqr_number: 'XX0002/99', supporting_wpqr_refs: '10/08/2023 XX0001/99, YY0202/98',
@@ -869,7 +881,6 @@ This WPQR is supported by NDT and mechanical tests related to the WPQR n. XX0001
         expect(out.status).toBe('pending_review');
         expect(out.wps_match).toBeNull();
         expect(out.verification_flags.map((f) => [f.ref, f.status])).toEqual([
-            ['ZZ 01/99', 'resolve_error'],
             ['XX0001/99', 'resolve_error'],
         ]);
         expect(out.verification_flags.every((f) => f.ref)).toBe(true);
@@ -886,7 +897,7 @@ This WPQR is supported by NDT and mechanical tests related to the WPQR n. XX0001
         });
         mockPipeline({ supporting_wpqr_refs: 'XX0001/99, YY0202/98' });
         const out = await extractWPQRFromPdf(Buffer.from('%PDF'), 'x.pdf', 1001, 2001);
-        expect(out.wps_match).toEqual({ ref: 'ZZ 01/99', wps_id: 3 });
+        expect(out.wps_match).toBeNull();
         expect(out.verification_flags.map((f) => [f.ref, f.status])).toEqual([
             ['XX0001/99', 'resolve_error'],
             ['YY0202/98', 'resolve_error'],
@@ -905,7 +916,6 @@ This WPQR is supported by NDT and mechanical tests related to the WPQR n. XX0001
         const out = await extractWPQRFromPdf(Buffer.from('%PDF'), 'x.pdf', 1001, 2001);
         expect(out.wps_match).toBeNull();
         expect(out.verification_flags.map((f) => [f.ref, f.status])).toEqual([
-            ['ZZ 01/99', 'not_found'],
             ['XX0001/99', 'resolve_error'],
         ]);
     });

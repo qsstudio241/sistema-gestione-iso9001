@@ -33,13 +33,15 @@ describe('createWPQR — campi estensione ISO 15614-1', () => {
     afterEach(() => jest.clearAllMocks());
 
     it('inserisce thickness_max_unlimited/preheat_temp/interpass_temp/throat_test_mm/product_type/rotated_position', async () => {
-        query.mockResolvedValueOnce({ recordset: [{ id: 1 }] }); // check WPS exists
+        query.mockResolvedValueOnce({ recordset: [{ id: 5 }] }); // azienda
         query.mockResolvedValueOnce({ recordset: [{ id: 42 }] }); // INSERT
 
         const req = {
             user: { organization_id: 1001, user_id: 5 },
             body: {
+                company_id: 5,
                 wps_id: 1,
+                wps_ref: '002p_24 rev.0',
                 wpqr_code: 'WPQR-EXT-01',
                 thickness_max_unlimited: true,
                 preheat_temp: 'min 100 C',
@@ -53,6 +55,10 @@ describe('createWPQR — campi estensione ISO 15614-1', () => {
         await createWPQR(req, res);
 
         expect(res.statusCode).toBe(201);
+        const companyCall = query.mock.calls.find(([sql]) => sql.includes('FROM companies'));
+        expect(companyCall[0]).toMatch(/auditor_org_id IN/);
+        expect(companyCall[0]).toMatch(/FROM auditor_orgs/);
+        expect(companyCall[0]).not.toMatch(/AND organization_id = @organization_id\s*$/);
         const insertCall = query.mock.calls.find(([sql]) => sql.includes('INSERT INTO wpqr_records'));
         expect(insertCall).toBeTruthy();
         const params = insertCall[1];
@@ -62,15 +68,39 @@ describe('createWPQR — campi estensione ISO 15614-1', () => {
         expect(params.throat_test_mm).toBe(6.5);
         expect(params.product_type).toBe('P');
         expect(params.rotated_position).toBe(1);
+        expect(params.company_id).toBe(5);
+        expect(params.wps_ref).toBe('002p_24 rev.0');
+        expect(insertCall[0]).not.toMatch(/\bwps_id\b/);
+        expect(params.wps_id).toBeUndefined();
+    });
+
+    it('senza company_id non inserisce', async () => {
+        const res = createRes();
+        await createWPQR({
+            user: { organization_id: 1001, user_id: 5 },
+            body: { wps_id: 9, wpqr_code: 'WPQR-NO-CO', wps_ref: 'pWPS-1' },
+        }, res);
+        expect(res.statusCode).toBe(400);
+        expect(query).not.toHaveBeenCalled();
+    });
+
+    it('company_id non numerico è 400', async () => {
+        const res = createRes();
+        await createWPQR({
+            user: { organization_id: 1001, user_id: 5 },
+            body: { company_id: 'studio', wpqr_code: 'WPQR-STUDIO' },
+        }, res);
+        expect(res.statusCode).toBe(400);
+        expect(query).not.toHaveBeenCalled();
     });
 
     it('senza i campi estensione, li salva come null/0 (nessun crash, retrocompatibile)', async () => {
-        query.mockResolvedValueOnce({ recordset: [{ id: 1 }] });
+        query.mockResolvedValueOnce({ recordset: [{ id: 5 }] });
         query.mockResolvedValueOnce({ recordset: [{ id: 43 }] });
 
         const req = {
             user: { organization_id: 1001, user_id: 5 },
-            body: { wps_id: 1, wpqr_code: 'WPQR-EXT-02' },
+            body: { company_id: 5, wps_id: 1, wpqr_code: 'WPQR-EXT-02' },
         };
         const res = createRes();
         await createWPQR(req, res);
@@ -157,5 +187,24 @@ describe('updateWPQR — campi estensione ISO 15614-1 + mirroring examiner_body'
         const [, params] = updateCall;
         expect(params.testing_body).toBe('TÜV');
         expect(params.examiner_body).toBe('Mario Rossi (esaminatore)');
+    });
+
+    it('un campo di testata nullo compare una sola volta nel SET', async () => {
+        query.mockResolvedValueOnce({ recordset: [{ id: 10, company_id: 5 }] });
+        query.mockResolvedValueOnce({ recordset: [{ len: 20 }] });
+        query.mockResolvedValueOnce({ recordset: [] });
+
+        const res = createRes();
+        await updateWPQR({
+            params: { id: '10' },
+            user: { organization_id: 1001, user_id: 5 },
+            body: { wps_ref: 'pWPS-MOD', electrode_count: null, notes: 'modifica' },
+        }, res);
+
+        expect(res.statusCode).toBe(200);
+        const updateCall = query.mock.calls.find(([sql]) => String(sql).includes('UPDATE wpqr_records'));
+        const sql = String(updateCall[0]);
+        expect(sql.match(/electrode_count = @electrode_count/g)).toHaveLength(1);
+        expect(sql).toMatch(/wps_ref = @wps_ref/);
     });
 });

@@ -84,20 +84,30 @@ async function getPool() {
 /**
  * Esegui query con gestione errori
  */
+function bindInput(request, key, value) {
+  if (value === undefined) return;
+  // mssql rifiuta input(nome, null) senza tipo: il parametro non viene
+  // dichiarato e l'UPDATE del form (campi vuoti) risponde 500.
+  if (value === null || (typeof value === 'number' && Number.isNaN(value))) {
+    request.input(key, sql.NVarChar(sql.MAX), null);
+    return;
+  }
+  request.input(key, value);
+}
+
 async function query(queryText, params = {}) {
   try {
     const pool = await getPool();
     const request = pool.request();
 
-    // Bind parameters
     Object.entries(params).forEach(([key, value]) => {
-      request.input(key, value);
+      bindInput(request, key, value);
     });
 
     const result = await request.query(queryText);
     return result;
   } catch (err) {
-    logger.error('Database query error:', { query: queryText, error: err.message });
+    logger.error('Database query error: ' + err.message);
     throw err;
   }
 }
@@ -112,10 +122,10 @@ async function execute(procedureName, params = {}) {
 
     // Bind parameters
     Object.entries(params).forEach(([key, value]) => {
-      if (value.isOutput) {
+      if (value && value.isOutput) {
         request.output(key, value.type);
       } else {
-        request.input(key, value);
+        bindInput(request, key, value);
       }
     });
 

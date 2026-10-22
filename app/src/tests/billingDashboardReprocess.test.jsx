@@ -67,6 +67,31 @@ describe("BillingDashboardPage — Rielaborazioni disponibili", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("Rielaborazioni disponibili");
   });
 
+  it("un ricalcolo da script non entra nel totale AI e non offre Lancia", async () => {
+    mockGetReprocessTasks.mockResolvedValue({
+      success: true,
+      tasks: [
+        ...BASE_TASKS,
+        {
+          key: "wpqr_certificate_number",
+          label: "Numero certificato — WPQR (solo frammenti)",
+          module: "saldatura",
+          apply_via: "script",
+          candidate_count: 10,
+        },
+      ],
+      total_candidates: 18,
+    });
+    render(<BillingDashboardPage />);
+
+    const row = (await screen.findByText("Numero certificato — WPQR (solo frammenti)")).closest("tr");
+    expect(row).toHaveTextContent("10");
+    expect(row).toHaveTextContent(/script sul server/i);
+    expect(within(row).queryByRole("button", { name: /Lancia/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent("18");
+    expect(screen.getByRole("alert")).not.toHaveTextContent("28");
+  });
+
   it("senza candidati: nessun alert e messaggio «Nessuna rielaborazione in sospeso»", async () => {
     mockGetReprocessTasks.mockResolvedValue({
       success: true,

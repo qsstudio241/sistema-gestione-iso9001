@@ -425,7 +425,8 @@
       "name": "scripts",
       "files": [
         "scripts/reprocess-qualifications.js",
-        "scripts/backfill-wpqr-sketches-vps.js"
+        "scripts/backfill-wpqr-sketches-vps.js",
+        "scripts/recalc-wpqr-certificate-fragments.js"
       ]
     }
   ]

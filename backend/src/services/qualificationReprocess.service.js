@@ -287,6 +287,11 @@ async function runReprocessForField(fieldKey, { orgId = null, limit = DEFAULT_RU
     if (fieldDef.kind === 'verify') {
         return runVerifyReport(fieldDef, { orgId, limit });
     }
+    if (fieldDef.applyVia === 'script') {
+        const err = new Error('Campo ricalcolabile solo da backend/scripts/recalc-wpqr-certificate-fragments.js');
+        err.code = 'REPROCESS_VIA_SCRIPT';
+        throw err;
+    }
     const table = fieldDef.table || 'qualifications';
     const adapter = getTableAdapter(table);
 
