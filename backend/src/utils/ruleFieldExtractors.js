@@ -137,10 +137,10 @@ const CERTIFICATE_FRAGMENT_SQL = '(certificate_number IS NOT NULL AND LTRIM(RTRI
  */
 const CERTIFICATE_CONFIRM_SQL = `(certificate_number IS NULL OR LTRIM(RTRIM(certificate_number)) = N'' OR ${CERTIFICATE_FRAGMENT_SQL})`;
 
-/** Verbale IIS: il numero di certificato è il numero del rapporto. */
+/** Verbale IIS: il numero di certificato è il numero del rapporto. Suffisso «rev.N» ammesso. */
 const IIS_REPORT_CODE_RES = [
-    /^\d{3}p_\d{2}\/\d{2}-\d{4,6}-\d{2}$/i,
-    /^\d{2}-\d{4,6}-\d{2}$/,
+    /^\d{3}p_\d{2}\/\d{2}-\d{4,6}-\d{2}(?:\s+rev\.?\s*\d+)?$/i,
+    /^\d{2}-\d{4,6}-\d{2}(?:\s+rev\.?\s*\d+)?$/i,
 ];
 
 function isPlausibleCertificateNumber(value) {

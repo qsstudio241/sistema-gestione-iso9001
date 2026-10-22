@@ -286,6 +286,7 @@ describe('extractCertificateNumber — frammenti No. / certifica', () => {
         expect(iisReportCertificateCandidate('25-03776-01', null)).toBe('25-03776-01');
         expect(iisReportCertificateCandidate('VB0387/23 rev.0', '002p_24/24-03390-01')).toBe('002p_24/24-03390-01');
         expect(iisReportCertificateCandidate('002p_24/24-03390-01', '25-03776-01')).toBe('002p_24/24-03390-01');
+        expect(iisReportCertificateCandidate('25-08276-01 rev.1', null)).toBe('25-08276-01 rev.1');
         expect(iisReportCertificateCandidate('VB0387/23 rev.0', 'VB0377/23 rev.0')).toBeNull();
         expect(iisReportCertificateCandidate(null, null)).toBeNull();
     });
