@@ -1026,6 +1026,7 @@ async function updateWPQR(req, res) {
         if (await denyOutsideCompany(res, req.user, wpqrScopeCompany(existing.recordset[0]), 'write')) return;
 
         const allowed = WPQR_MANUAL_EDITABLE_FIELDS;
+        const headerFieldNames = new Set(wpqrTestRuns.WPQR_TEST_HEADER_FIELDS);
 
         const updates = [];
         const params  = { id: parseInt(id) };
@@ -1040,6 +1041,7 @@ async function updateWPQR(req, res) {
             'thickness_t1_max_unlimited', 'thickness_t2_max_unlimited',
         ]);
         for (const field of allowed) {
+            if (headerFieldNames.has(field)) continue;
             if (req.body[field] !== undefined) {
                 updates.push(`${field} = @${field}`);
                 const v = req.body[field];

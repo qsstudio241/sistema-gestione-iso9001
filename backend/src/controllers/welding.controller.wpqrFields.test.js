@@ -188,4 +188,23 @@ describe('updateWPQR — campi estensione ISO 15614-1 + mirroring examiner_body'
         expect(params.testing_body).toBe('TÜV');
         expect(params.examiner_body).toBe('Mario Rossi (esaminatore)');
     });
+
+    it('un campo di testata nullo compare una sola volta nel SET', async () => {
+        query.mockResolvedValueOnce({ recordset: [{ id: 10, company_id: 5 }] });
+        query.mockResolvedValueOnce({ recordset: [{ len: 20 }] });
+        query.mockResolvedValueOnce({ recordset: [] });
+
+        const res = createRes();
+        await updateWPQR({
+            params: { id: '10' },
+            user: { organization_id: 1001, user_id: 5 },
+            body: { wps_ref: 'pWPS-MOD', electrode_count: null, notes: 'modifica' },
+        }, res);
+
+        expect(res.statusCode).toBe(200);
+        const updateCall = query.mock.calls.find(([sql]) => String(sql).includes('UPDATE wpqr_records'));
+        const sql = String(updateCall[0]);
+        expect(sql.match(/electrode_count = @electrode_count/g)).toHaveLength(1);
+        expect(sql).toMatch(/wps_ref = @wps_ref/);
+    });
 });
