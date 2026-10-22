@@ -65,7 +65,8 @@ function smallRunIndex(raw) {
 
 function continuationOk(rest) {
     if (rest === '' || /^\s/.test(rest)) return true;
-    return /^[A-Za-z]?\d{2,3}(?!\d)/.test(rest);
+    // Spazio, lettera di colla (`2Ra138`) o trattino (`2R-138-S`, `1R-135`).
+    return /^-?[A-Za-z]?\d{2,3}(?!\d)/.test(rest);
 }
 
 function collapseLabel(raw) {
@@ -112,26 +113,19 @@ function matchRunLabel(trimmed) {
     return found[0];
 }
 
-/** `3÷4`, `3÷4R`, anche se il processo è attaccato (`3÷4136`, `3÷4R136`). */
+/**
+ * `3÷4`, `3-4`, `3÷4R`, anche attaccati al processo (`3÷4R136`).
+ * Il numero a destra si prende intero: `3-135` non diventa la passata `3-1`.
+ */
 function matchShrunkRange(trimmed) {
     const m = new RegExp(`^(\\d+)\\s*(${RANGE_DASH})\\s*(\\d+)`, 'i').exec(trimmed);
-    if (!m || !smallRunIndex(m[1])) return null;
-    const rightAll = m[3];
-    const prefixLen = m[0].length - rightAll.length;
-    let best = null;
-    for (let len = rightAll.length; len >= 1; len -= 1) {
-        const right = rightAll.slice(0, len);
-        if (!smallRunIndex(right)) continue;
-        let cursor = prefixLen + len;
-        const r = /^(\s*R)(?![A-Za-z])/i.exec(trimmed.slice(cursor));
-        if (r) cursor += r[0].length;
-        const rest = trimmed.slice(cursor);
-        if (!continuationOk(rest)) continue;
-        if (!best || cursor > best.len) {
-            best = { label: trimmed.slice(0, cursor), rest, len: cursor };
-        }
-    }
-    return best;
+    if (!m || !smallRunIndex(m[1]) || !smallRunIndex(m[3])) return null;
+    let cursor = m[0].length;
+    const r = /^(\s*R)(?![A-Za-z])/i.exec(trimmed.slice(cursor));
+    if (r) cursor += r[0].length;
+    const rest = trimmed.slice(cursor);
+    if (!continuationOk(rest)) return null;
+    return { label: trimmed.slice(0, cursor), rest, len: cursor };
 }
 
 function badLeadingZero(raw) {
@@ -140,7 +134,14 @@ function badLeadingZero(raw) {
 }
 
 function skipFiller(s, i) {
-    while (i < s.length && !/[\d.,÷–—-]/.test(s[i])) i += 1;
+    while (i < s.length) {
+        const c = s[i];
+        if (/[\d.,]/.test(c)) break;
+        // Il trattino è un range solo se prima c'è già una cifra (`250÷270`).
+        // In testa è il separatore dell'etichetta (`2R-138`, `3-135`).
+        if (new RegExp(RANGE_DASH).test(c) && /\d\s*$/.test(s.slice(0, i))) break;
+        i += 1;
+    }
     return i;
 }
 
@@ -150,9 +151,8 @@ function numberOptions(s, i) {
     if (j === i) return [];
     const opts = [];
     for (let end = i + 1; end <= j; end += 1) opts.push({ raw: s.slice(i, end), end });
-    // Il decimale appartiene solo alla cifra che lo precede (`1,248`, `1,2`).
-    // `51,2` è il punto 5 e il diametro 1,2, non 51,2.
-    if (j === i + 1 && j < s.length && /[.,]/.test(s[j])) {
+    // Tutto l'intero attaccato al separatore: `18,5` e `24.5`, non solo `8,5` / `4.5`.
+    if (j < s.length && /[.,]/.test(s[j])) {
         let k = j + 1;
         while (k < s.length && /\d/.test(s[k])) k += 1;
         if (k > j + 1) opts.push({ raw: s.slice(i, k), end: k });
@@ -237,6 +237,8 @@ function parseMeasures(input) {
                 if (badLeadingZero(opt.raw)) continue;
                 const value = parseDecimalToken(opt.raw);
                 if (value == null) continue;
+                // `51,2` è il punto 5 e il diametro 1,2. Un decimale ≥ 10 non è un punto.
+                if (/[.,]/.test(opt.raw) && value >= 10) continue;
                 const rest = bestFrom(opt.end);
                 if (!rest) continue;
                 const measure = { range: false, value, _raw: opt.raw };
@@ -270,7 +272,7 @@ function findProcess(rest) {
         const after = s.slice(m.index + m[0].length);
         const insideNumber = (start > 0 && /\d/.test(s[start - 1])) || (!m[2] && /^\d/.test(after));
         const rangeMin = new RegExp(`^\\s*${RANGE_DASH}\\s*\\d`).test(after);
-        const rangeMax = new RegExp(`${RANGE_DASH}\\s*$`).test(s.slice(0, start));
+        const rangeMax = new RegExp(`\\d\\s*${RANGE_DASH}\\s*$`).test(s.slice(0, start));
         if (!insideNumber && !rangeMin && !rangeMax) {
             return {
                 process: m[2] ? `${m[1]}-${m[2]}` : m[1],
@@ -362,8 +364,15 @@ function isStrongValidityRow(row) {
 function nearestUnit(lines, endIndex, kind) {
     const start = Math.max(0, endIndex - 30);
     for (let k = endIndex; k >= start; k -= 1) {
-        if (String(lines[k]).includes('\f')) break;
-        const unit = unitFromHeader(lines[k], kind);
+        const line = String(lines[k] || '');
+        if (line.includes('\f')) break;
+        if (k < endIndex) {
+            if (!line.trim()) break;
+            if (isRunHeader(line)) break;
+            const previous = parseRunLine(line);
+            if (previous && !isStrongValidityRow(previous)) break;
+        }
+        const unit = unitFromHeader(line, kind);
         if (unit) return unit;
     }
     return null;
@@ -410,7 +419,8 @@ function collectTables(lines) {
 /**
  * Righe della tabella di validità (A/V/velocità/apporto sono range).
  * Se l'intestazione è spezzata su più righe, resta una riga forte:
- * processo + polarità + quattro range. Le unità si leggono dalla riga più vicina.
+ * processo + polarità + quattro range. Le unità si leggono solo nel blocco
+ * della tabella (ci si ferma a riga vuota, altra intestazione o passata di prova).
  */
 function extractValidityRuns(text) {
     const lines = String(text || '').split(/\r?\n/);

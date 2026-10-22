@@ -307,4 +307,101 @@ describe('etichetta di passata attaccata al processo', () => {
         expect(appended.heat_input_value_min).toBe(1.248);
         expect(appended.heat_input_value_max).toBe(1.568);
     });
+
+    it('tiene i decimali con più cifre intere nei quattro range', () => {
+        const runs = extractValidityRuns(validityDoc([
+            '4 135 1,2 DC EP 18,5÷22,5 24.5÷26.0 150,5÷170,5 1,25÷1,50',
+        ]));
+        expect(runs).toHaveLength(1);
+        expect(runs[0].run_label).toBe('4');
+        expect(runs[0].welding_process).toBe('135');
+        expect(runs[0].filler_diameter_mm).toBe(1.2);
+        expect(runs[0].current_a_min).toBe(18.5);
+        expect(runs[0].current_a_max).toBe(22.5);
+        expect(runs[0].voltage_v_min).toBe(24.5);
+        expect(runs[0].voltage_v_max).toBe(26);
+        expect(runs[0].travel_speed_min).toBe(150.5);
+        expect(runs[0].travel_speed_max).toBe(170.5);
+        expect(runs[0].heat_input_value_min).toBe(1.25);
+        expect(runs[0].heat_input_value_max).toBe(1.5);
+        const minOnly = extractValidityRuns(validityDoc([
+            '4 135 1.2 DC-EP 200÷220 18,5÷22 24.5÷26 0,80÷0,95',
+        ]));
+        expect(minOnly[0].voltage_v_min).toBe(18.5);
+        expect(minOnly[0].voltage_v_max).toBe(22);
+        expect(minOnly[0].travel_speed_min).toBe(24.5);
+        expect(minOnly[0].travel_speed_max).toBe(26);
+        expect(minOnly[0].current_a_min).toBe(200);
+    });
+
+    it('accetta il trattino tra etichetta R e processo', () => {
+        const runs = extractValidityRuns(validityDoc([
+            '2R-138-S 1,2 DC EP 250÷270 27÷29 240÷260 1,248÷1,568',
+            '1R-135 1,0 DC-EP 10÷20 21÷22 30÷40 0,5÷0,6',
+        ]));
+        expect(runs.map((row) => row.run_label)).toEqual(['2R', '1R']);
+        expect(runs.map((row) => row.welding_process)).toEqual(['138-S', '135']);
+        expect(runs[0].current_a_min).toBe(250);
+        expect(runs[0].current_a_max).toBe(270);
+        expect(runs[0].voltage_v_min).toBe(27);
+        expect(runs[0].travel_speed_min).toBe(240);
+        expect(runs[0].heat_input_value_min).toBe(1.248);
+        expect(runs[0].heat_input_value_max).toBe(1.568);
+        expect(runs[0].filler_diameter_mm).toBe(1.2);
+        expect(runs[1].current_a_min).toBe(10);
+        expect(runs[1].run_label).not.toBe('1');
+    });
+
+    it('legge 3-135 come passata 3 e processo 135, non come 3-1', () => {
+        const runs = extractValidityRuns(validityDoc([
+            '3-135 1,0 DC EP 10÷20 21÷22 30÷40 0,5÷0,6',
+            '2-135 1.0 DC-EP 11÷21 22÷23 31÷41 0.6÷0.7',
+            '4-141 1.2 DC EP 12÷22 23÷24 32÷42 0.7÷0.8',
+            '3÷4 135 1,0 DC EP 90÷110 18÷22 150÷170 0,40÷0,55',
+            '3-4 135 1,0 DC EP 91÷111 19÷23 151÷171 0,41÷0,56',
+        ]));
+        expect(runs.map((row) => row.run_label)).toEqual(['3', '2', '4', '3÷4', '3-4']);
+        expect(runs.map((row) => row.welding_process)).toEqual(['135', '135', '141', '135', '135']);
+        expect(runs[0].current_a_min).toBe(10);
+        expect(runs[0].current_a_max).toBe(20);
+        expect(normRunLabel(runs[3].run_label)).toBe(normRunLabel(runs[4].run_label));
+        expect(runs[3].current_a_min).toBe(90);
+        expect(runs[4].current_a_min).toBe(91);
+    });
+
+    it('non eredita le unità della tabella di prova oltre il confine', () => {
+        const row = '2Ra138-S1,2DC EP250÷27027÷29240÷2601,248÷1,568';
+        const withBlank = [
+            'Run Process Current A Voltage V Travel speed mm/s Heat input J/mm',
+            '1 135 1.0 DC-EP 100 20 3.0 0.50',
+            '',
+            'Passate',
+            'Corrente',
+            'Tensione',
+            row,
+        ].join('\n');
+        const stopped = extractValidityRuns(withBlank);
+        expect(stopped).toHaveLength(1);
+        expect(stopped[0].run_label).toBe('2R');
+        expect(stopped[0].current_a_min).toBe(250);
+        expect(stopped[0].travel_speed_min).toBe(240);
+        expect(stopped[0].heat_input_value_max).toBe(1.568);
+        expect(stopped[0].travel_speed_unit).toBeNull();
+        expect(stopped[0].heat_input_unit).toBeNull();
+
+        const notes = Array.from({ length: 8 }, () => 'nota di pagina');
+        const noBlank = [
+            'Run Process Current A Voltage V Travel speed mm/s Heat input J/mm',
+            '1 135 1.0 DC-EP 100 20 3.0 0.50',
+            ...notes,
+            'Passate',
+            'Corrente',
+            row,
+        ].join('\n');
+        const across = extractValidityRuns(noBlank);
+        expect(across).toHaveLength(1);
+        expect(across[0].travel_speed_unit).toBeNull();
+        expect(across[0].heat_input_unit).toBeNull();
+        expect(across[0].welding_process).toBe('138-S');
+    });
 });
