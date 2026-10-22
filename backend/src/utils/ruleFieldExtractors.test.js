@@ -6,6 +6,8 @@ const {
     extractFieldsByRules,
     extractCertificateNumber,
     isFragmentCertificateNumber,
+    salvageCertificateNumber,
+    iisReportCertificateCandidate,
     extractQualifica14732Fields,
     extractCertNdtFields,
     extractWpqrFields,
@@ -257,8 +259,36 @@ describe('extractCertificateNumber — frammenti No. / certifica', () => {
         ['N. Certificato 24-03390-01', '24-03390-01'],
         ['Page No. 2', null],
         ['N. 2 of 4', null],
+        ['Certificate No.\n16VE01735PO1/A', '16VE01735PO1/A'],
+        ['Certificato No.\n24-03390-01', '24-03390-01'],
+        ['N.\n25-03776-01', '25-03776-01'],
+        ['Certificate No. Risultati\n16VE01735PO1/A', null],
+        ['Certificate No.\nPage 2/4', null],
     ])('%s → %s', (text, expected) => {
         expect(extractCertificateNumber(text)).toBe(expected);
+    });
+
+    it('pulisce il valore già salvato e non inventa un numero', () => {
+        expect(salvageCertificateNumber('o. 16VE01735PO1/A')).toBe('16VE01735PO1/A');
+        expect(salvageCertificateNumber('o. / Certificato No. VB0377/23 rev.0')).toBe('VB0377/23 rev.0');
+        expect(salvageCertificateNumber('Certificate No. 16VE01735PO2/A Page 2/4')).toBe('16VE01735PO2/A');
+        expect(salvageCertificateNumber('o. 16 VE01735PO3/A')).toBe('16VE01735PO3/A');
+        expect(salvageCertificateNumber('VB0377/23 rev.0')).toBe('VB0377/23 rev.0');
+        expect(salvageCertificateNumber('E-00951-UT-2 R')).toBe('E-00951-UT-2 R');
+        expect(salvageCertificateNumber('o.')).toBeNull();
+        expect(salvageCertificateNumber('o. Risultati')).toBeNull();
+        expect(salvageCertificateNumber('Risultati')).toBeNull();
+        expect(salvageCertificateNumber('ifica')).toBeNull();
+        expect(salvageCertificateNumber(null)).toBeNull();
+    });
+
+    it('il codice rapporto IIS non è un codice WPQR qualunque', () => {
+        expect(iisReportCertificateCandidate('25-03776-01', null)).toBe('25-03776-01');
+        expect(iisReportCertificateCandidate('VB0387/23 rev.0', '002p_24/24-03390-01')).toBe('002p_24/24-03390-01');
+        expect(iisReportCertificateCandidate('002p_24/24-03390-01', '25-03776-01')).toBe('002p_24/24-03390-01');
+        expect(iisReportCertificateCandidate('25-08276-01 rev.1', null)).toBe('25-08276-01 rev.1');
+        expect(iisReportCertificateCandidate('VB0387/23 rev.0', 'VB0377/23 rev.0')).toBeNull();
+        expect(iisReportCertificateCandidate(null, null)).toBeNull();
     });
 
     it('riconosce i frammenti già salvati e non un numero vero', () => {
