@@ -880,7 +880,10 @@ async function createWPQR(req, res) {
         if (await denyOutsideCompany(res, req.user, bodyCompany.value, 'write')) return;
         const companyRow = await query(`
             SELECT id FROM companies
-            WHERE id = @company_id AND organization_id = @organization_id
+            WHERE id = @company_id
+              AND auditor_org_id IN (
+                  SELECT id FROM auditor_orgs WHERE organization_id = @organization_id
+              )
         `, { company_id: bodyCompany.value, organization_id });
         if (companyRow.recordset.length === 0) {
             return res.status(404).json({ error: 'Azienda non trovata', code: 'COMPANY_NOT_FOUND' });

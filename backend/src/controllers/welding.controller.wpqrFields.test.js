@@ -55,6 +55,10 @@ describe('createWPQR — campi estensione ISO 15614-1', () => {
         await createWPQR(req, res);
 
         expect(res.statusCode).toBe(201);
+        const companyCall = query.mock.calls.find(([sql]) => sql.includes('FROM companies'));
+        expect(companyCall[0]).toMatch(/auditor_org_id IN/);
+        expect(companyCall[0]).toMatch(/FROM auditor_orgs/);
+        expect(companyCall[0]).not.toMatch(/AND organization_id = @organization_id\s*$/);
         const insertCall = query.mock.calls.find(([sql]) => sql.includes('INSERT INTO wpqr_records'));
         expect(insertCall).toBeTruthy();
         const params = insertCall[1];
