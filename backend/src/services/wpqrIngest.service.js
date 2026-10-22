@@ -27,7 +27,7 @@ const { splitRefList, normalizeWpqrRef } = require('../utils/wpqrSupportRefs');
 const wpsWpqrLinks = require('./wpsWpqrLinks.service');
 const wpqrTestRuns = require('./wpqrTestRuns.service');
 const { withValidityRuns } = require('./wpqrValidityRuns');
-const { isFragmentCertificateNumber, CERTIFICATE_FRAGMENT_SQL } = require('../utils/ruleFieldExtractors');
+const { isFragmentCertificateNumber, CERTIFICATE_CONFIRM_SQL } = require('../utils/ruleFieldExtractors');
 
 /** Un frammento («ifica», «o.», «Risultati») non si salva: il numero vero o null. */
 function persistCertificateNumber(value) {
@@ -1133,11 +1133,12 @@ const WPQR_REPROCESSABLE_FIELDS = {
             writeGuard: `${column} IS NULL`,
         })),
     },
-    // Frammenti («ifica», «o.»): li ricalcola lo script, non l'AI. Il writeGuard
-    // impedisce a una conferma staging di toccare un numero già valido.
+    // Frammenti («ifica», «o.»): li ricalcola lo script, non l'AI.
+    // La conferma in Rivedi può compilare un frammento o un numero vuoto
+    // (proposta «da confermare»). Un numero già plausibile non si tocca.
     wpqr_certificate_number: {
         column: 'certificate_number',
-        writeGuard: CERTIFICATE_FRAGMENT_SQL,
+        writeGuard: CERTIFICATE_CONFIRM_SQL,
     },
 };
 

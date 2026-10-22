@@ -130,6 +130,34 @@ function isFragmentCertificateNumber(value) {
 /** Stesso criterio di isFragmentCertificateNumber, per il registro rielaborazioni. */
 const CERTIFICATE_FRAGMENT_SQL = '(certificate_number IS NOT NULL AND LTRIM(RTRIM(certificate_number)) <> N\'\' AND (certificate_number NOT LIKE N\'%[0-9]%\' OR LOWER(LTRIM(RTRIM(certificate_number))) IN (N\'ifica\', N\'ificate\', N\'ificato\', N\'ification\', N\'ication\', N\'body\', N\'risultati\', N\'o.\', N\'o\') OR certificate_number LIKE N\'o.%\' OR certificate_number LIKE N\'%Certificato No%\'))';
 
+/**
+ * Conferma in Rivedi: un frammento o un numero vuoto si può compilare.
+ * Un numero già plausibile resta fuori da questo predicato.
+ * Il registro «dati AI mancanti» continua a usare solo CERTIFICATE_FRAGMENT_SQL.
+ */
+const CERTIFICATE_CONFIRM_SQL = `(certificate_number IS NULL OR LTRIM(RTRIM(certificate_number)) = N'' OR ${CERTIFICATE_FRAGMENT_SQL})`;
+
+/** Verbale IIS: il numero di certificato è il numero del rapporto. */
+const IIS_REPORT_CODE_RES = [
+    /^\d{3}p_\d{2}\/\d{2}-\d{4,6}-\d{2}$/i,
+    /^\d{2}-\d{4,6}-\d{2}$/,
+];
+
+function isPlausibleCertificateNumber(value) {
+    if (value == null) return false;
+    const text = String(value).trim();
+    if (text.length < 4 || text.length > 60) return false;
+    if (!/\d/.test(text)) return false;
+    if (CERTIFICATE_FRAGMENT_TOKENS.has(text.toLowerCase())) return false;
+    if (/^page\b/i.test(text)) return false;
+    if (/^\d{1,3}$/.test(text)) return false;
+    if (/\bof\b/i.test(text)) return false;
+    if (/[A-Za-z]/.test(text)) return true;
+    if (/\d{2}-\d{3,}/.test(text)) return true;
+    if (text.includes('/')) return true;
+    return false;
+}
+
 function cleanCapturedCertificate(raw, { strictId = false } = {}) {
     if (raw == null) return null;
     let val = String(raw).split(/\r?\n/)[0].trim().replace(/\s{2,}/g, ' ');
@@ -140,13 +168,68 @@ function cleanCapturedCertificate(raw, { strictId = false } = {}) {
     if (/\bof\b/i.test(val)) return null;
     if (!/\d/.test(val)) return null;
     if (strictId && !/[A-Za-z]|[-/]/.test(val)) return null;
+    if (!isPlausibleCertificateNumber(val)) return null;
     return val;
+}
+
+/**
+ * Tiene il numero già scritto, togliendo solo sporco di OCR.
+ * «16 VE01735PO3/A» diventa «16VE01735PO3/A»; «VB0377/23 rev.0» resta com'è.
+ * Se non resta un numero plausibile, null (il chiamante non azzera un valore con cifre).
+ */
+function salvageCertificateNumber(value) {
+    if (value == null) return null;
+    let val = String(value).trim().replace(/\s{2,}/g, ' ');
+    if (!val) return null;
+    let prev;
+    do {
+        prev = val;
+        val = val.replace(/^\s*o\.\s*\/\s*/i, '');
+        val = val.replace(/^(?:certificate|certificato)\s+n(?:o\.?|umber|[°º.])\s*[:.]?\s*/i, '');
+        val = val.replace(/^o\.\s+/i, '');
+        val = val.replace(/^o\.\s*$/i, '');
+        val = val.replace(/\s+page\s+\d+\s*\/\s*\d+\s*$/i, '');
+        val = val.trim();
+    } while (val !== prev);
+    const glued = val.match(/^(\d+)\s+([A-Za-z][A-Za-z0-9./-]*\d[A-Za-z0-9./-]*)$/);
+    if (glued) val = glued[1] + glued[2];
+    if (!isPlausibleCertificateNumber(val)) return null;
+    return val;
+}
+
+function matchIisReportCode(value) {
+    const text = String(value || '').trim();
+    if (!text) return null;
+    return IIS_REPORT_CODE_RES.some((re) => re.test(text)) ? text : null;
+}
+
+/** Prima il codice WPQR, poi il numero di rapporto se il codice non è un verbale IIS. */
+function iisReportCertificateCandidate(wpqrCode, referenceNumber) {
+    return matchIisReportCode(wpqrCode) || matchIisReportCode(referenceNumber);
+}
+
+function certificateLabelTailIsEmpty(chunk) {
+    const text = String(chunk || '').trim();
+    if (!text) return true;
+    return /^(?:o\.\s*)?\/?\s*$/i.test(text);
+}
+
+function nextNonEmptyLine(src, index) {
+    const rest = String(src || '').slice(index);
+    const lines = rest.split(/\r?\n/);
+    for (let i = 1; i < lines.length; i += 1) {
+        const line = lines[i].trim();
+        if (line) return line;
+    }
+    return '';
 }
 
 function extractCertificateNumber(text) {
     // Etichetta esplicita: «Certificate No.» / «Certificato No.» / «N°».
     // Non consumare solo la N di «No.» (produceva «o.») e non ricadere su
-    // «certifica» (produceva «ifica»). Un'etichetta senza numero resta null.
+    // «certifica» (produceva «ifica»). Se l'etichetta è sola, il numero può
+    // stare sulla riga dopo. Se sulla riga c'è già un testo (es. «Risultati»),
+    // non si prende la riga successiva.
     const src = String(text || '');
     const labelRe = /\b(?:certificate|certificato)\s+n(?:o\.?|umber|[°º.])\s*[:.]?\s*([^\r\n]*)/gi;
     let foundLabel = false;
@@ -158,12 +241,21 @@ function extractCertificateNumber(text) {
         if (bilingual) chunk = bilingual[1];
         const cleaned = cleanCapturedCertificate(chunk);
         if (cleaned) return cleaned;
+        if (certificateLabelTailIsEmpty(chunk)) {
+            const fromNext = cleanCapturedCertificate(nextNonEmptyLine(src, labelRe.lastIndex), { strictId: true });
+            if (fromNext) return fromNext;
+        }
     }
     if (foundLabel) return null;
-    const lineRe = /(?:^|[\r\n])\s*(?:certificato\s+)?N(?:o\.?|[°º.])\s*(?:certificato\s+)?[:.]?\s*([^\r\n]+)/gi;
+    const lineRe = /(?:^|[\r\n])\s*(?:certificato\s+)?N(?:o\.?|[°º.])\s*(?:certificato\s+)?[:.]?\s*([^\r\n]*)/gi;
     while ((match = lineRe.exec(src))) {
-        const cleaned = cleanCapturedCertificate(match[1], { strictId: true });
+        const chunk = match[1] || '';
+        const cleaned = cleanCapturedCertificate(chunk, { strictId: true });
         if (cleaned) return cleaned;
+        if (certificateLabelTailIsEmpty(chunk)) {
+            const fromNext = cleanCapturedCertificate(nextNonEmptyLine(src, lineRe.lastIndex), { strictId: true });
+            if (fromNext) return fromNext;
+        }
     }
     return null;
 }
@@ -1169,7 +1261,11 @@ module.exports = {
     extractQualificationCertificateNumber,
     extractCertificateNumber,
     isFragmentCertificateNumber,
+    isPlausibleCertificateNumber,
+    salvageCertificateNumber,
+    iisReportCertificateCandidate,
     CERTIFICATE_FRAGMENT_SQL,
+    CERTIFICATE_CONFIRM_SQL,
     extractMaterialGroupLabeled,
     extractMaterialGroup,
     extractWpqrReference,
