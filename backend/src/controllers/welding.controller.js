@@ -160,6 +160,17 @@ async function pushCompanyScope(user, alias, conditions, params, prefix) {
  * Id intero positivo. parseInt("1e2") è 1 e parseFloat("1e2") è 100:
  * lo stesso campo non può essere letto con due parser diversi.
  */
+/**
+ * company_id di lista: vuoto = nessun filtro Ambito.
+ * Non numerico (es. "studio") → errore, mai parseInt che svuota la lista.
+ */
+function parseListCompanyId(raw) {
+    const text = raw === undefined || raw === null ? '' : String(raw).trim();
+    if (!text) return { value: null };
+    if (!/^\d{1,9}$/.test(text)) return { error: true };
+    return { value: parseInt(text, 10) };
+}
+
 function strictPositiveInt(raw) {
     if (typeof raw === 'number') {
         if (!Number.isInteger(raw) || raw <= 0) return null;
@@ -247,14 +258,18 @@ async function listWPS(req, res) {
         const conditions = ['w.organization_id = @organization_id', 'w.deleted_at IS NULL'];
         const params = { organization_id, limit: parseInt(limit), offset };
 
-        if (company_id != null && company_id !== '') {
-            if (await denyOutsideCompany(res, req.user, company_id, 'read')) return;
+        const parsedCompany = parseListCompanyId(company_id);
+        if (parsedCompany.error) {
+            return res.status(400).json({ error: 'company_id non valido.', code: 'INVALID_COMPANY_ID' });
+        }
+        if (parsedCompany.value != null) {
+            if (await denyOutsideCompany(res, req.user, parsedCompany.value, 'read')) return;
         }
         await pushCompanyScope(req.user, 'w', conditions, params, 'wpsco');
 
-        if (company_id) {
+        if (parsedCompany.value != null) {
             conditions.push('w.company_id = @company_id');
-            params.company_id = parseInt(company_id);
+            params.company_id = parsedCompany.value;
         }
         if (welding_process) {
             conditions.push('w.welding_process = @welding_process');
@@ -751,8 +766,12 @@ async function listWPQR(req, res) {
         ];
         const params = { organization_id, limit: parseInt(limit), offset };
 
-        if (company_id != null && company_id !== '') {
-            if (await denyOutsideCompany(res, req.user, company_id, 'read')) return;
+        const parsedCompany = parseListCompanyId(company_id);
+        if (parsedCompany.error) {
+            return res.status(400).json({ error: 'company_id non valido.', code: 'INVALID_COMPANY_ID' });
+        }
+        if (parsedCompany.value != null) {
+            if (await denyOutsideCompany(res, req.user, parsedCompany.value, 'read')) return;
         }
         await pushWpqrCompanyScope(req.user, conditions, params, 'wpqrco');
 
@@ -760,9 +779,9 @@ async function listWPQR(req, res) {
             conditions.push('wq.wps_id = @wps_id');
             params.wps_id = parseInt(wps_id);
         }
-        if (company_id) {
+        if (parsedCompany.value != null) {
             conditions.push('(wq.company_id = @company_id OR (wq.company_id IS NULL AND w.company_id = @company_id))');
-            params.company_id = parseInt(company_id);
+            params.company_id = parsedCompany.value;
         }
         if (approval_status) {
             conditions.push('wq.approval_status = @approval_status');

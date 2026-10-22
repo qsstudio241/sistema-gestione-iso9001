@@ -56,6 +56,34 @@ describe("ReprocessQueueBanner — parametro module", () => {
     });
   });
 
+  it("etichette italiane per data prova, risultati e passate (niente fallback inglese)", async () => {
+    apiService.listIngestStaging.mockResolvedValue({
+      items: [
+        {
+          id: 1, doc_type: "wpqr", original_name: "a.pdf", field_scope: "wpqr_test_date",
+          target_wpqr_id: 15, fields: { wpqr_code: "25-08276-01 rev.1", wpqr_test_date: "2023-01-01" },
+        },
+        {
+          id: 2, doc_type: "wpqr", original_name: "a.pdf", field_scope: "wpqr_test_results",
+          target_wpqr_id: 15, fields: { wpqr_code: "25-08276-01 rev.1", wpqr_test_results: "VT ok" },
+        },
+        {
+          id: 3, doc_type: "wpqr", original_name: "a.pdf", field_scope: "wpqr_test_runs",
+          target_wpqr_id: 15, fields: { wpqr_code: "25-08276-01 rev.1", wpqr_test_runs: "2" },
+        },
+      ],
+    });
+    render(<ReprocessQueueBanner module="saldatura" />);
+    await waitFor(() => expect(screen.getByText(/Vedi elenco/i)).toBeTruthy());
+    fireEvent.click(screen.getByText(/Vedi elenco/i));
+    expect(screen.getByText(/Data prova/)).toBeTruthy();
+    expect(screen.getByText(/Risultati prove/)).toBeTruthy();
+    expect(screen.getByText(/Passate di prova/)).toBeTruthy();
+    expect(screen.queryByText(/test date/i)).toBeNull();
+    expect(screen.queryByText(/test results/i)).toBeNull();
+    expect(screen.queryByText(/test runs/i)).toBeNull();
+  });
+
   it("mostra il wpqr_code come titolo quando manca person_name (proposta WPQR)", async () => {
     apiService.listIngestStaging.mockResolvedValue({
       items: [{
