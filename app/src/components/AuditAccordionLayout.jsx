@@ -92,7 +92,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
         const copy = JSON.parse(JSON.stringify(audit));
         applyServerWinnersToChecklist(copy.checklist, conflicts);
         return copy;
-      }, { skipSync: true });
+      }, { event: "refresh_draft" });
     };
     window.addEventListener("sgq:question-conflicts", onConflict);
     return () => window.removeEventListener("sgq:question-conflicts", onConflict);
@@ -312,8 +312,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
         );
         return applyPrunedChecklist(audit, pruned);
       };
-      pruneUpdater._systemCall = true;
-      updateCurrentAudit(pruneUpdater, { skipSync: true });
+      updateCurrentAudit(pruneUpdater, { event: "refresh_draft" });
     }
 
     // Per ogni standard supportato: se selezionato e checklist vuota → inizializza template
@@ -396,8 +395,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
         );
         return applyPrunedChecklist(audit, pruned);
       };
-      pruneUpdater._systemCall = true;
-      updateCurrentAudit(pruneUpdater, { skipSync: true });
+      updateCurrentAudit(pruneUpdater, { event: "refresh_draft" });
     }
   };
 

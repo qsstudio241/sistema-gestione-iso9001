@@ -3,6 +3,7 @@
  * La proiezione sulla riga corrente non sovrascrive una versione già sul server
  * se l'orario della modifica in arrivo è precedente e il testo è diverso.
  * Stesso contenuto = ritento, non è un conflitto.
+ * Stessa decisione lato client: decideAuditSync, evento other_device.
  */
 
 function normStatus(value) {

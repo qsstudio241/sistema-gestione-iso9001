@@ -12,6 +12,7 @@ import { getDatabase } from './IndexedDBProvider';
 import apiService from './apiService';
 import { toNumericChecklistQuestionId } from '../utils/attachmentQuestionId';
 import { confirmedPayloads, noteQuestionSaveResult } from '../utils/checklistPendingStore';
+import { decideAuditSync } from '../utils/decideAuditSync';
 
 const SYNC_QUEUE_STORE = 'syncQueue';
 const STORE_SYNC_METADATA = 'sync_metadata';  // Store per tracking sync status
@@ -137,6 +138,7 @@ export class SyncService {
             'save_responses': 'auditId',
             'save_custom_checklist_responses': 'auditId',
             'update_audit': 'audit_uuid',
+            'update_audit_status': 'audit_uuid',
             // CND-9: coalescenza bozze officina (ultima versione vince)
             'update_ndt_report': 'id',
             'create_ndt_report': 'uuid',
@@ -632,6 +634,9 @@ export class SyncService {
             case 'update_audit':
                 return await this.syncUpdateAudit(payload);
 
+            case 'update_audit_status':
+                return await this.syncUpdateAuditStatus(payload);
+
             case 'delete_audit':
                 return await this.syncDeleteAudit(payload);
 
@@ -688,6 +693,27 @@ export class SyncService {
     async syncUpdateAudit(auditData) {
         // Usa upsert invece di update separato
         return await this.syncUpsertAudit(auditData);
+    }
+
+    /**
+     * Solo lo stato. Non passa dal mapper della scheda:
+     * un payload parziale lì sovrascriverebbe conclusioni e date.
+     */
+    async syncUpdateAuditStatus(payload) {
+        const auditUuid = payload?.audit_uuid;
+        if (!auditUuid || !payload?.status) {
+            throw new Error('update_audit_status richiede audit_uuid e status');
+        }
+        const result = await apiService.upsertAudit({
+            audit_uuid: auditUuid,
+            status: payload.status,
+            status_only: true,
+        });
+        const responseData = result?.data || result;
+        if (responseData?.updated_at) {
+            localStorage.setItem(`sgq_srv_ts_${auditUuid}`, responseData.updated_at);
+        }
+        return result;
     }
 
     /**
@@ -1630,9 +1656,13 @@ export class SyncService {
         // Prima di processare, resuscita item stalled per errore di rete:
         // questi non devono rimanere bloccati in eterno solo perché la rete
         // mobile era instabile al momento del tentativo.
+        const decision = decideAuditSync({ event: 'offline', online: true });
         setTimeout(async () => {
             await this.unstallNetworkErrorItems();
-            this.processQueue();
+            // Nessuna scheda nuova: partono solo gli item già in coda.
+            if (decision.sendQuestions && !decision.sendScheda) {
+                this.processQueue();
+            }
         }, 2000);
 
         // Riavvia auto-sync se era stato fermato

@@ -44,6 +44,7 @@ import {
   auditMetadataSyncSignature,
   createMetadataSyncScheduler,
 } from "../utils/auditMetadataSync";
+import { decideAuditSync } from "../utils/decideAuditSync";
 import {
   forgetCurrentAuditId,
   pickRestoredAuditId,
@@ -609,7 +610,6 @@ export function StorageProvider({ children, useMockData = false }) {
   const fetchAndApplyLastRunRef = useRef({});
   const prevAuditIdForHydrateRef = useRef(null);
   const metadataSyncRef = useRef(null);
-  const statusPublishRef = useRef("");
   if (!metadataSyncRef.current) {
     metadataSyncRef.current = createMetadataSyncScheduler({
       enqueue: (payload) => {
@@ -1949,20 +1949,16 @@ export function StorageProvider({ children, useMockData = false }) {
   /**
    * Aggiorna audit corrente.
    * @param {Function|Object} updater
-   * @param {{ skipSync?: boolean, allowStatusSync?: boolean }} opts — skipSync=true non invia la scheda audit.
-   * allowStatusSync: una modifica reale della checklist pubblica una volta lo stato «in corso».
-   * Le risposte delle domande non partono da qui.
-   *   Usare quando si aggiorna la struttura locale (es. init template) senza voler sovrascrivere
-   *   dati già presenti sul server.
+   * @param {{ event?: string }} opts — event lo legge decideAuditSync.
+   * Le risposte delle domande non partono da qui: partono dalla coda a differenze.
+   * open_empty e refresh_draft aggiornano solo il locale.
    */
   const updateCurrentAudit = useCallback(
-    (updater, { skipSync = false, allowStatusSync = false } = {}) => {
+    (updater, opts = {}) => {
+      const eventName = opts.event || "scheda";
       setAudits((prevAudits) => {
-        // Determina PRIMA se è una chiamata di sistema (idratazione, reconcile, init checklist):
-        // queste devono bypassare il blocco lock per garantire server-wins anche per l'utente B.
-        const isSystemCall = typeof updater === "function" && updater._systemCall === true;
-
-        if (!isSystemCall && auditLockRef.current.mode === "foreign") {
+        const gate = decideAuditSync({ event: eventName, status: "draft" });
+        if (!gate.bypassLock && auditLockRef.current.mode === "foreign") {
           const now = Date.now();
           if (now - lockWriteWarnTsRef.current > 5000) {
             lockWriteWarnTsRef.current = now;
@@ -1983,17 +1979,19 @@ export function StorageProvider({ children, useMockData = false }) {
             let updated =
               typeof updater === "function" ? updater(audit) : updater;
 
-            // Transizione automatica draft → in_progress solo su edit esplicito utente.
-            // Le chiamate di sistema (initializeChecklist, hydrateQuestionIds,
-            // fetchAndApplyServerResponses) usano updater con proprietà _systemCall=true.
+            const decision = decideAuditSync({
+              event: eventName,
+              status: updated?.metadata?.status || "draft",
+              online: typeof navigator === "undefined" ? true : navigator.onLine,
+            });
             if (
-              !isSystemCall &&
-              updated?.metadata?.status === "draft" &&
-              typeof updater === "function"
+              updated?.metadata &&
+              decision.nextStatus &&
+              decision.nextStatus !== updated.metadata.status
             ) {
               updated = {
                 ...updated,
-                metadata: { ...updated.metadata, status: "in_progress" },
+                metadata: { ...updated.metadata, status: decision.nextStatus },
               };
             }
 
@@ -2027,19 +2025,18 @@ export function StorageProvider({ children, useMockData = false }) {
 
             const auditUuid = updated.id || updated.metadata?.id;
 
-            // Le risposte delle domande partono dal salvataggio a differenze.
-            // La scheda parte solo se un suo campo è cambiato. Lo stato «in corso»
-            // parte una volta, e solo se la modifica è una risposta dell'utente.
-            if (updated?.metadata?.status !== 'in_progress' && statusPublishRef.current === auditUuid) {
-              statusPublishRef.current = '';
+            // Domande: coda a differenze, non questa scheda.
+            // «In corso» è un invio a parte, solo alla prima risposta.
+            // La scheda parte solo se decideAuditSync lo chiede e un campo è cambiato.
+            if (!isHydratingRef.current && auditUuid && decision.sendStatusOnly) {
+              syncService.enqueue("update_audit_status", {
+                audit_uuid: auditUuid,
+                status: "in_progress",
+              }).catch((err) => {
+                console.error("❌ [SYNC] Errore enqueue stato:", err);
+              });
             }
-            const wantStatusPublish = allowStatusSync
-              && !isSystemCall
-              && !isHydratingRef.current
-              && updated?.metadata?.status === 'in_progress'
-              && statusPublishRef.current !== auditUuid;
-            if ((!skipSync || wantStatusPublish) && !isHydratingRef.current && !isSystemCall && auditUuid) {
-              if (wantStatusPublish) statusPublishRef.current = auditUuid;
+            if (!isHydratingRef.current && auditUuid && decision.sendScheda) {
               const storedServerTs = localStorage.getItem(`sgq_srv_ts_${auditUuid}`);
               const serverTsMs = storedServerTs ? new Date(storedServerTs).getTime() : 0;
               const syncUpdatedAt = new Date(Math.max(Date.now(), serverTsMs + 1)).toISOString();
@@ -2454,11 +2451,7 @@ export function StorageProvider({ children, useMockData = false }) {
         totalQuestions += section.questions.length;
       });
 
-      // Aggiorna audit con checklist copiata.
-      // skipSync=true SEMPRE: initializeChecklist crea solo la struttura locale (template vuoto).
-      // Le risposte reali arrivano da fetchAndApplyServerResponses (chiamata subito dopo in
-      // AuditAccordionLayout) oppure dalle modifiche esplicite dell'utente.
-      // Non accodare MAI save_responses con NOT_ANSWERED — sovrascriverebbero i dati sul server.
+      // Apertura vuota: solo struttura locale. Nessun invio, lo stato resta bozza.
       const initUpdater = (audit) => {
         const updatedAudit = { ...audit };
 
@@ -2472,8 +2465,7 @@ export function StorageProvider({ children, useMockData = false }) {
 
         return updatedAudit;
       };
-      initUpdater._systemCall = true;
-      updateCurrentAudit(initUpdater, { skipSync: true });
+      updateCurrentAudit(initUpdater, { event: "open_empty" });
 
       console.log(
         `✅ Checklist ${standard} inizializzata da template (${totalQuestions} domande)`,
@@ -2559,8 +2551,7 @@ export function StorageProvider({ children, useMockData = false }) {
           }
           return updated;
         };
-        hydrateUpdater._systemCall = true;
-        updateCurrentAudit(hydrateUpdater, { skipSync: true });
+        updateCurrentAudit(hydrateUpdater, { event: "open_empty" });
         console.log(`\u2705 [HYDRATE] questionIds idratati per ${standardKey} (${questions.length} domande)`);
       } catch (e) {
         console.warn(`[HYDRATE] questionIds per ${standardKey}:`, e.message);
@@ -2677,8 +2668,7 @@ export function StorageProvider({ children, useMockData = false }) {
                 customResponses: mergedResponses,
               };
             };
-            customUpdater._systemCall = true;
-            updateCurrentAudit(customUpdater, { skipSync: true });
+            updateCurrentAudit(customUpdater, { event: "open_empty" });
 
             console.log(
               `✅ [HYDRATE] Custom checklist "${clTemplate?.name}": ` +
@@ -2736,8 +2726,7 @@ export function StorageProvider({ children, useMockData = false }) {
           console.log(`✅ [HYDRATE] Applicate ${applied}/${rows.length} risposte (note locali preservate se in draft)`);
           return updatedAudit;
         };
-        isoHydrateUpdater._systemCall = true;
-        updateCurrentAudit(isoHydrateUpdater, { skipSync: true });
+        updateCurrentAudit(isoHydrateUpdater, { event: "open_empty" });
         setServerDataStatus('ready');
       } catch (err) {
         console.warn("⚠️ [HYDRATE] Errore caricamento risposte server:", err.message);

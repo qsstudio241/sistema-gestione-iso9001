@@ -869,6 +869,66 @@ async function upsertAudit(req, res) {
             ? standard_ids.map(id => parseInt(id)).filter(id => !isNaN(id) && id > 0)
             : (bodyHasStandardField ? [parseInt(standard_id) || 1] : []);
 
+        // Solo lo stato. Non tocca conclusioni, date, note, norme.
+        if (req.body.status_only === true) {
+            const allowedStatus = new Set(['draft', 'in_progress', 'completed', 'approved']);
+            if (!audit_uuid || !status || !allowedStatus.has(status)) {
+                return res.status(400).json({
+                    error: 'Stato non valido',
+                    code: 'VALIDATION_ERROR',
+                    required: ['audit_uuid', 'status']
+                });
+            }
+            const found = await query(`
+                SELECT audit_id, status
+                FROM audits
+                WHERE audit_uuid = @audit_uuid AND organization_id = @organization_id
+            `, { audit_uuid, organization_id });
+            if (!found.recordset.length) {
+                return res.status(404).json({
+                    error: 'Audit non trovato',
+                    code: 'AUDIT_NOT_FOUND'
+                });
+            }
+            const inScope = await resolveAuditForUser(req.user, audit_uuid);
+            if (!inScope) {
+                return res.status(404).json({
+                    error: 'Audit non trovato',
+                    code: 'AUDIT_NOT_FOUND'
+                });
+            }
+            const row = found.recordset[0];
+            if (row.status === status) {
+                return res.status(200).json({
+                    success: true,
+                    data: {
+                        audit_id: row.audit_id,
+                        audit_uuid,
+                        action: 'unchanged',
+                        status
+                    }
+                });
+            }
+            const updated = await query(`
+                DECLARE @out TABLE (updated_at DATETIME2);
+                UPDATE audits
+                SET status = @status, updated_at = GETDATE()
+                OUTPUT INSERTED.updated_at INTO @out
+                WHERE audit_id = @audit_id AND organization_id = @organization_id;
+                SELECT updated_at FROM @out;
+            `, { status, audit_id: row.audit_id, organization_id });
+            return res.status(200).json({
+                success: true,
+                data: {
+                    audit_id: row.audit_id,
+                    audit_uuid,
+                    action: 'updated',
+                    status,
+                    updated_at: updated.recordset?.[0]?.updated_at || null
+                }
+            });
+        }
+
         // Validazione campi obbligatori minimi
         if (!audit_uuid || !client_name) {
             return res.status(400).json({

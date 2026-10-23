@@ -14,6 +14,7 @@ import apiService from "../services/apiService";
 import { toNumericChecklistQuestionId } from "../utils/attachmentQuestionId";
 import { QuestionCard as UniversalQuestionCard } from "./QuestionCard";
 import { saveChecklistFocus, buildChecklistAskAiFocus } from "../utils/aiAssistantContext";
+import { eventForAnswer } from "../utils/decideAuditSync";
 import {
   resumeChecklistPendingSends,
   scheduleChecklistQuestionSave,
@@ -110,7 +111,7 @@ function ChecklistModule({ defaultNorm = "ISO_9001", readOnly = false, forceExpa
       const copy = JSON.parse(JSON.stringify(audit));
       applyPendingAnswersToChecklist(copy.checklist, pending);
       return copy;
-    }, { skipSync: true, allowStatusSync: true });
+    }, { event: "refresh_draft" });
   }, [currentAudit?.metadata?.id, currentAudit?.id, currentAudit?.checklist, checklistBind, updateCurrentAudit]);
 
   // Hook gestione allegati
@@ -510,7 +511,11 @@ function ChecklistModule({ defaultNorm = "ISO_9001", readOnly = false, forceExpa
       }
 
       return updatedAudit;
-    }, { skipSync: deferredQuestionSave, allowStatusSync: deferredQuestionSave });
+    }, {
+      event: deferredQuestionSave
+        ? eventForAnswer(currentAudit?.metadata?.status)
+        : "scheda",
+    });
   };
 
   const handleSatisfiedByChange = (clauseId, questionId, satData) => {
@@ -542,7 +547,11 @@ function ChecklistModule({ defaultNorm = "ISO_9001", readOnly = false, forceExpa
 
       updatedAudit.metadata.lastModified = new Date().toISOString();
       return updatedAudit;
-    }, { skipSync: true, allowStatusSync: Boolean(becomesConform) });
+    }, {
+      event: becomesConform
+        ? eventForAnswer(currentAudit?.metadata?.status)
+        : "refresh_draft",
+    });
   };
 
   // === RENDER ===

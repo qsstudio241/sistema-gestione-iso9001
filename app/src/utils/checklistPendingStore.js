@@ -4,6 +4,8 @@
  * La coda IndexedDB (save_question_diff) è lo specchio per il reconnect.
  */
 
+import { decideAuditSync } from './decideAuditSync';
+
 const DEVICE_KEY = 'sgq:device-id';
 const PREFIX = 'sgq:qdiff:';
 const NOTICE_PREFIX = 'sgq:qconflict:';
@@ -204,32 +206,13 @@ export function clearConflictNotices(auditUuid, storage) {
   noticeStorageOf(storage).removeItem(noticeKey(auditUuid));
 }
 
-function payloadMatchesSaveError(payload, err) {
-  if (!payload || !err) return false;
-  if (payload.questionId != null && err.question_id != null
-      && String(payload.questionId) === String(err.question_id)) return true;
-  if (payload.clauseRef && err.clause_ref
-      && String(payload.clauseRef).trim() === String(err.clause_ref).trim()) return true;
-  return false;
-}
-
-function errorsFromSaveResult(result) {
-  const errors = [];
-  const rows = Array.isArray(result?.results) ? result.results : (result ? [result] : []);
-  for (const row of rows) {
-    if (Array.isArray(row?.errors)) errors.push(...row.errors);
-    if (Array.isArray(row?.results?.errors)) errors.push(...row.results.errors);
-  }
-  if (Array.isArray(result?.errors)) errors.push(...result.errors);
-  return errors;
-}
-
 /** Tiene in bozza le domande che il server ha rifiutato dentro un HTTP 200. */
 export function confirmedPayloads(payloads, result) {
-  const list = payloads || [];
-  const errors = errorsFromSaveResult(result);
-  if (errors.length === 0) return list;
-  return list.filter((payload) => !errors.some((err) => payloadMatchesSaveError(payload, err)));
+  return decideAuditSync({
+    event: 'partial_200',
+    payloads: payloads || [],
+    result,
+  }).confirmed;
 }
 
 export function noteQuestionSaveResult(payloads, conflicts, pendingStorage, noticeStorage) {
