@@ -11,7 +11,7 @@
 import { getDatabase } from './IndexedDBProvider';
 import apiService from './apiService';
 import { toNumericChecklistQuestionId } from '../utils/attachmentQuestionId';
-import { noteQuestionSaveResult } from '../utils/checklistPendingStore';
+import { confirmedPayloads, noteQuestionSaveResult } from '../utils/checklistPendingStore';
 
 const SYNC_QUEUE_STORE = 'syncQueue';
 const STORE_SYNC_METADATA = 'sync_metadata';  // Store per tracking sync status
@@ -1019,12 +1019,13 @@ export class SyncService {
             organizationId: question.organizationId ?? payload.organizationId ?? null,
         }));
         const result = await this.postQuestionSaves(jobs);
+        const confirmed = confirmedPayloads(jobs, result);
         const conflicts = [];
         for (const row of result?.results || []) {
             if (Array.isArray(row?.conflicts)) conflicts.push(...row.conflicts);
             if (Array.isArray(row?.results?.conflicts)) conflicts.push(...row.results.conflicts);
         }
-        noteQuestionSaveResult(jobs, conflicts);
+        noteQuestionSaveResult(confirmed, conflicts);
         if (conflicts.length && typeof window !== 'undefined') {
             window.dispatchEvent(new CustomEvent('sgq:question-conflicts', {
                 detail: { auditUuid: payload.auditUuid, conflicts },

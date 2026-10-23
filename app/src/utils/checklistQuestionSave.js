@@ -9,6 +9,7 @@ import {
   DEFAULT_DEBOUNCE_MS,
 } from './checklistSaveScheduler';
 import {
+  confirmedPayloads,
   listPendingQuestions,
   noteQuestionSaveResult,
   upsertPendingQuestion,
@@ -38,9 +39,10 @@ function collectConflicts(result) {
 async function deliver(payloads, opts) {
   const result = await syncService.postQuestionSaves(payloads, opts);
   const conflicts = collectConflicts(result);
-  noteQuestionSaveResult(payloads, conflicts);
+  const confirmed = confirmedPayloads(payloads, result);
+  noteQuestionSaveResult(confirmed, conflicts);
   try {
-    await syncService.clearQuestionDiffMatches(payloads);
+    await syncService.clearQuestionDiffMatches(confirmed);
   } catch {
     /* la bozza locale è già aggiornata */
   }

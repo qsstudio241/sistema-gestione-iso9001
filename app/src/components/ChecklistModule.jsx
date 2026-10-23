@@ -20,7 +20,11 @@ import {
   subscribeChecklistSave,
 } from "../utils/checklistQuestionSave";
 import { readPending } from "../utils/checklistPendingStore";
-import { applyPendingAnswersToChecklist } from "../utils/checklistTextMerge";
+import {
+  applyPendingAnswersToChecklist,
+  checklistQuestionBindSignature,
+  countPendingMatches,
+} from "../utils/checklistTextMerge";
 import AskAiButton from "./AskAiButton";
 import "./ChecklistModule.css";
 
@@ -87,6 +91,10 @@ function ChecklistModule({ defaultNorm = "ISO_9001", readOnly = false, forceExpa
 
   useEffect(() => subscribeChecklistSave((snap) => setQuestionSavePhase(snap.phase)), []);
   const pendingAppliedRef = useRef("");
+  const checklistBind = useMemo(
+    () => checklistQuestionBindSignature(currentAudit?.checklist),
+    [currentAudit?.checklist],
+  );
   useEffect(() => {
     resumeChecklistPendingSends();
     const auditUuid = currentAudit?.metadata?.id || currentAudit?.id;
@@ -96,13 +104,14 @@ function ChecklistModule({ defaultNorm = "ISO_9001", readOnly = false, forceExpa
     const organizationId = apiService.getStoredUser?.()?.organization_id ?? null;
     const pending = Object.values(readPending(organizationId, auditUuid).questions || {});
     if (pending.length === 0) return;
+    if (countPendingMatches(currentAudit?.checklist, pending) === 0) return;
     pendingAppliedRef.current = key;
     updateCurrentAudit((audit) => {
       const copy = JSON.parse(JSON.stringify(audit));
       applyPendingAnswersToChecklist(copy.checklist, pending);
       return copy;
     }, { skipSync: true });
-  }, [currentAudit?.metadata?.id, currentAudit?.id, updateCurrentAudit]);
+  }, [currentAudit?.metadata?.id, currentAudit?.id, currentAudit?.checklist, checklistBind, updateCurrentAudit]);
 
   // Hook gestione allegati
   const attachments = useAttachmentManager(currentAudit, updateCurrentAudit);

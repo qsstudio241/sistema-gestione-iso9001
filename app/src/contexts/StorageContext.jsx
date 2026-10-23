@@ -2025,10 +2025,13 @@ export function StorageProvider({ children, useMockData = false }) {
 
             const auditUuid = updated.id || updated.metadata?.id;
 
-            // Le risposte delle domande partono dal salvataggio a differenze
-            // (checklistQuestionSave). Qui si invia solo la scheda audit, in differita,
-            // e solo se un campo della scheda è davvero cambiato.
-            if (!skipSync && !isHydratingRef.current && !isSystemCall && auditUuid) {
+            // Le risposte delle domande partono dal salvataggio a differenze.
+            // La scheda parte solo se un suo campo è cambiato. Il passaggio
+            // draft → in corso va comunque inviato, anche se la modifica è una domanda.
+            const statusJustStarted = !isSystemCall
+              && audit?.metadata?.status === 'draft'
+              && updated?.metadata?.status === 'in_progress';
+            if ((!skipSync || statusJustStarted) && !isHydratingRef.current && !isSystemCall && auditUuid) {
               const storedServerTs = localStorage.getItem(`sgq_srv_ts_${auditUuid}`);
               const serverTsMs = storedServerTs ? new Date(storedServerTs).getTime() : 0;
               const syncUpdatedAt = new Date(Math.max(Date.now(), serverTsMs + 1)).toISOString();

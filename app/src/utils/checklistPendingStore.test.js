@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  confirmedPayloads,
   countAllPending,
   countPendingForAudit,
   forgetMatchingQuestions,
@@ -83,6 +84,20 @@ describe('checklistPendingStore', () => {
     }], storage);
     expect(countPendingForAudit(4, 'abcd', storage)).toBe(1);
     expect(listPendingQuestions(storage)[0].status).toBe('NC');
+  });
+
+  it('un HTTP 200 con errore sulla clausola non conferma quella bozza', () => {
+    const ok = { questionId: 7, clauseRef: '4.1', auditUuid: 'abcd' };
+    const bad = { questionId: null, clauseRef: '4.2', auditUuid: 'abcd' };
+    const result = {
+      results: [{
+        results: {
+          errors: [{ clause_ref: '4.2', question_id: null, error: 'Question not found' }],
+        },
+      }],
+    };
+    const confirmed = confirmedPayloads([ok, bad], result);
+    expect(confirmed).toEqual([ok]);
   });
 
   it('registra il conflitto una sola volta', () => {

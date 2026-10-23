@@ -3,6 +3,8 @@ import {
   shouldKeepLocalText,
   pickMergedNotes,
   applyServerResponsesPreservingLocalNotes,
+  checklistQuestionBindSignature,
+  countPendingMatches,
   mergeChecklistStructuresLocalRichWins,
   localChecklistIsRicher,
   resolveMergedChecklistForReconcile,
@@ -85,6 +87,23 @@ describe('checklistTextMerge', () => {
     );
     expect(checklist.ISO_9001['4.1'].questions[0].status).toBe('C');
     expect(checklist.ISO_9001['4.1'].questions[0].notes).toBe('sul telefono');
+  });
+
+  it('la bozza si applica solo quando la domanda è già in checklist, e la firma cambia con gli id', () => {
+    const pending = [{ questionId: 42, clauseRef: '4.1', status: 'C', notes: 'bozza' }];
+    const empty = {};
+    expect(countPendingMatches(empty, pending)).toBe(0);
+    expect(checklistQuestionBindSignature(empty)).toBe('0:0');
+    const withoutId = {
+      ISO_9001: { '4.1': { questions: [{ clauseRef: '4.1', status: 'NOT_ANSWERED', notes: '' }] } },
+    };
+    expect(checklistQuestionBindSignature(withoutId)).toBe('1:0');
+    expect(countPendingMatches(withoutId, pending)).toBe(1);
+    const withId = {
+      ISO_9001: { '4.1': { questions: [{ questionId: 42, clauseRef: '4.1', status: 'NOT_ANSWERED', notes: '' }] } },
+    };
+    expect(checklistQuestionBindSignature(withId)).toBe('1:1');
+    expect(checklistQuestionBindSignature(withId)).not.toBe(checklistQuestionBindSignature(withoutId));
   });
 
   it('resolveMergedChecklistForReconcile unisce quando locale più ricco', () => {

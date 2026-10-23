@@ -59,6 +59,44 @@ export function applyServerResponsesPreservingLocalNotes(checklist, responseMap,
   return applied;
 }
 
+export function checklistQuestionBindSignature(checklist) {
+  let total = 0;
+  let withId = 0;
+  if (!checklist) return '0:0';
+  Object.values(checklist).forEach((normData) => {
+    if (!normData || typeof normData !== 'object') return;
+    Object.values(normData).forEach((clauseData) => {
+      clauseData?.questions?.forEach((q) => {
+        total += 1;
+        if (q?.questionId != null && q.questionId !== '') withId += 1;
+      });
+    });
+  });
+  return `${total}:${withId}`;
+}
+
+export function countPendingMatches(checklist, pendingQuestions) {
+  if (!checklist || !Array.isArray(pendingQuestions) || pendingQuestions.length === 0) return 0;
+  const byId = new Map();
+  const byClause = new Map();
+  pendingQuestions.forEach((item) => {
+    if (item?.questionId != null && item.questionId !== '') byId.set(String(item.questionId), item);
+    if (item?.clauseRef) byClause.set(String(item.clauseRef), item);
+  });
+  let matches = 0;
+  Object.values(checklist).forEach((normData) => {
+    if (!normData || typeof normData !== 'object') return;
+    Object.values(normData).forEach((clauseData) => {
+      clauseData?.questions?.forEach((q) => {
+        const pending = (q.questionId != null && byId.get(String(q.questionId)))
+          || (q.clauseRef && byClause.get(String(q.clauseRef)));
+        if (pending) matches += 1;
+      });
+    });
+  });
+  return matches;
+}
+
 export function applyPendingAnswersToChecklist(checklist, pendingQuestions) {
   if (!checklist || !Array.isArray(pendingQuestions) || pendingQuestions.length === 0) return checklist;
   const byId = new Map();
