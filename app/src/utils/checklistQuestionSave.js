@@ -11,6 +11,7 @@ import {
 const scheduler = createChecklistSaveScheduler({
   debounceMs: DEFAULT_DEBOUNCE_MS,
   send: (payload, opts) => syncService.postQuestionSave(payload, opts),
+  sendMany: (payloads, opts) => syncService.postQuestionSaves(payloads, opts),
 });
 
 let guardsInstalled = false;

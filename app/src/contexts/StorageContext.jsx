@@ -43,6 +43,7 @@ import {
   forgetCurrentAuditId,
   pickRestoredAuditId,
   rememberCurrentAuditId,
+  resolveAuditId,
 } from "../utils/currentAuditSession";
 
 /** Lettura coda sync: fallimento → [] (hydrate procede, non blocca). */
@@ -1179,7 +1180,7 @@ export function StorageProvider({ children, useMockData = false }) {
           setCurrentAuditId((prev) => {
             if (!prev) return prev;
             if (recentlyDeletedRef.current.has(prev) || isInTombstone(prev)) return null;
-            return finalAudits.some((a) => auditUuid(a) === prev) ? prev : null;
+            return resolveAuditId(finalAudits, prev);
           });
           return { success: true, count: finalAudits.length, serverEmpty: true, preservedLocal: true };
         }
@@ -1205,7 +1206,7 @@ export function StorageProvider({ children, useMockData = false }) {
         setCurrentAuditId((prev) => {
           if (!prev) return prev;
           if (recentlyDeletedRef.current.has(prev) || isInTombstone(prev)) return null;
-          return finalAudits.some((a) => auditUuid(a) === prev) ? prev : null;
+          return resolveAuditId(finalAudits, prev);
         });
         return { success: true, count: finalAudits.length, serverEmpty: true };
       }
@@ -1371,8 +1372,7 @@ export function StorageProvider({ children, useMockData = false }) {
         if (!prev) return prev;
         // Audit eliminato (in-sessione o tombstone persistente): azzera currentAuditId.
         if (recentlyDeletedRef.current.has(prev) || isInTombstone(prev)) return null;
-        const exists = finalAudits.some((a) => (a.metadata?.id || a.id) === prev);
-        return exists ? prev : null;
+        return resolveAuditId(finalAudits, prev);
       });
 
       return { success: true, count: finalAudits.length };

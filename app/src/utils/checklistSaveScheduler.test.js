@@ -99,6 +99,29 @@ describe('checklistSaveScheduler', () => {
     expect(sched.snapshot().phase).toBe('saved');
   });
 
+  it('al refresh manda tutte le domande ancora aperte in un solo invio', async () => {
+    const send = vi.fn().mockResolvedValue(undefined);
+    const sendMany = vi.fn().mockResolvedValue(undefined);
+    const clock = fakeClock();
+    const sched = createChecklistSaveScheduler({
+      debounceMs: 1000,
+      send,
+      sendMany,
+      setTimer: clock.setTimer,
+      clearTimer: clock.clearTimer,
+    });
+    sched.schedule('q1', { n: 1 });
+    sched.schedule('q2', { n: 2 });
+    sched.schedule('q3', { n: 3 });
+    await sched.flushAllNow({ keepalive: true });
+    expect(send).not.toHaveBeenCalled();
+    expect(sendMany).toHaveBeenCalledTimes(1);
+    expect(sendMany.mock.calls[0][0]).toEqual([{ n: 1 }, { n: 2 }, { n: 3 }]);
+    expect(sendMany.mock.calls[0][1]).toEqual({ keepalive: true });
+    expect(sched.snapshot().phase).toBe('saved');
+    expect(sched.snapshot().saved).toBe(3);
+  });
+
   it('al refresh invia subito la modifica ancora in attesa', async () => {
     const send = vi.fn().mockResolvedValue(undefined);
     const clock = fakeClock();

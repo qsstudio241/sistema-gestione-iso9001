@@ -861,6 +861,49 @@ export class SyncService {
     }
 
     /**
+     * Un solo invio con tutte le domande ancora aperte (refresh a metà compilazione).
+     * Più richieste keepalive vengono scartate dal browser.
+     */
+    async postQuestionSaves(jobs, { keepalive = false } = {}) {
+        const list = (Array.isArray(jobs) ? jobs : []).filter(
+            (job) => job && job.auditUuid && job.questionId != null,
+        );
+        if (list.length === 0) return;
+        const groups = new Map();
+        for (const job of list) {
+            const key = String(job.auditUuid);
+            if (!groups.has(key)) groups.set(key, []);
+            groups.get(key).push(job);
+        }
+        const tasks = [];
+        for (const [auditUuid, group] of groups) {
+            const chunkSize = 20;
+            for (let i = 0; i < group.length; i += chunkSize) {
+                const chunk = group.slice(i, i + chunkSize);
+                if (import.meta.env.VITE_SYNC_MODE === 'events') {
+                    const events = chunk.map((job) => this.buildResponseEvent(
+                        auditUuid,
+                        job.questionId,
+                        job.status,
+                        job.notes ?? null,
+                    ));
+                    tasks.push(apiService.post(`/audits/${auditUuid}/events`, { events }, {
+                        keepalive,
+                        lockAuditUuid: auditUuid,
+                    }));
+                } else {
+                    tasks.push(apiService.bulkSaveResponses(auditUuid, chunk.map((job) => ({
+                        question_id: job.questionId,
+                        conformity_status: job.status ?? null,
+                        notes: job.notes ?? null,
+                    })), { keepalive }));
+                }
+            }
+        }
+        await Promise.all(tasks);
+    }
+
+    /**
      * GAP-B3: accoda un evento custom_response_set per il percorso event-based T3 custom.
      * Analogo a enqueueResponseEvent ma per audit_custom_checklist_responses.
      * Usato solo se VITE_SYNC_MODE === 'events'.

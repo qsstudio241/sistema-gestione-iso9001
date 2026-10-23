@@ -28,6 +28,7 @@ function retryDelayMs(err, attempt) {
 function createChecklistSaveScheduler({
   debounceMs = DEFAULT_DEBOUNCE_MS,
   send,
+  sendMany = null,
   setTimer = (fn, ms) => setTimeout(fn, ms),
   clearTimer = (id) => clearTimeout(id),
 } = {}) {
@@ -152,6 +153,43 @@ function createChecklistSaveScheduler({
   }
 
   function flushAllNow({ keepalive = false } = {}) {
+    if (keepalive && typeof sendMany === 'function') {
+      const batch = [];
+      const keys = [];
+      for (const [key, slot] of slots) {
+        if (slot.timer) clearTimer(slot.timer);
+        slot.timer = null;
+        if (slot.latest == null) continue;
+        const needsSend = slot.status !== 'saved' || slot.dirty || slot.inFlight;
+        if (!needsSend) continue;
+        batch.push(slot.latest);
+        keys.push(key);
+        slot.inFlight = true;
+        slot.dirty = false;
+        slot.status = 'saving';
+      }
+      emit();
+      if (batch.length === 0) return Promise.resolve();
+      return Promise.resolve(sendMany(batch, { keepalive: true }))
+        .then(() => {
+          for (const key of keys) {
+            const slot = slots.get(key);
+            if (!slot) continue;
+            slot.inFlight = false;
+            slot.status = slot.dirty ? 'pending' : 'saved';
+          }
+          emit();
+        })
+        .catch((err) => {
+          for (const key of keys) {
+            const slot = slots.get(key);
+            if (!slot) continue;
+            slot.inFlight = false;
+            slot.status = isRetryableSaveError(err) ? 'retrying' : 'error';
+          }
+          emit();
+        });
+    }
     const jobs = [];
     for (const [key, slot] of slots) {
       if (slot.timer) clearTimer(slot.timer);
