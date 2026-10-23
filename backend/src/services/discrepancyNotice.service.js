@@ -309,7 +309,7 @@ async function saveNoticeRow(fields) {
         `, fields);
         if (existing.recordset.length) {
             const prior = existing.recordset[0];
-            if (prior.status === STATUS.CONFERMATO && fields.status === STATUS.CORRETTO) return;
+            // Correggi sulla stessa impronta scrive lo storico. Senza questa azione la conferma resta chiusa.
             const kept = {
                 ...fields,
                 id: prior.id,

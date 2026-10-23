@@ -220,4 +220,66 @@ describe('Correggi di un campo chiave che era vuoto', () => {
             expect(query.mock.calls.some(([sql]) => /UPDATE wpqr_records/i.test(sql))).toBe(false);
         }
     });
+
+    test('dopo una conferma, Correggi sulla stessa impronta scrive lo storico e non riapre da sola', async () => {
+        const emptyEnte = { ...KEY_FILLED, examiner_body: '', testing_body: '', issuing_body: '' };
+        const open = evaluateWpqrNotices(emptyEnte).find((notice) => notice.code === CODES.KEYS);
+        const conferma = {
+            rule_code: open.code,
+            fingerprint: open.fingerprint,
+            status: STATUS.CONFERMATO,
+            note: 'Sul PDF l\'ente non c\'è: il dato è giusto così.',
+        };
+        const closed = applyResolution(open, pickResolution(open, [conferma]));
+        expect(closed.status).toBe(STATUS.CONFERMATO);
+        expect(closed.blocks_conformity).toBe(false);
+
+        const saved = {
+            ...KEY_FILLED,
+            examiner_body: 'RINA',
+            testing_body: 'RINA',
+            issuing_body: 'RINA',
+        };
+        query.mockImplementation(async (sql) => {
+            if (/FROM wpqr_test_runs/i.test(sql)) return { recordset: [] };
+            if (/FROM wpqr_records/i.test(sql)) return { recordset: [saved] };
+            if (/FROM discrepancy_notices/i.test(sql) && /SELECT id, status/i.test(sql)) {
+                return {
+                    recordset: [{
+                        id: 9,
+                        status: 'confermato',
+                        reason: null,
+                        request_draft: null,
+                        previous_value: null,
+                        new_value: null,
+                        field_name: 'testing_body',
+                    }],
+                };
+            }
+            return { recordset: [] };
+        });
+
+        await actOnWpqrNotice({
+            organizationId: 1005,
+            wpqrId: 51,
+            userId: 7,
+            action: 'correggi',
+            ruleCode: 'WPQR.KEY_FIELDS_EMPTY',
+            field: 'testing_body',
+            newValue: 'RINA',
+            previousValue: '',
+            fingerprint: open.fingerprint,
+        });
+
+        const noticeUpdate = query.mock.calls.find(([sql]) => /UPDATE discrepancy_notices/i.test(sql));
+        expect(noticeUpdate).toBeTruthy();
+        expect(noticeUpdate[0]).toMatch(/SYSUTCDATETIME\(\)/);
+        expect(noticeUpdate[1].status).toBe('corretto');
+        expect(noticeUpdate[1].previous_value).toBe('');
+        expect(noticeUpdate[1].new_value).toBe('RINA');
+        expect(noticeUpdate[1].field_name).toBe('testing_body');
+        expect(noticeUpdate[1].acted_by).toBe(7);
+        expect(noticeUpdate[1].fingerprint).toBe(open.fingerprint);
+        expect(query.mock.calls.some(([sql]) => /UPDATE wpqr_records/i.test(sql))).toBe(false);
+    });
 });
