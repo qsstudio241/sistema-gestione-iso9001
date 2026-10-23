@@ -201,6 +201,7 @@ async function pushWpqrCompanyScope(user, conditions, params, prefix) {
 
 const { describeIngestFileError, redactFileNameForLog } = require('../utils/ingestErrorMessage');
 const wpqrTestRuns = require('../services/wpqrTestRuns.service');
+const discrepancyNotices = require('../services/discrepancyNotice.service');
 
 /**
  * Campi WPQR modificabili da form/API manuale (updateWPQR) — fonte unica,
@@ -227,6 +228,7 @@ const WPQR_MANUAL_EDITABLE_FIELDS = [
     'thickness_t2_min', 'thickness_t2_max', 'thickness_t2_max_unlimited',
     // STUD-1: stud/prigioniero + Parent Metal 2 (mig. 159)
     'qualifying_element', 'base_material_group_2', 'base_material_spec_2',
+    'material_group_range', 'fillet_throat_range',
     ...wpqrTestRuns.WPQR_TEST_HEADER_FIELDS,
 ];
 
@@ -770,13 +772,17 @@ async function listWPQR(req, res) {
             conditions.push('wq.company_id = @company_id');
             params.company_id = parsedCompany.value;
         }
-        if (approval_status) {
-            conditions.push('wq.approval_status = @approval_status');
-            params.approval_status = approval_status;
-        }
         if (search) {
             conditions.push('(wq.wpqr_code LIKE @search OR wq.reference_number LIKE @search OR wq.testing_body LIKE @search OR wq.examiner_body LIKE @search OR wq.welder_name LIKE @search)');
             params.search = `%${search}%`;
+        }
+        if (approval_status === 'da_rivedere' || approval_status === 'approvata') {
+            const classified = await discrepancyNotices.classifyWpqrIds(organization_id, conditions, params);
+            const ids = approval_status === 'da_rivedere' ? classified.daRivedere : classified.verificate;
+            discrepancyNotices.pushIdFilter(conditions, params, ids, 'avviso');
+        } else if (approval_status) {
+            conditions.push('wq.approval_status = @approval_status');
+            params.approval_status = approval_status;
         }
 
         const where = conditions.join(' AND ');
@@ -800,10 +806,11 @@ async function listWPQR(req, res) {
         `, params);
 
         const total = countResult.recordset[0].total;
+        const data = await discrepancyNotices.decorateWpqrRows(organization_id, result.recordset);
 
         res.json({
             success: true,
-            data: result.recordset,
+            data,
             pagination: {
                 page:       parseInt(page),
                 limit:      parseInt(limit),
@@ -838,7 +845,8 @@ async function getWPQR(req, res) {
         }
         if (await denyOutsideCompany(res, req.user, wpqrScopeCompany(result.recordset[0]), 'read')) return;
 
-        res.json({ success: true, data: result.recordset[0] });
+        const [data] = await discrepancyNotices.decorateWpqrRows(organization_id, result.recordset);
+        res.json({ success: true, data });
     } catch (error) {
         logger.error('Error getting WPQR', { error: error.message });
         res.status(500).json({ error: 'Errore durante il recupero del WPQR', code: 'WPQR_GET_ERROR' });
@@ -868,6 +876,7 @@ async function createWPQR(req, res) {
             thickness_t1_min, thickness_t1_max, thickness_t1_max_unlimited,
             thickness_t2_min, thickness_t2_max, thickness_t2_max_unlimited,
             qualifying_element, base_material_group_2, base_material_spec_2,
+            material_group_range, fillet_throat_range,
         } = req.body;
 
         const bodyCompany = parseListCompanyId(req.body.company_id);
@@ -908,6 +917,7 @@ async function createWPQR(req, res) {
                 thickness_t1_min, thickness_t1_max, thickness_t1_max_unlimited,
                 thickness_t2_min, thickness_t2_max, thickness_t2_max_unlimited,
                 qualifying_element, base_material_group_2, base_material_spec_2,
+                material_group_range, fillet_throat_range,
                 approval_status, status,
                 created_by, created_at, updated_at
             )
@@ -927,6 +937,7 @@ async function createWPQR(req, res) {
                 @thickness_t1_min, @thickness_t1_max, @thickness_t1_max_unlimited,
                 @thickness_t2_min, @thickness_t2_max, @thickness_t2_max_unlimited,
                 @qualifying_element, @base_material_group_2, @base_material_spec_2,
+                @material_group_range, @fillet_throat_range,
                 'bozza', 'attiva',
                 @created_by, GETDATE(), GETDATE()
             )
@@ -987,6 +998,8 @@ async function createWPQR(req, res) {
             qualifying_element:  qualifying_element || null,
             base_material_group_2: base_material_group_2 || null,
             base_material_spec_2:  base_material_spec_2 || null,
+            material_group_range: material_group_range || null,
+            fillet_throat_range:  fillet_throat_range || null,
             created_by:         user_id,
         });
 
@@ -1387,7 +1400,11 @@ async function getWPQRStats(req, res) {
             WHERE ${conditions.join(' AND ')}
         `, params);
 
-        res.json({ success: true, data: result.recordset[0] });
+        const classified = await discrepancyNotices.classifyWpqrIds(organization_id, conditions, params);
+        const data = result.recordset[0] || {};
+        data.da_rivedere = classified.daRivedere.length;
+        data.approvate = classified.verificate.length;
+        res.json({ success: true, data });
     } catch (error) {
         logger.error('Error getting WPQR stats', { error: error.message });
         res.status(500).json({ error: 'Errore stats WPQR', code: 'WPQR_STATS_ERROR' });
@@ -1542,6 +1559,7 @@ async function uploadWPQRBatch(req, res) {
                     field_confidence: extracted.field_confidence,
                     confidence: extracted.confidence,
                     warnings: extracted.warnings || [],
+                    discrepancy_notices: extracted.discrepancy_notices || [],
                 };
             } catch (err) {
                 const errMsg = describeIngestFileError(err);
@@ -1963,6 +1981,131 @@ async function uploadWeldSketch(req, res) {
     }
 }
 
+async function previewWpqrNotices(req, res) {
+    try {
+        const body = req.body || {};
+        const record = body.record || body.fields || {};
+        const runs = body.runs || record.test_runs || [];
+        const notices = discrepancyNotices.mergeNotices(record, runs, body.resolutions || []);
+        const open = notices.filter((item) => item.blocks_conformity).length;
+        res.json({ success: true, data: { discrepancy_notices: notices, open_notice_count: open } });
+    } catch (error) {
+        logger.error('Error previewing WPQR notices', { error: error.message });
+        res.status(500).json({ error: 'Errore anteprima avvisi WPQR', code: 'WPQR_NOTICE_PREVIEW_ERROR' });
+    }
+}
+
+async function listWpqrSignals(req, res) {
+    try {
+        const { organization_id } = req.user;
+        const parsedCompany = parseListCompanyId(req.query.company_id);
+        if (parsedCompany.error) {
+            return res.status(400).json({ error: 'company_id non valido.', code: 'INVALID_COMPANY_ID' });
+        }
+        if (parsedCompany.value != null) {
+            if (await denyOutsideCompany(res, req.user, parsedCompany.value, 'read')) return;
+        }
+        const conditions = [
+            'wq.organization_id = @organization_id',
+            'wq.deleted_at IS NULL',
+        ];
+        const params = { organization_id };
+        await pushWpqrCompanyScope(req.user, conditions, params, 'sigco');
+        if (parsedCompany.value != null) {
+            conditions.push('wq.company_id = @company_id');
+            params.company_id = parsedCompany.value;
+        }
+        const data = await discrepancyNotices.listWpqrSignals({
+            conditions,
+            params,
+            reason: req.query.reason ? String(req.query.reason) : null,
+            status: req.query.status ? String(req.query.status) : null,
+        });
+        res.json({ success: true, data });
+    } catch (error) {
+        const status = error.status || 500;
+        if (status >= 500) logger.error('Error listing WPQR signals', { error: error.message });
+        res.status(status).json({
+            error: error.message || 'Errore elenco segnalazioni',
+            code: error.code || 'WPQR_SIGNALS_ERROR',
+        });
+    }
+}
+
+async function approveWpqrSignalExample(req, res) {
+    try {
+        const { organization_id, user_id, role } = req.user;
+        if (role !== 'admin' && role !== 'superadmin') {
+            return res.status(403).json({ error: 'Permesso insufficiente', code: 'FORBIDDEN' });
+        }
+        const id = parseInt(req.params.id, 10);
+        if (!Number.isInteger(id) || id <= 0) {
+            return res.status(400).json({ error: 'Segnalazione non valida', code: 'VALIDATION_ERROR' });
+        }
+        const existing = await query(`
+            SELECT wq.company_id
+            FROM discrepancy_notices n
+            INNER JOIN wpqr_records wq
+                ON wq.id = n.entity_id AND wq.organization_id = n.organization_id AND wq.deleted_at IS NULL
+            WHERE n.id = @id AND n.organization_id = @organization_id AND n.domain = N'wpqr'
+        `, { id, organization_id });
+        if (existing.recordset.length === 0) {
+            return res.status(404).json({ error: 'Segnalazione non trovata', code: 'NOTICE_NOT_FOUND' });
+        }
+        if (await denyOutsideCompany(res, req.user, existing.recordset[0].company_id, 'write')) return;
+        const data = await discrepancyNotices.approveLearningExample({
+            organizationId: organization_id,
+            noticeId: id,
+            userId: user_id,
+        });
+        res.json({ success: true, data });
+    } catch (error) {
+        const status = error.status || 500;
+        if (status >= 500) logger.error('Error approving WPQR learning example', { error: error.message });
+        res.status(status).json({
+            error: error.message || 'Errore approvazione esempio',
+            code: error.code || 'WPQR_SIGNAL_APPROVE_ERROR',
+        });
+    }
+}
+
+async function actWpqrNotice(req, res) {
+    try {
+        const id = parseInt(req.params.id, 10);
+        const { organization_id, user_id } = req.user;
+        if (!Number.isInteger(id) || id <= 0) {
+            return res.status(400).json({ error: 'WPQR non valida', code: 'VALIDATION_ERROR' });
+        }
+        const existing = await query(WPQR_SCOPE_SQL, { id, organization_id });
+        if (existing.recordset.length === 0) {
+            return res.status(404).json({ error: 'WPQR non trovato', code: 'WPQR_NOT_FOUND' });
+        }
+        if (await denyOutsideCompany(res, req.user, wpqrScopeCompany(existing.recordset[0]), 'write')) return;
+        const data = await discrepancyNotices.actOnWpqrNotice({
+            organizationId: organization_id,
+            wpqrId: id,
+            userId: user_id,
+            action: req.body && req.body.action,
+            ruleCode: req.body && req.body.rule_code,
+            note: req.body && req.body.note,
+            reason: req.body && req.body.reason,
+            newValue: req.body && req.body.new_value,
+            previousValue: req.body && req.body.previous_value,
+            field: req.body && req.body.field,
+            fingerprint: req.body && req.body.fingerprint,
+            message: req.body && req.body.message_it,
+        });
+        res.json({ success: true, data });
+    } catch (error) {
+        const status = error.status || 500;
+        if (status >= 500) logger.error('Error acting on WPQR notice', { error: error.message });
+        res.status(status).json({
+            error: error.message || 'Errore azione avviso WPQR',
+            code: error.code || 'WPQR_NOTICE_ERROR',
+        });
+    }
+}
+
 module.exports = {
     listWPS,
     getWPS,
@@ -1982,6 +2125,10 @@ module.exports = {
     removeWpsWelder,
     // New
     getWPQRStats,
+    previewWpqrNotices,
+    listWpqrSignals,
+    approveWpqrSignalExample,
+    actWpqrNotice,
     approveWPQR,
     rejectWPQR,
     uploadWPQRBatch,

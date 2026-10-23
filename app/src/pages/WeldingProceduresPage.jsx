@@ -10,6 +10,9 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import apiService from "../services/apiService";
 import { useCompanyScope } from "../contexts/CompanyScopeContext";
+import { useAuthOptional } from "../contexts/AuthContext";
+import DiscrepancyNotices, { WpqrSignalsList } from "../components/DiscrepancyNotices";
+import noticeTexts from "@sgq-notice-texts";
 import { numericCompanyScopeId } from "../utils/appCompanyScope";
 import { formatDate } from "../utils/dateHelpers";
 import WpqrUploadButton from "../components/WpqrUploadButton";
@@ -63,12 +66,16 @@ function ApprovalBadge({ approvalStatus }) {
     approvata: { cls: "wp-approval wp-approval-approvata", label: "Approvata" },
     rifiutata: { cls: "wp-approval wp-approval-rifiutata", label: "Rifiutata" },
     bozza:     { cls: "wp-approval wp-approval-bozza",     label: "Bozza" },
+    da_rivedere: { cls: "wp-approval wp-approval-da_rivedere", label: "Da rivedere" },
   };
   const { cls, label } = map[approvalStatus] || map.bozza;
   return <span className={cls}>{label}</span>;
 }
 
 function SemaforoDot({ approvalStatus }) {
+  if (approvalStatus === "da_rivedere") {
+    return <span className="wp-sem wp-sem-ambra" title="Da rivedere" />;
+  }
   if (approvalStatus && approvalStatus !== "approvata") {
     return <span className="wp-sem wp-sem-grigio" title="Non approvata" />;
   }
@@ -828,6 +835,10 @@ export function buildWpqrSavePayload(form, scopeCompanyId) {
   delete payload.linked_wps_id;
   delete payload.linked_wps_code;
   delete payload.company_name;
+  delete payload.discrepancy_notices;
+  delete payload.open_notice_count;
+  delete payload.effective_approval_status;
+  delete payload.conformity_verified;
   payload.company_id = companyText ? Number(companyText) : null;
   payload.wps_ref = payload.wps_ref ? String(payload.wps_ref).trim() : null;
   return payload;
@@ -863,6 +874,7 @@ function WPQRFormModal({ wpqr, defaultCompanyId, onSave, onClose, onSaved }) {
     throat_test_mm: "", product_type: "", rotated_position: false,
     // STUD-1: stud/prigioniero + Parent Metal 2
     qualifying_element: "", base_material_group_2: "", base_material_spec_2: "",
+    material_group_range: "", fillet_throat_range: "",
     ...seeded,
     company_id: numericCompanyScopeId(defaultCompanyId)
       ? Number(numericCompanyScopeId(defaultCompanyId))
@@ -870,8 +882,123 @@ function WPQRFormModal({ wpqr, defaultCompanyId, onSave, onClose, onSaved }) {
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+  const [notices, setNotices] = useState(() => wpqr?.discrepancy_notices || []);
+  const [noticeHistory, setNoticeHistory] = useState(() => wpqr?.notice_history || []);
+  const [noticeBusy, setNoticeBusy] = useState(null);
+  const previewGen = useRef(0);
+  const [noticeRuns, setNoticeRuns] = useState(() => (
+    Array.isArray(wpqr?.test_runs) ? wpqr.test_runs : []
+  ));
+  const [noticeRunsReady, setNoticeRunsReady] = useState(
+    () => !wpqr?.id || Array.isArray(wpqr?.test_runs),
+  );
+  const [noticeRunsFailed, setNoticeRunsFailed] = useState(false);
+  const resolutionsRef = useRef(
+    (wpqr?.discrepancy_notices || [])
+      .filter((n) => n.status && n.status !== "aperto")
+      .map((n) => ({
+        rule_code: n.code,
+        fingerprint: n.fingerprint,
+        status: n.status,
+        note: n.note || null,
+      })),
+  );
+  const auth = useAuthOptional();
+  const canWrite = !!(auth && typeof auth.canWriteModule === "function" && auth.canWriteModule(form.company_id));
+  const canAct = canWrite && !!savedIdRef.current;
+  const lockedTitle = canWrite
+    ? "Salva la WPQR prima di registrare l'azione"
+    : "Sola lettura: non puoi confermare, correggere o segnalare l'avviso";
 
   const set = (key, val) => setForm((f) => ({ ...f, [key]: val }));
+
+  useEffect(() => {
+    const id = wpqr?.id;
+    setNoticeRunsFailed(false);
+    if (!id || Array.isArray(wpqr?.test_runs) || typeof apiService.getWpqrTestRuns !== "function") {
+      if (Array.isArray(wpqr?.test_runs)) setNoticeRuns(wpqr.test_runs);
+      setNoticeRunsReady(true);
+      return undefined;
+    }
+    let cancelled = false;
+    setNoticeRunsReady(false);
+    apiService.getWpqrTestRuns(id)
+      .then((res) => {
+        if (cancelled) return;
+        setNoticeRuns(Array.isArray(res?.runs) ? res.runs : []);
+        setNoticeRunsFailed(false);
+        setNoticeRunsReady(true);
+      })
+      .catch(() => {
+        if (!cancelled) setNoticeRunsFailed(true);
+      });
+    return () => { cancelled = true; };
+  }, [wpqr]);
+
+  useEffect(() => {
+    if (typeof apiService.previewWpqrNotices !== "function") return undefined;
+    if (noticeRunsFailed) return undefined;
+    if (wpqr?.id && !noticeRunsReady) return undefined;
+    const gen = previewGen.current + 1;
+    previewGen.current = gen;
+    const timer = setTimeout(async () => {
+      try {
+        const res = await apiService.previewWpqrNotices({
+          record: form,
+          runs: noticeRuns,
+          resolutions: resolutionsRef.current,
+        });
+        if (previewGen.current === gen) setNotices(res?.data?.discrepancy_notices || []);
+      } catch {
+        /* l'ultimo elenco resta visibile */
+      }
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [form, wpqr, noticeRuns, noticeRunsReady, noticeRunsFailed]);
+
+  function focusNoticeField(field) {
+    if (!field) return;
+    const el = document.querySelector(`[data-wpqr-field="${field}"]`);
+    if (el && typeof el.focus === "function") el.focus();
+  }
+
+  async function handleNoticeAction(notice, action, payload = {}) {
+    const id = savedIdRef.current;
+    if (!id || typeof apiService.actWpqrNotice !== "function") return;
+    previewGen.current += 1;
+    setNoticeBusy(notice.code);
+    setError(null);
+    try {
+      const res = await apiService.actWpqrNotice(id, {
+        action,
+        rule_code: notice.code,
+        note: payload.note,
+        reason: payload.reason,
+        new_value: payload.new_value,
+        previous_value: notice.current_value,
+        field: notice.field,
+      });
+      const row = res?.data;
+      if (action === "correggi" && notice.field) set(notice.field, payload.new_value);
+      if (row?.discrepancy_notices) {
+        setNotices(row.discrepancy_notices);
+        resolutionsRef.current = row.discrepancy_notices
+          .filter((n) => n.status && n.status !== "aperto")
+          .map((n) => ({
+            rule_code: n.code,
+            fingerprint: n.fingerprint,
+            status: n.status,
+            note: n.note || null,
+          }));
+      }
+      if (row?.notice_history) setNoticeHistory(row.notice_history);
+      onSaved?.();
+    } catch (err) {
+      setError(err?.data?.error || err?.message || "Azione sull'avviso non registrata.");
+    } finally {
+      setNoticeBusy(null);
+    }
+  }
   const isStudJoint = String(form.joint_type || "").toUpperCase() === "SW";
   const diameterLabelMin = isStudJoint
     ? "Diametro prigioniero - min (mm)"
@@ -929,6 +1056,24 @@ function WPQRFormModal({ wpqr, defaultCompanyId, onSave, onClose, onSaved }) {
           const res = await apiService.createWPQR(payload);
           savedIdRef.current = res?.data?.id || null;
         }
+        if (savedIdRef.current && typeof apiService.getWPQR === "function") {
+          try {
+            const fresh = await apiService.getWPQR(savedIdRef.current);
+            if (fresh?.data?.discrepancy_notices) {
+              setNotices(fresh.data.discrepancy_notices);
+              resolutionsRef.current = fresh.data.discrepancy_notices
+                .filter((n) => n.status && n.status !== "aperto")
+                .map((n) => ({
+                  rule_code: n.code,
+                  fingerprint: n.fingerprint,
+                  status: n.status,
+                  note: n.note || null,
+                }));
+            }
+          } catch {
+            /* il salvataggio è già andato a buon fine */
+          }
+        }
         setAutoSaveStatus('saved');
         onSaved?.();
       } catch (err) {
@@ -972,6 +1117,22 @@ function WPQRFormModal({ wpqr, defaultCompanyId, onSave, onClose, onSaved }) {
         <form onSubmit={e => e.preventDefault()}>
           <div className="wp-modal-body">
             {error && <div className="wp-error">{error}</div>}
+            {noticeRunsFailed && (
+              <p className="disc-notice__help" data-testid="filler-check-skipped">
+                {noticeTexts.UI.fillerCheckSkipped}
+              </p>
+            )}
+            <DiscrepancyNotices
+              notices={notices}
+              history={noticeHistory}
+              values={form}
+              canAct={canAct}
+              canCorrect={canWrite && canAct}
+              lockedTitle={lockedTitle}
+              busyCode={noticeBusy}
+              onAction={handleNoticeAction}
+              onFocusField={focusNoticeField}
+            />
             {creatingWithoutCompany && (
               <div className="wp-warn-no-company">
                 {"\u26A0\uFE0F Seleziona un\u2019azienda nell\u2019Ambito in alto prima di creare una WPQR."}
@@ -984,7 +1145,7 @@ function WPQRFormModal({ wpqr, defaultCompanyId, onSave, onClose, onSaved }) {
               </div>
               <div className="wp-form-group">
                 <label className="wp-form-label">Codice WPQR</label>
-                <input className="wp-form-input" value={form.wpqr_code || ""} onChange={(e) => set("wpqr_code", e.target.value)} />
+                <input className="wp-form-input" data-wpqr-field="wpqr_code" value={form.wpqr_code || ""} onChange={(e) => set("wpqr_code", e.target.value)} />
               </div>
               <div className="wp-form-group">
                 <label className="wp-form-label">Data prova</label>
@@ -992,7 +1153,7 @@ function WPQRFormModal({ wpqr, defaultCompanyId, onSave, onClose, onSaved }) {
               </div>
               <div className="wp-form-group">
                 <label className="wp-form-label">Ente / esaminatore</label>
-                <input className="wp-form-input" value={form.testing_body || ""} onChange={(e) => set("testing_body", e.target.value)} placeholder="es. TÜV, IIS - ISSCERT, Bureau Veritas" />
+                <input className="wp-form-input" data-wpqr-field="testing_body" value={form.testing_body || ""} onChange={(e) => set("testing_body", e.target.value)} placeholder="es. TÜV, IIS - ISSCERT, Bureau Veritas" />
               </div>
               <div className="wp-form-group">
                 <label className="wp-form-label">Saldatore</label>
@@ -1000,7 +1161,7 @@ function WPQRFormModal({ wpqr, defaultCompanyId, onSave, onClose, onSaved }) {
               </div>
               <div className="wp-form-group">
                 <label className="wp-form-label">N. Certificato</label>
-                <input className="wp-form-input" value={form.certificate_number || ""} onChange={(e) => set("certificate_number", e.target.value)} />
+                <input className="wp-form-input" data-wpqr-field="certificate_number" value={form.certificate_number || ""} onChange={(e) => set("certificate_number", e.target.value)} />
               </div>
               <div className="wp-form-group">
                 <label className="wp-form-label">Data emissione</label>
@@ -1014,6 +1175,7 @@ function WPQRFormModal({ wpqr, defaultCompanyId, onSave, onClose, onSaved }) {
                 <label className="wp-form-label">Norma riferimento</label>
                 <select
                   className="wp-form-select"
+                  data-wpqr-field="standard_reference"
                   value={
                     !form.standard_reference
                       ? ""
@@ -1072,7 +1234,7 @@ function WPQRFormModal({ wpqr, defaultCompanyId, onSave, onClose, onSaved }) {
               </div>
               <div className="wp-form-group">
                 <label className="wp-form-label">Tipo di giunto</label>
-                <select className="wp-form-select" value={form.joint_type || ""} onChange={(e) => set("joint_type", e.target.value)}>
+                <select className="wp-form-select" data-wpqr-field="joint_type" value={form.joint_type || ""} onChange={(e) => set("joint_type", e.target.value)}>
                   <option value="">-- Seleziona --</option>
                   <option value="BW">BW - Testa a testa</option>
                   <option value="FW">FW - Angolare</option>
@@ -1091,7 +1253,11 @@ function WPQRFormModal({ wpqr, defaultCompanyId, onSave, onClose, onSaved }) {
               </div>
               <div className="wp-form-group">
                 <label className="wp-form-label">Gruppo materiale Parent Metal 1 (ISO/TR 15608)</label>
-                <input className="wp-form-input" value={form.base_material_group || ""} onChange={(e) => set("base_material_group", e.target.value)} placeholder="es. 1.1, 2, 8" />
+                <input className="wp-form-input" data-wpqr-field="base_material_group" value={form.base_material_group || ""} onChange={(e) => set("base_material_group", e.target.value)} placeholder="es. 1.1, 2, 8" />
+              </div>
+              <div className="wp-form-group">
+                <label className="wp-form-label">Campo di validità gruppi</label>
+                <input className="wp-form-input" data-wpqr-field="material_group_range" value={form.material_group_range || ""} onChange={(e) => set("material_group_range", e.target.value)} placeholder="es. 1.1-1.2 oppure 1-1" />
               </div>
               <div className="wp-form-group">
                 <label className="wp-form-label">Gruppo materiale Parent Metal 2</label>
@@ -1103,7 +1269,11 @@ function WPQRFormModal({ wpqr, defaultCompanyId, onSave, onClose, onSaved }) {
               </div>
               <div className="wp-form-group">
                 <label className="wp-form-label">Materiale d'apporto</label>
-                <input className="wp-form-input" value={form.filler_material || ""} onChange={(e) => set("filler_material", e.target.value)} placeholder="es. G 42 4 M21 4Si1" />
+                <input className="wp-form-input" data-wpqr-field="filler_material" value={form.filler_material || ""} onChange={(e) => set("filler_material", e.target.value)} placeholder="es. G 42 4 M21 4Si1" />
+              </div>
+              <div className="wp-form-group">
+                <label className="wp-form-label">Range d&apos;angolo (mm)</label>
+                <input className="wp-form-input" data-wpqr-field="fillet_throat_range" value={form.fillet_throat_range || ""} onChange={(e) => set("fillet_throat_range", e.target.value)} placeholder="es. 6-24" />
               </div>
               <div className="wp-form-group">
                 <label className="wp-form-label">Spessore testato (mm)</label>
@@ -1331,6 +1501,12 @@ function WeldingProceduresPage() {
   const [wpsFilters, setWpsFilters] = useState({ welding_process: "", status: "", search: "" });
   const [wpqrFilters, setWpqrFilters] = useState({ approval_status: "", search: "", wps_id: "" });
   const [wpqrFilterWpsId, setWpqrFilterWpsId] = useState("");
+  const [signals, setSignals] = useState([]);
+  const [signalReason, setSignalReason] = useState("");
+  const [signalStatus, setSignalStatus] = useState("");
+  const [signalsError, setSignalsError] = useState("");
+  const pageAuth = useAuthOptional();
+  const canApproveSignal = pageAuth?.user?.role === "admin" || pageAuth?.user?.role === "superadmin";
 
   // Modals
   const [wpsFormOpen, setWpsFormOpen] = useState(false);
@@ -1431,6 +1607,36 @@ function WeldingProceduresPage() {
   useEffect(() => { loadAllWps(); }, [loadAllWps]);
   // Il conteggio del tab deve essere vero anche mentre è aperto l'altro tab.
   useEffect(() => { loadWPQR(); }, [loadWPQR]);
+
+  const loadSignals = useCallback(async () => {
+    if (typeof apiService.listWpqrSignals !== "function") return;
+    try {
+      const params = {};
+      if (listCompanyId) params.company_id = listCompanyId;
+      if (signalReason) params.reason = signalReason;
+      if (signalStatus) params.status = signalStatus;
+      const res = await apiService.listWpqrSignals(params);
+      setSignals(Array.isArray(res?.data) ? res.data : []);
+      setSignalsError("");
+    } catch (err) {
+      setSignalsError(err?.data?.error || err?.message || "Elenco segnalazioni non disponibile.");
+    }
+  }, [listCompanyId, signalReason, signalStatus]);
+
+  useEffect(() => {
+    if (activeTab === "wpqr") loadSignals();
+  }, [activeTab, loadSignals]);
+
+  async function approveSignal(id) {
+    if (typeof apiService.approveWpqrSignalExample !== "function") return;
+    try {
+      await apiService.approveWpqrSignalExample(id);
+      setSignalsError("");
+      await loadSignals();
+    } catch (err) {
+      setSignalsError(err?.data?.error || err?.message || "Approvazione non registrata.");
+    }
+  }
 
   // Chip AskAi / deep-link: apri Genera WPS precompilato (caso Mason)
   useEffect(() => {
@@ -1561,6 +1767,7 @@ function WeldingProceduresPage() {
   const stats = wpqrStats || {};
   const approvalStatCards = [
     { label: "Da approvare", value: stats.da_approvare || 0, color: "#6b7280", statusValue: "bozza" },
+    { label: "Da rivedere",  value: stats.da_rivedere  || 0, color: "#d97706", statusValue: "da_rivedere" },
     { label: "Approvate",    value: stats.approvate     || 0, color: "#16a34a", statusValue: "approvata" },
     { label: "Rifiutate",    value: stats.rifiutate     || 0, color: "#dc2626", statusValue: "rifiutata" },
   ];
@@ -1800,6 +2007,16 @@ function WeldingProceduresPage() {
       {/* TAB WPQR */}
       {activeTab === "wpqr" && (
         <>
+          <WpqrSignalsList
+            signals={signals}
+            reason={signalReason}
+            status={signalStatus}
+            onReason={setSignalReason}
+            onStatus={setSignalStatus}
+            canApprove={canApproveSignal}
+            error={signalsError}
+            onApprove={approveSignal}
+          />
           <div className="wp-toolbar">
             <input
               className="wp-search"
@@ -1854,8 +2071,20 @@ function WeldingProceduresPage() {
                 <tbody>
                   {wpqrList.map((wq) => (
                     <tr key={wq.id} className="wp-row-click" onClick={() => handleEditWpqr(wq)}>
-                      <td><SemaforoDot approvalStatus={wq.approval_status} /></td>
-                      <td><strong>{wq.reference_number || wq.wpqr_code || "-"}</strong></td>
+                      <td><SemaforoDot approvalStatus={wq.effective_approval_status || wq.approval_status} /></td>
+                      <td>
+                        <div className="wp-ref-cell">
+                          <strong>{wq.reference_number || wq.wpqr_code || "-"}</strong>
+                          {wq.open_notice_count > 0 && (
+                            <span className="wp-notice-badge" data-testid="wpqr-notice-badge">
+                              {`\u26A0\uFE0F ${wq.open_notice_count}`}
+                            </span>
+                          )}
+                          {wq.effective_approval_status === "da_rivedere" && (
+                            <span className="wp-approval wp-approval-da_rivedere">Da rivedere</span>
+                          )}
+                        </div>
+                      </td>
                       <td>{wq.wps_ref || "-"}</td>
                       <td>{wq.welding_process || wq.wps_welding_process || "-"}</td>
                       <td>
@@ -1865,7 +2094,7 @@ function WeldingProceduresPage() {
                       </td>
                       <td>{wq.test_date ? formatDate(wq.test_date) : "-"}</td>
                       <td>{wq.examiner_body || wq.testing_body || "-"}</td>
-                      <td><ApprovalBadge approvalStatus={wq.approval_status} /></td>
+                      <td><ApprovalBadge approvalStatus={wq.effective_approval_status || wq.approval_status} /></td>
                       <td onClick={(e) => e.stopPropagation()}>
                         {wq.certificate_file_url
                           ? <ProtectedFileLink fileUrl={wq.certificate_file_url} kind="wpqr" recordId={wq.id} title="Apri certificato PDF">{"\uD83D\uDCC4"}</ProtectedFileLink>

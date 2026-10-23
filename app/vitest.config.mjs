@@ -1,6 +1,7 @@
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { fileURLToPath } from 'node:url';
+import path from 'node:path';
 import fs from 'node:fs';
 
 /**
@@ -16,7 +17,11 @@ export default defineConfig({
   server: {
     fs: {
       strict: true,
-      allow: [process.cwd(), fs.realpathSync.native(process.cwd())],
+      allow: [
+        process.cwd(),
+        fs.realpathSync.native(process.cwd()),
+        path.resolve(process.cwd(), '../backend/src/content'),
+      ],
     },
   },
   resolve: {
@@ -24,6 +29,7 @@ export default defineConfig({
     preserveSymlinks: true,
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
+      '@sgq-notice-texts': path.resolve(process.cwd(), '../backend/src/content/discrepancyNoticeTexts.js'),
     },
   },
 

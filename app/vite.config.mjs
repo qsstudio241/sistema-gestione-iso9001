@@ -28,7 +28,11 @@ return {
     server: {
         fs: {
             strict: true,
-            allow: [process.cwd(), fs.realpathSync.native(process.cwd())]
+            allow: [
+                process.cwd(),
+                fs.realpathSync.native(process.cwd()),
+                path.resolve(process.cwd(), '../backend/src/content'),
+            ]
         },
         port: 5173,
         open: true,
@@ -52,7 +56,8 @@ return {
         // Alias esplicito per react-easy-crop: evita fallimenti di risoluzione Rollup
         // su percorsi con spazi (Google Drive junction su Windows).
         alias: {
-            'react-easy-crop': path.resolve(process.cwd(), 'node_modules/react-easy-crop/index.module.mjs')
+            'react-easy-crop': path.resolve(process.cwd(), 'node_modules/react-easy-crop/index.module.mjs'),
+            '@sgq-notice-texts': path.resolve(process.cwd(), '../backend/src/content/discrepancyNoticeTexts.js'),
         }
     },
     // Strip debugger statements in produzione.
@@ -63,6 +68,9 @@ return {
         pure: isProd ? ['console.log', 'console.debug', 'console.info'] : [],
     },
     build: {
+        commonjsOptions: {
+            include: [/node_modules/, /discrepancyNoticeTexts\.js/],
+        },
         sourcemap: false, // nessuna source map in produzione (no leakage codice sorgente)
         rollupOptions: {
             // Evita che Rollup emetta un fileName assoluto su Windows+symlink.

@@ -27,11 +27,20 @@ function createRes() {
     return res;
 }
 
+function mockStatsQueries(aggregate, rows = []) {
+    query.mockImplementation(async (sql) => {
+        if (/SUM\(CASE WHEN/.test(sql)) return { recordset: [aggregate] };
+        if (/FROM wpqr_test_runs|FROM discrepancy_notices/i.test(sql)) return { recordset: [] };
+        if (/FROM wpqr_records/i.test(sql)) return { recordset: rows };
+        return { recordset: [] };
+    });
+}
+
 describe('getWPQRStats — solo approval_status, nessuna expiry WPQR', () => {
     afterEach(() => jest.clearAllMocks());
 
     it('include i bucket approval_status e non usa wq.expiry_date', async () => {
-        query.mockResolvedValueOnce({ recordset: [{}] });
+        mockStatsQueries({ totale: 0, da_approvare: 0, rifiutate: 0, approvate: 0 });
 
         const req = { user: { organization_id: 1001 }, query: {} };
         const res = createRes();
@@ -44,21 +53,35 @@ describe('getWPQRStats — solo approval_status, nessuna expiry WPQR', () => {
         expect(sql).not.toMatch(/wq\.expiry_date/);
         expect(sql).not.toMatch(/AS scadute/);
         expect(sql).not.toMatch(/AS in_scadenza/);
+        expect(res.body.data.da_rivedere).toBe(0);
     });
 
-    it('restituisce i dati aggregati dal DB così come sono (nessuna trasformazione aggiuntiva)', async () => {
-        const row = { totale: 10, da_approvare: 2, rifiutate: 1, approvate: 7 };
-        query.mockResolvedValueOnce({ recordset: [row] });
+    it('un record approvato con avviso aperto è da rivedere e non conta fra le approvate verificate', async () => {
+        mockStatsQueries(
+            { totale: 1, da_approvare: 0, rifiutate: 0, approvate: 1 },
+            [{
+                id: 23,
+                approval_status: 'approvata',
+                wpqr_code: '16VE01735P02/A',
+                certificate_number: '16VE01735PO2/A',
+                examiner_body: 'RINA',
+                welding_process: '135',
+                standard_reference: 'UNI EN ISO 15614-1:2017',
+            }],
+        );
 
         const req = { user: { organization_id: 1001 }, query: {} };
         const res = createRes();
         await getWPQRStats(req, res);
 
-        expect(res.body).toEqual({ success: true, data: row });
+        expect(res.statusCode).toBe(200);
+        expect(res.body.data.da_rivedere).toBe(1);
+        expect(res.body.data.approvate).toBe(0);
+        expect(res.body.data.da_approvare).toBe(0);
     });
 
     it('applica il filtro company_id quando presente in query', async () => {
-        query.mockResolvedValueOnce({ recordset: [{}] });
+        mockStatsQueries({ totale: 0, da_approvare: 0, rifiutate: 0, approvate: 0 });
 
         const req = { user: { organization_id: 1001 }, query: { company_id: '5' } };
         const res = createRes();
