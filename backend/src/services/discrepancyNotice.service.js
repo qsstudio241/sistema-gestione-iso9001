@@ -155,12 +155,14 @@ function locateCorrection({ record, runs, ruleCode, field, newValue, previousVal
     const column = field && CORREGGI_COLUMNS.has(field) && /^[a-z_]+$/.test(field) ? field : '';
     const next = trimValue(newValue);
     const previous = trimValue(previousValue);
-    if (!column || !previous || previous === next || trimValue(record[column]) !== next) {
+    // Il vuoto (stringa vuota o null) è il valore precedente di un campo chiave, non un avviso assente.
+    if (!column || previous === next || trimValue(record[column]) !== next) {
         return { mode: 'missing' };
     }
     const restored = { ...record, [column]: previous };
     const old = evaluateDiscrepancy(DOMAIN, restored, { runs: list }).find((item) => item.code === ruleCode);
-    if (!old || old.field !== column) return { mode: 'missing' };
+    if (!old) return { mode: 'missing' };
+    if (old.field !== column && previous !== '') return { mode: 'missing' };
     return { mode: 'audit-only', target: old, field: column, previous, next };
 }
 
