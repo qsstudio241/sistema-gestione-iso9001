@@ -157,4 +157,67 @@ describe('Correggi di un campo chiave che era vuoto', () => {
         expect(closed.note).toBe(conferma.note);
         expect(countsAsVerifiedConformity('approvata', [closed])).toBe(true);
     });
+
+    test('ente o numero vuoti, record già salvato coi campi specchio: lo storico c\'è, senza un secondo update', async () => {
+        const cases = [
+            {
+                field: 'testing_body',
+                previousValue: null,
+                newValue: 'RINA',
+                record: {
+                    ...KEY_FILLED,
+                    examiner_body: 'RINA',
+                    testing_body: 'RINA',
+                    issuing_body: 'RINA',
+                },
+            },
+            {
+                field: 'wpqr_code',
+                previousValue: '',
+                newValue: 'ZZ-AVVISO-VUOTO',
+                record: {
+                    ...KEY_FILLED,
+                    wpqr_code: 'ZZ-AVVISO-VUOTO',
+                    reference_number: 'ZZ-AVVISO-VUOTO',
+                    wpqr_number: 'ZZ-AVVISO-VUOTO',
+                },
+            },
+        ];
+
+        for (const item of cases) {
+            query.mockClear();
+            query.mockImplementation(async (sql) => {
+                if (/FROM wpqr_test_runs/i.test(sql)) return { recordset: [] };
+                if (/FROM wpqr_records/i.test(sql)) return { recordset: [item.record] };
+                return { recordset: [] };
+            });
+
+            await actOnWpqrNotice({
+                organizationId: 1005,
+                wpqrId: 51,
+                userId: 7,
+                action: 'correggi',
+                ruleCode: 'WPQR.KEY_FIELDS_EMPTY',
+                field: item.field,
+                newValue: item.newValue,
+                previousValue: item.previousValue,
+            });
+
+            const noticeInsert = query.mock.calls.find(([sql]) => /INSERT INTO discrepancy_notices/i.test(sql));
+            expect(noticeInsert).toBeTruthy();
+            expect(noticeInsert[0]).toMatch(/SYSUTCDATETIME\(\)/);
+            expect(noticeInsert[1].status).toBe('corretto');
+            expect(noticeInsert[1].previous_value).toBe('');
+            expect(noticeInsert[1].new_value).toBe(item.newValue);
+            expect(noticeInsert[1].field_name).toBe(item.field);
+            expect(noticeInsert[1].acted_by).toBe(7);
+
+            const change = query.mock.calls.find(([sql]) => /INSERT INTO entity_change_log/i.test(sql));
+            expect(change).toBeTruthy();
+            expect(change[1].old_value).toBe('');
+            expect(change[1].new_value).toBe(item.newValue);
+            expect(change[1].actor_user_id).toBe(7);
+            expect(query.mock.calls.some(([sql]) => /UPDATE wpqr_records/i.test(sql))).toBe(false);
+        }
+    });
 });

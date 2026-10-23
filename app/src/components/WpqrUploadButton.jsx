@@ -94,6 +94,8 @@ export default function WpqrUploadButton({ companyId, companyName, onUploadCompl
               new_value: row.new_value,
               previous_value: row.previous_value,
               field: row.field,
+              fingerprint: row.fingerprint,
+              message_it: row.message_it,
             });
           } catch {
             /* la conferma del record resta valida */

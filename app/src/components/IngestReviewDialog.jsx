@@ -485,6 +485,7 @@ export default function IngestReviewDialog({
         new_value: payload.new_value || null,
         previous_value: action === "correggi" ? (previousValue == null ? "" : String(previousValue)) : null,
         field: action === "correggi" ? notice.field : null,
+        message_it: notice.message_it || null,
       },
     ];
     onDiscrepancyResolutions?.(discResolutions.current);

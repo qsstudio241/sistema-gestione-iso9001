@@ -5,6 +5,7 @@
 
 'use strict';
 
+const crypto = require('crypto');
 const { query } = require('../config/database');
 const { logEntityChange } = require('./entityChangeLog.service');
 const texts = require('../content/discrepancyNoticeTexts');
@@ -18,6 +19,9 @@ const {
     ACTION_TO_STATUS,
     STATUS,
 } = require('./discrepancyNotices');
+const { CODES } = require('./discrepancyNotices/wpqrRules');
+
+const KNOWN_RULES = new Set(Object.values(CODES));
 
 const DOMAIN = 'wpqr';
 const ACTIONS = Object.keys(ACTION_TO_STATUS);
@@ -148,7 +152,27 @@ function trimValue(value) {
     return value == null ? '' : String(value).trim();
 }
 
-function locateCorrection({ record, runs, ruleCode, field, newValue, previousValue }) {
+function acceptedFingerprint(value) {
+    const raw = trimValue(value).toLowerCase();
+    return /^[a-f0-9]{64}$/.test(raw) ? raw : '';
+}
+
+function correctionFingerprint(ruleCode, field, previous, next) {
+    return crypto.createHash('sha256')
+        .update(JSON.stringify(['correggi', ruleCode, field, previous, next]))
+        .digest('hex');
+}
+
+function capturedTarget({ ruleCode, column, previous, next, fingerprint, message }) {
+    return {
+        code: ruleCode,
+        field: column,
+        fingerprint: acceptedFingerprint(fingerprint) || correctionFingerprint(ruleCode, column, previous, next),
+        message_it: trimValue(message).slice(0, 1000),
+    };
+}
+
+function locateCorrection({ record, runs, ruleCode, field, newValue, previousValue, fingerprint, message }) {
     const list = runs || [];
     const live = evaluateDiscrepancy(DOMAIN, record, { runs: list }).find((item) => item.code === ruleCode);
     if (live) return { mode: 'update', target: live };
@@ -161,9 +185,18 @@ function locateCorrection({ record, runs, ruleCode, field, newValue, previousVal
     }
     const restored = { ...record, [column]: previous };
     const old = evaluateDiscrepancy(DOMAIN, restored, { runs: list }).find((item) => item.code === ruleCode);
-    if (!old) return { mode: 'missing' };
-    if (old.field !== column && previous !== '') return { mode: 'missing' };
-    return { mode: 'audit-only', target: old, field: column, previous, next };
+    if (old && (old.field === column || previous === '')) {
+        return { mode: 'audit-only', target: old, field: column, previous, next };
+    }
+    // Il record è già salvato e i campi specchio tengono il valore nuovo: lo storico nasce dalla correzione.
+    if (!KNOWN_RULES.has(ruleCode)) return { mode: 'missing' };
+    return {
+        mode: 'audit-only',
+        target: capturedTarget({ ruleCode, column, previous, next, fingerprint, message }),
+        field: column,
+        previous,
+        next,
+    };
 }
 
 function decorateRecord(record, runs, resolutions) {
@@ -266,7 +299,7 @@ async function loadWpqrRecord(organizationId, wpqrId) {
 async function saveNoticeRow(fields) {
     try {
         const existing = await query(`
-            SELECT id, reason, request_draft, previous_value, new_value, field_name
+            SELECT id, status, reason, request_draft, previous_value, new_value, field_name
             FROM discrepancy_notices
             WHERE organization_id = @organization_id
               AND domain = @domain
@@ -276,6 +309,7 @@ async function saveNoticeRow(fields) {
         `, fields);
         if (existing.recordset.length) {
             const prior = existing.recordset[0];
+            if (prior.status === STATUS.CONFERMATO && fields.status === STATUS.CORRETTO) return;
             const kept = {
                 ...fields,
                 id: prior.id,
@@ -323,6 +357,7 @@ async function saveNoticeRow(fields) {
 
 async function actOnWpqrNotice({
     organizationId, wpqrId, userId, action, ruleCode, note, reason, newValue, previousValue, field,
+    fingerprint, message,
 }) {
     const checked = texts.validateNoticeAction(action, { note, reason, new_value: newValue });
     if (!checked.ok) throw httpError(400, 'VALIDATION_ERROR', checked.error);
@@ -342,6 +377,8 @@ async function actOnWpqrNotice({
             field,
             newValue: checked.newValue,
             previousValue,
+            fingerprint,
+            message,
         });
         if (located.mode === 'missing') {
             throw httpError(404, 'NOTICE_NOT_FOUND', 'Avviso non più presente su questa WPQR');
