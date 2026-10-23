@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { createChecklistSaveScheduler, retryDelayMs } from './checklistSaveScheduler';
+import { createChecklistSaveScheduler, isRetryableSaveError, retryDelayMs } from './checklistSaveScheduler';
 
 function fakeClock() {
   let now = 0;
@@ -99,6 +99,26 @@ describe('checklistSaveScheduler', () => {
     expect(sched.snapshot().phase).toBe('saved');
   });
 
+  it('più domande pronte insieme partono in serie, non in parallelo', async () => {
+    const send = vi.fn().mockResolvedValue(undefined);
+    const sendMany = vi.fn().mockResolvedValue(undefined);
+    const clock = fakeClock();
+    const sched = createChecklistSaveScheduler({
+      debounceMs: 1000,
+      send,
+      sendMany,
+      setTimer: clock.setTimer,
+      clearTimer: clock.clearTimer,
+    });
+    sched.schedule('q1', { n: 1 });
+    sched.schedule('q2', { n: 2 });
+    await clock.advance(1000);
+    expect(send).not.toHaveBeenCalled();
+    const flat = sendMany.mock.calls.flatMap((call) => call[0]);
+    expect(flat).toEqual([{ n: 1 }, { n: 2 }]);
+    expect(sched.snapshot().phase).toBe('saved');
+  });
+
   it('al refresh manda tutte le domande ancora aperte in un solo invio', async () => {
     const send = vi.fn().mockResolvedValue(undefined);
     const sendMany = vi.fn().mockResolvedValue(undefined);
@@ -138,6 +158,11 @@ describe('checklistSaveScheduler', () => {
     expect(send.mock.calls[0][0]).toEqual({ n: 1 });
     expect(send.mock.calls[0][1]).toEqual({ keepalive: true });
     expect(sched.snapshot().phase).toBe('saved');
+  });
+
+  it('un errore di salvataggio eventi si può riprovare', () => {
+    expect(isRetryableSaveError({ status: 500, code: 'EVENTS_SAVE_ERROR' })).toBe(true);
+    expect(isRetryableSaveError({ status: 500, code: 'API_ERROR' })).toBe(false);
   });
 
   it('senza Retry-After il ritardo raddoppia', () => {

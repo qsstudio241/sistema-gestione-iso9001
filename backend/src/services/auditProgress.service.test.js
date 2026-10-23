@@ -5,7 +5,7 @@ jest.mock('../utils/logger', () => ({
     warn: jest.fn(),
 }));
 
-const { AUDIT_PROGRESS_SQL, updateAuditProgress } = require('./auditProgress.service');
+const { AUDIT_PROGRESS_SQL, updateAuditProgress, updateAuditProgressSafe } = require('./auditProgress.service');
 
 describe('updateAuditProgress', () => {
     it('conta il catalogo attivo e non tocca colonne inesistenti', async () => {
@@ -21,6 +21,20 @@ describe('updateAuditProgress', () => {
         expect(calls[0].sql).toMatch(/answered_questions/);
         expect(calls[0].sql).not.toMatch(/observations_count/);
         expect(calls[0].sql).not.toMatch(/opportunities_count/);
+    });
+
+    it('riprova il conteggio se il database segnala un deadlock', async () => {
+        let calls = 0;
+        const queryFn = async () => {
+            calls += 1;
+            if (calls === 1) {
+                const error = new Error('deadlock victim');
+                error.number = 1205;
+                throw error;
+            }
+        };
+        await updateAuditProgressSafe(35234, queryFn);
+        expect(calls).toBe(2);
     });
 
     it('il testo SQL è quello esportato', () => {

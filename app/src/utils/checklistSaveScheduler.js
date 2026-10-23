@@ -15,7 +15,8 @@ function isRetryableSaveError(err) {
     || code === 'NETWORK_ERROR'
     || code === 'TIMEOUT'
     || code === 'OFFLINE'
-    || code === 'RATE_LIMIT_API';
+    || code === 'RATE_LIMIT_API'
+    || code === 'EVENTS_SAVE_ERROR';
 }
 
 function retryDelayMs(err, attempt) {
@@ -86,6 +87,7 @@ function createChecklistSaveScheduler({
         timer: null,
         latest: null,
         generation: 0,
+        due: false,
       };
       slots.set(key, slot);
     }
@@ -110,6 +112,67 @@ function createChecklistSaveScheduler({
     emit();
   }
 
+  let pumping = false;
+
+  async function pump() {
+    if (pumping || typeof sendMany !== 'function') return;
+    pumping = true;
+    try {
+      while (true) {
+        const batch = [];
+        const keys = [];
+        for (const [key, slot] of slots) {
+          if (!slot.due || slot.latest == null || slot.inFlight) continue;
+          batch.push(slot.latest);
+          keys.push(key);
+          slot.due = false;
+          slot.inFlight = true;
+          slot.dirty = false;
+          slot.status = 'saving';
+        }
+        if (batch.length === 0) break;
+        emit();
+        try {
+          await sendMany(batch, { keepalive: false });
+          for (const key of keys) {
+            const slot = slots.get(key);
+            if (!slot) continue;
+            slot.inFlight = false;
+            slot.retry = 0;
+            if (slot.dirty) {
+              slot.dirty = false;
+              slot.due = true;
+              slot.status = 'pending';
+            } else {
+              slot.status = 'saved';
+            }
+          }
+        } catch (err) {
+          for (const key of keys) {
+            const slot = slots.get(key);
+            if (!slot) continue;
+            slot.inFlight = false;
+            slot.due = false;
+            if (isRetryableSaveError(err)) {
+              slot.retry += 1;
+              slot.status = 'retrying';
+              const wait = retryDelayMs(err, slot.retry);
+              const gen = slot.generation;
+              slot.timer = setTimer(() => { flush(key, gen); }, wait);
+            } else {
+              slot.status = 'error';
+            }
+          }
+          emit();
+          break;
+        }
+        emit();
+      }
+    } finally {
+      pumping = false;
+    }
+  }
+
   async function flush(key, gen, { keepalive = false } = {}) {
     const slot = slots.get(key);
     if (!slot || slot.latest == null) return;
@@ -117,6 +180,14 @@ function createChecklistSaveScheduler({
     if (slot.inFlight) {
       slot.dirty = true;
       return;
+    }
+    if (typeof sendMany === 'function' && !keepalive) {
+      if (slot.timer) clearTimer(slot.timer);
+      slot.timer = null;
+      slot.due = true;
+      if (slot.status !== 'retrying') slot.status = 'pending';
+      emit();
+      return pump();
     }
     if (slot.timer) clearTimer(slot.timer);
     slot.timer = null;

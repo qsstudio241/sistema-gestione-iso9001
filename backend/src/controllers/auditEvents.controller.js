@@ -7,7 +7,35 @@ const { query } = require('../config/database');
 const logger = require('../utils/logger');
 const { updateAuditProgressSafe } = require('../services/auditProgress.service');
 
+function isSqlDeadlock(error) {
+    const number = error?.number ?? error?.originalError?.number;
+    if (number === 1205) return true;
+    const text = `${error?.message || ''} ${error?.originalError?.message || ''}`;
+    return /deadlock/i.test(text);
+}
+
+function waitMs(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function postAuditEvents(req, res) {
+    const maxAttempts = 4;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+            return await postAuditEventsOnce(req, res);
+        } catch (error) {
+            if (isSqlDeadlock(error) && attempt < maxAttempts) {
+                await waitMs(60 * attempt);
+                continue;
+            }
+            logger.error('Error saving audit events', { error: error.message });
+            return res.status(500).json({ error: 'Errore salvataggio eventi', code: 'EVENTS_SAVE_ERROR' });
+        }
+    }
+    return res.status(500).json({ error: 'Errore salvataggio eventi', code: 'EVENTS_SAVE_ERROR' });
+}
+
+async function postAuditEventsOnce(req, res) {
     try {
         const { uuid } = req.params;
         const { organization_id, user_id } = req.user;
@@ -175,8 +203,7 @@ async function postAuditEvents(req, res) {
         return res.status(207).json({ inserted, skipped, total: events.length });
 
     } catch (error) {
-        logger.error('Error saving audit events', { error: error.message });
-        return res.status(500).json({ error: 'Errore salvataggio eventi', code: 'EVENTS_SAVE_ERROR' });
+        throw error;
     }
 }
 

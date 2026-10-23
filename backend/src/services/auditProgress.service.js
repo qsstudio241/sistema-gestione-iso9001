@@ -109,15 +109,30 @@ function progressErrorText(error) {
         || (error ? String(error) : 'errore sconosciuto');
 }
 
+function isSqlDeadlock(error) {
+    const number = error?.number ?? error?.originalError?.number;
+    if (number === 1205) return true;
+    return /deadlock/i.test(progressErrorText(error));
+}
+
 async function updateAuditProgressSafe(auditId, queryFn = query) {
-    try {
-        await updateAuditProgress(auditId, queryFn);
-        logger.info('Audit statistics updated', { audit_id: auditId });
-    } catch (error) {
-        logger.error('Error updating audit statistics', {
-            audit_id: auditId,
-            error: progressErrorText(error),
-        });
+    const maxAttempts = 4;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+            await updateAuditProgress(auditId, queryFn);
+            logger.info('Audit statistics updated', { audit_id: auditId });
+            return;
+        } catch (error) {
+            if (isSqlDeadlock(error) && attempt < maxAttempts) {
+                await new Promise((resolve) => setTimeout(resolve, 60 * attempt));
+                continue;
+            }
+            logger.error('Error updating audit statistics', {
+                audit_id: auditId,
+                error: progressErrorText(error),
+            });
+            return;
+        }
     }
 }
 
