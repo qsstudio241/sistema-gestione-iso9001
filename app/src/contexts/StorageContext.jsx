@@ -41,6 +41,10 @@ import {
 } from "../utils/pendingAuditQueue";
 import { loadErrorMessage } from "../utils/loadErrorMessage";
 import {
+  auditMetadataSyncSignature,
+  createMetadataSyncScheduler,
+} from "../utils/auditMetadataSync";
+import {
   forgetCurrentAuditId,
   pickRestoredAuditId,
   rememberCurrentAuditId,
@@ -604,8 +608,29 @@ export function StorageProvider({ children, useMockData = false }) {
   // finché non trascorre 1 minuto.
   const fetchAndApplyLastRunRef = useRef({});
   const prevAuditIdForHydrateRef = useRef(null);
-  // T4: debounce timer per eventi field_updated (generalData, auditObjective, auditOutcome, notes)
-  const fieldUpdatedDebounceRef = useRef({});
+  const metadataSyncRef = useRef(null);
+  if (!metadataSyncRef.current) {
+    metadataSyncRef.current = createMetadataSyncScheduler({
+      enqueue: (payload) => {
+        syncService.enqueue("update_audit", payload).catch((err) => {
+          console.error("❌ [SYNC] Errore enqueue update:", err);
+        });
+        // Una volta sola, insieme alla scheda: non a ogni tasto.
+        if (import.meta.env.VITE_SYNC_MODE === "events" && payload?.audit_uuid) {
+          const richFields = [
+            ["generalData", payload.generalData],
+            ["auditObjective", payload.auditObjective],
+            ["auditOutcome", payload.auditOutcome],
+            ["notes", payload.notes],
+          ];
+          for (const [key, value] of richFields) {
+            if (value === undefined) continue;
+            syncService.enqueueFieldUpdatedEvent(payload.audit_uuid, key, value).catch(() => {});
+          }
+        }
+      },
+    });
+  }
   useEffect(() => {
     if (currentAuditId !== prevAuditIdForHydrateRef.current) {
       // Audit cambiato: cancella il debounce per il nuovo audit (e per quello precedente)
@@ -1028,9 +1053,27 @@ export function StorageProvider({ children, useMockData = false }) {
     return { ok: false };
   }, [currentAudit]);
 
-  // Auto-save multiplo con IndexedDB
+  // Auto-save multiplo con IndexedDB (solo sul dispositivo, non chiama il server)
   const { auditSaveStatus, listSaveStatus, isSaving, allSaved } =
     useAutoSaveMultiple(currentAudit, audits, fsProvider);
+
+  // Scheda audit in pausa: invia subito se si chiude o si cambia scheda.
+  useEffect(() => {
+    const flush = () => {
+      metadataSyncRef.current?.flushAll();
+    };
+    const onHide = () => {
+      if (document.visibilityState === "hidden") flush();
+    };
+    window.addEventListener("pagehide", flush);
+    document.addEventListener("visibilitychange", onHide);
+    window.addEventListener("beforeunload", flush);
+    return () => {
+      window.removeEventListener("pagehide", flush);
+      document.removeEventListener("visibilitychange", onHide);
+      window.removeEventListener("beforeunload", flush);
+    };
+  }, []);
 
   // === SYNC INIZIALE ALL'AVVIO + AUTO-SYNC POLLING ===
   useEffect(() => {
@@ -1868,50 +1911,6 @@ export function StorageProvider({ children, useMockData = false }) {
   // === CRUD OPERATIONS ===
 
   /**
-   * Estrae risposte checklist da audit per sync
-   * @param {Object} audit - Audit con checklist compilata
-   * @returns {Array} Array di risposte nel formato backend
-   */
-  function extractChecklistResponses(audit) {
-    const responses = [];
-    const checklist = audit.checklist;
-
-    if (!checklist) return responses;
-
-    // Itera su ogni norma (ISO_9001, ISO_14001, ecc.)
-    Object.entries(checklist).forEach(([normKey, normData]) => {
-      // Itera su ogni clausola
-      Object.entries(normData).forEach(([clauseKey, clauseData]) => {
-        if (!clauseData.questions || !Array.isArray(clauseData.questions))
-          return;
-
-        // Itera su ogni domanda
-        clauseData.questions.forEach((question) => {
-          const hasStatus =
-            question.status && question.status !== "NOT_ANSWERED";
-          const hasNotes =
-            question.notes != null && String(question.notes).trim() !== "";
-          // Sync anche note senza esito (es. dettatura prima del click C/NC/OSS)
-          if (hasStatus || hasNotes) {
-            responses.push({
-              // question_id (intero) prioritario → lookup diretto sul server
-              // clause_ref come fallback per lookup via section_code
-              question_id: question.questionId || null,
-              clause_ref: question.clauseRef || question.id,
-              conformity_status: hasStatus ? question.status : null,
-              notes: hasNotes ? question.notes : null,
-              evidence: question.evidenceRef || null,
-              client_updated_at: new Date().toISOString(),
-            });
-          }
-        });
-      });
-    });
-
-    return responses;
-  }
-
-  /**
    * Calcola metriche checklist da struttura audit
    * @param {Object} checklist - Struttura checklist audit
    * @returns {Object} Metriche: {total, answered, conformities, nonConformities}
@@ -1949,7 +1948,8 @@ export function StorageProvider({ children, useMockData = false }) {
   /**
    * Aggiorna audit corrente.
    * @param {Function|Object} updater
-   * @param {{ skipSync?: boolean }} opts — skipSync=true inibisce l'enqueue save_responses/update_audit.
+   * @param {{ skipSync?: boolean }} opts — skipSync=true non invia la scheda audit.
+   * Le risposte delle domande non partono da qui.
    *   Usare quando si aggiorna la struttura locale (es. init template) senza voler sovrascrivere
    *   dati già presenti sul server.
    */
@@ -2025,93 +2025,40 @@ export function StorageProvider({ children, useMockData = false }) {
 
             const auditUuid = updated.id || updated.metadata?.id;
 
-            // Accoda save_responses se non è hydration/init e non è una chiamata di sistema.
-            // La guardia navigator.onLine è RIMOSSA: i dati vengono accodati anche offline e
-            // processati automaticamente al reconnect (ADR-008 / offline-first).
-            // Con VITE_SYNC_MODE=events gli eventi T3 (response_set) coprono status e note;
-            // save_responses resta attivo in parallelo (incluso note senza esito).
-            if (!skipSync && !isHydratingRef.current && !isSystemCall) {
-              const responses = extractChecklistResponses(updated);
-              if (responses.length > 0) {
-                syncService
-                  .enqueue("save_responses", {
-                    auditId: auditUuid,
-                    responses,
-                  })
-                  .then(() => {
-                    console.log(
-                      `📤 [SYNC] ${responses.length} risposte enqueued per sync (online: ${navigator.onLine})`,
-                    );
-                  })
-                  .catch((err) => {
-                    console.error("❌ [SYNC] Errore enqueue risposte:", err);
-                  });
-              }
-            }
-
-            // Enqueue update_audit anche offline: la guardia navigator.onLine è rimossa.
-            // L'item resta in coda finché non torna la connessione; il sync processa allora.
-            if (!skipSync && !isHydratingRef.current && !isSystemCall) {
+            // Le risposte delle domande partono dal salvataggio a differenze
+            // (checklistQuestionSave). Qui si invia solo la scheda audit, in differita,
+            // e solo se un campo della scheda è davvero cambiato.
+            if (!skipSync && !isHydratingRef.current && !isSystemCall && auditUuid) {
               const storedServerTs = localStorage.getItem(`sgq_srv_ts_${auditUuid}`);
               const serverTsMs = storedServerTs ? new Date(storedServerTs).getTime() : 0;
-              const clientTsMs = Date.now();
-              // +1ms garantisce client >= server per evitare conflict non necessari
-              const syncUpdatedAt = new Date(Math.max(clientTsMs, serverTsMs + 1)).toISOString();
-
-              syncService
-                .enqueue("update_audit", {
-                  audit_uuid: auditUuid,
-                  audit_number: updated.metadata?.auditNumber,
-                  client_name: updated.metadata?.clientName,
-                  company_id: updated.metadata?.companyId ?? null,
-                  audit_party_type: updated.metadata?.auditPartyType ?? 'first_party',
-                  fornitore_name: updated.metadata?.fornitoreName ?? '',
-                  fornitore_supplier_id: updated.metadata?.fornitoreSupplierId ?? null,
-                  project_year: updated.metadata?.projectYear,
-                  audit_date: updated.metadata?.auditDate,
-                  audit_date_end: updated.metadata?.auditDateEnd ?? null,
-                  auditor_name: updated.metadata?.auditorName,
-                  audit_type: updated.metadata?.auditType,
-                  status: updated.metadata?.status,
-                  notes: updated.metadata?.notes,
-                  ...calculatedMetrics,
-                  selectedStandards: updated.metadata?.selectedStandards || [],
-                  custom_checklist_id:
-                    updated.metadata?.customChecklistId ??
-                    updated.custom_checklist_id ??
-                    null,
-                  updated_at: syncUpdatedAt,
-                  generalData: updated.metadata?.generalData ?? updated.generalData,
-                  auditObjective: updated.metadata?.auditObjective ?? updated.auditObjective,
-                  auditOutcome: updated.metadata?.auditOutcome ?? updated.auditOutcome,
-                })
-                .catch((err) => {
-                  console.error("❌ [SYNC] Errore enqueue update:", err);
-                });
-
-              // T4: eventi field_updated con debounce 500ms per campi testo ricchi.
-              // Ogni modifica a generalData / auditObjective / auditOutcome / notes genera un evento
-              // atomico su POST /audits/:uuid/events — garantisce server-wins anche su questi campi
-              // in scenario multi-device, esattamente come T3 per le risposte checklist.
-              if (import.meta.env.VITE_SYNC_MODE === 'events') {
-                const richFields = [
-                  { key: 'generalData',    value: updated.metadata?.generalData ?? updated.generalData },
-                  { key: 'auditObjective', value: updated.metadata?.auditObjective ?? updated.auditObjective },
-                  { key: 'auditOutcome',   value: updated.metadata?.auditOutcome ?? updated.auditOutcome },
-                  { key: 'notes',          value: updated.metadata?.notes ?? null },
-                ];
-                richFields.forEach(({ key, value }) => {
-                  if (value === undefined) return;
-                  const debounceKey = `${auditUuid}:${key}`;
-                  if (fieldUpdatedDebounceRef.current[debounceKey]) {
-                    clearTimeout(fieldUpdatedDebounceRef.current[debounceKey]);
-                  }
-                  fieldUpdatedDebounceRef.current[debounceKey] = setTimeout(() => {
-                    delete fieldUpdatedDebounceRef.current[debounceKey];
-                    syncService.enqueueFieldUpdatedEvent(auditUuid, key, value).catch(() => {});
-                  }, 500);
-                });
-              }
+              const syncUpdatedAt = new Date(Math.max(Date.now(), serverTsMs + 1)).toISOString();
+              const signature = auditMetadataSyncSignature(updated, calculatedMetrics);
+              metadataSyncRef.current.schedule(auditUuid, signature, {
+                audit_uuid: auditUuid,
+                audit_number: updated.metadata?.auditNumber,
+                client_name: updated.metadata?.clientName,
+                company_id: updated.metadata?.companyId ?? null,
+                audit_party_type: updated.metadata?.auditPartyType ?? 'first_party',
+                fornitore_name: updated.metadata?.fornitoreName ?? '',
+                fornitore_supplier_id: updated.metadata?.fornitoreSupplierId ?? null,
+                project_year: updated.metadata?.projectYear,
+                audit_date: updated.metadata?.auditDate,
+                audit_date_end: updated.metadata?.auditDateEnd ?? null,
+                auditor_name: updated.metadata?.auditorName,
+                audit_type: updated.metadata?.auditType,
+                status: updated.metadata?.status,
+                notes: updated.metadata?.notes,
+                ...calculatedMetrics,
+                selectedStandards: updated.metadata?.selectedStandards || [],
+                custom_checklist_id:
+                  updated.metadata?.customChecklistId ??
+                  updated.custom_checklist_id ??
+                  null,
+                updated_at: syncUpdatedAt,
+                generalData: updated.metadata?.generalData ?? updated.generalData,
+                auditObjective: updated.metadata?.auditObjective ?? updated.auditObjective,
+                auditOutcome: updated.metadata?.auditOutcome ?? updated.auditOutcome,
+              });
 
               if (auditLockRef.current.mode !== "owner" && auditLockRef.current.mode !== "none") {
                 // Lock "foreign": write bloccato da altro utente — log visibile una volta ogni 5s.

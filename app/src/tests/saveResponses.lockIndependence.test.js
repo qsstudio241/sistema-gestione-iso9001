@@ -7,8 +7,9 @@
  * Con il fix, save_responses viene accodato per ogni stato lock
  * tranne "foreign" (altro utente attivo — il write è già bloccato a monte).
  *
- * Questi test verificano la logica di extractChecklistResponses e il
- * contratto di separazione: risposte SEMPRE accodate, update_audit SOLO se owner.
+ * La replica sotto è solo la regola di estrazione (domande senza esito escluse).
+ * updateCurrentAudit non rimanda più tutte le risposte: ogni domanda parte
+ * a differenze e la scheda audit parte a parte, solo se è cambiata.
  */
 
 // ── Replica minima di extractChecklistResponses (copiata da StorageContext) ───

@@ -508,6 +508,21 @@ function ChecklistModule({ defaultNorm = "ISO_9001", readOnly = false, forceExpa
   };
 
   const handleSatisfiedByChange = (clauseId, questionId, satData) => {
+    const auditUuidForEvent = currentAudit?.metadata?.id || currentAudit?.id;
+    const questionRow = currentAudit?.checklist?.[checklistKey]?.[clauseId]
+      ?.questions?.find((q) => q.id === questionId);
+    const numericQId = questionRow?.questionId ?? null;
+    const becomesConform = satData?.standard && (!questionRow?.status || questionRow.status === "NOT_ANSWERED");
+    if (becomesConform && auditUuidForEvent && numericQId != null) {
+      scheduleChecklistQuestionSave({
+        auditUuid: auditUuidForEvent,
+        questionId: numericQId,
+        status: "C",
+        notes: questionRow?.notes ?? null,
+        organizationId: apiService.getStoredUser?.()?.organization_id ?? null,
+        baseUpdatedAt: questionRow?.serverUpdatedAt || null,
+      });
+    }
     updateCurrentAudit((audit) => {
       const updatedAudit = { ...audit };
       const clause = updatedAudit.checklist?.[checklistKey]?.[clauseId];
@@ -525,7 +540,7 @@ function ChecklistModule({ defaultNorm = "ISO_9001", readOnly = false, forceExpa
 
       updatedAudit.metadata.lastModified = new Date().toISOString();
       return updatedAudit;
-    });
+    }, { skipSync: true });
   };
 
   // === RENDER ===

@@ -75,6 +75,14 @@ function installGuards() {
   window.addEventListener('pagehide', () => {
     scheduler.flushAllNow({ keepalive: true });
   });
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') {
+      scheduler.flushAllNow({ keepalive: true });
+    }
+  });
+  window.addEventListener('blur', () => {
+    scheduler.flushAllNow();
+  });
   window.addEventListener('online', () => {
     scheduler.flushAllNow();
   });
