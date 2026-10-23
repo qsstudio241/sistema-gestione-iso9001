@@ -178,12 +178,20 @@
 .wp-sem-arancio { background:#d97706; }
 .wp-sem-rosso   { background:#dc2626; }
 .wp-sem-grigio  { background:#9ca3af; }
+.wp-sem-ambra   { background:#d97706; }
 
 /* ?? Approval badges  */
 .wp-approval { padding:2px 8px; border-radius:12px; font-size:11px; font-weight:600; white-space:nowrap; }
 .wp-approval-approvata { background:#dcfce7; color:#15803d; }
 .wp-approval-rifiutata { background:#fee2e2; color:#dc2626; }
 .wp-approval-bozza     { background:#f3f4f6; color:#6b7280; }
+.wp-approval-da_rivedere { background:#fffbeb; color:#92400e; }
+.wp-notice-badge {
+  display:inline-block; padding:1px 6px; border-radius:10px;
+  background:#fffbeb; color:#92400e; border:1px solid #fcd34d;
+  font-size:11px; font-weight:700; white-space:nowrap;
+}
+.wp-ref-cell { display:flex; flex-wrap:wrap; align-items:center; gap:4px; }
 
 /* ?? Approve/reject buttons ? */
 .wp-actions-cell { display:flex; align-items:center; gap:4px; }
@@ -208,6 +216,10 @@
 .wp-link { color:#1e3a5f; text-decoration:underline; cursor:pointer; background:none; border:none; font-size:13px; padding:0; }
 .wp-link:hover { color:#16304e; }
 
+@media (max-width:420px) {
+    .wp-modal-overlay { padding:8px; }
+    .wp-modal-body { padding:12px; }
+}
 @media (max-width:700px) {
     .wp-page { padding:14px; }
     .wp-form-grid { grid-template-columns:1fr; }

@@ -6,6 +6,28 @@ La skill che lo usa è [`SKILL.md`](SKILL.md): va letto prima del diff.
 
 Per ogni caso: data, PR, area, gravità, cosa è successo, regola generale.
 
+## 23/10/2026
+
+### L'anteprima della scheda perde le passate
+
+- **Data:** 23/10/2026
+- **PR:** [#863](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/863)
+- **Area:** WPQR, avvisi di discrepanza
+- **Gravità:** alta
+- **Cosa è successo:** la scheda ricalcola gli avvisi senza le passate. Il materiale d'apporto diverso tra copertina e pagine interne sparisce dopo un attimo, ma il server continua a contare l'avviso. Una WPQR approvata resta da rivedere senza un avviso da confermare.
+- **Regola:** l'anteprima usa gli stessi input del server, passate comprese.
+- **Confronto:** lo ha visto solo Bugbot. La skill guardava il testo delle regole e lo stato, non gli input della chiamata di anteprima.
+
+### Una conferma vecchia riapre l'avviso
+
+- **Data:** 23/10/2026
+- **PR:** [#863](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/863)
+- **Area:** WPQR, avvisi di discrepanza
+- **Gravità:** media
+- **Cosa è successo:** dopo Conferma, una modifica e una seconda Conferma restano due righe per la stessa regola. La mappa teneva una riga sola, senza ordine. Poteva vincere l'impronta vecchia e l'avviso tornava aperto.
+- **Regola:** conta solo la riga con l'impronta dei valori attuali.
+- **Confronto:** lo ha visto solo Bugbot. La skill controllava che un'impronta diversa non applicasse lo stato, non che la scelta della riga fosse univoca.
+
 ## 19/10/2026
 
 ### I colori uguali alla visita restano sul giorno vecchio

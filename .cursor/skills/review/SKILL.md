@@ -215,6 +215,11 @@ Controllare solo ciò che il diff tocca.
 - Simboli di posizione fuori tabella non fanno sembrare assente ogni colonna
   qualificata. Il finding «manca il dato» resta; il «più stretto» no.
 
+**Avvisi ricalcolati**
+
+- L'anteprima usa gli stessi input del server, passate comprese. Senza, l'avviso sparisce dallo schermo e resta nel conteggio.
+- Se la stessa regola ha più esiti salvati, conta solo la riga con l'impronta dei valori attuali. Un esito vecchio non riapre l'avviso.
+
 **Chiamate dal browser**
 
 - Un metodo di `apiService` che usa `this` si invoca sull'oggetto
