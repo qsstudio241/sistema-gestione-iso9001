@@ -110,7 +110,7 @@ function ChecklistModule({ defaultNorm = "ISO_9001", readOnly = false, forceExpa
       const copy = JSON.parse(JSON.stringify(audit));
       applyPendingAnswersToChecklist(copy.checklist, pending);
       return copy;
-    }, { skipSync: true });
+    }, { skipSync: true, allowStatusSync: true });
   }, [currentAudit?.metadata?.id, currentAudit?.id, currentAudit?.checklist, checklistBind, updateCurrentAudit]);
 
   // Hook gestione allegati
@@ -510,7 +510,7 @@ function ChecklistModule({ defaultNorm = "ISO_9001", readOnly = false, forceExpa
       }
 
       return updatedAudit;
-    }, { skipSync: deferredQuestionSave });
+    }, { skipSync: deferredQuestionSave, allowStatusSync: deferredQuestionSave });
   };
 
   const handleSatisfiedByChange = (clauseId, questionId, satData) => {
@@ -542,7 +542,7 @@ function ChecklistModule({ defaultNorm = "ISO_9001", readOnly = false, forceExpa
 
       updatedAudit.metadata.lastModified = new Date().toISOString();
       return updatedAudit;
-    }, { skipSync: true });
+    }, { skipSync: true, allowStatusSync: Boolean(becomesConform) });
   };
 
   // === RENDER ===

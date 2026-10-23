@@ -609,6 +609,7 @@ export function StorageProvider({ children, useMockData = false }) {
   const fetchAndApplyLastRunRef = useRef({});
   const prevAuditIdForHydrateRef = useRef(null);
   const metadataSyncRef = useRef(null);
+  const statusPublishRef = useRef("");
   if (!metadataSyncRef.current) {
     metadataSyncRef.current = createMetadataSyncScheduler({
       enqueue: (payload) => {
@@ -1948,13 +1949,14 @@ export function StorageProvider({ children, useMockData = false }) {
   /**
    * Aggiorna audit corrente.
    * @param {Function|Object} updater
-   * @param {{ skipSync?: boolean }} opts — skipSync=true non invia la scheda audit.
+   * @param {{ skipSync?: boolean, allowStatusSync?: boolean }} opts — skipSync=true non invia la scheda audit.
+   * allowStatusSync: una modifica reale della checklist pubblica una volta lo stato «in corso».
    * Le risposte delle domande non partono da qui.
    *   Usare quando si aggiorna la struttura locale (es. init template) senza voler sovrascrivere
    *   dati già presenti sul server.
    */
   const updateCurrentAudit = useCallback(
-    (updater, { skipSync = false } = {}) => {
+    (updater, { skipSync = false, allowStatusSync = false } = {}) => {
       setAudits((prevAudits) => {
         // Determina PRIMA se è una chiamata di sistema (idratazione, reconcile, init checklist):
         // queste devono bypassare il blocco lock per garantire server-wins anche per l'utente B.
@@ -2026,12 +2028,18 @@ export function StorageProvider({ children, useMockData = false }) {
             const auditUuid = updated.id || updated.metadata?.id;
 
             // Le risposte delle domande partono dal salvataggio a differenze.
-            // La scheda parte solo se un suo campo è cambiato. Il passaggio
-            // draft → in corso va comunque inviato, anche se la modifica è una domanda.
-            const statusJustStarted = !isSystemCall
-              && audit?.metadata?.status === 'draft'
-              && updated?.metadata?.status === 'in_progress';
-            if ((!skipSync || statusJustStarted) && !isHydratingRef.current && !isSystemCall && auditUuid) {
+            // La scheda parte solo se un suo campo è cambiato. Lo stato «in corso»
+            // parte una volta, e solo se la modifica è una risposta dell'utente.
+            if (updated?.metadata?.status !== 'in_progress' && statusPublishRef.current === auditUuid) {
+              statusPublishRef.current = '';
+            }
+            const wantStatusPublish = allowStatusSync
+              && !isSystemCall
+              && !isHydratingRef.current
+              && updated?.metadata?.status === 'in_progress'
+              && statusPublishRef.current !== auditUuid;
+            if ((!skipSync || wantStatusPublish) && !isHydratingRef.current && !isSystemCall && auditUuid) {
+              if (wantStatusPublish) statusPublishRef.current = auditUuid;
               const storedServerTs = localStorage.getItem(`sgq_srv_ts_${auditUuid}`);
               const serverTsMs = storedServerTs ? new Date(storedServerTs).getTime() : 0;
               const syncUpdatedAt = new Date(Math.max(Date.now(), serverTsMs + 1)).toISOString();
@@ -2451,7 +2459,7 @@ export function StorageProvider({ children, useMockData = false }) {
       // Le risposte reali arrivano da fetchAndApplyServerResponses (chiamata subito dopo in
       // AuditAccordionLayout) oppure dalle modifiche esplicite dell'utente.
       // Non accodare MAI save_responses con NOT_ANSWERED — sovrascriverebbero i dati sul server.
-      updateCurrentAudit((audit) => {
+      const initUpdater = (audit) => {
         const updatedAudit = { ...audit };
 
         if (!updatedAudit.checklist) {
@@ -2463,7 +2471,9 @@ export function StorageProvider({ children, useMockData = false }) {
         updatedAudit.metrics.totalQuestions = totalQuestions;
 
         return updatedAudit;
-      }, { skipSync: true });
+      };
+      initUpdater._systemCall = true;
+      updateCurrentAudit(initUpdater, { skipSync: true });
 
       console.log(
         `✅ Checklist ${standard} inizializzata da template (${totalQuestions} domande)`,
@@ -2509,7 +2519,7 @@ export function StorageProvider({ children, useMockData = false }) {
         Object.keys(bySection).forEach((k) =>
           bySection[k].sort((a, b) => (a.order || 0) - (b.order || 0))
         );
-        updateCurrentAudit((audit) => {
+        const hydrateUpdater = (audit) => {
           const checklist = audit.checklist?.[standardKey];
           if (!checklist) return audit;
           const updated = JSON.parse(JSON.stringify(audit));
@@ -2548,7 +2558,9 @@ export function StorageProvider({ children, useMockData = false }) {
             });
           }
           return updated;
-        });
+        };
+        hydrateUpdater._systemCall = true;
+        updateCurrentAudit(hydrateUpdater, { skipSync: true });
         console.log(`\u2705 [HYDRATE] questionIds idratati per ${standardKey} (${questions.length} domande)`);
       } catch (e) {
         console.warn(`[HYDRATE] questionIds per ${standardKey}:`, e.message);
