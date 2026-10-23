@@ -241,7 +241,8 @@ try {
     window.dispatchEvent(new Event('online'));
   });
   await page.waitForTimeout(4000);
-  result.conflictText = await page.locator('.server-data-banner').innerText().catch(() => '');
+  result.conflictText = await page.getByText('Versione più recente sul server').first().innerText().catch(() => '');
+  result.conflictDetail = await page.getByText(/Domanda \d+/).first().innerText().catch(() => '');
   await page.screenshot({ path: join(ART, 'smoke-mobile-dopo-online.png') });
 
   result.server = await page.evaluate(async (uuid) => {
@@ -295,6 +296,7 @@ try {
     answerKeptAfterOfflineRefresh: result.answerKeptAfterOfflineRefresh,
     reopenedOffline: result.reopenedOffline,
     conflict: (result.conflictText || '').slice(0, 180),
+    conflictDetail: (result.conflictDetail || '').slice(0, 220),
     server: result.server || null,
     error: result.error || null,
   }));
