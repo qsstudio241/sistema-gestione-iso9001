@@ -97,10 +97,15 @@ SET
     END,
     updated_at = GETDATE()
 WHERE audit_id = @audit_id
+  AND organization_id = @organization_id
 `;
 
-async function updateAuditProgress(auditId, queryFn = query) {
-    await queryFn(AUDIT_PROGRESS_SQL, { audit_id: auditId });
+async function updateAuditProgress(auditId, organizationId, queryFn = query) {
+    const orgId = Number(organizationId);
+    if (!Number.isFinite(orgId) || orgId <= 0) {
+        throw new Error('organization_id obbligatorio');
+    }
+    await queryFn(AUDIT_PROGRESS_SQL, { audit_id: auditId, organization_id: orgId });
 }
 
 function progressErrorText(error) {
@@ -115,11 +120,11 @@ function isSqlDeadlock(error) {
     return /deadlock/i.test(progressErrorText(error));
 }
 
-async function updateAuditProgressSafe(auditId, queryFn = query) {
+async function updateAuditProgressSafe(auditId, organizationId, queryFn = query) {
     const maxAttempts = 4;
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
         try {
-            await updateAuditProgress(auditId, queryFn);
+            await updateAuditProgress(auditId, organizationId, queryFn);
             logger.info('Audit statistics updated', { audit_id: auditId });
             return;
         } catch (error) {

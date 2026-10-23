@@ -106,9 +106,12 @@ async function postAuditEventsOnce(req, res) {
                 inserted++;
             } catch (err) {
                 // Unique constraint violation = idempotency_key già presente → skip
-                if (err.number === 2627 || err.number === 2601) {
+                const duplicateNumber = err.number ?? err.originalError?.number;
+                if (duplicateNumber === 2627 || duplicateNumber === 2601) {
+                    // L'evento c'è già (ritento dopo un deadlock). La proiezione
+                    // sulla risposta va comunque eseguita: un continue la saltava
+                    // e il client leggeva 207 senza la risposta salvata.
                     skipped++;
-                    continue;
                 } else {
                     throw err;
                 }
@@ -196,7 +199,7 @@ async function postAuditEventsOnce(req, res) {
             ev.event_type === 'response_set' || ev.event_type === 'response_cleared'
         );
         if (touchedResponses) {
-            await updateAuditProgressSafe(audit_id);
+            await updateAuditProgressSafe(audit_id, organization_id);
         }
 
         logger.info('Audit events saved', { audit_id, inserted, skipped, user_id });

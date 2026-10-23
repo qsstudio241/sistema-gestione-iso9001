@@ -520,8 +520,11 @@ function ChecklistModule({ defaultNorm = "ISO_9001", readOnly = false, forceExpa
             {questionSavePhase === "saving" && (
               <span className="stat-badge saving">Salvataggio…</span>
             )}
-            {(questionSavePhase === "retrying" || questionSavePhase === "error") && (
+            {questionSavePhase === "retrying" && (
               <span className="stat-badge saving">Non salvato, riprovo</span>
+            )}
+            {questionSavePhase === "error" && (
+              <span className="stat-badge saving">Non salvato</span>
             )}
             {questionSavePhase === "saved" && (
               <span className="stat-badge saved">Salvato</span>

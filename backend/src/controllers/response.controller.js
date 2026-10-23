@@ -325,7 +325,7 @@ async function saveResponse(req, res) {
         }
 
         // Aggiorna statistiche audit
-        await updateAuditStatistics(auditIdNumeric);
+        await updateAuditStatistics(auditIdNumeric, organization_id);
 
     } catch (error) {
         logger.error('Error saving response', { error: error.message, stack: error.stack });
@@ -555,7 +555,7 @@ async function bulkSaveResponses(req, res) {
         }
 
         // Aggiorna statistiche audit
-        await updateAuditStatistics(auditIdNumeric);
+        await updateAuditStatistics(auditIdNumeric, organization_id);
 
         logger.info('Bulk responses saved', {
             audit_id: auditId,
@@ -615,7 +615,7 @@ async function deleteResponse(req, res) {
         `, { audit_id: parseInt(auditId), question_id: parseInt(questionId) });
 
         // Aggiorna statistiche
-        await updateAuditStatistics(parseInt(auditId));
+        await updateAuditStatistics(parseInt(auditId), organization_id);
 
         logger.info('Response deleted', { audit_id: auditId, question_id: questionId });
 
@@ -637,8 +637,8 @@ async function deleteResponse(req, res) {
  * Helper: Aggiorna statistiche audit (contatori conformità)
  * UPDATE 10/01/2026: Calcolo basato su response_options.weight_percentage
  */
-async function updateAuditStatistics(auditId) {
-    await updateAuditProgressSafe(auditId);
+async function updateAuditStatistics(auditId, organizationId) {
+    await updateAuditProgressSafe(auditId, organizationId);
 }
 
 module.exports = {

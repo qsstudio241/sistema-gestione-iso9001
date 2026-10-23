@@ -13,14 +13,15 @@ describe('updateAuditProgress', () => {
         const queryFn = async (sql, params) => {
             calls.push({ sql, params });
         };
-        await updateAuditProgress(35234, queryFn);
+        await updateAuditProgress(35234, 1002, queryFn);
         expect(calls).toHaveLength(1);
-        expect(calls[0].params).toEqual({ audit_id: 35234 });
+        expect(calls[0].params).toEqual({ audit_id: 35234, organization_id: 1002 });
         expect(calls[0].sql).toMatch(/checklist_questions/);
         expect(calls[0].sql).toMatch(/cq\.is_active = 1/);
         expect(calls[0].sql).toMatch(/answered_questions/);
         expect(calls[0].sql).not.toMatch(/observations_count/);
         expect(calls[0].sql).not.toMatch(/opportunities_count/);
+        expect(calls[0].sql).toMatch(/organization_id = @organization_id/);
     });
 
     it('riprova il conteggio se il database segnala un deadlock', async () => {
@@ -33,7 +34,7 @@ describe('updateAuditProgress', () => {
                 throw error;
             }
         };
-        await updateAuditProgressSafe(35234, queryFn);
+        await updateAuditProgressSafe(35234, 1002, queryFn);
         expect(calls).toBe(2);
     });
 
