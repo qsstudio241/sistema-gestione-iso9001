@@ -30,6 +30,14 @@ function isBlockingStatus(status) {
     return !RESOLVED.has(status || STATUS.APERTO);
 }
 
+function pickResolution(notice, rows) {
+    if (!notice) return null;
+    return (rows || []).find((row) => row
+        && row.rule_code === notice.code
+        && row.fingerprint
+        && row.fingerprint === notice.fingerprint) || null;
+}
+
 function applyResolution(notice, row) {
     const base = notice || {};
     const same = row && row.fingerprint && row.fingerprint === base.fingerprint;
@@ -60,6 +68,7 @@ module.exports = {
     ACTION_TO_STATUS,
     RESOLVED,
     isBlockingStatus,
+    pickResolution,
     applyResolution,
     openNotices,
     countsAsVerifiedConformity,

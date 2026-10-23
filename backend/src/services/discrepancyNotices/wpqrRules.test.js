@@ -4,7 +4,7 @@ const {
     evaluateWpqrNotices, CODES,
 } = require('./wpqrRules');
 const {
-    countsAsVerifiedConformity, effectiveApprovalStatus, applyResolution, STATUS,
+    countsAsVerifiedConformity, effectiveApprovalStatus, applyResolution, pickResolution, STATUS,
 } = require('./status');
 const { registerDiscrepancyDomain, listDiscrepancyDomains, evaluateDiscrepancy } = require('./index');
 
@@ -145,6 +145,18 @@ describe('approvato con avviso aperto e avviso risolto', () => {
         expect(resolved.blocks_conformity).toBe(false);
         expect(effectiveApprovalStatus('approvata', [resolved])).toBe('approvata');
         expect(countsAsVerifiedConformity('approvata', [resolved])).toBe(true);
+    });
+
+    test('due esiti sulla stessa regola: conta solo l\'impronta dei valori attuali', () => {
+        const current = { code: 'WPQR.KEY_FIELDS_EMPTY', fingerprint: 'attuale' };
+        const rows = [
+            { rule_code: current.code, fingerprint: 'vecchia', status: 'confermato' },
+            { rule_code: current.code, fingerprint: 'attuale', status: 'confermato' },
+        ];
+        expect(pickResolution(current, rows).fingerprint).toBe('attuale');
+        expect(pickResolution(current, [rows[0]])).toBeNull();
+        const reopened = applyResolution(current, pickResolution(current, [rows[0]]));
+        expect(reopened.status).toBe('aperto');
     });
 
     test('segnalato resta da rivedere', () => {

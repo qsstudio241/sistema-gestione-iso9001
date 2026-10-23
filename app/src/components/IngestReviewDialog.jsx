@@ -438,9 +438,12 @@ export default function IngestReviewDialog({
     discPreviewGen.current = gen;
     const timer = setTimeout(async () => {
       try {
+        const record = formRef.current || {};
+        const fromRecord = Array.isArray(record.test_runs) ? record.test_runs : [];
+        const fromFields = Array.isArray(fields?.test_runs) ? fields.test_runs : [];
         const res = await apiService.previewWpqrNotices({
-          record: formRef.current,
-          runs: formRef.current?.test_runs || [],
+          record,
+          runs: fromRecord.length ? fromRecord : fromFields,
           resolutions: discResolutions.current,
         });
         if (discPreviewGen.current === gen) setDiscNotices(res?.data?.discrepancy_notices || []);
@@ -449,7 +452,7 @@ export default function IngestReviewDialog({
       }
     }, 300);
     return () => clearTimeout(timer);
-  }, [open, docType, form]);
+  }, [open, docType, form, fields]);
 
   function handleDiscAction(notice, action) {
     discPreviewGen.current += 1;

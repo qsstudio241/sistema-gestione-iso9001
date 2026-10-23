@@ -884,6 +884,12 @@ function WPQRFormModal({ wpqr, defaultCompanyId, onSave, onClose, onSaved }) {
   const [notices, setNotices] = useState(() => wpqr?.discrepancy_notices || []);
   const [noticeBusy, setNoticeBusy] = useState(null);
   const previewGen = useRef(0);
+  const [noticeRuns, setNoticeRuns] = useState(() => (
+    Array.isArray(wpqr?.test_runs) ? wpqr.test_runs : []
+  ));
+  const [noticeRunsReady, setNoticeRunsReady] = useState(
+    () => !wpqr?.id || Array.isArray(wpqr?.test_runs),
+  );
   const resolutionsRef = useRef(
     (wpqr?.discrepancy_notices || [])
       .filter((n) => n.status && n.status !== "aperto")
@@ -904,14 +910,36 @@ function WPQRFormModal({ wpqr, defaultCompanyId, onSave, onClose, onSaved }) {
   const set = (key, val) => setForm((f) => ({ ...f, [key]: val }));
 
   useEffect(() => {
+    const id = wpqr?.id;
+    if (!id || Array.isArray(wpqr?.test_runs) || typeof apiService.getWpqrTestRuns !== "function") {
+      if (Array.isArray(wpqr?.test_runs)) setNoticeRuns(wpqr.test_runs);
+      setNoticeRunsReady(true);
+      return undefined;
+    }
+    let cancelled = false;
+    setNoticeRunsReady(false);
+    apiService.getWpqrTestRuns(id)
+      .then((res) => {
+        if (cancelled) return;
+        setNoticeRuns(Array.isArray(res?.runs) ? res.runs : []);
+        setNoticeRunsReady(true);
+      })
+      .catch(() => {
+        if (!cancelled) setNoticeRunsReady(true);
+      });
+    return () => { cancelled = true; };
+  }, [wpqr]);
+
+  useEffect(() => {
     if (typeof apiService.previewWpqrNotices !== "function") return undefined;
+    if (wpqr?.id && !noticeRunsReady) return undefined;
     const gen = previewGen.current + 1;
     previewGen.current = gen;
     const timer = setTimeout(async () => {
       try {
         const res = await apiService.previewWpqrNotices({
           record: form,
-          runs: wpqr?.test_runs || form.test_runs || [],
+          runs: noticeRuns,
           resolutions: resolutionsRef.current,
         });
         if (previewGen.current === gen) setNotices(res?.data?.discrepancy_notices || []);
@@ -920,7 +948,7 @@ function WPQRFormModal({ wpqr, defaultCompanyId, onSave, onClose, onSaved }) {
       }
     }, 400);
     return () => clearTimeout(timer);
-  }, [form, wpqr]);
+  }, [form, wpqr, noticeRuns, noticeRunsReady]);
 
   function focusNoticeField(field) {
     if (!field) return;

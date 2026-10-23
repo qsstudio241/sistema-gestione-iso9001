@@ -9,6 +9,7 @@ const { query } = require('../config/database');
 const {
     evaluateDiscrepancy,
     applyResolution,
+    pickResolution,
     openNotices,
     countsAsVerifiedConformity,
     effectiveApprovalStatus,
@@ -115,8 +116,7 @@ async function loadResolutions(organizationId, ids) {
 
 function mergeNotices(record, runs, resolutions) {
     const evaluated = evaluateDiscrepancy(DOMAIN, { ...record, ...optionalColumns(record) }, { runs: runs || [] });
-    const byCode = new Map((resolutions || []).map((row) => [row.rule_code, row]));
-    return evaluated.map((notice) => applyResolution(notice, byCode.get(notice.code)));
+    return evaluated.map((notice) => applyResolution(notice, pickResolution(notice, resolutions)));
 }
 
 function decorateRecord(record, runs, resolutions) {
