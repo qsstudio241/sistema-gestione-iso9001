@@ -43,6 +43,11 @@ export function useAuth() {
   return context;
 }
 
+/** Come useAuth, ma null fuori dal provider (test di pagina senza login). */
+export function useAuthOptional() {
+  return useContext(AuthContext);
+}
+
 /**
  * Provider Autenticazione
  */

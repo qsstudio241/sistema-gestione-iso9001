@@ -1,0 +1,67 @@
+/**
+ * Stato degli avvisi di discrepanza e effetto sulla conformità verificata.
+ * Puro: nessun DB. Vale per WPQR e, con gli stessi stati, per i domini successivi.
+ *
+ * Un avviso aperto, in correzione o segnalato blocca la conformità verificata.
+ * Confermato o corretto non blocca: un record approvato torna a contare.
+ * Se il record è approvato e resta almeno un avviso che blocca, lo stato
+ * effettivo è «da rivedere».
+ */
+
+'use strict';
+
+const STATUS = Object.freeze({
+    APERTO: 'aperto',
+    CONFERMATO: 'confermato',
+    IN_CORREZIONE: 'in_correzione',
+    SEGNALATO: 'segnalato',
+    CORRETTO: 'corretto',
+});
+
+const ACTION_TO_STATUS = Object.freeze({
+    conferma: STATUS.CONFERMATO,
+    correggi: STATUS.IN_CORREZIONE,
+    segnala: STATUS.SEGNALATO,
+});
+
+const RESOLVED = new Set([STATUS.CONFERMATO, STATUS.CORRETTO]);
+
+function isBlockingStatus(status) {
+    return !RESOLVED.has(status || STATUS.APERTO);
+}
+
+function applyResolution(notice, row) {
+    const base = notice || {};
+    const same = row && row.fingerprint && row.fingerprint === base.fingerprint;
+    const status = same ? row.status : STATUS.APERTO;
+    return {
+        ...base,
+        status,
+        blocks_conformity: isBlockingStatus(status),
+        note: same ? (row.note || null) : null,
+    };
+}
+
+function openNotices(notices) {
+    return (notices || []).filter((n) => n && n.blocks_conformity !== false && isBlockingStatus(n.status));
+}
+
+function countsAsVerifiedConformity(approvalStatus, notices) {
+    return approvalStatus === 'approvata' && openNotices(notices).length === 0;
+}
+
+function effectiveApprovalStatus(approvalStatus, notices) {
+    if (approvalStatus === 'approvata' && openNotices(notices).length > 0) return 'da_rivedere';
+    return approvalStatus || 'bozza';
+}
+
+module.exports = {
+    STATUS,
+    ACTION_TO_STATUS,
+    RESOLVED,
+    isBlockingStatus,
+    applyResolution,
+    openNotices,
+    countsAsVerifiedConformity,
+    effectiveApprovalStatus,
+};

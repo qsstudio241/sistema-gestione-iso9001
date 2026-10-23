@@ -21,6 +21,7 @@ export default function WpqrUploadButton({ companyId, companyName, onUploadCompl
   const [reviewItem, setReviewItem] = useState(null);
   const [reviewBusy, setReviewBusy] = useState(false);
   const inputRef = useRef(null);
+  const noticeResolutions = useRef([]);
   const scopeKey = isValidCompany ? String(companyIdInt) : "";
 
   useEffect(() => {
@@ -77,6 +78,25 @@ export default function WpqrUploadButton({ companyId, companyName, onUploadCompl
     setReviewBusy(true);
     try {
       const res = await apiService.confirmIngestStaging(reviewItem.staging_id, fields);
+      const wpqrId = res?.wpqr_id;
+      const pendingActs = noticeResolutions.current || [];
+      if (wpqrId && pendingActs.length && typeof apiService.actWpqrNotice === "function") {
+        const actionOf = { confermato: "conferma", in_correzione: "correggi", segnalato: "segnala" };
+        for (const row of pendingActs) {
+          const action = actionOf[row.status];
+          if (!action) continue;
+          try {
+            await apiService.actWpqrNotice(wpqrId, {
+              action,
+              rule_code: row.rule_code,
+              note: row.note,
+            });
+          } catch {
+            /* la conferma del record resta valida */
+          }
+        }
+      }
+      noticeResolutions.current = [];
       updateResult(reviewItem.staging_id, {
         status: "confirmed",
         wpqr_id: res.wpqr_id,
@@ -300,6 +320,8 @@ export default function WpqrUploadButton({ companyId, companyName, onUploadCompl
         fields={reviewItem?.fields}
         fieldConfidence={reviewItem?.field_confidence}
         warnings={reviewItem?.warnings}
+        initialNotices={reviewItem?.discrepancy_notices}
+        onDiscrepancyResolutions={(rows) => { noticeResolutions.current = rows || []; }}
         onConfirm={handleConfirmReview}
         onReject={handleRejectReview}
         onClose={() => setReviewItem(null)}

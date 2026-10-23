@@ -27,6 +27,7 @@ const { splitRefList, normalizeWpqrRef } = require('../utils/wpqrSupportRefs');
 const wpsWpqrLinks = require('./wpsWpqrLinks.service');
 const wpqrTestRuns = require('./wpqrTestRuns.service');
 const { withValidityRuns } = require('./wpqrValidityRuns');
+const { evaluateWpqrNotices } = require('./discrepancyNotices');
 const { isFragmentCertificateNumber, CERTIFICATE_CONFIRM_SQL } = require('../utils/ruleFieldExtractors');
 
 /** Un frammento («ifica», «o.», «Risultati») non si salva: il numero vero o null. */
@@ -754,6 +755,10 @@ async function extractWPQRFromPdf(pdfBuffer, fileName, organizationId, companyId
     if (reviewMatchesSupportingRef(reviewFields, pipeline.fields)) {
         warnings.push('Il numero WPQR coincide con una WPQR di supporto — verificare che non sia il numero della WPS o di un altro certificato');
     }
+    const discrepancy_notices = evaluateWpqrNotices(reviewFields, { runs: reviewFields.test_runs || [] });
+    for (const item of discrepancy_notices) {
+        if (item.message_it && !warnings.includes(item.message_it)) warnings.push(item.message_it);
+    }
     const linkResult = { wps_match: linkReview.wpsMatch, verification_flags: linkReview.flags };
 
     if (reviewFields.reference_number && await checkDuplicate(reviewFields.reference_number, organizationId, companyId)) {
@@ -763,6 +768,7 @@ async function extractWPQRFromPdf(pdfBuffer, fileName, organizationId, companyId
             warnings,
             fields: reviewFields,
             field_confidence: pipeline.fieldConfidence,
+            discrepancy_notices,
             ...linkResult,
         };
     }
@@ -777,6 +783,7 @@ async function extractWPQRFromPdf(pdfBuffer, fileName, organizationId, companyId
         field_confidence: pipeline.fieldConfidence,
         confidence,
         warnings,
+        discrepancy_notices,
         ai_model: pipeline.aiModel,
     };
 }

@@ -2835,6 +2835,8 @@ class ApiService {
 
     async getWPQRList(params = {})   { const qs = new URLSearchParams(params).toString(); return this.get(`/welding/wpqr${qs ? '?' + qs : ''}`); }
     async getWPQR(id)                { return this.get(`/welding/wpqr/${id}`); }
+    async previewWpqrNotices(body)   { return this.post('/welding/wpqr/notices/preview', body); }
+    async actWpqrNotice(id, body)    { return this.post(`/welding/wpqr/${id}/notices`, body); }
     async createWPQR(data)           { return this.post('/welding/wpqr', data); }
     async updateWPQR(id, data)       { return this.put(`/welding/wpqr/${id}`, data); }
     async deleteWPQR(id)             { return this.delete(`/welding/wpqr/${id}`); }

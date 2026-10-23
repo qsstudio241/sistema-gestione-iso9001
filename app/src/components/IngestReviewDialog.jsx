@@ -10,6 +10,8 @@ import { repairTextEncoding } from "../utils/textEncodingRepair";
 import IngestDialogShell from "./IngestDialogShell";
 import IngestSourcePreview from "./IngestSourcePreview";
 import QualificationVerifyPanel from "./QualificationVerifyPanel";
+import DiscrepancyNotices from "./DiscrepancyNotices";
+import { useAuthOptional } from "../contexts/AuthContext";
 import "./IngestReviewDialog.css";
 
 const CONFIDENCE_LABELS = {
@@ -351,6 +353,8 @@ export default function IngestReviewDialog({
   onReject,
   onClose,
   busy = false,
+  initialNotices = null,
+  onDiscrepancyResolutions,
 }) {
   const schema = useMemo(() => getSchemaForDocType(docType), [docType]);
   const [form, setForm] = useState({});
@@ -363,6 +367,14 @@ export default function IngestReviewDialog({
   const { seed: seedVerify, run: runVerify, reset: resetVerify } = verify;
   // Campi confermati dall'AI (alta confidenza) che l'operatore ha scelto di modificare a mano.
   const [editingFields, setEditingFields] = useState(() => new Set());
+  const [discNotices, setDiscNotices] = useState([]);
+  const discResolutions = useRef([]);
+  const discPreviewGen = useRef(0);
+  const initialNoticesRef = useRef(initialNotices);
+  initialNoticesRef.current = initialNotices;
+  const auth = useAuthOptional();
+  const canWriteNotices = docType === "wpqr"
+    && !!(auth && typeof auth.canWriteModule === "function" && auth.canWriteModule(form.company_id));
 
   useEffect(() => {
     if (open) {
@@ -401,6 +413,64 @@ export default function IngestReviewDialog({
   const visibleWarnings = verifiedMessages
     ? warnings.filter((w) => !verifiedMessages.has(w))
     : warnings;
+  const noticeTexts = new Set((discNotices || []).map((n) => n.message_it).filter(Boolean));
+  const shownWarnings = visibleWarnings.filter((w) => !noticeTexts.has(w));
+
+  useEffect(() => {
+    if (!open || docType !== "wpqr") return undefined;
+    const seed = Array.isArray(initialNoticesRef.current) ? initialNoticesRef.current : [];
+    setDiscNotices(seed);
+    discResolutions.current = seed
+      .filter((n) => n.status && n.status !== "aperto")
+      .map((n) => ({
+        rule_code: n.code,
+        fingerprint: n.fingerprint,
+        status: n.status,
+        note: n.note || null,
+      }));
+    return undefined;
+  }, [open, docType, stagingId]);
+
+  useEffect(() => {
+    if (!open || docType !== "wpqr") return undefined;
+    if (typeof apiService.previewWpqrNotices !== "function") return undefined;
+    const gen = discPreviewGen.current + 1;
+    discPreviewGen.current = gen;
+    const timer = setTimeout(async () => {
+      try {
+        const res = await apiService.previewWpqrNotices({
+          record: formRef.current,
+          runs: formRef.current?.test_runs || [],
+          resolutions: discResolutions.current,
+        });
+        if (discPreviewGen.current === gen) setDiscNotices(res?.data?.discrepancy_notices || []);
+      } catch {
+        /* la revisione resta utilizzabile */
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [open, docType, form]);
+
+  function handleDiscAction(notice, action) {
+    discPreviewGen.current += 1;
+    const status = action === "conferma" ? "confermato"
+      : action === "correggi" ? "in_correzione"
+        : "segnalato";
+    const next = {
+      ...notice,
+      status,
+      blocks_conformity: action !== "conferma",
+    };
+    if (action === "correggi" && notice.field) {
+      document.getElementById(`ingest-field-${notice.field}`)?.focus();
+    }
+    setDiscNotices((list) => list.map((n) => (n.code === notice.code ? next : n)));
+    discResolutions.current = [
+      ...discResolutions.current.filter((row) => row.rule_code !== notice.code),
+      { rule_code: notice.code, fingerprint: notice.fingerprint, status, note: null },
+    ];
+    onDiscrepancyResolutions?.(discResolutions.current);
+  }
 
   // Verifica solo al blur (mai a ogni tasto); stesso insieme di campi gia' verificato = nessuna chiamata.
   function handleFieldsBlur() {
@@ -513,9 +583,19 @@ export default function IngestReviewDialog({
       contentClassName="ingest-review__form-pane"
       renderContent={() => (
         <>
-          {visibleWarnings.length > 0 && (
+          {docType === "wpqr" && (
+            <DiscrepancyNotices
+              notices={discNotices}
+              canAct={canWriteNotices}
+              canCorrect={canWriteNotices}
+              busyCode={busy ? "review" : null}
+              onAction={handleDiscAction}
+            />
+          )}
+
+          {shownWarnings.length > 0 && (
             <div className="ingest-review__warnings">
-              {visibleWarnings.map((w, i) => (
+              {shownWarnings.map((w, i) => (
                 <div key={i} className="ingest-review__warning">{"\u26A0\uFE0F"} {w}</div>
               ))}
             </div>

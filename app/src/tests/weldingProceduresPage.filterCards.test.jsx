@@ -6,7 +6,7 @@
  *
  * Mappatura: le card sono calcolate SOLO su wpqr_records (getWPQRStats) — non
  * hanno alcun significato nel tab WPS, quindi sono mostrate solo quando
- * activeTab === "wpqr". 3 card cliccabili (Da approvare/Approvate/Rifiutate),
+ * activeTab === "wpqr". Card cliccabili (Da approvare/Da rivedere/Approvate/Rifiutate),
  * tendina approval_status rimossa. Le card semaforo scadenza (Valide/Scad.60/
  * Scad.30/Scadute) sono state tolte: WPQR non ha expiry_date (ISO 15614/15613/14555).
  */
@@ -73,6 +73,34 @@ describe("WeldingProceduresPage — card statistiche WPQR sostituiscono la tendi
     expect(screen.getByRole("button", { name: /Da approvare/i })).toBeTruthy();
     expect(screen.getByRole("button", { name: /Approvate/i })).toBeTruthy();
     expect(screen.getByRole("button", { name: /Rifiutate/i })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /Da rivedere/i })).toBeTruthy();
+  });
+
+  it("badge avvisi in lista e card Da rivedere filtrano approval_status=da_rivedere", async () => {
+    const user = userEvent.setup();
+    apiService.getWPQRList.mockResolvedValue({
+      data: [{
+        id: 23,
+        wpqr_code: "16VE01735P02/A",
+        approval_status: "approvata",
+        effective_approval_status: "da_rivedere",
+        open_notice_count: 1,
+      }],
+      pagination: { total: 1 },
+    });
+    render(<WeldingProceduresPage />);
+    await waitFor(() => expect(apiService.getWPQRStats).toHaveBeenCalled());
+    await user.click(screen.getByRole("button", { name: /^WPQR/i }));
+    await waitFor(() => expect(screen.getByTestId("wpqr-notice-badge")).toBeTruthy());
+    expect(screen.getByTestId("wpqr-notice-badge").textContent).toMatch(/1/);
+
+    apiService.getWPQRList.mockClear();
+    await user.click(screen.getByRole("button", { name: /Da rivedere/i }));
+    await waitFor(() => {
+      expect(apiService.getWPQRList).toHaveBeenCalledWith(
+        expect.objectContaining({ approval_status: "da_rivedere" })
+      );
+    });
   });
 
   it("non mostra più la tendina 'Tutti gli stati' (approval_status, rimossa, ridondante con le card)", async () => {
