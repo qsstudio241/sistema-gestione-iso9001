@@ -61,15 +61,23 @@ function readSql(fsImpl, backendRoot, file) {
 async function schemaState(pool) {
     const tab = await pool.request().query(`
         SELECT OBJECT_ID(N'dbo.discrepancy_notices', N'U') AS notices,
+               COL_LENGTH(N'dbo.discrepancy_notices', N'reason') AS reason,
+               COL_LENGTH(N'dbo.discrepancy_notices', N'previous_value') AS previous_value,
                COL_LENGTH(N'dbo.wpqr_records', N'material_group_range') AS material_group_range,
                COL_LENGTH(N'dbo.wpqr_records', N'fillet_throat_range') AS fillet_throat_range
     `);
     const row = tab.recordset[0] || {};
     return {
         notices: row.notices != null,
+        reason: row.reason != null,
+        previous: row.previous_value != null,
         material: row.material_group_range != null,
         fillet: row.fillet_throat_range != null,
-        complete: row.notices != null && row.material_group_range != null && row.fillet_throat_range != null,
+        complete: row.notices != null
+            && row.reason != null
+            && row.previous_value != null
+            && row.material_group_range != null
+            && row.fillet_throat_range != null,
     };
 }
 

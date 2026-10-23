@@ -2837,6 +2837,15 @@ class ApiService {
     async getWPQR(id)                { return this.get(`/welding/wpqr/${id}`); }
     async previewWpqrNotices(body)   { return this.post('/welding/wpqr/notices/preview', body); }
     async actWpqrNotice(id, body)    { return this.post(`/welding/wpqr/${id}/notices`, body); }
+    async listWpqrSignals(params = {}) {
+        const qs = new URLSearchParams();
+        Object.entries(params).forEach(([key, value]) => {
+            if (value != null && value !== '') qs.set(key, String(value));
+        });
+        const q = qs.toString();
+        return this.get(`/welding/wpqr/signals${q ? `?${q}` : ''}`);
+    }
+    async approveWpqrSignalExample(id) { return this.post(`/welding/wpqr/signals/${id}/learning-example`, {}); }
     async createWPQR(data)           { return this.post('/welding/wpqr', data); }
     async updateWPQR(id, data)       { return this.put(`/welding/wpqr/${id}`, data); }
     async deleteWPQR(id)             { return this.delete(`/welding/wpqr/${id}`); }

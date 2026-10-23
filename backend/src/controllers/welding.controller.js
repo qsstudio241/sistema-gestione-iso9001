@@ -1995,6 +1995,80 @@ async function previewWpqrNotices(req, res) {
     }
 }
 
+async function listWpqrSignals(req, res) {
+    try {
+        const { organization_id } = req.user;
+        const parsedCompany = parseListCompanyId(req.query.company_id);
+        if (parsedCompany.error) {
+            return res.status(400).json({ error: 'company_id non valido.', code: 'INVALID_COMPANY_ID' });
+        }
+        if (parsedCompany.value != null) {
+            if (await denyOutsideCompany(res, req.user, parsedCompany.value, 'read')) return;
+        }
+        const conditions = [
+            'wq.organization_id = @organization_id',
+            'wq.deleted_at IS NULL',
+        ];
+        const params = { organization_id };
+        await pushWpqrCompanyScope(req.user, conditions, params, 'sigco');
+        if (parsedCompany.value != null) {
+            conditions.push('wq.company_id = @company_id');
+            params.company_id = parsedCompany.value;
+        }
+        const data = await discrepancyNotices.listWpqrSignals({
+            conditions,
+            params,
+            reason: req.query.reason ? String(req.query.reason) : null,
+            status: req.query.status ? String(req.query.status) : null,
+        });
+        res.json({ success: true, data });
+    } catch (error) {
+        const status = error.status || 500;
+        if (status >= 500) logger.error('Error listing WPQR signals', { error: error.message });
+        res.status(status).json({
+            error: error.message || 'Errore elenco segnalazioni',
+            code: error.code || 'WPQR_SIGNALS_ERROR',
+        });
+    }
+}
+
+async function approveWpqrSignalExample(req, res) {
+    try {
+        const { organization_id, user_id, role } = req.user;
+        if (role !== 'admin' && role !== 'superadmin') {
+            return res.status(403).json({ error: 'Permesso insufficiente', code: 'FORBIDDEN' });
+        }
+        const id = parseInt(req.params.id, 10);
+        if (!Number.isInteger(id) || id <= 0) {
+            return res.status(400).json({ error: 'Segnalazione non valida', code: 'VALIDATION_ERROR' });
+        }
+        const existing = await query(`
+            SELECT wq.company_id
+            FROM discrepancy_notices n
+            INNER JOIN wpqr_records wq
+                ON wq.id = n.entity_id AND wq.organization_id = n.organization_id AND wq.deleted_at IS NULL
+            WHERE n.id = @id AND n.organization_id = @organization_id AND n.domain = N'wpqr'
+        `, { id, organization_id });
+        if (existing.recordset.length === 0) {
+            return res.status(404).json({ error: 'Segnalazione non trovata', code: 'NOTICE_NOT_FOUND' });
+        }
+        if (await denyOutsideCompany(res, req.user, existing.recordset[0].company_id, 'write')) return;
+        const data = await discrepancyNotices.approveLearningExample({
+            organizationId: organization_id,
+            noticeId: id,
+            userId: user_id,
+        });
+        res.json({ success: true, data });
+    } catch (error) {
+        const status = error.status || 500;
+        if (status >= 500) logger.error('Error approving WPQR learning example', { error: error.message });
+        res.status(status).json({
+            error: error.message || 'Errore approvazione esempio',
+            code: error.code || 'WPQR_SIGNAL_APPROVE_ERROR',
+        });
+    }
+}
+
 async function actWpqrNotice(req, res) {
     try {
         const id = parseInt(req.params.id, 10);
@@ -2014,6 +2088,8 @@ async function actWpqrNotice(req, res) {
             action: req.body && req.body.action,
             ruleCode: req.body && req.body.rule_code,
             note: req.body && req.body.note,
+            reason: req.body && req.body.reason,
+            newValue: req.body && req.body.new_value,
         });
         res.json({ success: true, data });
     } catch (error) {
@@ -2046,6 +2122,8 @@ module.exports = {
     // New
     getWPQRStats,
     previewWpqrNotices,
+    listWpqrSignals,
+    approveWpqrSignalExample,
     actWpqrNotice,
     approveWPQR,
     rejectWPQR,

@@ -8,6 +8,7 @@
 'use strict';
 
 const crypto = require('crypto');
+const texts = require('../../content/discrepancyNoticeTexts');
 const { ensureDefaultPacks } = require('../qualificationVerify/registerDefaultPacks');
 const { toWpqrView, SOURCE } = require('../qualificationVerify/wpqrRecordView');
 const { isStandardCovered, listRulePacks } = require('../qualificationVerify/verifyRegistry');
@@ -97,16 +98,7 @@ function codeCertNotice(record) {
     const ente = enteLabel(record);
     const dove = ente ? `Sul certificato ${ente}` : 'Sul certificato';
     const kind = oZeroKind(code, cert);
-    let message;
-    if (kind === 'cert_o') {
-        message = `\u26A0\uFE0F Il numero del certificato non coincide con il codice WPQR. ${dove} c'è la lettera O (${cert}), nel codice c'è lo zero (${code}). Controlla sul PDF.`;
-    } else if (kind === 'code_o') {
-        message = `\u26A0\uFE0F Il numero del certificato non coincide con il codice WPQR. ${dove} c'è lo zero (${cert}), nel codice c'è la lettera O (${code}). Controlla sul PDF.`;
-    } else if (kind === 'mixed') {
-        message = `\u26A0\uFE0F Il numero del certificato non coincide con il codice WPQR. ${dove} c'è ${cert}, nel codice c'è ${code}. La differenza è tra la lettera O e lo zero. Controlla sul PDF.`;
-    } else {
-        message = `\u26A0\uFE0F Il numero del certificato (${cert}) non coincide con il codice WPQR (${code}). Controlla sul PDF.`;
-    }
+    const message = texts.codeCertMessage({ kind, dove, cert, code });
     return notice(CODES.CODE_CERT, 'certificate_number', message, { code, cert });
 }
 
@@ -148,7 +140,7 @@ function fillerNotice(record, runs) {
     if (!different.length) return null;
     const inner = different[0];
     const extra = different.length > 1 ? ' (e altre designazioni diverse nelle pagine interne)' : '';
-    const message = `Il materiale d'apporto della copertina (${cover}) non coincide con quello delle pagine interne (${inner})${extra}. Controlla sul PDF.`;
+    const message = texts.fillerMessage({ cover, inner, extra });
     return notice(CODES.FILLER, 'filler_material', message, { cover, inner });
 }
 
@@ -230,9 +222,7 @@ function materialNotice(record) {
     const validity = parseValidity(raw);
     const inside = groupIncluded(test, validity);
     if (inside === true) return null;
-    const message = inside === false
-        ? `Il gruppo materiale del saggio (${test}) non è coerente con il campo di validità (${raw}). Controlla sul PDF.`
-        : `Il gruppo materiale del saggio (${test}) non si riesce a confrontare con il campo di validità (${raw}). Controlla sul PDF.`;
+    const message = texts.materialMessage({ inside, test, raw });
     return notice(CODES.MATERIAL, 'material_group_range', message, { test, raw });
 }
 
@@ -263,7 +253,7 @@ function filletNotice(record) {
     const hasTest = record.throat_test_mm != null && record.throat_test_mm !== '';
     if (!quote && !hasTest) return null;
     const quoted = quote ? ` ${quote} mm` : '';
-    const message = `Il campo di validità è incompleto: manca il range d'angolo${quoted}. Controlla sul PDF.`;
+    const message = texts.filletMessage(quoted);
     return notice(CODES.FILLET, 'fillet_throat_range', message, { quote: quote || null, joint: text(record.joint_type) });
 }
 
@@ -289,7 +279,7 @@ function editionNotice(record) {
         return notice(
             CODES.EDITION,
             'standard_reference',
-            `La verifica di conformità non è completa: la norma letta (${raw}) non si può controllare. Non è un esito di conformità.`,
+            texts.editionUnreadableMessage(raw),
             { raw, error: err.message },
         );
     }
@@ -299,7 +289,7 @@ function editionNotice(record) {
     const coveredText = covered.length
         ? ` Le regole in libreria coprono ${standard.label || 'questa norma'} ${covered.join(', ')}.`
         : '';
-    const message = `La verifica di conformità non è completa: sul certificato c'è ${raw} e questa edizione non è in libreria.${coveredText} Non si può verificare la conformità su questa edizione.`;
+    const message = texts.editionMessage({ raw, coveredText });
     return notice(CODES.EDITION, 'standard_reference', message, { raw, edition: standard.edition || null });
 }
 
@@ -312,15 +302,14 @@ function keyFieldsNotice(record) {
     if (!text(record.standard_reference) && !text(record.standard_ref)) missing.push('norma di riferimento');
     if (!missing.length) return null;
     const onlyEnte = missing.length === 1 && missing[0] === 'ente emittente';
-    const message = onlyEnte
-        ? "L'ente emittente è vuoto. Controlla sul PDF."
-        : `Mancano dati chiave: ${missing.join(', ')}. Controlla sul PDF.`;
+    const message = texts.keyFieldsMessage({ onlyEnte, missing });
     return notice(CODES.KEYS, missing[0] === 'ente emittente' ? 'testing_body' : 'wpqr_code', message, { missing });
 }
 
 function evaluateWpqrNotices(record, context = {}) {
     const row = record && typeof record === 'object' ? record : {};
     const runs = Array.isArray(context.runs) ? context.runs : (Array.isArray(row.test_runs) ? row.test_runs : []);
+    const page = texts.knownPdfPage(row);
     const out = [];
     for (const item of [
         codeCertNotice(row),
@@ -330,7 +319,14 @@ function evaluateWpqrNotices(record, context = {}) {
         editionNotice(row),
         keyFieldsNotice(row),
     ]) {
-        if (item) out.push(item);
+        if (!item) continue;
+        const raw = row[item.field];
+        out.push({
+            ...item,
+            message_it: texts.withPdfPage(item.message_it, page),
+            pdf_page: page,
+            current_value: raw == null ? '' : String(raw),
+        });
     }
     return out;
 }

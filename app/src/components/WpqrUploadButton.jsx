@@ -81,7 +81,7 @@ export default function WpqrUploadButton({ companyId, companyName, onUploadCompl
       const wpqrId = res?.wpqr_id;
       const pendingActs = noticeResolutions.current || [];
       if (wpqrId && pendingActs.length && typeof apiService.actWpqrNotice === "function") {
-        const actionOf = { confermato: "conferma", in_correzione: "correggi", segnalato: "segnala" };
+        const actionOf = { confermato: "conferma", in_correzione: "correggi", corretto: "correggi", segnalato: "segnala" };
         for (const row of pendingActs) {
           const action = actionOf[row.status];
           if (!action) continue;
@@ -90,6 +90,8 @@ export default function WpqrUploadButton({ companyId, companyName, onUploadCompl
               action,
               rule_code: row.rule_code,
               note: row.note,
+              reason: row.reason,
+              new_value: row.new_value,
             });
           } catch {
             /* la conferma del record resta valida */

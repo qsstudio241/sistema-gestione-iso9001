@@ -89,6 +89,8 @@ router.delete('/welding/wps/:id/welders/:welderId', ctrl.removeWpsWelder);
 // WPQR — stats e upload-batch PRIMA di /:id
 router.get   ('/welding/wpqr/stats',          ctrl.getWPQRStats);
 router.post  ('/welding/wpqr/notices/preview', ctrl.previewWpqrNotices);
+router.get   ('/welding/wpqr/signals',        ctrl.listWpqrSignals);
+router.post  ('/welding/wpqr/signals/:id/learning-example', ctrl.approveWpqrSignalExample);
 router.post  ('/welding/wpqr/upload-batch',   upload.array('files', 20), ctrl.uploadWPQRBatch);
 router.get   ('/welding/sketches',            ctrl.listWeldSketches);
 router.post  ('/welding/sketches/upload',     sketchUpload.single('file'), ctrl.uploadWeldSketch);

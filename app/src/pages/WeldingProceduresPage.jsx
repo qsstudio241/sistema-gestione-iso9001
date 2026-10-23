@@ -11,7 +11,7 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import apiService from "../services/apiService";
 import { useCompanyScope } from "../contexts/CompanyScopeContext";
 import { useAuthOptional } from "../contexts/AuthContext";
-import DiscrepancyNotices from "../components/DiscrepancyNotices";
+import DiscrepancyNotices, { WpqrSignalsList } from "../components/DiscrepancyNotices";
 import { numericCompanyScopeId } from "../utils/appCompanyScope";
 import { formatDate } from "../utils/dateHelpers";
 import WpqrUploadButton from "../components/WpqrUploadButton";
@@ -882,6 +882,7 @@ function WPQRFormModal({ wpqr, defaultCompanyId, onSave, onClose, onSaved }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [notices, setNotices] = useState(() => wpqr?.discrepancy_notices || []);
+  const [noticeHistory, setNoticeHistory] = useState(() => wpqr?.notice_history || []);
   const [noticeBusy, setNoticeBusy] = useState(null);
   const previewGen = useRef(0);
   const [noticeRuns, setNoticeRuns] = useState(() => (
@@ -956,15 +957,22 @@ function WPQRFormModal({ wpqr, defaultCompanyId, onSave, onClose, onSaved }) {
     if (el && typeof el.focus === "function") el.focus();
   }
 
-  async function handleNoticeAction(notice, action) {
+  async function handleNoticeAction(notice, action, payload = {}) {
     const id = savedIdRef.current;
     if (!id || typeof apiService.actWpqrNotice !== "function") return;
     previewGen.current += 1;
     setNoticeBusy(notice.code);
     setError(null);
     try {
-      const res = await apiService.actWpqrNotice(id, { action, rule_code: notice.code });
+      const res = await apiService.actWpqrNotice(id, {
+        action,
+        rule_code: notice.code,
+        note: payload.note,
+        reason: payload.reason,
+        new_value: payload.new_value,
+      });
       const row = res?.data;
+      if (action === "correggi" && notice.field) set(notice.field, payload.new_value);
       if (row?.discrepancy_notices) {
         setNotices(row.discrepancy_notices);
         resolutionsRef.current = row.discrepancy_notices
@@ -976,9 +984,10 @@ function WPQRFormModal({ wpqr, defaultCompanyId, onSave, onClose, onSaved }) {
             note: n.note || null,
           }));
       }
+      if (row?.notice_history) setNoticeHistory(row.notice_history);
       onSaved?.();
     } catch (err) {
-      setError(err?.message || "Azione sull'avviso non registrata.");
+      setError(err?.data?.error || err?.message || "Azione sull'avviso non registrata.");
     } finally {
       setNoticeBusy(null);
     }
@@ -1103,8 +1112,10 @@ function WPQRFormModal({ wpqr, defaultCompanyId, onSave, onClose, onSaved }) {
             {error && <div className="wp-error">{error}</div>}
             <DiscrepancyNotices
               notices={notices}
+              history={noticeHistory}
+              values={form}
               canAct={canAct}
-              canCorrect={canWrite}
+              canCorrect={canWrite && canAct}
               lockedTitle={lockedTitle}
               busyCode={noticeBusy}
               onAction={handleNoticeAction}
@@ -1478,6 +1489,12 @@ function WeldingProceduresPage() {
   const [wpsFilters, setWpsFilters] = useState({ welding_process: "", status: "", search: "" });
   const [wpqrFilters, setWpqrFilters] = useState({ approval_status: "", search: "", wps_id: "" });
   const [wpqrFilterWpsId, setWpqrFilterWpsId] = useState("");
+  const [signals, setSignals] = useState([]);
+  const [signalReason, setSignalReason] = useState("");
+  const [signalStatus, setSignalStatus] = useState("");
+  const [signalsError, setSignalsError] = useState("");
+  const pageAuth = useAuthOptional();
+  const canApproveSignal = pageAuth?.user?.role === "admin" || pageAuth?.user?.role === "superadmin";
 
   // Modals
   const [wpsFormOpen, setWpsFormOpen] = useState(false);
@@ -1578,6 +1595,36 @@ function WeldingProceduresPage() {
   useEffect(() => { loadAllWps(); }, [loadAllWps]);
   // Il conteggio del tab deve essere vero anche mentre è aperto l'altro tab.
   useEffect(() => { loadWPQR(); }, [loadWPQR]);
+
+  const loadSignals = useCallback(async () => {
+    if (typeof apiService.listWpqrSignals !== "function") return;
+    try {
+      const params = {};
+      if (listCompanyId) params.company_id = listCompanyId;
+      if (signalReason) params.reason = signalReason;
+      if (signalStatus) params.status = signalStatus;
+      const res = await apiService.listWpqrSignals(params);
+      setSignals(Array.isArray(res?.data) ? res.data : []);
+      setSignalsError("");
+    } catch (err) {
+      setSignalsError(err?.data?.error || err?.message || "Elenco segnalazioni non disponibile.");
+    }
+  }, [listCompanyId, signalReason, signalStatus]);
+
+  useEffect(() => {
+    if (activeTab === "wpqr") loadSignals();
+  }, [activeTab, loadSignals]);
+
+  async function approveSignal(id) {
+    if (typeof apiService.approveWpqrSignalExample !== "function") return;
+    try {
+      await apiService.approveWpqrSignalExample(id);
+      setSignalsError("");
+      await loadSignals();
+    } catch (err) {
+      setSignalsError(err?.data?.error || err?.message || "Approvazione non registrata.");
+    }
+  }
 
   // Chip AskAi / deep-link: apri Genera WPS precompilato (caso Mason)
   useEffect(() => {
@@ -1948,6 +1995,16 @@ function WeldingProceduresPage() {
       {/* TAB WPQR */}
       {activeTab === "wpqr" && (
         <>
+          <WpqrSignalsList
+            signals={signals}
+            reason={signalReason}
+            status={signalStatus}
+            onReason={setSignalReason}
+            onStatus={setSignalStatus}
+            canApprove={canApproveSignal}
+            error={signalsError}
+            onApprove={approveSignal}
+          />
           <div className="wp-toolbar">
             <input
               className="wp-search"

@@ -38,6 +38,18 @@ describe('avvisi di discrepanza WPQR', () => {
         expect(n.message_it).toBe(
             '⚠️ Il numero del certificato non coincide con il codice WPQR. Sul certificato RINA c\'è la lettera O (16VE01735PO2/A), nel codice c\'è lo zero (16VE01735P02/A). Controlla sul PDF.',
         );
+        expect(n.message_it).not.toContain('Pagina del PDF');
+    });
+
+    test('1c. la pagina del PDF compare solo se il record la ha già', () => {
+        const n = byCode(base({
+            wpqr_code: '16VE01735P02/A',
+            certificate_number: '16VE01735PO2/A',
+            examiner_body: 'RINA',
+            pdf_page: 3,
+        }), CODES.CODE_CERT);
+        expect(n.message_it).toContain('Pagina del PDF: 3.');
+        expect(n.pdf_page).toBe(3);
     });
 
     test('1b. il testo usa i valori reali, non solo l\'esempio RINA', () => {

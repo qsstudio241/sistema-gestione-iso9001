@@ -37,9 +37,72 @@
   letter-spacing: 0.02em;
   text-transform: uppercase;
 }
+.disc-notice__help {
+  margin: 6px 0 0;
+  font-size: 14px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.disc-notice__history {
+  margin: 6px 0 0;
+  font-size: 14px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.disc-notice__panel,
+.disc-signals__filters {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+.disc-notice__label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.disc-notice__input {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 40px;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid #d6d3d1;
+  font-size: 16px;
+  font-weight: 400;
+  color: #1c1917;
+  background: #fff;
+}
+textarea.disc-notice__input {
+  min-height: 72px;
+  resize: vertical;
+}
+.disc-notice__reason {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  font-size: 14px;
+}
+.disc-notice__reason .disc-notice__help {
+  display: block;
+  font-weight: 400;
+}
+.disc-notice__error {
+  margin: 0;
+  color: #991b1b;
+  font-size: 14px;
+}
 .disc-notice__actions {
   display: flex;
   flex-wrap: wrap;
+  gap: 8px;
+}
+.disc-signals {
+  margin: 12px 0 16px;
+  display: flex;
+  flex-direction: column;
   gap: 8px;
 }
 .disc-notice__btn {

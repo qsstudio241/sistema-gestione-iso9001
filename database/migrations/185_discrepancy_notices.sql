@@ -25,6 +25,15 @@ BEGIN
         status           NVARCHAR(20)   NOT NULL CONSTRAINT DF_discrepancy_notices_status DEFAULT N'aperto',
         message_it       NVARCHAR(1000) NULL,
         note             NVARCHAR(500)  NULL,
+        reason           NVARCHAR(40)   NULL,
+        previous_value   NVARCHAR(500)  NULL,
+        new_value        NVARCHAR(500)  NULL,
+        field_name       NVARCHAR(80)   NULL,
+        pdf_page         INT            NULL,
+        request_draft    NVARCHAR(1000) NULL,
+        learning_example NVARCHAR(1000) NULL,
+        learning_approved_at DATETIME2(7) NULL,
+        learning_approved_by INT          NULL,
         acted_by         INT            NULL,
         acted_at         DATETIME2(7)   NULL,
         created_at       DATETIME2(7)   NOT NULL CONSTRAINT DF_discrepancy_notices_created DEFAULT SYSUTCDATETIME(),
@@ -50,6 +59,78 @@ IF OBJECT_ID(N'dbo.wpqr_records', N'U') IS NOT NULL
 BEGIN
     ALTER TABLE dbo.wpqr_records ADD fillet_throat_range NVARCHAR(80) NULL;
     PRINT N'185: wpqr_records.fillet_throat_range aggiunta.';
+END
+GO
+
+IF OBJECT_ID(N'dbo.discrepancy_notices', N'U') IS NOT NULL
+   AND COL_LENGTH(N'dbo.discrepancy_notices', N'reason') IS NULL
+BEGIN
+    ALTER TABLE dbo.discrepancy_notices ADD reason NVARCHAR(40) NULL;
+    PRINT N'185: discrepancy_notices.reason aggiunta.';
+END
+GO
+
+IF OBJECT_ID(N'dbo.discrepancy_notices', N'U') IS NOT NULL
+   AND COL_LENGTH(N'dbo.discrepancy_notices', N'previous_value') IS NULL
+BEGIN
+    ALTER TABLE dbo.discrepancy_notices ADD previous_value NVARCHAR(500) NULL;
+    PRINT N'185: discrepancy_notices.previous_value aggiunta.';
+END
+GO
+
+IF OBJECT_ID(N'dbo.discrepancy_notices', N'U') IS NOT NULL
+   AND COL_LENGTH(N'dbo.discrepancy_notices', N'new_value') IS NULL
+BEGIN
+    ALTER TABLE dbo.discrepancy_notices ADD new_value NVARCHAR(500) NULL;
+    PRINT N'185: discrepancy_notices.new_value aggiunta.';
+END
+GO
+
+IF OBJECT_ID(N'dbo.discrepancy_notices', N'U') IS NOT NULL
+   AND COL_LENGTH(N'dbo.discrepancy_notices', N'field_name') IS NULL
+BEGIN
+    ALTER TABLE dbo.discrepancy_notices ADD field_name NVARCHAR(80) NULL;
+    PRINT N'185: discrepancy_notices.field_name aggiunta.';
+END
+GO
+
+IF OBJECT_ID(N'dbo.discrepancy_notices', N'U') IS NOT NULL
+   AND COL_LENGTH(N'dbo.discrepancy_notices', N'pdf_page') IS NULL
+BEGIN
+    ALTER TABLE dbo.discrepancy_notices ADD pdf_page INT NULL;
+    PRINT N'185: discrepancy_notices.pdf_page aggiunta.';
+END
+GO
+
+IF OBJECT_ID(N'dbo.discrepancy_notices', N'U') IS NOT NULL
+   AND COL_LENGTH(N'dbo.discrepancy_notices', N'request_draft') IS NULL
+BEGIN
+    ALTER TABLE dbo.discrepancy_notices ADD request_draft NVARCHAR(1000) NULL;
+    PRINT N'185: discrepancy_notices.request_draft aggiunta.';
+END
+GO
+
+IF OBJECT_ID(N'dbo.discrepancy_notices', N'U') IS NOT NULL
+   AND COL_LENGTH(N'dbo.discrepancy_notices', N'learning_example') IS NULL
+BEGIN
+    ALTER TABLE dbo.discrepancy_notices ADD learning_example NVARCHAR(1000) NULL;
+    PRINT N'185: discrepancy_notices.learning_example aggiunta.';
+END
+GO
+
+IF OBJECT_ID(N'dbo.discrepancy_notices', N'U') IS NOT NULL
+   AND COL_LENGTH(N'dbo.discrepancy_notices', N'learning_approved_at') IS NULL
+BEGIN
+    ALTER TABLE dbo.discrepancy_notices ADD learning_approved_at DATETIME2(7) NULL;
+    PRINT N'185: discrepancy_notices.learning_approved_at aggiunta.';
+END
+GO
+
+IF OBJECT_ID(N'dbo.discrepancy_notices', N'U') IS NOT NULL
+   AND COL_LENGTH(N'dbo.discrepancy_notices', N'learning_approved_by') IS NULL
+BEGIN
+    ALTER TABLE dbo.discrepancy_notices ADD learning_approved_by INT NULL;
+    PRINT N'185: discrepancy_notices.learning_approved_by aggiunta.';
 END
 GO
 

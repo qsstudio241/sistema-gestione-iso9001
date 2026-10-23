@@ -454,23 +454,33 @@ export default function IngestReviewDialog({
     return () => clearTimeout(timer);
   }, [open, docType, form, fields]);
 
-  function handleDiscAction(notice, action) {
+  function handleDiscAction(notice, action, payload = {}) {
     discPreviewGen.current += 1;
     const status = action === "conferma" ? "confermato"
-      : action === "correggi" ? "in_correzione"
+      : action === "correggi" ? "corretto"
         : "segnalato";
+    if (action === "correggi" && notice.field) {
+      handleChange(notice.field, payload.new_value);
+      document.getElementById(`ingest-field-${notice.field}`)?.focus();
+    }
     const next = {
       ...notice,
       status,
-      blocks_conformity: action !== "conferma",
+      note: payload.note || null,
+      reason: payload.reason || null,
+      blocks_conformity: action === "segnala",
     };
-    if (action === "correggi" && notice.field) {
-      document.getElementById(`ingest-field-${notice.field}`)?.focus();
-    }
     setDiscNotices((list) => list.map((n) => (n.code === notice.code ? next : n)));
     discResolutions.current = [
-      ...discResolutions.current.filter((row) => row.rule_code !== notice.code),
-      { rule_code: notice.code, fingerprint: notice.fingerprint, status, note: null },
+      ...discResolutions.current.filter((row) => row.rule_code !== notice.code || row.fingerprint !== notice.fingerprint),
+      {
+        rule_code: notice.code,
+        fingerprint: notice.fingerprint,
+        status,
+        note: payload.note || null,
+        reason: payload.reason || null,
+        new_value: payload.new_value || null,
+      },
     ];
     onDiscrepancyResolutions?.(discResolutions.current);
   }

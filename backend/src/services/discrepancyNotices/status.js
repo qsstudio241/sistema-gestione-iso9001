@@ -47,6 +47,17 @@ function applyResolution(notice, row) {
         status,
         blocks_conformity: isBlockingStatus(status),
         note: same ? (row.note || null) : null,
+        reason: same ? (row.reason || null) : null,
+        acted_by: same ? (row.acted_by || null) : null,
+        acted_by_name: same ? (row.acted_by_name || null) : null,
+        acted_at: same ? (row.acted_at || null) : null,
+        previous_value: same ? (row.previous_value || null) : null,
+        new_value: same ? (row.new_value || null) : null,
+        field_name: same ? (row.field_name || null) : null,
+        pdf_page: same ? (row.pdf_page || base.pdf_page || null) : (base.pdf_page || null),
+        request_draft: same ? (row.request_draft || null) : null,
+        learning_example: same ? (row.learning_example || null) : null,
+        learning_approved_at: same ? (row.learning_approved_at || null) : null,
     };
 }
 
