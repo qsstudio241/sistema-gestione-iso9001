@@ -476,9 +476,9 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
             </button>
           )}
           <div className="audit-save-status">
-            {offline && (pendingCount > 0 || questionSnap.unsaved > 0) ? (
+            {offline ? (
               <span className="save-indicator queued">
-                Offline · {Math.max(pendingCount, questionSnap.unsaved || 0)} in attesa di invio
+                Offline · {Math.max(pendingCount, questionSnap.unsaved || 0)} in attesa
               </span>
             ) : pendingCount > 0 || questionSnap.phase === "pending" || questionSnap.phase === "retrying" ? (
               <span className="save-indicator queued">

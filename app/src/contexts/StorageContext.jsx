@@ -26,15 +26,15 @@ import apiService, { setAuditLockTokensForAudit, clearAllAuditLockTokens } from 
 import { hasAnyDraftForAudit } from "../utils/draftFieldRegistry";
 import {
   auditMatchesOrganization,
-  filterAuditsByOrganization,
   resolveAuditOrganizationId,
+  stampMissingOrganization,
 } from "../utils/auditLocalTenantFilter";
 import {
   applyServerResponsesPreservingLocalNotes,
   mergeCustomEvidenceResponses,
   resolveMergedChecklistForReconcile,
 } from "../utils/checklistTextMerge";
-import { readPendingQuestionIdSet } from "../utils/checklistPendingStore";
+import { readPending, readPendingQuestionIdSet } from "../utils/checklistPendingStore";
 import {
   resolveChecklistHydrateWithPendingQueue,
   shouldSkipServerHydrate,
@@ -48,7 +48,10 @@ import { decideAuditSync } from "../utils/decideAuditSync";
 import {
   forgetCurrentAuditId,
   pickRestoredAuditId,
+  readRecentAuditIds,
+  readRememberedAuditId,
   rememberCurrentAuditId,
+  rememberRecentAuditId,
   resolveAuditId,
 } from "../utils/currentAuditSession";
 
@@ -61,6 +64,30 @@ async function readSyncQueueItemsSafe() {
   } catch {
     return [];
   }
+}
+
+function decideOfflineCache(localAudits) {
+  const organizationId = resolveAuditOrganizationId(
+    null,
+    apiService.getStoredUser?.() || null,
+  );
+  const list = Array.isArray(localAudits) ? localAudits : [];
+  const pendingByAudit = {};
+  for (const audit of list) {
+    const uuid = audit?.metadata?.id || audit?.id;
+    if (!uuid) continue;
+    const questions = Object.values(readPending(organizationId, uuid).questions || {});
+    if (questions.length > 0) pendingByAudit[String(uuid).toLowerCase()] = questions;
+  }
+  return decideAuditSync({
+    event: "offline",
+    online: false,
+    localAudits: list,
+    organizationId,
+    recentIds: readRecentAuditIds(organizationId),
+    rememberedId: readRememberedAuditId(),
+    pendingByAudit,
+  });
 }
 
 function extraHydrateRefs(audit, numericAuditId) {
@@ -520,7 +547,12 @@ export function StorageProvider({ children, useMockData = false }) {
   const [auditsLoadError, setAuditsLoadError] = useState(null);
 
   useEffect(() => {
-    if (currentAuditId) rememberCurrentAuditId(currentAuditId);
+    if (!currentAuditId) return;
+    rememberCurrentAuditId(currentAuditId);
+    rememberRecentAuditId(
+      currentAuditId,
+      resolveAuditOrganizationId(null, apiService.getStoredUser?.() || null),
+    );
   }, [currentAuditId]);
 
   // Sync state
@@ -1543,6 +1575,11 @@ export function StorageProvider({ children, useMockData = false }) {
         const auditsToUploadRichData = []; // audit locali con dati ricchi mai inviati al server
         const canTrustServerList =
           serverFetchSucceeded && navigator.onLine && apiService.getToken();
+        const stampOrgId = resolveAuditOrganizationId(
+          null,
+          apiService.getStoredUser?.() || null,
+        );
+        const offlineDecision = canTrustServerList ? null : decideOfflineCache(localAudits);
         const mergedAudits = canTrustServerList
           ? serverAudits.map(serverAudit => {
               const sid = serverAudit.metadata?.id || serverAudit.id;
@@ -1629,14 +1666,9 @@ export function StorageProvider({ children, useMockData = false }) {
                 );
               }
 
-              return merged;
+              return stampMissingOrganization(merged, stampOrgId);
             })
-          : !navigator.onLine || !apiService.getToken()
-            ? filterAuditsByOrganization(
-                localAudits,
-                resolveAuditOrganizationId(null, apiService.getStoredUser?.() || null),
-              )
-            : [];
+          : (offlineDecision?.visibleAudits || []);
 
         // Includi audit solo locali (non ancora sul server) nella lista finale.
         // Gli audit locali NON inclusi nel merge (stale, senza isIntentionalDraft, o tombstoned)
@@ -1656,11 +1688,6 @@ export function StorageProvider({ children, useMockData = false }) {
             );
             await purgeStaleAuditsFromDevice(fsProvider, staleLocals);
           }
-        } else if (serverDownloadFailed && navigator.onLine && apiService.getToken()) {
-          finalAudits = filterAuditsByOrganization(
-            localAudits,
-            resolveAuditOrganizationId(null, apiService.getStoredUser?.() || null),
-          );
         }
 
         if (serverDownloadFailed) {
@@ -1741,7 +1768,7 @@ export function StorageProvider({ children, useMockData = false }) {
           }
         }
 
-        const restoredAuditId = pickRestoredAuditId(finalAudits);
+        const restoredAuditId = offlineDecision?.restoreId || pickRestoredAuditId(finalAudits);
         if (canTrustServerList) {
           await persistFinalAuditsToIndexedDB(fsProvider, finalAudits);
           setAudits(finalAudits);
@@ -2575,8 +2602,8 @@ export function StorageProvider({ children, useMockData = false }) {
     async (numericAuditId) => {
       if (!numericAuditId) return;
       if (!navigator.onLine) {
-        console.log("📴 [HYDRATE] Offline — risposte non scaricate dal server");
-        setServerDataStatus('error');
+        console.log("📴 [HYDRATE] Offline — restano le risposte già in pagina");
+        setServerDataStatus('idle');
         return;
       }
 

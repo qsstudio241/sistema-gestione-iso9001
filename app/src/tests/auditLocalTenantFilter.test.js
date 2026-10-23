@@ -7,6 +7,8 @@ import {
   filterAuditsByOrganization,
   getAuditOrganizationId,
   resolveAuditOrganizationId,
+  selectAuditsForOfflineReopen,
+  stampMissingOrganization,
 } from "../utils/auditLocalTenantFilter.js";
 
 describe("auditLocalTenantFilter", () => {
@@ -49,5 +51,20 @@ describe("auditLocalTenantFilter", () => {
     expect(getAuditOrganizationId(legacy)).toBeNull();
     expect(auditMatchesOrganization(legacy, 1002)).toBe(false);
     expect(filterAuditsByOrganization([legacy], 1002)).toEqual([]);
+  });
+
+  it("offline riapre il recente senza studio e nasconde l'altro studio", () => {
+    const legacy = { metadata: { id: "aperto-qui", clientName: "Locale" } };
+    const other = { metadata: { id: "altro", organizationId: 1003 } };
+    const stamped = stampMissingOrganization(legacy, 1002);
+    expect(stamped.metadata.organizationId).toBe(1002);
+    expect(stampMissingOrganization(other, 1002)).toBe(other);
+    const visible = selectAuditsForOfflineReopen(
+      [legacy, other],
+      1002,
+      ["aperto-qui"],
+    );
+    expect(visible.map((audit) => audit.metadata.id)).toEqual(["aperto-qui"]);
+    expect(visible[0].metadata.organizationId).toBe(1002);
   });
 });

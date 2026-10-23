@@ -75,6 +75,55 @@ describe('decideAuditSync', () => {
     expect(offline.keepPending).toBe(true);
     expect(offline.questionKeys).toEqual(['7', '8']);
 
+    const reopened = decideAuditSync({
+      event: 'offline',
+      online: false,
+      organizationId: 4,
+      rememberedId: 'audit-locale',
+      recentIds: ['audit-locale'],
+      localAudits: [
+        {
+          metadata: { id: 'audit-locale', clientName: 'Smoke', status: 'in_progress' },
+          checklist: {
+            ISO_9001: {
+              clause4: {
+                questions: [{ questionId: 7, clauseRef: '4.1', status: 'C', notes: '' }],
+              },
+            },
+          },
+        },
+        {
+          metadata: { id: 'altro-studio', organizationId: 9, clientName: 'Altro' },
+          checklist: {},
+        },
+      ],
+      pendingByAudit: {
+        'audit-locale': [{ questionId: 7, clauseRef: '4.1', status: 'NC', notes: 'bozza offline' }],
+      },
+    });
+    expect(reopened.sendQuestions).toBe(false);
+    expect(reopened.sendScheda).toBe(false);
+    expect(reopened.sendStatusOnly).toBe(false);
+    expect(reopened.keepPending).toBe(true);
+    expect(reopened.reopenFromCache).toBe(true);
+    expect(reopened.visibleAudits.map((audit) => audit.metadata.id)).toEqual(['audit-locale']);
+    expect(reopened.visibleAudits[0].metadata.organizationId).toBe(4);
+    expect(reopened.restoreId).toBe('audit-locale');
+    expect(reopened.visibleAudits[0].checklist.ISO_9001.clause4.questions[0].status).toBe('NC');
+    expect(reopened.visibleAudits[0].checklist.ISO_9001.clause4.questions[0].notes).toBe('bozza offline');
+
+    const sameOrg = decideAuditSync({
+      event: 'offline',
+      online: false,
+      organizationId: 4,
+      localAudits: [
+        { metadata: { id: 'mio', organizationId: 4 } },
+        { metadata: { id: 'loro', organizationId: 9 } },
+      ],
+    });
+    expect(sameOrg.visibleAudits.map((audit) => audit.metadata.id)).toEqual(['mio']);
+    expect(sameOrg.restoreId).toBeNull();
+
     const online = decideAuditSync({
       event: 'offline',
       online: true,

@@ -8,6 +8,9 @@
  * backend/src/services/responseConflict.js (decideResponseProjection).
  */
 
+import { applyPendingAnswersToChecklist } from './checklistTextMerge';
+import { selectAuditsForOfflineReopen } from './auditLocalTenantFilter';
+
 function normStatus(value) {
   if (value == null || value === '' || value === 'NOT_ANSWERED') return null;
   return String(value);
@@ -22,6 +25,31 @@ function toMs(value) {
   if (value == null || value === '') return null;
   const t = new Date(value).getTime();
   return Number.isFinite(t) ? t : null;
+}
+
+function rowId(audit) {
+  const id = audit?.metadata?.id || audit?.id;
+  return id == null || id === '' ? null : String(id);
+}
+
+function firstListedId(audits, id) {
+  if (id == null || id === '') return null;
+  const found = (audits || []).find((audit) => {
+    const current = rowId(audit);
+    return current && current.toLowerCase() === String(id).toLowerCase();
+  });
+  return found ? rowId(found) : null;
+}
+
+function overlayPendingDraft(audit, pendingByAudit) {
+  if (!audit?.checklist || !pendingByAudit || typeof pendingByAudit !== 'object') return audit;
+  const id = rowId(audit);
+  if (!id) return audit;
+  const pending = pendingByAudit[id] || pendingByAudit[id.toLowerCase()] || [];
+  if (!Array.isArray(pending) || pending.length === 0) return audit;
+  const copy = JSON.parse(JSON.stringify(audit));
+  applyPendingAnswersToChecklist(copy.checklist, pending);
+  return copy;
 }
 
 function payloadMatchesSaveError(payload, err) {
@@ -129,13 +157,28 @@ export function decideAuditSync(input = {}) {
 
   if (event === 'offline') {
     const online = input.online === true;
-    return {
+    const decision = {
       ...base,
       sendQuestions: online,
       sendScheda: false,
       sendStatusOnly: false,
       keepPending: true,
       questionKeys: Array.isArray(input.pendingKeys) ? input.pendingKeys : [],
+    };
+    if (online || !Array.isArray(input.localAudits)) return decision;
+    const visibleAudits = selectAuditsForOfflineReopen(
+      input.localAudits,
+      input.organizationId,
+      input.recentIds,
+      input.rememberedId,
+    ).map((audit) => overlayPendingDraft(audit, input.pendingByAudit));
+    const restoreId = firstListedId(visibleAudits, input.rememberedId)
+      || firstListedId(visibleAudits, Array.isArray(input.recentIds) ? input.recentIds[0] : null);
+    return {
+      ...decision,
+      visibleAudits,
+      restoreId,
+      reopenFromCache: true,
     };
   }
 
