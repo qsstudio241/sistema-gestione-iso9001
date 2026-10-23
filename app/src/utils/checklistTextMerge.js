@@ -30,7 +30,6 @@ export function pickMergedNotes(localNotes, serverNotes, options = {}) {
 export function applyServerResponsesPreservingLocalNotes(checklist, responseMap, auditUuid = null, options = {}) {
   if (!checklist || !responseMap) return 0;
   const pendingIds = options?.pendingQuestionIds instanceof Set ? options.pendingQuestionIds : null;
-  const replaced = Array.isArray(options?.replaced) ? options.replaced : null;
   let applied = 0;
 
   Object.values(checklist).forEach((normData) => {
@@ -38,24 +37,15 @@ export function applyServerResponsesPreservingLocalNotes(checklist, responseMap,
     Object.values(normData).forEach((clauseData) => {
       if (!clauseData?.questions) return;
       clauseData.questions = clauseData.questions.map((q) => {
+        const clauseKey = q.clauseRef ? `clause:${q.clauseRef}` : null;
+        if (pendingIds?.has(String(q.questionId)) || (clauseKey && pendingIds?.has(clauseKey))) return q;
         if (!q.questionId || !responseMap[q.questionId]) return q;
-        if (pendingIds?.has(String(q.questionId))) return q;
         applied++;
         const serverData = responseMap[q.questionId];
         const fieldId = `q:${q.questionId}`;
         const notes = pickMergedNotes(q.notes, serverData.notes, {
           forceLocal: auditUuid ? isDraft(auditUuid, fieldId) : false,
         });
-        const localStatus = !q.status || q.status === 'NOT_ANSWERED' ? null : q.status;
-        const serverStatus = !serverData.status || serverData.status === 'NOT_ANSWERED' ? null : serverData.status;
-        if (replaced && localStatus && localStatus !== serverStatus) {
-          replaced.push({
-            question_id: q.questionId,
-            reason: 'server_newer',
-            server: { conformity_status: serverStatus, notes: serverData.notes ?? '' },
-            client: { conformity_status: localStatus, notes: q.notes ?? '' },
-          });
-        }
         return {
           ...q,
           status: serverData.status,
@@ -71,13 +61,19 @@ export function applyServerResponsesPreservingLocalNotes(checklist, responseMap,
 
 export function applyPendingAnswersToChecklist(checklist, pendingQuestions) {
   if (!checklist || !Array.isArray(pendingQuestions) || pendingQuestions.length === 0) return checklist;
-  const byId = new Map(pendingQuestions.map((item) => [String(item.questionId), item]));
+  const byId = new Map();
+  const byClause = new Map();
+  pendingQuestions.forEach((item) => {
+    if (item?.questionId != null && item.questionId !== '') byId.set(String(item.questionId), item);
+    if (item?.clauseRef) byClause.set(String(item.clauseRef), item);
+  });
   Object.values(checklist).forEach((normData) => {
     if (!normData || typeof normData !== 'object') return;
     Object.values(normData).forEach((clauseData) => {
       if (!clauseData?.questions) return;
       clauseData.questions = clauseData.questions.map((q) => {
-        const pending = byId.get(String(q.questionId));
+        const pending = (q.questionId != null && byId.get(String(q.questionId)))
+          || (q.clauseRef && byClause.get(String(q.clauseRef)));
         if (!pending) return q;
         const status = pending.status || 'NOT_ANSWERED';
         return {

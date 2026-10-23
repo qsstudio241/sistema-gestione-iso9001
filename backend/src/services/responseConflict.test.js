@@ -1,4 +1,4 @@
-const { decideResponseProjection } = require('./responseConflict');
+const { decideResponseProjection, versionDateForWrite } = require('./responseConflict');
 
 describe('decideResponseProjection', () => {
     const existing = {
@@ -44,6 +44,14 @@ describe('decideResponseProjection', () => {
         expect(decision.conflict.server.conformity_status).toBe('NC');
         expect(decision.conflict.client.conformity_status).toBe('C');
         expect(decision.conflict.client.device_id).toBe('phone-1');
+    });
+
+    test('orario della modifica resta la versione, un orologio troppo avanti no', () => {
+        const now = new Date('2026-10-23T10:05:00.000Z');
+        const kept = versionDateForWrite('2026-10-23T10:04:58.000Z', now);
+        expect(kept.toISOString()).toBe('2026-10-23T10:04:58.000Z');
+        expect(versionDateForWrite('2030-01-01T00:00:00.000Z', now)).toBeNull();
+        expect(versionDateForWrite(null, now)).toBeNull();
     });
 
     test('modifica più recente: vince e sostituisce', () => {

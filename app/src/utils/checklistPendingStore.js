@@ -66,24 +66,38 @@ export function readPendingQuestionIdSet(organizationId, auditUuid, storage) {
   return new Set(Object.keys(readPending(organizationId, auditUuid, storage).questions));
 }
 
+/** Chiave stabile: id numerico, oppure la clausola finché l'id non è ancora noto. */
+export function pendingQuestionKey(question) {
+  if (!question) return null;
+  if (question.questionId != null && question.questionId !== '') return String(question.questionId);
+  const clause = question.clauseRef != null ? String(question.clauseRef).trim() : '';
+  return clause ? `clause:${clause}` : null;
+}
+
 /**
  * Registra la bozza subito, prima del debounce di rete.
  * Se il contenuto non cambia, tiene la stessa chiave di idempotenza e lo stesso orario.
  */
 export function upsertPendingQuestion(organizationId, auditUuid, question, storage) {
   const box = storageOf(storage);
-  const questionId = question?.questionId;
-  if (!auditUuid || questionId == null) return null;
+  const id = pendingQuestionKey(question);
+  if (!auditUuid || !id) return null;
   const current = readPending(organizationId, auditUuid, box);
-  const id = String(questionId);
-  const prev = current.questions[id];
+  const clauseKey = question?.clauseRef ? `clause:${String(question.clauseRef).trim()}` : null;
+  const displaced = question?.questionId != null && clauseKey && clauseKey !== id
+    ? current.questions[clauseKey]
+    : null;
+  if (displaced) delete current.questions[clauseKey];
+  const prev = current.questions[id] || displaced;
   const status = question.status ?? null;
   const notes = question.notes ?? null;
   const same = prev
     && prev.status === status
     && prev.notes === notes;
   const next = {
-    questionId: questionId,
+    questionId: question.questionId ?? null,
+    clauseRef: question.clauseRef ? String(question.clauseRef).trim() : (prev?.clauseRef ?? null),
+    questionKey: id,
     status,
     notes,
     baseUpdatedAt: question.baseUpdatedAt ?? prev?.baseUpdatedAt ?? null,
@@ -108,7 +122,7 @@ export function forgetMatchingQuestions(entries, storage) {
   const box = storageOf(storage);
   const groups = new Map();
   for (const entry of entries || []) {
-    if (!entry?.auditUuid || entry.questionId == null) continue;
+    if (!entry?.auditUuid || !pendingQuestionKey(entry)) continue;
     const key = pendingStorageKey(entry.organizationId, entry.auditUuid);
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(entry);
@@ -122,7 +136,8 @@ export function forgetMatchingQuestions(entries, storage) {
     }
     const questions = parsed.questions || {};
     for (const entry of list) {
-      const id = String(entry.questionId);
+      const id = pendingQuestionKey(entry);
+      if (!id) continue;
       const stored = questions[id];
       if (!stored) continue;
       if (entry.idempotencyKey && stored.idempotencyKey !== entry.idempotencyKey) continue;
@@ -194,7 +209,8 @@ export function noteQuestionSaveResult(payloads, conflicts, pendingStorage, noti
   const byAudit = new Map();
   for (const conflict of conflicts || []) {
     const auditUuid = conflict.auditUuid
-      || (payloads || []).find((item) => String(item.questionId) === String(conflict.question_id))?.auditUuid;
+      || (payloads || []).find((item) => item.questionId != null && String(item.questionId) === String(conflict.question_id))?.auditUuid
+      || (payloads || []).find((item) => conflict.clause_ref && item.clauseRef && String(item.clauseRef) === String(conflict.clause_ref))?.auditUuid;
     if (!auditUuid) continue;
     if (!byAudit.has(String(auditUuid))) byAudit.set(String(auditUuid), []);
     byAudit.get(String(auditUuid)).push(conflict);

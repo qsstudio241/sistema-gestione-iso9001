@@ -9,7 +9,7 @@
  */
 
 const { query } = require('../config/database');
-const { decideResponseProjection } = require('../services/responseConflict');
+const { decideResponseProjection, versionDateForWrite } = require('../services/responseConflict');
 const logger = require('../utils/logger');
 const { updateAuditProgressSafe } = require('../services/auditProgress.service');
 // assertWriteAllowed rimosso in T5 (lock solo UX)
@@ -420,6 +420,7 @@ async function bulkSaveResponses(req, res) {
         const results = {
             saved: 0,
             updated: 0,
+            unchanged: 0,
             conflicts: [],
             errors: []
         };
@@ -494,6 +495,10 @@ async function bulkSaveResponses(req, res) {
                             updated_at: row.updated_at,
                         },
                     });
+                    if (decision.idempotent) {
+                        results.unchanged++;
+                        continue;
+                    }
                     if (!decision.apply) {
                         results.conflicts.push({
                             ...decision.conflict,
@@ -503,7 +508,8 @@ async function bulkSaveResponses(req, res) {
                         continue;
                     }
 
-                    // UPDATE
+                    const versionAt = versionDateForWrite(client_updated_at || new Date().toISOString()) || new Date();
+                    // UPDATE — la versione è l'orario della modifica, non l'arrivo al server
                     await query(`
                         UPDATE audit_responses
                         SET 
@@ -511,7 +517,7 @@ async function bulkSaveResponses(req, res) {
                             notes = @notes,
                             is_answered = @is_answered,
                             answered_at = CASE WHEN @is_answered = 1 AND answered_at IS NULL THEN GETDATE() ELSE answered_at END,
-                            updated_at = GETDATE(),
+                            updated_at = @version_at,
                             updated_by = @user_id
                         WHERE audit_id = @audit_id AND question_id = @question_id
                     `, {
@@ -520,11 +526,13 @@ async function bulkSaveResponses(req, res) {
                         conformity_status: conformity_status || null,
                         notes: notes || null,
                         is_answered: isAnswered ? 1 : 0,
-                        user_id
+                        user_id,
+                        version_at: versionAt,
                     });
 
                     results.updated++;
                 } else {
+                    const versionAt = versionDateForWrite(client_updated_at || new Date().toISOString()) || new Date();
                     // INSERT
                     await query(`
                         INSERT INTO audit_responses (
@@ -535,7 +543,7 @@ async function bulkSaveResponses(req, res) {
                             @audit_id, @question_id, @conformity_status, @notes,
                             @is_answered, 
                             CASE WHEN @is_answered = 1 THEN GETDATE() ELSE NULL END,
-                            @user_id, GETDATE(), GETDATE()
+                            @user_id, GETDATE(), @version_at
                         )
                     `, {
                         audit_id: auditIdNumeric,
@@ -543,7 +551,8 @@ async function bulkSaveResponses(req, res) {
                         conformity_status: conformity_status || null,
                         notes: notes || null,
                         is_answered: isAnswered ? 1 : 0,
-                        user_id
+                        user_id,
+                        version_at: versionAt,
                     });
 
                     results.saved++;
@@ -576,7 +585,7 @@ async function bulkSaveResponses(req, res) {
         });
 
         // Log dettagliato se 0 salvati
-        if (results.saved === 0 && results.updated === 0) {
+        if (results.saved === 0 && results.updated === 0 && results.unchanged === 0) {
             logger.warn(`[DEBUG] Zero responses written! Errors: ${results.errors.length}, Conflicts: ${results.conflicts.length}`, {
                 errors: results.errors.slice(0, 3),
                 conflicts: results.conflicts.slice(0, 3)

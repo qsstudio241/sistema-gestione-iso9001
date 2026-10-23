@@ -34,7 +34,7 @@ import {
   mergeCustomEvidenceResponses,
   resolveMergedChecklistForReconcile,
 } from "../utils/checklistTextMerge";
-import { pushConflictNotices, readPendingQuestionIdSet } from "../utils/checklistPendingStore";
+import { readPendingQuestionIdSet } from "../utils/checklistPendingStore";
 import {
   resolveChecklistHydrateWithPendingQueue,
   shouldSkipServerHydrate,
@@ -2704,7 +2704,6 @@ export function StorageProvider({ children, useMockData = false }) {
           currentAuditIdRef.current ||
           null;
 
-        const replaced = [];
         const isoHydrateUpdater = (audit) => {
           const updatedAudit = JSON.parse(JSON.stringify(audit));
           const checklist = updatedAudit.checklist;
@@ -2716,7 +2715,7 @@ export function StorageProvider({ children, useMockData = false }) {
             checklist,
             responseMap,
             hydrateUuid,
-            { pendingQuestionIds: pendingIds, replaced },
+            { pendingQuestionIds: pendingIds },
           );
 
           console.log(`✅ [HYDRATE] Applicate ${applied}/${rows.length} risposte (note locali preservate se in draft)`);
@@ -2724,14 +2723,6 @@ export function StorageProvider({ children, useMockData = false }) {
         };
         isoHydrateUpdater._systemCall = true;
         updateCurrentAudit(isoHydrateUpdater, { skipSync: true });
-        if (replaced.length) {
-          pushConflictNotices(hydrateUuid, replaced);
-          if (typeof window !== "undefined") {
-            window.dispatchEvent(new CustomEvent("sgq:question-conflicts", {
-              detail: { auditUuid: hydrateUuid, conflicts: replaced, source: "hydrate" },
-            }));
-          }
-        }
         setServerDataStatus('ready');
       } catch (err) {
         console.warn("⚠️ [HYDRATE] Errore caricamento risposte server:", err.message);

@@ -11,7 +11,7 @@ import { CHECKLIST_STATUS } from "../data/auditDataModel";
 import { calculateNormCompletion } from "../utils/auditUtils";
 import { getStandardByKey } from "../data/standardsRegistry";
 import apiService from "../services/apiService";
-import { syncService } from "../services/syncService";
+import { toNumericChecklistQuestionId } from "../utils/attachmentQuestionId";
 import { QuestionCard as UniversalQuestionCard } from "./QuestionCard";
 import { saveChecklistFocus, buildChecklistAskAiFocus } from "../utils/aiAssistantContext";
 import {
@@ -29,6 +29,22 @@ import "./ChecklistModule.css";
  * "ISO_9001_2015" → "ISO_9001", "ISO_14001_2015" → "ISO_14001", ecc.
  * Il dato viene salvato sempre con la chiave breve (es. "ISO_9001").
  */
+function queueQuestionSave(auditUuid, questionRow, { status, notes, clauseRef }) {
+  const numericQId = toNumericChecklistQuestionId(questionRow?.questionId);
+  const ref = String(clauseRef || questionRow?.clauseRef || "").trim();
+  if (!auditUuid || (numericQId == null && !ref)) return false;
+  scheduleChecklistQuestionSave({
+    auditUuid,
+    questionId: numericQId ?? null,
+    clauseRef: ref || null,
+    status,
+    notes,
+    organizationId: apiService.getStoredUser?.()?.organization_id ?? null,
+    baseUpdatedAt: questionRow?.serverUpdatedAt || null,
+  });
+  return true;
+}
+
 function normalizeChecklistKey(normCode) {
   const mapping = {
     ISO_9001_2015:  "ISO_9001",
@@ -357,40 +373,21 @@ function ChecklistModule({ defaultNorm = "ISO_9001", readOnly = false, forceExpa
       const auditUuidForEvent = currentAudit?.metadata?.id || currentAudit?.id;
       const questionRow = currentAudit?.checklist?.[checklistKey]?.[clauseId]
         ?.questions?.find((q) => q.id === questionId);
-      const numericQId = questionRow?.questionId ?? null;
-      if (auditUuidForEvent && numericQId != null) {
-        const currentNotes = questionRow?.notes ?? null;
-        const currentStatus = questionRow?.status ?? null;
-        let newStatus =
-          field === "status"
-            ? (value === "NOT_ANSWERED" || value == null ? null : value)
-            : (currentStatus === "NOT_ANSWERED" ? null : currentStatus);
-        let newNotes = field === "notes" ? value : currentNotes;
-        if (typeof newNotes === "string" && newNotes.length > 5000) {
-          newNotes = newNotes.substring(0, 5000);
-        }
-        scheduleChecklistQuestionSave({
-          auditUuid: auditUuidForEvent,
-          questionId: numericQId,
-          status: newStatus,
-          notes: newNotes,
-          organizationId: apiService.getStoredUser?.()?.organization_id ?? null,
-          baseUpdatedAt: questionRow?.serverUpdatedAt || null,
-        });
-        deferredQuestionSave = true;
-      } else if (import.meta.env.VITE_SYNC_MODE === "events") {
-        const auditUuidLegacy = currentAudit?.metadata?.id || currentAudit?.id;
-        if (auditUuidLegacy) {
-          const questionRowLegacy = currentAudit?.checklist?.[checklistKey]?.[clauseId]
-            ?.questions?.find((q) => q.id === questionId);
-          syncService.enqueueResponseEvent(
-            auditUuidLegacy,
-            questionRowLegacy?.questionId,
-            field === "status" ? value : questionRowLegacy?.status,
-            field === "notes" ? value : questionRowLegacy?.notes,
-          ).catch(() => {});
-        }
+      const currentNotes = questionRow?.notes ?? null;
+      const currentStatus = questionRow?.status ?? null;
+      let newStatus =
+        field === "status"
+          ? (value === "NOT_ANSWERED" || value == null ? null : value)
+          : (currentStatus === "NOT_ANSWERED" ? null : currentStatus);
+      let newNotes = field === "notes" ? value : currentNotes;
+      if (typeof newNotes === "string" && newNotes.length > 5000) {
+        newNotes = newNotes.substring(0, 5000);
       }
+      deferredQuestionSave = queueQuestionSave(auditUuidForEvent, questionRow, {
+        status: newStatus,
+        notes: newNotes,
+        clauseRef: questionRow?.clauseRef || clauseForFocus?.clauseRef || clauseId,
+      });
     }
 
     // Percorso legacy: deselect diretto al server (bypassa sync queue per evitare dedup-override).
@@ -511,16 +508,12 @@ function ChecklistModule({ defaultNorm = "ISO_9001", readOnly = false, forceExpa
     const auditUuidForEvent = currentAudit?.metadata?.id || currentAudit?.id;
     const questionRow = currentAudit?.checklist?.[checklistKey]?.[clauseId]
       ?.questions?.find((q) => q.id === questionId);
-    const numericQId = questionRow?.questionId ?? null;
     const becomesConform = satData?.standard && (!questionRow?.status || questionRow.status === "NOT_ANSWERED");
-    if (becomesConform && auditUuidForEvent && numericQId != null) {
-      scheduleChecklistQuestionSave({
-        auditUuid: auditUuidForEvent,
-        questionId: numericQId,
+    if (becomesConform) {
+      queueQuestionSave(auditUuidForEvent, questionRow, {
         status: "C",
         notes: questionRow?.notes ?? null,
-        organizationId: apiService.getStoredUser?.()?.organization_id ?? null,
-        baseUpdatedAt: questionRow?.serverUpdatedAt || null,
+        clauseRef: questionRow?.clauseRef || clauseId,
       });
     }
     updateCurrentAudit((audit) => {

@@ -21,6 +21,16 @@ function toMs(value) {
     return Number.isFinite(t) ? t : null;
 }
 
+/** Un orario client più di due minuti avanti non diventa la versione della riga. */
+const FUTURE_SKEW_MS = 2 * 60 * 1000;
+
+function versionDateForWrite(clientTs, now = new Date()) {
+    const ms = toMs(clientTs);
+    if (ms == null) return null;
+    if (ms > now.getTime() + FUTURE_SKEW_MS) return null;
+    return new Date(ms);
+}
+
 function decideResponseProjection({
     incomingClientTs,
     incomingStatus,
@@ -35,6 +45,8 @@ function decideResponseProjection({
     const same = normStatus(incomingStatus) === normStatus(existing.conformity_status)
         && normNotes(incomingNotes) === normNotes(existing.notes);
     if (same) {
+        // Il chiamante non deve riscrivere la riga: un MERGE identico
+        // sposterebbe updated_at e farebbe sembrare vecchia la modifica successiva.
         return { apply: true, conflict: null, idempotent: true };
     }
 
@@ -65,4 +77,4 @@ function decideResponseProjection({
     };
 }
 
-module.exports = { decideResponseProjection };
+module.exports = { decideResponseProjection, versionDateForWrite };

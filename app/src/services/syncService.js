@@ -244,8 +244,9 @@ export class SyncService {
      */
     async upsertQuestionDiff(question) {
         const auditUuid = question?.auditUuid;
-        const questionId = question?.questionId;
-        if (!auditUuid || questionId == null) return;
+        const questionKey = question?.questionKey
+            || (question?.questionId != null && question.questionId !== '' ? String(question.questionId) : null);
+        if (!auditUuid || !questionKey) return;
         const db = await this.init();
         const normalized = String(auditUuid).toLowerCase();
         await new Promise((resolve, reject) => {
@@ -261,8 +262,10 @@ export class SyncService {
                     questions = { ...questions, ...(item.payload?.questions || {}) };
                     store.delete(item.id);
                 }
-                questions[String(questionId)] = {
-                    questionId,
+                questions[String(questionKey)] = {
+                    questionId: question.questionId ?? null,
+                    clauseRef: question.clauseRef ?? null,
+                    questionKey: String(questionKey),
                     status: question.status ?? null,
                     notes: question.notes ?? null,
                     baseUpdatedAt: question.baseUpdatedAt ?? null,
@@ -307,7 +310,9 @@ export class SyncService {
                     let changed = false;
                     for (const entry of list) {
                         if (String(entry?.auditUuid || '').toLowerCase() !== auditUuid) continue;
-                        const id = String(entry.questionId);
+                        const id = entry?.questionKey
+                            || (entry?.questionId != null ? String(entry.questionId) : null);
+                        if (!id) continue;
                         const stored = questions[id];
                         if (!stored) continue;
                         if (entry.idempotencyKey && stored.idempotencyKey !== entry.idempotencyKey) continue;
@@ -938,24 +943,8 @@ export class SyncService {
      * Invio immediato di una sola domanda (già in debounce).
      * Non accoda un evento per ogni tasto.
      */
-    async postQuestionSave(job, { keepalive = false } = {}) {
-        const auditUuid = job?.auditUuid;
-        const questionId = job?.questionId;
-        if (!auditUuid || questionId == null) return;
-        if (import.meta.env.VITE_SYNC_MODE === 'events') {
-            const event = this.buildResponseEvent(auditUuid, questionId, job.status, job.notes ?? null, job);
-            return apiService.post(`/audits/${auditUuid}/events`, { events: [event] }, {
-                keepalive,
-                lockAuditUuid: String(auditUuid),
-            });
-        }
-        return apiService.bulkSaveResponses(auditUuid, [{
-            question_id: questionId,
-            conformity_status: job.status ?? null,
-            notes: job.notes ?? null,
-            client_updated_at: job.clientTs || null,
-            device_id: job.deviceId || null,
-        }], { keepalive });
+    async postQuestionSave(job, opts) {
+        return this.postQuestionSaves([job], opts);
     }
 
     /**
@@ -963,9 +952,11 @@ export class SyncService {
      * Più richieste keepalive vengono scartate dal browser.
      */
     async postQuestionSaves(jobs, { keepalive = false } = {}) {
-        const list = (Array.isArray(jobs) ? jobs : []).filter(
-            (job) => job && job.auditUuid && job.questionId != null,
-        );
+        const list = (Array.isArray(jobs) ? jobs : []).filter((job) => {
+            if (!job?.auditUuid) return false;
+            if (toNumericChecklistQuestionId(job.questionId) != null) return true;
+            return Boolean(job.clauseRef && String(job.clauseRef).trim());
+        });
         if (list.length === 0) return;
         const groups = new Map();
         for (const job of list) {
@@ -978,8 +969,15 @@ export class SyncService {
             const chunkSize = 20;
             for (let i = 0; i < group.length; i += chunkSize) {
                 const chunk = group.slice(i, i + chunkSize);
-                if (import.meta.env.VITE_SYNC_MODE === 'events') {
-                    const events = chunk.map((job) => this.buildResponseEvent(
+                const withId = [];
+                const byClause = [];
+                for (const job of chunk) {
+                    const numericId = toNumericChecklistQuestionId(job.questionId);
+                    if (numericId != null) withId.push({ ...job, questionId: numericId });
+                    else if (job.clauseRef) byClause.push(job);
+                }
+                if (withId.length && import.meta.env.VITE_SYNC_MODE === 'events') {
+                    const events = withId.map((job) => this.buildResponseEvent(
                         auditUuid,
                         job.questionId,
                         job.status,
@@ -990,9 +988,18 @@ export class SyncService {
                         keepalive,
                         lockAuditUuid: auditUuid,
                     }));
-                } else {
-                    tasks.push(apiService.bulkSaveResponses(auditUuid, chunk.map((job) => ({
+                } else if (withId.length) {
+                    tasks.push(apiService.bulkSaveResponses(auditUuid, withId.map((job) => ({
                         question_id: job.questionId,
+                        conformity_status: job.status ?? null,
+                        notes: job.notes ?? null,
+                        client_updated_at: job.clientTs || null,
+                        device_id: job.deviceId || null,
+                    })), { keepalive }));
+                }
+                if (byClause.length) {
+                    tasks.push(apiService.bulkSaveResponses(auditUuid, byClause.map((job) => ({
+                        clause_ref: String(job.clauseRef).trim(),
                         conformity_status: job.status ?? null,
                         notes: job.notes ?? null,
                         client_updated_at: job.clientTs || null,

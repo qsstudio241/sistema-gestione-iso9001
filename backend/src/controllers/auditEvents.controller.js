@@ -6,7 +6,7 @@
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
 const { updateAuditProgressSafe } = require('../services/auditProgress.service');
-const { decideResponseProjection } = require('../services/responseConflict');
+const { decideResponseProjection, versionDateForWrite } = require('../services/responseConflict');
 
 function isSqlDeadlock(error) {
     const number = error?.number ?? error?.originalError?.number;
@@ -186,11 +186,16 @@ async function postAuditEventsOnce(req, res) {
                             ? { ...existingRow.recordset[0], question_id: questionId }
                             : null,
                     });
+                    if (decision.idempotent) {
+                        continue;
+                    }
                     if (!decision.apply) {
                         conflicts.push(decision.conflict);
                         continue;
                     }
-                    // UPSERT: aggiorna se esiste, inserisce se non esiste
+                    const versionAt = versionDateForWrite(ev.client_ts) || new Date();
+                    // UPSERT: aggiorna se esiste, inserisce se non esiste.
+                    // La versione è l'orario della modifica sul dispositivo, non l'arrivo.
                     await query(`
                         MERGE dbo.audit_responses AS target
                         USING (SELECT @audit_id AS audit_id, @question_id AS question_id) AS source
@@ -201,10 +206,10 @@ async function postAuditEventsOnce(req, res) {
                                 notes = @notes,
                                 is_answered = @is_answered,
                                 answered_at = GETDATE(),
-                                updated_at = GETDATE()
+                                updated_at = @version_at
                         WHEN NOT MATCHED THEN
                             INSERT (audit_id, question_id, conformity_status, notes, is_answered, answered_at, created_by, created_at, updated_at)
-                            VALUES (@audit_id, @question_id, @conformity_status, @notes, @is_answered, GETDATE(), @user_id, GETDATE(), GETDATE());
+                            VALUES (@audit_id, @question_id, @conformity_status, @notes, @is_answered, GETDATE(), @user_id, GETDATE(), @version_at);
                     `, {
                         audit_id,
                         question_id: questionId,
@@ -212,6 +217,7 @@ async function postAuditEventsOnce(req, res) {
                         notes: notes,
                         is_answered: conformityStatus ? 1 : 0,
                         user_id,
+                        version_at: versionAt,
                     });
                 }
             }

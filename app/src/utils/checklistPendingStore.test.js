@@ -7,6 +7,7 @@ import {
   listPendingQuestions,
   pushConflictNotices,
   readConflictNotices,
+  pendingQuestionKey,
   upsertPendingQuestion,
 } from './checklistPendingStore';
 
@@ -48,6 +49,26 @@ describe('checklistPendingStore', () => {
     expect(countAllPending(storage)).toBe(2);
     expect(listPendingQuestions(storage).map((q) => q.questionId).sort()).toEqual([7, 8]);
     expect(changed.status).toBe('NC');
+  });
+
+  it('senza id numerico tiene la bozza sulla clausola e la sostituisce quando l\'id arriva', () => {
+    const storage = box();
+    const draft = upsertPendingQuestion(4, 'abcd', {
+      questionId: null,
+      clauseRef: '4.1',
+      status: 'C',
+      notes: 'prima dell\'id',
+    }, storage);
+    expect(draft.questionKey).toBe('clause:4.1');
+    expect(pendingQuestionKey(draft)).toBe('clause:4.1');
+    const withId = upsertPendingQuestion(4, 'abcd', {
+      questionId: 42,
+      clauseRef: '4.1',
+      status: 'C',
+      notes: 'prima dell\'id',
+    }, storage);
+    expect(withId.questionKey).toBe('42');
+    expect(countPendingForAudit(4, 'abcd', storage)).toBe(1);
   });
 
   it('dimentica solo la versione inviata, non una bozza più nuova', () => {

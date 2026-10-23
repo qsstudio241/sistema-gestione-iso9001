@@ -58,8 +58,10 @@ function resumePending() {
   resumed = true;
   const pending = listPendingQuestions();
   for (const question of pending) {
-    if (!question?.auditUuid || question.questionId == null) continue;
-    const key = `${question.auditUuid}:${question.questionId}`;
+    const questionKey = question?.questionKey
+      || (question?.questionId != null ? String(question.questionId) : null);
+    if (!question?.auditUuid || !questionKey) continue;
+    const key = `${question.auditUuid}:${questionKey}`;
     scheduler.schedule(key, question);
   }
 }
@@ -95,17 +97,21 @@ export function resumeChecklistPendingSends() {
 
 export function scheduleChecklistQuestionSave(payload) {
   installGuards();
-  if (!payload?.auditUuid || payload.questionId == null) return;
+  if (!payload?.auditUuid) return;
   const stored = upsertPendingQuestion(payload.organizationId, payload.auditUuid, {
-    questionId: payload.questionId,
+    questionId: payload.questionId ?? null,
+    clauseRef: payload.clauseRef ?? null,
     status: payload.status ?? null,
     notes: payload.notes ?? null,
     baseUpdatedAt: payload.baseUpdatedAt ?? null,
     deviceId: payload.deviceId,
   });
-  if (!stored) return;
+  if (!stored?.questionKey) return;
   const enriched = {
     ...payload,
+    questionId: stored.questionId,
+    clauseRef: stored.clauseRef,
+    questionKey: stored.questionKey,
     status: stored.status,
     notes: stored.notes,
     deviceId: stored.deviceId,
@@ -116,7 +122,7 @@ export function scheduleChecklistQuestionSave(payload) {
     auditUuid: stored.auditUuid,
   };
   syncService.upsertQuestionDiff(enriched).catch(() => {});
-  const key = `${enriched.auditUuid}:${enriched.questionId}`;
+  const key = `${enriched.auditUuid}:${enriched.questionKey}`;
   scheduler.schedule(key, enriched);
 }
 
