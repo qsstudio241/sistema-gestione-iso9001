@@ -2029,6 +2029,12 @@ export function StorageProvider({ children, useMockData = false }) {
             // «In corso» è un invio a parte, solo alla prima risposta.
             // La scheda parte solo se decideAuditSync lo chiede e un campo è cambiato.
             if (!isHydratingRef.current && auditUuid && decision.sendStatusOnly) {
+              if (decision.patchPendingSchedaStatus) {
+                metadataSyncRef.current.patchPendingStatus(
+                  auditUuid,
+                  decision.patchPendingSchedaStatus,
+                );
+              }
               syncService.enqueue("update_audit_status", {
                 audit_uuid: auditUuid,
                 status: "in_progress",

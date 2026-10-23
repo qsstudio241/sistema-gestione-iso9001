@@ -74,6 +74,25 @@ export function createMetadataSyncScheduler({
     timers.set(uuid, setTimer(() => flushOne(uuid), debounceMs));
   }
 
+  function patchPendingStatus(uuid, status) {
+    const pending = latest.get(uuid);
+    if (!pending?.payload || !status) return false;
+    if (pending.payload.status === status) return true;
+    const payload = { ...pending.payload, status };
+    let signature = pending.signature;
+    try {
+      const parsed = JSON.parse(signature);
+      if (parsed && typeof parsed === 'object') {
+        parsed.status = status;
+        signature = JSON.stringify(parsed);
+      }
+    } catch {
+      /* firma opaca: parte comunque il payload aggiornato */
+    }
+    latest.set(uuid, { signature, payload });
+    return true;
+  }
+
   function flushAll() {
     let sent = 0;
     for (const uuid of [...latest.keys()]) {
@@ -86,5 +105,5 @@ export function createMetadataSyncScheduler({
     return latest.size > 0;
   }
 
-  return { schedule, flushAll, hasPending };
+  return { schedule, flushAll, hasPending, patchPendingStatus };
 }

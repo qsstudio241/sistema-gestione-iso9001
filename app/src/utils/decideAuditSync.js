@@ -88,12 +88,20 @@ export function decideAuditSync(input = {}) {
 
   if (event === 'first_answer') {
     const promote = status === 'draft' || !status;
+    const pending = input.pendingScheda && typeof input.pendingScheda === 'object'
+      ? input.pendingScheda
+      : null;
+    const pendingScheda = promote && pending && pending.status !== 'in_progress'
+      ? { ...pending, status: 'in_progress' }
+      : pending;
     return {
       ...base,
       nextStatus: promote ? 'in_progress' : status,
       sendQuestions: true,
       sendStatusOnly: promote,
       sendScheda: false,
+      patchPendingSchedaStatus: promote ? 'in_progress' : null,
+      pendingScheda,
     };
   }
 

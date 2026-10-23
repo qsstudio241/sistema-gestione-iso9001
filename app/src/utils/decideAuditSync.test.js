@@ -24,6 +24,24 @@ describe('decideAuditSync', () => {
     expect(decision.sendScheda).toBe(false);
   });
 
+  it('prima risposta con scheda già in attesa: la coda non rimette bozza', () => {
+    const decision = decideAuditSync({
+      event: 'first_answer',
+      status: 'draft',
+      pendingScheda: {
+        status: 'draft',
+        notes: 'bozza',
+        auditOutcome: { conclusions: 'dal PC' },
+      },
+    });
+    expect(decision.sendStatusOnly).toBe(true);
+    expect(decision.sendScheda).toBe(false);
+    expect(decision.patchPendingSchedaStatus).toBe('in_progress');
+    expect(decision.pendingScheda.status).toBe('in_progress');
+    expect(decision.pendingScheda.notes).toBe('bozza');
+    expect(decision.pendingScheda.auditOutcome.conclusions).toBe('dal PC');
+  });
+
   it('risposte successive: solo le domande cambiate, lo stato non si rimanda', () => {
     const decision = decideAuditSync({ event: 'next_answer', status: 'in_progress' });
     expect(decision.nextStatus).toBe('in_progress');

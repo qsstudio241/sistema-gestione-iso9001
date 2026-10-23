@@ -526,6 +526,7 @@ export class SyncService {
                         'save_responses',
                         'save_custom_checklist_responses',
                         'update_audit',
+                        'update_audit_status',
                         'upload_attachment',
                         'delete_attachment',
                         'upload_custom_attachment_and_patch_custom_response',

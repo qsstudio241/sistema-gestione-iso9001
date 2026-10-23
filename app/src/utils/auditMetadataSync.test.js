@@ -48,6 +48,27 @@ describe('createMetadataSyncScheduler', () => {
     vi.useRealTimers();
   });
 
+  it('una scheda in attesa non riparte con lo stato bozza', () => {
+    vi.useFakeTimers();
+    const enqueue = vi.fn();
+    const scheduler = createMetadataSyncScheduler({ enqueue, debounceMs: 1200 });
+    const draftAudit = audit('dal PC');
+    draftAudit.metadata.status = 'draft';
+    const sig = auditMetadataSyncSignature(draftAudit, { answered_questions: 0 });
+    scheduler.schedule('u1', sig, {
+      audit_uuid: 'u1',
+      status: 'draft',
+      notes: 'bozza',
+      auditOutcome: { conclusions: 'dal PC' },
+    });
+    expect(scheduler.patchPendingStatus('u1', 'in_progress')).toBe(true);
+    vi.advanceTimersByTime(1200);
+    expect(enqueue).toHaveBeenCalledTimes(1);
+    expect(enqueue.mock.calls[0][0].status).toBe('in_progress');
+    expect(enqueue.mock.calls[0][0].auditOutcome.conclusions).toBe('dal PC');
+    vi.useRealTimers();
+  });
+
   it('flush invia subito e non ripete se nulla è cambiato', () => {
     const enqueue = vi.fn();
     const scheduler = createMetadataSyncScheduler({
