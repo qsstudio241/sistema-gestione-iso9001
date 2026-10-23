@@ -33,6 +33,11 @@ const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
 const rateLimit = require('express-rate-limit');
+const {
+    isChecklistWrite,
+    userOrIpKey,
+    rateLimitHandler,
+} = require('./middleware/rateLimitPolicy');
 const logger = require('./utils/logger');
 const { closePool } = require('./config/database');
 const {
@@ -186,6 +191,7 @@ const authLimiter = rateLimit({
     standardHeaders: true,
     legacyHeaders:   false,
     skip: () => rateLimitDisabled,
+    handler: rateLimitHandler,
 });
 
 // API generale — moderato
@@ -199,21 +205,23 @@ const apiLimiter = rateLimit({
     message:  { error: 'Troppe richieste. Riprova tra qualche minuto.', code: 'RATE_LIMIT_API' },
     standardHeaders: true,
     legacyHeaders:   false,
-    skip: () => rateLimitDisabled,
-    keyGenerator: (req) => {
-        // JWT non ancora verificato qui (middleware auth viene dopo). Campo SGQ: user_id.
-        try {
-            const auth = req.headers.authorization || '';
-            if (auth.startsWith('Bearer ')) {
-                const payload = JSON.parse(
-                    Buffer.from(auth.split('.')[1], 'base64url').toString('utf8')
-                );
-                const uid = payload.user_id || payload.id || payload.sub;
-                if (uid) return `user:${uid}`;
-            }
-        } catch (_) { /* token assente o malformato: fallback su IP */ }
-        return req.ip;
-    },
+    // Le scritture checklist hanno un tetto proprio: non consumano questo.
+    skip: (req) => rateLimitDisabled || isChecklistWrite(req),
+    keyGenerator: userOrIpKey,
+    handler: rateLimitHandler,
+});
+
+// Salvataggi checklist (eventi, risposte, sync). Tetto più alto e separato,
+// così un audit lungo non fa rispondere 429 a GET /companies e GET /audits.
+const checklistWriteLimiter = rateLimit({
+    windowMs: parseInt(process.env.RATE_LIMIT_CHECKLIST_WINDOW_MS) || 15 * 60 * 1000,
+    max:      parseInt(process.env.RATE_LIMIT_CHECKLIST_MAX)       || 8000,
+    message:  { error: 'Troppe richieste. Riprova tra qualche minuto.', code: 'RATE_LIMIT_API' },
+    standardHeaders: true,
+    legacyHeaders:   false,
+    skip: (req) => rateLimitDisabled || !isChecklistWrite(req),
+    keyGenerator: userOrIpKey,
+    handler: rateLimitHandler,
 });
 
 if (rateLimitDisabled) {
@@ -278,7 +286,8 @@ app.use(API_BASE, smokeRoutes);
 
 // Rate limiting applicato prima delle route
 app.use(`${API_BASE}/auth`, authLimiter);   // Stretto su login/register
-app.use(API_BASE, apiLimiter);              // Moderato su tutto il resto
+app.use(API_BASE, apiLimiter);              // Letture e altre API
+app.use(API_BASE, checklistWriteLimiter);   // Scritture checklist, tetto separato
 
 // Endpoint autenticati
 app.use(API_BASE, authRoutes);

@@ -229,8 +229,14 @@ class ApiService {
             const fetchOptions = {
                 method,
                 headers: { ...this.getHeaders(includeAuth) },
-                signal: controller.signal
             };
+            if (options.keepalive) {
+                // Con keepalive il browser rifiuta AbortSignal: la richiesta deve
+                // sopravvivere al refresh (pagehide) e non essere annullata dal timer.
+                fetchOptions.keepalive = true;
+            } else {
+                fetchOptions.signal = controller.signal;
+            }
 
             if (options.lockAuditUuid) {
                 const lt = AUDIT_LOCK_TOKENS.get(String(options.lockAuditUuid));
@@ -973,8 +979,11 @@ class ApiService {
      * @param {number} auditId 
      * @param {Array} responses - Array di risposte
      */
-    async bulkSaveResponses(auditId, responses) {
-        return this.post(`/audits/${auditId}/responses/bulk`, { responses }, { lockAuditUuid: String(auditId) });
+    async bulkSaveResponses(auditId, responses, options = {}) {
+        return this.post(`/audits/${auditId}/responses/bulk`, { responses }, {
+            lockAuditUuid: String(auditId),
+            ...options,
+        });
     }
 
     /**

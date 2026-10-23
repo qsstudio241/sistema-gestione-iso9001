@@ -14,6 +14,10 @@ import apiService from "../services/apiService";
 import { syncService } from "../services/syncService";
 import { QuestionCard as UniversalQuestionCard } from "./QuestionCard";
 import { saveChecklistFocus, buildChecklistAskAiFocus } from "../utils/aiAssistantContext";
+import {
+  scheduleChecklistQuestionSave,
+  subscribeChecklistSave,
+} from "../utils/checklistQuestionSave";
 import AskAiButton from "./AskAiButton";
 import "./ChecklistModule.css";
 
@@ -47,8 +51,6 @@ function ChecklistModule({ defaultNorm = "ISO_9001", readOnly = false, forceExpa
   const {
     currentAudit,
     updateCurrentAudit,
-    auditSaveStatus,
-    isSaving,
     initializeChecklist,
     hydrateQuestionIds,
   } = useStorage();
@@ -62,6 +64,9 @@ function ChecklistModule({ defaultNorm = "ISO_9001", readOnly = false, forceExpa
   // entro questo tempo l'auto-init di AuditAccordionLayout o l'effect locale (riga 100)
   // popolano la struttura. Evita lampeggi e diagnosi confondenti per l'utente.
   const [showEmptyFallback, setShowEmptyFallback] = useState(false);
+  const [questionSavePhase, setQuestionSavePhase] = useState("idle");
+
+  useEffect(() => subscribeChecklistSave((snap) => setQuestionSavePhase(snap.phase)), []);
 
   // Hook gestione allegati
   const attachments = useAttachmentManager(currentAudit, updateCurrentAudit);
@@ -326,13 +331,9 @@ function ChecklistModule({ defaultNorm = "ISO_9001", readOnly = false, forceExpa
       );
     }
 
-    // Percorso event-based (T3): attivo solo con VITE_SYNC_MODE=events.
-    // Status e note generano eventi atomici su POST /audits/:uuid/events.
-    // Il bulk save_responses resta attivo in parallelo (note senza esito incluse).
-    if (
-      (field === 'status' || field === 'notes') &&
-      import.meta.env.VITE_SYNC_MODE === 'events'
-    ) {
+    // Una domanda = un salvataggio in debounce. Non parte da un effect.
+    let deferredQuestionSave = false;
+    if (field === "status" || field === "notes") {
       const auditUuidForEvent = currentAudit?.metadata?.id || currentAudit?.id;
       const questionRow = currentAudit?.checklist?.[checklistKey]?.[clauseId]
         ?.questions?.find((q) => q.id === questionId);
@@ -340,17 +341,33 @@ function ChecklistModule({ defaultNorm = "ISO_9001", readOnly = false, forceExpa
       if (auditUuidForEvent && numericQId != null) {
         const currentNotes = questionRow?.notes ?? null;
         const currentStatus = questionRow?.status ?? null;
-        const newStatus =
-          field === 'status'
-            ? (value === 'NOT_ANSWERED' ? null : value)
-            : (currentStatus === 'NOT_ANSWERED' ? null : currentStatus);
-        const newNotes = field === 'notes' ? value : currentNotes;
-        syncService.enqueueResponseEvent(
-          auditUuidForEvent,
-          numericQId,
-          newStatus,
-          newNotes,
-        ).catch(() => {});
+        let newStatus =
+          field === "status"
+            ? (value === "NOT_ANSWERED" || value == null ? null : value)
+            : (currentStatus === "NOT_ANSWERED" ? null : currentStatus);
+        let newNotes = field === "notes" ? value : currentNotes;
+        if (typeof newNotes === "string" && newNotes.length > 5000) {
+          newNotes = newNotes.substring(0, 5000);
+        }
+        scheduleChecklistQuestionSave({
+          auditUuid: auditUuidForEvent,
+          questionId: numericQId,
+          status: newStatus,
+          notes: newNotes,
+        });
+        deferredQuestionSave = true;
+      } else if (import.meta.env.VITE_SYNC_MODE === "events") {
+        const auditUuidLegacy = currentAudit?.metadata?.id || currentAudit?.id;
+        if (auditUuidLegacy) {
+          const questionRowLegacy = currentAudit?.checklist?.[checklistKey]?.[clauseId]
+            ?.questions?.find((q) => q.id === questionId);
+          syncService.enqueueResponseEvent(
+            auditUuidLegacy,
+            questionRowLegacy?.questionId,
+            field === "status" ? value : questionRowLegacy?.status,
+            field === "notes" ? value : questionRowLegacy?.notes,
+          ).catch(() => {});
+        }
       }
     }
 
@@ -360,6 +377,7 @@ function ChecklistModule({ defaultNorm = "ISO_9001", readOnly = false, forceExpa
     // il reset arrivi al server se l'utente è online. In offline, il deselect persiste in IDB
     // ma al prossimo hydrate il server ripristina il vecchio valore (limitazione nota).
     if (
+      !deferredQuestionSave &&
       field === 'status' &&
       value === null &&
       import.meta.env.VITE_SYNC_MODE !== 'events' &&
@@ -464,7 +482,7 @@ function ChecklistModule({ defaultNorm = "ISO_9001", readOnly = false, forceExpa
       }
 
       return updatedAudit;
-    });
+    }, { skipSync: deferredQuestionSave });
   };
 
   const handleSatisfiedByChange = (clauseId, questionId, satData) => {
@@ -499,12 +517,17 @@ function ChecklistModule({ defaultNorm = "ISO_9001", readOnly = false, forceExpa
             <span className="stat-badge">
               {stats.answered}/{stats.total} domande
             </span>
-            {/* Auto-save indicator */}
-            {isSaving && (
-              <span className="stat-badge saving">💾 Salvataggio...</span>
+            {questionSavePhase === "saving" && (
+              <span className="stat-badge saving">Salvataggio…</span>
             )}
-            {auditSaveStatus === "saved" && (
-              <span className="stat-badge saved">✓ Salvato</span>
+            {questionSavePhase === "retrying" && (
+              <span className="stat-badge saving">Non salvato, riprovo</span>
+            )}
+            {questionSavePhase === "error" && (
+              <span className="stat-badge saving">Non salvato</span>
+            )}
+            {questionSavePhase === "saved" && (
+              <span className="stat-badge saved">Salvato</span>
             )}
           </div>
         </div>
