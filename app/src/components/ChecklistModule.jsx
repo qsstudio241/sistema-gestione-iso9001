@@ -4,7 +4,7 @@
  * Sistema Gestione ISO 9001 - QS Studio
  */
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { useStorage } from "../contexts/StorageContext";
 import { useAttachmentManager } from "../hooks/useAttachmentManager";
 import { CHECKLIST_STATUS } from "../data/auditDataModel";
@@ -19,6 +19,8 @@ import {
   scheduleChecklistQuestionSave,
   subscribeChecklistSave,
 } from "../utils/checklistQuestionSave";
+import { readPending } from "../utils/checklistPendingStore";
+import { applyPendingAnswersToChecklist } from "../utils/checklistTextMerge";
 import AskAiButton from "./AskAiButton";
 import "./ChecklistModule.css";
 
@@ -68,7 +70,23 @@ function ChecklistModule({ defaultNorm = "ISO_9001", readOnly = false, forceExpa
   const [questionSavePhase, setQuestionSavePhase] = useState("idle");
 
   useEffect(() => subscribeChecklistSave((snap) => setQuestionSavePhase(snap.phase)), []);
-  useEffect(() => { resumeChecklistPendingSends(); }, []);
+  const pendingAppliedRef = useRef("");
+  useEffect(() => {
+    resumeChecklistPendingSends();
+    const auditUuid = currentAudit?.metadata?.id || currentAudit?.id;
+    if (!auditUuid) return;
+    const key = String(auditUuid).toLowerCase();
+    if (pendingAppliedRef.current === key) return;
+    const organizationId = apiService.getStoredUser?.()?.organization_id ?? null;
+    const pending = Object.values(readPending(organizationId, auditUuid).questions || {});
+    if (pending.length === 0) return;
+    pendingAppliedRef.current = key;
+    updateCurrentAudit((audit) => {
+      const copy = JSON.parse(JSON.stringify(audit));
+      applyPendingAnswersToChecklist(copy.checklist, pending);
+      return copy;
+    }, { skipSync: true });
+  }, [currentAudit?.metadata?.id, currentAudit?.id, updateCurrentAudit]);
 
   // Hook gestione allegati
   const attachments = useAttachmentManager(currentAudit, updateCurrentAudit);

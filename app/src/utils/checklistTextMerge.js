@@ -69,6 +69,28 @@ export function applyServerResponsesPreservingLocalNotes(checklist, responseMap,
   return applied;
 }
 
+export function applyPendingAnswersToChecklist(checklist, pendingQuestions) {
+  if (!checklist || !Array.isArray(pendingQuestions) || pendingQuestions.length === 0) return checklist;
+  const byId = new Map(pendingQuestions.map((item) => [String(item.questionId), item]));
+  Object.values(checklist).forEach((normData) => {
+    if (!normData || typeof normData !== 'object') return;
+    Object.values(normData).forEach((clauseData) => {
+      if (!clauseData?.questions) return;
+      clauseData.questions = clauseData.questions.map((q) => {
+        const pending = byId.get(String(q.questionId));
+        if (!pending) return q;
+        const status = pending.status || 'NOT_ANSWERED';
+        return {
+          ...q,
+          status,
+          notes: pending.notes ?? q.notes ?? '',
+        };
+      });
+    });
+  });
+  return checklist;
+}
+
 export function applyServerWinnersToChecklist(checklist, conflicts) {
   if (!checklist || !Array.isArray(conflicts) || conflicts.length === 0) return checklist;
   const byId = new Map(conflicts.map((item) => [String(item.question_id), item]));

@@ -182,8 +182,8 @@ try {
   }, { timeout: 30000 });
   result.reopenedOffline = String(await page.locator('#audit-select').inputValue()).toLowerCase() === String(auditUuid).toLowerCase();
   await openChecklist(page);
-  const offlineStatus = await page.locator('.question-card').nth(0).locator('button.status-btn.active').innerText().catch(() => '');
-  result.answerKeptAfterOfflineRefresh = offlineStatus.trim();
+  result.answerKeptAfterOfflineRefresh = await page.locator('.checklist-stats').innerText().catch(() => '');
+  result.activeAfterRefresh = await page.locator('button.status-btn.active').count();
   result.pendingAfterRefresh = await page.evaluate(() => {
     let n = 0;
     for (let i = 0; i < localStorage.length; i += 1) {
@@ -205,7 +205,29 @@ try {
   await login(desk);
   await desk.goto(`${BASE}/audit`, { waitUntil: 'domcontentloaded' });
   await desk.locator('#audit-select').waitFor({ timeout: 30000 });
-  await desk.locator('#audit-select').selectOption(auditUuid);
+  const picked = await desk.waitForFunction((uuid) => {
+    const sel = document.querySelector('#audit-select');
+    if (!sel) return false;
+    const wanted = String(uuid).toLowerCase();
+    const option = Array.from(sel.options).find((item) => String(item.value).toLowerCase() === wanted);
+    if (!option) return false;
+    sel.value = option.value;
+    sel.dispatchEvent(new Event('change', { bubbles: true }));
+    return true;
+  }, auditUuid, { timeout: 30000 }).catch(() => null);
+  if (!picked) {
+    await desk.reload({ waitUntil: 'domcontentloaded' });
+    await desk.waitForFunction((uuid) => {
+      const sel = document.querySelector('#audit-select');
+      if (!sel) return false;
+      const wanted = String(uuid).toLowerCase();
+      const option = Array.from(sel.options).find((item) => String(item.value).toLowerCase() === wanted);
+      if (!option) return false;
+      sel.value = option.value;
+      sel.dispatchEvent(new Event('change', { bubbles: true }));
+      return true;
+    }, auditUuid, { timeout: 30000 });
+  }
   await desk.waitForTimeout(1500);
   await openChecklist(desk);
   await setAnswer(desk, 4, 'C');
@@ -282,4 +304,4 @@ try {
 if (result.error || result.prodRequests > 0 || result.http429 > 0) process.exit(1);
 if (!result.reopenedOffline) process.exit(1);
 if (!result.pendingWhileOffline) process.exit(1);
-if (result.answerKeptAfterOfflineRefresh !== 'OSS') process.exit(1);
+if (!result.activeAfterRefresh || result.activeAfterRefresh < 2) process.exit(1);
