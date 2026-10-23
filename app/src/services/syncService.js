@@ -11,6 +11,7 @@
 import { getDatabase } from './IndexedDBProvider';
 import apiService from './apiService';
 import { toNumericChecklistQuestionId } from '../utils/attachmentQuestionId';
+import { noteQuestionSaveResult } from '../utils/checklistPendingStore';
 
 const SYNC_QUEUE_STORE = 'syncQueue';
 const STORE_SYNC_METADATA = 'sync_metadata';  // Store per tracking sync status
@@ -25,7 +26,7 @@ const ATTACHMENTS_BLOB_STORE = 'attachments_offline'; // Store blob per upload o
  *       | 'upload_attachment' | 'delete_attachment'
  *       | 'save_responses' | 'save_custom_checklist_responses'
  *       | 'upload_custom_attachment_and_patch_custom_response'
- *       | 'send_audit_event',
+ *       | 'send_audit_event' | 'save_question_diff',
  *   payload: any,
  *   timestamp: number,
  *   retryCount: number,
@@ -237,6 +238,96 @@ export class SyncService {
     }
 
     /**
+     * Bozza domande: un solo item per audit, aggiornato sul posto logico
+     * (nuovo id, così un invio già partito non cancella la versione successiva).
+     * Non chiama processQueue: l'invio lo fa il debounce, o il reconnect.
+     */
+    async upsertQuestionDiff(question) {
+        const auditUuid = question?.auditUuid;
+        const questionId = question?.questionId;
+        if (!auditUuid || questionId == null) return;
+        const db = await this.init();
+        const normalized = String(auditUuid).toLowerCase();
+        await new Promise((resolve, reject) => {
+            const tx = db.transaction([SYNC_QUEUE_STORE], 'readwrite');
+            const store = tx.objectStore(SYNC_QUEUE_STORE);
+            const req = store.getAll();
+            req.onerror = () => reject(req.error);
+            req.onsuccess = () => {
+                let questions = {};
+                for (const item of req.result) {
+                    if (item.type !== 'save_question_diff' || item.isStalled) continue;
+                    if (String(item.payload?.auditUuid || '').toLowerCase() !== normalized) continue;
+                    questions = { ...questions, ...(item.payload?.questions || {}) };
+                    store.delete(item.id);
+                }
+                questions[String(questionId)] = {
+                    questionId,
+                    status: question.status ?? null,
+                    notes: question.notes ?? null,
+                    baseUpdatedAt: question.baseUpdatedAt ?? null,
+                    deviceId: question.deviceId ?? null,
+                    organizationId: question.organizationId ?? null,
+                    auditUuid: normalized,
+                    idempotencyKey: question.idempotencyKey,
+                    clientTs: question.clientTs,
+                };
+                store.add({
+                    id: crypto.randomUUID(),
+                    type: 'save_question_diff',
+                    payload: {
+                        auditUuid: normalized,
+                        organizationId: question.organizationId ?? null,
+                        questions,
+                    },
+                    timestamp: Date.now(),
+                    retryCount: 0,
+                    lastError: null,
+                });
+            };
+            tx.oncomplete = () => resolve();
+            tx.onerror = () => reject(tx.error);
+        });
+    }
+
+    async clearQuestionDiffMatches(entries) {
+        const list = Array.isArray(entries) ? entries : [];
+        if (list.length === 0) return;
+        const db = await this.init();
+        await new Promise((resolve, reject) => {
+            const tx = db.transaction([SYNC_QUEUE_STORE], 'readwrite');
+            const store = tx.objectStore(SYNC_QUEUE_STORE);
+            const req = store.getAll();
+            req.onerror = () => reject(req.error);
+            req.onsuccess = () => {
+                for (const item of req.result) {
+                    if (item.type !== 'save_question_diff' || item.isStalled) continue;
+                    const auditUuid = String(item.payload?.auditUuid || '').toLowerCase();
+                    const questions = { ...(item.payload?.questions || {}) };
+                    let changed = false;
+                    for (const entry of list) {
+                        if (String(entry?.auditUuid || '').toLowerCase() !== auditUuid) continue;
+                        const id = String(entry.questionId);
+                        const stored = questions[id];
+                        if (!stored) continue;
+                        if (entry.idempotencyKey && stored.idempotencyKey !== entry.idempotencyKey) continue;
+                        delete questions[id];
+                        changed = true;
+                    }
+                    if (!changed) continue;
+                    if (Object.keys(questions).length === 0) store.delete(item.id);
+                    else {
+                        item.payload = { ...item.payload, questions };
+                        store.put(item);
+                    }
+                }
+            };
+            tx.oncomplete = () => resolve();
+            tx.onerror = () => reject(tx.error);
+        });
+    }
+
+    /**
      * Verifica se un'entità è stata sincronizzata al server
      * @param {string} entityType - Tipo entità ('audit', 'response')
      * @param {string} localId - ID locale dell'entità
@@ -432,6 +523,7 @@ export class SyncService {
                         'delete_attachment',
                         'upload_custom_attachment_and_patch_custom_response',
                         'send_audit_event',
+                        'save_question_diff',
                     ]);
                     if (
                         st === 404 &&
@@ -558,6 +650,9 @@ export class SyncService {
 
             case 'send_audit_event':
                 return await this.syncSendAuditEvent(payload);
+
+            case 'save_question_diff':
+                return await this.syncQuestionDiff(payload);
 
             // ── CND: Verbali VT/MT/PT/UT ────────────────────────────────────
             case 'create_ndt_report':
@@ -809,13 +904,13 @@ export class SyncService {
      * @param {string|null} conformityStatus - 'C'|'NC'|'OSS'|'OM'|'NA'|'NV'|null
      * @param {string|null} notes
      */
-    buildResponseEvent(auditUuid, questionId, conformityStatus, notes = null) {
+    buildResponseEvent(auditUuid, questionId, conformityStatus, notes = null, extras = {}) {
         const hasStatus =
             conformityStatus != null &&
             conformityStatus !== '' &&
             conformityStatus !== 'NOT_ANSWERED';
         const hasNotes = notes != null && String(notes).trim() !== '';
-        const idempotencyKey = this.generateResponseEventKey(auditUuid, questionId);
+        const idempotencyKey = extras.idempotencyKey || this.generateResponseEventKey(auditUuid, questionId);
         return {
             event_type: hasStatus || hasNotes ? 'response_set' : 'response_cleared',
             field_path: `responses.${questionId}`,
@@ -823,9 +918,11 @@ export class SyncService {
                 ? JSON.stringify({
                     conformity_status: hasStatus ? conformityStatus : null,
                     notes: hasNotes ? notes : null,
+                    device_id: extras.deviceId || null,
+                    base_updated_at: extras.baseUpdatedAt || null,
                 })
                 : null,
-            client_ts: new Date().toISOString(),
+            client_ts: extras.clientTs || new Date().toISOString(),
             client_ts_offset_ms: 0,
             idempotency_key: idempotencyKey,
             device_type: /Mobi|Android/i.test(navigator.userAgent) ? 'mobile' : 'desktop',
@@ -846,17 +943,18 @@ export class SyncService {
         const questionId = job?.questionId;
         if (!auditUuid || questionId == null) return;
         if (import.meta.env.VITE_SYNC_MODE === 'events') {
-            const event = this.buildResponseEvent(auditUuid, questionId, job.status, job.notes ?? null);
-            await apiService.post(`/audits/${auditUuid}/events`, { events: [event] }, {
+            const event = this.buildResponseEvent(auditUuid, questionId, job.status, job.notes ?? null, job);
+            return apiService.post(`/audits/${auditUuid}/events`, { events: [event] }, {
                 keepalive,
                 lockAuditUuid: String(auditUuid),
             });
-            return;
         }
-        await apiService.bulkSaveResponses(auditUuid, [{
+        return apiService.bulkSaveResponses(auditUuid, [{
             question_id: questionId,
             conformity_status: job.status ?? null,
             notes: job.notes ?? null,
+            client_updated_at: job.clientTs || null,
+            device_id: job.deviceId || null,
         }], { keepalive });
     }
 
@@ -886,6 +984,7 @@ export class SyncService {
                         job.questionId,
                         job.status,
                         job.notes ?? null,
+                        job,
                     ));
                     tasks.push(apiService.post(`/audits/${auditUuid}/events`, { events }, {
                         keepalive,
@@ -896,11 +995,35 @@ export class SyncService {
                         question_id: job.questionId,
                         conformity_status: job.status ?? null,
                         notes: job.notes ?? null,
+                        client_updated_at: job.clientTs || null,
+                        device_id: job.deviceId || null,
                     })), { keepalive }));
                 }
             }
         }
-        await Promise.all(tasks);
+        const results = await Promise.all(tasks);
+        return { results };
+    }
+
+    async syncQuestionDiff(payload) {
+        const jobs = Object.values(payload?.questions || {}).map((question) => ({
+            ...question,
+            auditUuid: payload.auditUuid,
+            organizationId: question.organizationId ?? payload.organizationId ?? null,
+        }));
+        const result = await this.postQuestionSaves(jobs);
+        const conflicts = [];
+        for (const row of result?.results || []) {
+            if (Array.isArray(row?.conflicts)) conflicts.push(...row.conflicts);
+            if (Array.isArray(row?.results?.conflicts)) conflicts.push(...row.results.conflicts);
+        }
+        noteQuestionSaveResult(jobs, conflicts);
+        if (conflicts.length && typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('sgq:question-conflicts', {
+                detail: { auditUuid: payload.auditUuid, conflicts },
+            }));
+        }
+        return result;
     }
 
     /**

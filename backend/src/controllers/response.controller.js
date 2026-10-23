@@ -9,6 +9,7 @@
  */
 
 const { query } = require('../config/database');
+const { decideResponseProjection } = require('../services/responseConflict');
 const logger = require('../utils/logger');
 const { updateAuditProgressSafe } = require('../services/auditProgress.service');
 // assertWriteAllowed rimosso in T5 (lock solo UX)
@@ -458,7 +459,8 @@ async function bulkSaveResponses(req, res) {
 
                 // Cerca risposta esistente
                 const existing = await query(`
-                    SELECT response_id, updated_at FROM audit_responses
+                    SELECT response_id, updated_at, conformity_status, notes
+                    FROM audit_responses
                     WHERE audit_id = @audit_id AND question_id = @question_id
                 `, { audit_id: auditIdNumeric, question_id: parseInt(finalQuestionId) });
 
@@ -479,15 +481,24 @@ async function bulkSaveResponses(req, res) {
                 const isAnswered = conformity_status && conformity_status !== 'NOT_ANSWERED';
 
                 if (existing.recordset.length > 0) {
-                    // Check conflict
-                    const serverTime = new Date(existing.recordset[0].updated_at).getTime();
-                    const clientTime = client_updated_at ? new Date(client_updated_at).getTime() : Date.now();
-
-                    if (clientTime < serverTime) {
+                    const row = existing.recordset[0];
+                    const decision = decideResponseProjection({
+                        incomingClientTs: client_updated_at || new Date().toISOString(),
+                        incomingStatus: conformity_status,
+                        incomingNotes: notes,
+                        incomingDeviceId: resp.device_id || null,
+                        existing: {
+                            question_id: parseInt(finalQuestionId),
+                            conformity_status: row.conformity_status,
+                            notes: row.notes,
+                            updated_at: row.updated_at,
+                        },
+                    });
+                    if (!decision.apply) {
                         results.conflicts.push({
-                            question_id: finalQuestionId,
+                            ...decision.conflict,
                             clause_ref: clause_ref || null,
-                            serverVersion: existing.recordset[0].updated_at
+                            serverVersion: row.updated_at,
                         });
                         continue;
                     }

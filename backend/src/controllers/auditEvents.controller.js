@@ -6,6 +6,7 @@
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
 const { updateAuditProgressSafe } = require('../services/auditProgress.service');
+const { decideResponseProjection } = require('../services/responseConflict');
 
 function isSqlDeadlock(error) {
     const number = error?.number ?? error?.originalError?.number;
@@ -69,6 +70,7 @@ async function postAuditEventsOnce(req, res) {
 
         let inserted = 0;
         let skipped = 0;
+        const conflicts = [];
 
         for (const ev of events) {
             if (!ev.idempotency_key || !ev.event_type || !ev.client_ts) {
@@ -158,15 +160,35 @@ async function postAuditEventsOnce(req, res) {
                 if (questionId && Number.isFinite(questionId)) {
                     let conformityStatus = null;
                     let notes = null;
+                    let deviceId = null;
                     if (ev.event_type === 'response_set' && ev.new_value) {
                         try {
                             // new_value è una stringa JSON: {"conformity_status":"C","notes":"..."}
                             const parsed = JSON.parse(ev.new_value);
                             conformityStatus = parsed.conformity_status ?? null;
                             notes = parsed.notes ?? null;
+                            deviceId = parsed.device_id ?? null;
                         } catch {
                             // new_value malformato: lascia null
                         }
+                    }
+                    const existingRow = await query(`
+                        SELECT conformity_status, notes, updated_at
+                        FROM dbo.audit_responses
+                        WHERE audit_id = @audit_id AND question_id = @question_id
+                    `, { audit_id, question_id: questionId });
+                    const decision = decideResponseProjection({
+                        incomingClientTs: ev.client_ts,
+                        incomingStatus: conformityStatus,
+                        incomingNotes: notes,
+                        incomingDeviceId: deviceId,
+                        existing: existingRow.recordset[0]
+                            ? { ...existingRow.recordset[0], question_id: questionId }
+                            : null,
+                    });
+                    if (!decision.apply) {
+                        conflicts.push(decision.conflict);
+                        continue;
                     }
                     // UPSERT: aggiorna se esiste, inserisce se non esiste
                     await query(`
@@ -203,7 +225,7 @@ async function postAuditEventsOnce(req, res) {
         }
 
         logger.info('Audit events saved', { audit_id, inserted, skipped, user_id });
-        return res.status(207).json({ inserted, skipped, total: events.length });
+        return res.status(207).json({ inserted, skipped, total: events.length, conflicts });
 
     } catch (error) {
         throw error;

@@ -156,6 +156,7 @@
         "src/services/auditLock.service.js",
         "src/services/auditNumberAllocation.service.js",
         "src/services/auditProgress.service.js",
+        "src/services/responseConflict.js",
         "src/services/customChecklist.service.js",
         "src/services/commercialChecklistTemplate.service.js",
         "src/services/commercialChecklistAttachment.service.js",
@@ -309,6 +310,8 @@
       "name": "controllers",
       "files": [
         "src/controllers/audit.controller.js",
+        "src/controllers/auditEvents.controller.js",
+        "src/controllers/response.controller.js",
         "src/controllers/sync.controller.js",
         "src/controllers/nc.controller.js",
         "src/controllers/attachment.controller.js",

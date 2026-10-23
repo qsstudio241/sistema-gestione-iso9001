@@ -15,6 +15,7 @@ import { syncService } from "../services/syncService";
 import { QuestionCard as UniversalQuestionCard } from "./QuestionCard";
 import { saveChecklistFocus, buildChecklistAskAiFocus } from "../utils/aiAssistantContext";
 import {
+  resumeChecklistPendingSends,
   scheduleChecklistQuestionSave,
   subscribeChecklistSave,
 } from "../utils/checklistQuestionSave";
@@ -67,6 +68,7 @@ function ChecklistModule({ defaultNorm = "ISO_9001", readOnly = false, forceExpa
   const [questionSavePhase, setQuestionSavePhase] = useState("idle");
 
   useEffect(() => subscribeChecklistSave((snap) => setQuestionSavePhase(snap.phase)), []);
+  useEffect(() => { resumeChecklistPendingSends(); }, []);
 
   // Hook gestione allegati
   const attachments = useAttachmentManager(currentAudit, updateCurrentAudit);
@@ -354,6 +356,8 @@ function ChecklistModule({ defaultNorm = "ISO_9001", readOnly = false, forceExpa
           questionId: numericQId,
           status: newStatus,
           notes: newNotes,
+          organizationId: apiService.getStoredUser?.()?.organization_id ?? null,
+          baseUpdatedAt: questionRow?.serverUpdatedAt || null,
         });
         deferredQuestionSave = true;
       } else if (import.meta.env.VITE_SYNC_MODE === "events") {
@@ -517,6 +521,9 @@ function ChecklistModule({ defaultNorm = "ISO_9001", readOnly = false, forceExpa
             <span className="stat-badge">
               {stats.answered}/{stats.total} domande
             </span>
+            {questionSavePhase === "pending" && (
+              <span className="stat-badge saving">In attesa di invio</span>
+            )}
             {questionSavePhase === "saving" && (
               <span className="stat-badge saving">Salvataggio…</span>
             )}

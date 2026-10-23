@@ -12,6 +12,7 @@ export const PENDING_AUDIT_HYDRATE_TYPES = Object.freeze([
   "save_custom_checklist_responses",
   "update_audit",
   "send_audit_event",
+  "save_question_diff",
 ]);
 
 function normalizeRef(value) {

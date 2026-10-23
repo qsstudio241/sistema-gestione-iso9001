@@ -27,8 +27,10 @@ export function pickMergedNotes(localNotes, serverNotes, options = {}) {
  * @param {Record<number, {status, notes}>} responseMap - da getAuditResponses
  * @param {string|null} auditUuid - per draft guard
  */
-export function applyServerResponsesPreservingLocalNotes(checklist, responseMap, auditUuid = null) {
+export function applyServerResponsesPreservingLocalNotes(checklist, responseMap, auditUuid = null, options = {}) {
   if (!checklist || !responseMap) return 0;
+  const pendingIds = options?.pendingQuestionIds instanceof Set ? options.pendingQuestionIds : null;
+  const replaced = Array.isArray(options?.replaced) ? options.replaced : null;
   let applied = 0;
 
   Object.values(checklist).forEach((normData) => {
@@ -37,22 +39,57 @@ export function applyServerResponsesPreservingLocalNotes(checklist, responseMap,
       if (!clauseData?.questions) return;
       clauseData.questions = clauseData.questions.map((q) => {
         if (!q.questionId || !responseMap[q.questionId]) return q;
+        if (pendingIds?.has(String(q.questionId))) return q;
         applied++;
         const serverData = responseMap[q.questionId];
         const fieldId = `q:${q.questionId}`;
         const notes = pickMergedNotes(q.notes, serverData.notes, {
           forceLocal: auditUuid ? isDraft(auditUuid, fieldId) : false,
         });
+        const localStatus = !q.status || q.status === 'NOT_ANSWERED' ? null : q.status;
+        const serverStatus = !serverData.status || serverData.status === 'NOT_ANSWERED' ? null : serverData.status;
+        if (replaced && localStatus && localStatus !== serverStatus) {
+          replaced.push({
+            question_id: q.questionId,
+            reason: 'server_newer',
+            server: { conformity_status: serverStatus, notes: serverData.notes ?? '' },
+            client: { conformity_status: localStatus, notes: q.notes ?? '' },
+          });
+        }
         return {
           ...q,
           status: serverData.status,
           notes,
+          serverUpdatedAt: serverData.updated_at || q.serverUpdatedAt || null,
         };
       });
     });
   });
 
   return applied;
+}
+
+export function applyServerWinnersToChecklist(checklist, conflicts) {
+  if (!checklist || !Array.isArray(conflicts) || conflicts.length === 0) return checklist;
+  const byId = new Map(conflicts.map((item) => [String(item.question_id), item]));
+  Object.values(checklist).forEach((normData) => {
+    if (!normData || typeof normData !== 'object') return;
+    Object.values(normData).forEach((clauseData) => {
+      if (!clauseData?.questions) return;
+      clauseData.questions = clauseData.questions.map((q) => {
+        const winner = byId.get(String(q.questionId));
+        if (!winner?.server) return q;
+        const status = winner.server.conformity_status || 'NOT_ANSWERED';
+        return {
+          ...q,
+          status,
+          notes: winner.server.notes ?? '',
+          serverUpdatedAt: winner.server.updated_at || q.serverUpdatedAt || null,
+        };
+      });
+    });
+  });
+  return checklist;
 }
 
 function countChecklistProgress(checklist) {

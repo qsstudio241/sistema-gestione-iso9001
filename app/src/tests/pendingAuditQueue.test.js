@@ -40,6 +40,7 @@ describe("shouldSkipServerHydrate (CONS-4)", () => {
     ["save_custom_checklist_responses", { auditId: AUDIT_UUID }],
     ["update_audit", { audit_uuid: AUDIT_UUID }],
     ["send_audit_event", { auditUuid: AUDIT_UUID, event: { event_type: "response_set" } }],
+    ["save_question_diff", { auditUuid: AUDIT_UUID, questions: { 1: { questionId: 1 } } }],
   ])("%s attivo per lo stesso UUID → skip", (type, payload) => {
     expect(PENDING_AUDIT_HYDRATE_TYPES).toContain(type);
     expect(shouldSkipServerHydrate([item(type, payload)], AUDIT_UUID)).toBe(true);
