@@ -459,6 +459,9 @@ export default function IngestReviewDialog({
     const status = action === "conferma" ? "confermato"
       : action === "correggi" ? "corretto"
         : "segnalato";
+    const previousValue = notice.current_value != null && String(notice.current_value) !== ""
+      ? String(notice.current_value)
+      : (formRef.current && notice.field ? formRef.current[notice.field] : "");
     if (action === "correggi" && notice.field) {
       handleChange(notice.field, payload.new_value);
       document.getElementById(`ingest-field-${notice.field}`)?.focus();
@@ -480,6 +483,8 @@ export default function IngestReviewDialog({
         note: payload.note || null,
         reason: payload.reason || null,
         new_value: payload.new_value || null,
+        previous_value: action === "correggi" ? (previousValue == null ? "" : String(previousValue)) : null,
+        field: action === "correggi" ? notice.field : null,
       },
     ];
     onDiscrepancyResolutions?.(discResolutions.current);

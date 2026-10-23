@@ -12,6 +12,7 @@ import apiService from "../services/apiService";
 import { useCompanyScope } from "../contexts/CompanyScopeContext";
 import { useAuthOptional } from "../contexts/AuthContext";
 import DiscrepancyNotices, { WpqrSignalsList } from "../components/DiscrepancyNotices";
+import noticeTexts from "@sgq-notice-texts";
 import { numericCompanyScopeId } from "../utils/appCompanyScope";
 import { formatDate } from "../utils/dateHelpers";
 import WpqrUploadButton from "../components/WpqrUploadButton";
@@ -891,6 +892,7 @@ function WPQRFormModal({ wpqr, defaultCompanyId, onSave, onClose, onSaved }) {
   const [noticeRunsReady, setNoticeRunsReady] = useState(
     () => !wpqr?.id || Array.isArray(wpqr?.test_runs),
   );
+  const [noticeRunsFailed, setNoticeRunsFailed] = useState(false);
   const resolutionsRef = useRef(
     (wpqr?.discrepancy_notices || [])
       .filter((n) => n.status && n.status !== "aperto")
@@ -912,6 +914,7 @@ function WPQRFormModal({ wpqr, defaultCompanyId, onSave, onClose, onSaved }) {
 
   useEffect(() => {
     const id = wpqr?.id;
+    setNoticeRunsFailed(false);
     if (!id || Array.isArray(wpqr?.test_runs) || typeof apiService.getWpqrTestRuns !== "function") {
       if (Array.isArray(wpqr?.test_runs)) setNoticeRuns(wpqr.test_runs);
       setNoticeRunsReady(true);
@@ -923,16 +926,18 @@ function WPQRFormModal({ wpqr, defaultCompanyId, onSave, onClose, onSaved }) {
       .then((res) => {
         if (cancelled) return;
         setNoticeRuns(Array.isArray(res?.runs) ? res.runs : []);
+        setNoticeRunsFailed(false);
         setNoticeRunsReady(true);
       })
       .catch(() => {
-        if (!cancelled) setNoticeRunsReady(true);
+        if (!cancelled) setNoticeRunsFailed(true);
       });
     return () => { cancelled = true; };
   }, [wpqr]);
 
   useEffect(() => {
     if (typeof apiService.previewWpqrNotices !== "function") return undefined;
+    if (noticeRunsFailed) return undefined;
     if (wpqr?.id && !noticeRunsReady) return undefined;
     const gen = previewGen.current + 1;
     previewGen.current = gen;
@@ -949,7 +954,7 @@ function WPQRFormModal({ wpqr, defaultCompanyId, onSave, onClose, onSaved }) {
       }
     }, 400);
     return () => clearTimeout(timer);
-  }, [form, wpqr, noticeRuns, noticeRunsReady]);
+  }, [form, wpqr, noticeRuns, noticeRunsReady, noticeRunsFailed]);
 
   function focusNoticeField(field) {
     if (!field) return;
@@ -970,6 +975,8 @@ function WPQRFormModal({ wpqr, defaultCompanyId, onSave, onClose, onSaved }) {
         note: payload.note,
         reason: payload.reason,
         new_value: payload.new_value,
+        previous_value: notice.current_value,
+        field: notice.field,
       });
       const row = res?.data;
       if (action === "correggi" && notice.field) set(notice.field, payload.new_value);
@@ -1110,6 +1117,11 @@ function WPQRFormModal({ wpqr, defaultCompanyId, onSave, onClose, onSaved }) {
         <form onSubmit={e => e.preventDefault()}>
           <div className="wp-modal-body">
             {error && <div className="wp-error">{error}</div>}
+            {noticeRunsFailed && (
+              <p className="disc-notice__help" data-testid="filler-check-skipped">
+                {noticeTexts.UI.fillerCheckSkipped}
+              </p>
+            )}
             <DiscrepancyNotices
               notices={notices}
               history={noticeHistory}

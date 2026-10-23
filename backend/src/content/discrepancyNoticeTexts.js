@@ -69,6 +69,7 @@ const UI = Object.freeze({
     locked: "Sola lettura: non puoi confermare, correggere o segnalare l'avviso",
     saveFirst: "Salva la WPQR prima di registrare l'azione",
     openCount: 'Segnalazioni aperte',
+    fillerCheckSkipped: "Il controllo del materiale d'apporto non è stato fatto: le passate non sono arrivate.",
 });
 
 function reasonById(id) {

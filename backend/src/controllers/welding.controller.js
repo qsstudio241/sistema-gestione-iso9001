@@ -2090,6 +2090,8 @@ async function actWpqrNotice(req, res) {
             note: req.body && req.body.note,
             reason: req.body && req.body.reason,
             newValue: req.body && req.body.new_value,
+            previousValue: req.body && req.body.previous_value,
+            field: req.body && req.body.field,
         });
         res.json({ success: true, data });
     } catch (error) {

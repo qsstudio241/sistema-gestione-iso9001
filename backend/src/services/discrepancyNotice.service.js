@@ -137,7 +137,31 @@ function noticeKey(code, fingerprint) {
 
 function historyRows(resolutions, notices) {
     const live = new Set((notices || []).map((notice) => noticeKey(notice.code, notice.fingerprint)));
-    return (resolutions || []).filter((row) => row && !live.has(noticeKey(row.rule_code, row.fingerprint)));
+    return (resolutions || []).filter((row) => {
+        if (!row) return false;
+        if (row.status === STATUS.CORRETTO) return true;
+        return !live.has(noticeKey(row.rule_code, row.fingerprint));
+    });
+}
+
+function trimValue(value) {
+    return value == null ? '' : String(value).trim();
+}
+
+function locateCorrection({ record, runs, ruleCode, field, newValue, previousValue }) {
+    const list = runs || [];
+    const live = evaluateDiscrepancy(DOMAIN, record, { runs: list }).find((item) => item.code === ruleCode);
+    if (live) return { mode: 'update', target: live };
+    const column = field && CORREGGI_COLUMNS.has(field) && /^[a-z_]+$/.test(field) ? field : '';
+    const next = trimValue(newValue);
+    const previous = trimValue(previousValue);
+    if (!column || !previous || previous === next || trimValue(record[column]) !== next) {
+        return { mode: 'missing' };
+    }
+    const restored = { ...record, [column]: previous };
+    const old = evaluateDiscrepancy(DOMAIN, restored, { runs: list }).find((item) => item.code === ruleCode);
+    if (!old || old.field !== column) return { mode: 'missing' };
+    return { mode: 'audit-only', target: old, field: column, previous, next };
 }
 
 function decorateRecord(record, runs, resolutions) {
@@ -295,7 +319,9 @@ async function saveNoticeRow(fields) {
     }
 }
 
-async function actOnWpqrNotice({ organizationId, wpqrId, userId, action, ruleCode, note, reason, newValue }) {
+async function actOnWpqrNotice({
+    organizationId, wpqrId, userId, action, ruleCode, note, reason, newValue, previousValue, field,
+}) {
     const checked = texts.validateNoticeAction(action, { note, reason, new_value: newValue });
     if (!checked.ok) throw httpError(400, 'VALIDATION_ERROR', checked.error);
     if (!ruleCode) throw httpError(400, 'VALIDATION_ERROR', 'Codice avviso obbligatorio');
@@ -303,10 +329,27 @@ async function actOnWpqrNotice({ organizationId, wpqrId, userId, action, ruleCod
 
     const record = await loadWpqrRecord(organizationId, wpqrId);
     if (!record) throw httpError(404, 'WPQR_NOT_FOUND', 'WPQR non trovata');
-    const runs = await loadRuns(organizationId, [wpqrId]);
-    const evaluated = evaluateDiscrepancy(DOMAIN, record, { runs: runs.get(wpqrId) || [] });
-    const target = evaluated.find((item) => item.code === ruleCode);
-    if (!target) throw httpError(404, 'NOTICE_NOT_FOUND', 'Avviso non più presente su questa WPQR');
+    const runRows = (await loadRuns(organizationId, [wpqrId])).get(wpqrId) || [];
+    let target = null;
+    let auditOnly = null;
+    if (action === 'correggi') {
+        const located = locateCorrection({
+            record,
+            runs: runRows,
+            ruleCode,
+            field,
+            newValue: checked.newValue,
+            previousValue,
+        });
+        if (located.mode === 'missing') {
+            throw httpError(404, 'NOTICE_NOT_FOUND', 'Avviso non più presente su questa WPQR');
+        }
+        target = located.target;
+        if (located.mode === 'audit-only') auditOnly = located;
+    } else {
+        target = evaluateDiscrepancy(DOMAIN, record, { runs: runRows }).find((item) => item.code === ruleCode);
+        if (!target) throw httpError(404, 'NOTICE_NOT_FOUND', 'Avviso non più presente su questa WPQR');
+    }
 
     const page = texts.knownPdfPage(record);
     let status = ACTION_TO_STATUS[action];
@@ -317,17 +360,23 @@ async function actOnWpqrNotice({ organizationId, wpqrId, userId, action, ruleCod
     let savedRecord = record;
 
     if (action === 'correggi') {
-        fieldName = target.field;
+        fieldName = auditOnly ? auditOnly.field : target.field;
         if (!CORREGGI_COLUMNS.has(fieldName) || !/^[a-z_]+$/.test(fieldName)) {
             throw httpError(400, 'VALIDATION_ERROR', texts.UI.fieldNotCorrectable);
         }
-        previous = record[fieldName] == null ? '' : String(record[fieldName]).trim();
-        next = checked.newValue;
-        if (previous === next) throw httpError(400, 'VALIDATION_ERROR', texts.UI.valueUnchanged);
-        await query(
-            `UPDATE wpqr_records SET ${fieldName} = @value, updated_at = GETDATE() WHERE id = @id AND organization_id = @organization_id AND deleted_at IS NULL`,
-            { value: next, id: wpqrId, organization_id: organizationId },
-        );
+        if (auditOnly) {
+            previous = auditOnly.previous;
+            next = auditOnly.next;
+        } else {
+            previous = trimValue(record[fieldName]);
+            next = checked.newValue;
+            if (previous === next) throw httpError(400, 'VALIDATION_ERROR', texts.UI.valueUnchanged);
+            await query(
+                `UPDATE wpqr_records SET ${fieldName} = @value, updated_at = GETDATE() WHERE id = @id AND organization_id = @organization_id AND deleted_at IS NULL`,
+                { value: next, id: wpqrId, organization_id: organizationId },
+            );
+            savedRecord = { ...record, [fieldName]: next };
+        }
         try {
             await logEntityChange({
                 organizationId,
@@ -341,7 +390,6 @@ async function actOnWpqrNotice({ organizationId, wpqrId, userId, action, ruleCod
             if (!isMissingObject(err)) throw err;
         }
         status = STATUS.CORRETTO;
-        savedRecord = { ...record, [fieldName]: next };
     }
 
     if (action === 'segnala') {
@@ -455,6 +503,7 @@ module.exports = {
     classifyWpqrIds,
     noticesForWpqr,
     actOnWpqrNotice,
+    locateCorrection,
     listWpqrSignals,
     approveLearningExample,
     pushIdFilter,

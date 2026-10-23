@@ -181,6 +181,39 @@ describe('approvato con avviso aperto e avviso risolto', () => {
         expect(effectiveApprovalStatus('approvata', [flagged])).toBe('da_rivedere');
     });
 
+    test('se i valori discrepanti tornano l\'avviso si riapre; una conferma con motivazione resta chiusa', () => {
+        const rec = base({
+            wpqr_code: '16VE01735P02/A',
+            certificate_number: '16VE01735PO2/A',
+            examiner_body: 'RINA',
+        });
+        const open = byCode(rec, CODES.CODE_CERT);
+        const conferma = {
+            rule_code: open.code,
+            fingerprint: open.fingerprint,
+            status: STATUS.CONFERMATO,
+            note: 'Sul PDF c\'è davvero la lettera O.',
+        };
+        const afterConfirm = applyResolution(open, pickResolution(open, [conferma]));
+        expect(afterConfirm.status).toBe(STATUS.CONFERMATO);
+        expect(afterConfirm.blocks_conformity).toBe(false);
+        expect(afterConfirm.note).toBe('Sul PDF c\'è davvero la lettera O.');
+        expect(countsAsVerifiedConformity('approvata', [afterConfirm])).toBe(true);
+
+        const correzione = {
+            rule_code: open.code,
+            fingerprint: open.fingerprint,
+            status: STATUS.CORRETTO,
+            previous_value: '16VE01735PO2/A',
+            new_value: '16VE01735P02/A',
+        };
+        expect(pickResolution(open, [correzione])).toBeNull();
+        const afterReturn = applyResolution(open, pickResolution(open, [correzione]));
+        expect(afterReturn.status).toBe('aperto');
+        expect(afterReturn.blocks_conformity).toBe(true);
+        expect(effectiveApprovalStatus('approvata', [afterReturn])).toBe('da_rivedere');
+    });
+
     test('fingerprint diverso non riusa una conferma vecchia', () => {
         const [open] = evaluateWpqrNotices(base({ examiner_body: '' }));
         const again = applyResolution(open, {

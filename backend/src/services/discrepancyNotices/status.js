@@ -3,7 +3,8 @@
  * Puro: nessun DB. Vale per WPQR e, con gli stessi stati, per i domini successivi.
  *
  * Un avviso aperto, in correzione o segnalato blocca la conformità verificata.
- * Confermato o corretto non blocca: un record approvato torna a contare.
+ * Una conferma è una chiusura voluta: gli stessi valori non riaprono l'avviso.
+ * Una correzione non tiene chiuso l'avviso se quei valori tornano discrepanti.
  * Se il record è approvato e resta almeno un avviso che blocca, lo stato
  * effettivo è «da rivedere».
  */
@@ -32,10 +33,12 @@ function isBlockingStatus(status) {
 
 function pickResolution(notice, rows) {
     if (!notice) return null;
-    return (rows || []).find((row) => row
-        && row.rule_code === notice.code
-        && row.fingerprint
-        && row.fingerprint === notice.fingerprint) || null;
+    const row = (rows || []).find((item) => item
+        && item.rule_code === notice.code
+        && item.fingerprint
+        && item.fingerprint === notice.fingerprint) || null;
+    if (!row || row.status === STATUS.CORRETTO) return null;
+    return row;
 }
 
 function applyResolution(notice, row) {
