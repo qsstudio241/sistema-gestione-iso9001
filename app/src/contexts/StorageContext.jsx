@@ -38,6 +38,12 @@ import {
   resolveChecklistHydrateWithPendingQueue,
   shouldSkipServerHydrate,
 } from "../utils/pendingAuditQueue";
+import { loadErrorMessage } from "../utils/loadErrorMessage";
+import {
+  forgetCurrentAuditId,
+  pickRestoredAuditId,
+  rememberCurrentAuditId,
+} from "../utils/currentAuditSession";
 
 /** Lettura coda sync: fallimento → [] (hydrate procede, non blocca). */
 async function readSyncQueueItemsSafe() {
@@ -504,6 +510,11 @@ export function StorageProvider({ children, useMockData = false }) {
   const [fsConnected, setFsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [auditsLoadError, setAuditsLoadError] = useState(null);
+
+  useEffect(() => {
+    if (currentAuditId) rememberCurrentAuditId(currentAuditId);
+  }, [currentAuditId]);
 
   // Sync state
   const [syncStatus, setSyncStatus] = useState({
@@ -930,7 +941,9 @@ export function StorageProvider({ children, useMockData = false }) {
             console.warn("⚠️ [LOGOUT] clearSessionStoresOnLogout:", e?.message || e);
           }
           setAudits([]);
+          forgetCurrentAuditId();
           setCurrentAuditId(null);
+          setAuditsLoadError(null);
           lastLoginUserKeyRef.current = null;
           // Reset flag di inizializzazione: garantisce che al prossimo login
           // (stesso browser, senza page-refresh) loadAuditsFromIndexedDB
@@ -1079,6 +1092,10 @@ export function StorageProvider({ children, useMockData = false }) {
   const [hasInitialized, setHasInitialized] = useState(false);
   /** Incrementato dopo login: forza a ripetere loadAuditsFromIndexedDB (l'effect non si riattiva solo con hasInitialized=false). */
   const [authReloadNonce, setAuthReloadNonce] = useState(0);
+  const retryLoadAudits = useCallback(() => {
+    setAuditsLoadError(null);
+    setAuthReloadNonce((n) => n + 1);
+  }, []);
   const lastLoadedAuthNonceRef = useRef(null);
   const isReconcilingRef = useRef(false);
   /** True mentre logout sta svuotando IDB: reconcile deve attendere (evita race login→lettura 11 audit vecchi). */
@@ -1431,6 +1448,7 @@ export function StorageProvider({ children, useMockData = false }) {
         let serverAudits = [];
         let serverFetchSucceeded = false;
         let serverDownloadFailed = false;
+        let serverDownloadError = null;
         if (navigator.onLine && apiService.getToken()) {
           try {
             console.log("🌐 [DOWNLOAD] Scarico tutti gli audit dal server (paginato)...");
@@ -1467,8 +1485,9 @@ export function StorageProvider({ children, useMockData = false }) {
             }
           } catch (err) {
             serverDownloadFailed = true;
+            serverDownloadError = err;
             console.warn(
-              "⚠️ [DOWNLOAD] Errore download server — niente fallback a tutta la cache (server-first):",
+              "⚠️ [DOWNLOAD] Errore download server — tengo gli audit già in pagina:",
               err.message,
             );
           }
@@ -1593,12 +1612,16 @@ export function StorageProvider({ children, useMockData = false }) {
             await purgeStaleAuditsFromDevice(fsProvider, staleLocals);
           }
         } else if (serverDownloadFailed && navigator.onLine && apiService.getToken()) {
-          finalAudits = filterLocalAuditsAfterServerFetch(localAudits, []);
-          const staleOnFail = listStaleLocalAudits(localAudits, finalAudits);
-          if (staleOnFail.length > 0) {
-            await purgeStaleAuditsFromDevice(fsProvider, staleOnFail);
-          }
-          reconcileAuditsFromServer({ processQueueFirst: true }).catch(() => {});
+          finalAudits = filterAuditsByOrganization(
+            localAudits,
+            resolveAuditOrganizationId(null, apiService.getStoredUser?.() || null),
+          );
+        }
+
+        if (serverDownloadFailed) {
+          setAuditsLoadError(loadErrorMessage(serverDownloadError));
+        } else {
+          setAuditsLoadError(null);
         }
 
         // Deduplica difensiva finale per evitare doppioni nel menu selector.
@@ -1673,16 +1696,17 @@ export function StorageProvider({ children, useMockData = false }) {
           }
         }
 
+        const restoredAuditId = pickRestoredAuditId(finalAudits);
         if (canTrustServerList) {
           await persistFinalAuditsToIndexedDB(fsProvider, finalAudits);
           setAudits(finalAudits);
-          setCurrentAuditId(null);
+          setCurrentAuditId(restoredAuditId);
           console.log(
             `✅ Caricati ${finalAudits.length} audit (${serverAudits.length} server, purge server-first)`,
           );
         } else if (finalAudits && finalAudits.length > 0) {
           setAudits(finalAudits);
-          setCurrentAuditId(null);
+          setCurrentAuditId(restoredAuditId);
           console.log(
             `✅ Caricati ${finalAudits.length} audit (solo cache locale — offline o download fallito)`,
           );
@@ -3010,8 +3034,11 @@ export function StorageProvider({ children, useMockData = false }) {
       // rimangano nella coda locale per i 30s dell'auto-sync e non siano visibili
       // sull'altro dispositivo che apre l'audit subito dopo.
       if (navigator.onLine) syncService.processQueue().catch(() => {});
+      forgetCurrentAuditId();
       setCurrentAuditId(null);
     },
+    auditsLoadError,
+    retryLoadAudits,
     createAudit,
     duplicateAudit,
     deleteAudit,

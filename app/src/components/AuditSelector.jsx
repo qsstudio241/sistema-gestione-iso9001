@@ -43,6 +43,16 @@ function isClosedAuditStatus(status) {
   return CLOSED_AUDIT_STATUSES.has(String(status || "").toLowerCase());
 }
 
+function AuditLoadErrorBanner({ message, onRetry }) {
+  if (!message) return null;
+  return (
+    <div className="load-error-banner" role="alert">
+      <span>{message}</span>
+      <button type="button" onClick={onRetry}>Riprova</button>
+    </div>
+  );
+}
+
 function AuditSelector() {
   const {
     audits,
@@ -52,6 +62,8 @@ function AuditSelector() {
     createAudit,
     deleteAudit,
     isSaving,
+    auditsLoadError,
+    retryLoadAudits,
   } = useStorage();
   const { user } = useAuth();
   const { companyId: companyScope, scopeCompanyName } = useCompanyScope();
@@ -164,6 +176,8 @@ function AuditSelector() {
   if (audits.length === 0) {
     return (
       <>
+        <AuditLoadErrorBanner message={auditsLoadError} onRetry={retryLoadAudits} />
+        {!auditsLoadError && (
         <div className="audit-selector empty">
           <p>Nessun audit disponibile</p>
           <button
@@ -176,6 +190,7 @@ function AuditSelector() {
             {"\u2795"} Crea Primo Audit
           </button>
         </div>
+        )}
 
         {/* Modal Creazione - NECESSARIO anche quando lista vuota */}
         {showCreateModal && (
@@ -195,6 +210,7 @@ function AuditSelector() {
 
   return (
     <div className="audit-selector">
+      <AuditLoadErrorBanner message={auditsLoadError} onRetry={retryLoadAudits} />
       <div className="audit-selector-header">
         <div className="audit-selector-controls">
 <div className="audit-selector-filters">

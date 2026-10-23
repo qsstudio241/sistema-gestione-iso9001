@@ -10,6 +10,7 @@
 
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
+const { updateAuditProgressSafe } = require('../services/auditProgress.service');
 // assertWriteAllowed rimosso in T5 (lock solo UX)
 
 /**
@@ -637,52 +638,7 @@ async function deleteResponse(req, res) {
  * UPDATE 10/01/2026: Calcolo basato su response_options.weight_percentage
  */
 async function updateAuditStatistics(auditId) {
-    try {
-        await query(`
-            UPDATE audits
-            SET 
-                total_questions = (
-                    SELECT COUNT(*) FROM audit_responses WHERE audit_id = @audit_id
-                ),
-                answered_questions = (
-                    SELECT COUNT(*) FROM audit_responses WHERE audit_id = @audit_id AND is_answered = 1
-                ),
-                conformities_count = (
-                    SELECT COUNT(*) FROM audit_responses 
-                    WHERE audit_id = @audit_id 
-                    AND conformity_status = 'C'
-                ),
-                non_conformities_count = (
-                    SELECT COUNT(*) FROM audit_responses 
-                    WHERE audit_id = @audit_id 
-                    AND conformity_status = 'NC'
-                ),
-                observations_count = (
-                    SELECT COUNT(*) FROM audit_responses 
-                    WHERE audit_id = @audit_id 
-                    AND conformity_status = 'OSS'
-                ),
-                opportunities_count = (
-                    SELECT COUNT(*) FROM audit_responses 
-                    WHERE audit_id = @audit_id 
-                    AND conformity_status = 'OM'
-                ),
-                completion_percentage = CASE 
-                    WHEN (SELECT COUNT(*) FROM audit_responses WHERE audit_id = @audit_id) > 0
-                    THEN CAST((SELECT COUNT(*) FROM audit_responses WHERE audit_id = @audit_id AND is_answered = 1) AS FLOAT) /
-                         CAST((SELECT COUNT(*) FROM audit_responses WHERE audit_id = @audit_id) AS FLOAT) * 100
-                    ELSE 0
-                END,
-                updated_at = GETDATE()
-            WHERE audit_id = @audit_id
-        `, { audit_id: auditId });
-
-        logger.info('Audit statistics updated', { audit_id: auditId });
-
-    } catch (error) {
-        logger.error('Error updating audit statistics', { audit_id: auditId, error: error.message });
-        // Non lanciare errore - le statistiche sono secondarie
-    }
+    await updateAuditProgressSafe(auditId);
 }
 
 module.exports = {

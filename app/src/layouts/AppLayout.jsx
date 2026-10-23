@@ -16,7 +16,7 @@ import { NavLink, useRouter, useNavigate } from "../contexts/RouterContext";
 import { useAuth } from "../contexts/AuthContext";
 import apiService from "../services/apiService";
 import { hasCompanyAccess, getPrimaryCompanyId } from "../utils/companyAccess";
-import { CompanyScopeProvider } from "../contexts/CompanyScopeContext";
+import { CompanyScopeProvider, useCompanyScope } from "../contexts/CompanyScopeContext";
 import CompanyScopeSelect from "../components/CompanyScopeSelect";
 import "./AppLayout.css";
 import { hasLicensedModule, hasMaterialComplianceCapability } from "../utils/licenseUtils";
@@ -314,6 +314,7 @@ function Sidebar({
 
 function AppLayoutInner({ children }) {
   const { user, logout } = useAuth();
+  const { companiesLoadError, reloadCompanies } = useCompanyScope();
   const navigate = useNavigate();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -465,6 +466,12 @@ function AppLayoutInner({ children }) {
 
         <div className="layout-org-banner" role="region" aria-label="Ambito azienda">
           <CompanyScopeSelect />
+          {companiesLoadError ? (
+            <div className="load-error-banner" role="alert">
+              <span>{companiesLoadError}</span>
+              <button type="button" onClick={() => reloadCompanies()}>Riprova</button>
+            </div>
+          ) : null}
         </div>
 
         {/* Contenuto principale */}

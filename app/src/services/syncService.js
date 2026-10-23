@@ -809,14 +809,14 @@ export class SyncService {
      * @param {string|null} conformityStatus - 'C'|'NC'|'OSS'|'OM'|'NA'|'NV'|null
      * @param {string|null} notes
      */
-    async enqueueResponseEvent(auditUuid, questionId, conformityStatus, notes = null) {
+    buildResponseEvent(auditUuid, questionId, conformityStatus, notes = null) {
         const hasStatus =
             conformityStatus != null &&
             conformityStatus !== '' &&
             conformityStatus !== 'NOT_ANSWERED';
         const hasNotes = notes != null && String(notes).trim() !== '';
         const idempotencyKey = this.generateResponseEventKey(auditUuid, questionId);
-        const event = {
+        return {
             event_type: hasStatus || hasNotes ? 'response_set' : 'response_cleared',
             field_path: `responses.${questionId}`,
             new_value: hasStatus || hasNotes
@@ -830,7 +830,34 @@ export class SyncService {
             idempotency_key: idempotencyKey,
             device_type: /Mobi|Android/i.test(navigator.userAgent) ? 'mobile' : 'desktop',
         };
+    }
+
+    async enqueueResponseEvent(auditUuid, questionId, conformityStatus, notes = null) {
+        const event = this.buildResponseEvent(auditUuid, questionId, conformityStatus, notes);
         return this.enqueue('send_audit_event', { auditUuid, event });
+    }
+
+    /**
+     * Invio immediato di una sola domanda (già in debounce).
+     * Non accoda un evento per ogni tasto.
+     */
+    async postQuestionSave(job, { keepalive = false } = {}) {
+        const auditUuid = job?.auditUuid;
+        const questionId = job?.questionId;
+        if (!auditUuid || questionId == null) return;
+        if (import.meta.env.VITE_SYNC_MODE === 'events') {
+            const event = this.buildResponseEvent(auditUuid, questionId, job.status, job.notes ?? null);
+            await apiService.post(`/audits/${auditUuid}/events`, { events: [event] }, {
+                keepalive,
+                lockAuditUuid: String(auditUuid),
+            });
+            return;
+        }
+        await apiService.bulkSaveResponses(auditUuid, [{
+            question_id: questionId,
+            conformity_status: job.status ?? null,
+            notes: job.notes ?? null,
+        }], { keepalive });
     }
 
     /**

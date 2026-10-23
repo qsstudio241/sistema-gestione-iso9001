@@ -5,6 +5,7 @@
  */
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
+const { updateAuditProgressSafe } = require('../services/auditProgress.service');
 
 async function postAuditEvents(req, res) {
     try {
@@ -161,6 +162,13 @@ async function postAuditEvents(req, res) {
                     });
                 }
             }
+        }
+
+        const touchedResponses = events.some((ev) =>
+            ev.event_type === 'response_set' || ev.event_type === 'response_cleared'
+        );
+        if (touchedResponses) {
+            await updateAuditProgressSafe(audit_id);
         }
 
         logger.info('Audit events saved', { audit_id, inserted, skipped, user_id });

@@ -6,6 +6,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useAuth } from "./AuthContext";
 import apiService from "../services/apiService";
+import { loadErrorMessage } from "../utils/loadErrorMessage";
 import {
   findStudioCompany,
   getAllowedCompanyIds,
@@ -26,6 +27,7 @@ const TEST_FALLBACK_SCOPE = Object.freeze({
   companyId: "",
   setCompanyId: () => {},
   companies: [],
+  companiesLoadError: null,
   reloadCompanies: () => Promise.resolve([]),
   locked: false,
   companyScoped: false,
@@ -47,6 +49,7 @@ export function useCompanyScope() {
 export function CompanyScopeProvider({ children, initialCompanyId }) {
   const { user } = useAuth();
   const [companies, setCompanies] = useState([]);
+  const [companiesLoadError, setCompaniesLoadError] = useState(null);
   const [companyId, setCompanyIdState] = useState(() =>
     initialCompanyId !== undefined ? String(initialCompanyId) : resolveAppCompanyScope(user)
   );
@@ -79,11 +82,12 @@ export function CompanyScopeProvider({ children, initialCompanyId }) {
       .then((res) => {
         const list = res?.data || [];
         applyCompanyList(list);
+        setCompaniesLoadError(null);
         return list;
       })
-      .catch(() => {
-        setCompanies([]);
-        return [];
+      .catch((err) => {
+        setCompaniesLoadError(loadErrorMessage(err));
+        return null;
       });
   }, [applyCompanyList]);
 
@@ -97,11 +101,12 @@ export function CompanyScopeProvider({ children, initialCompanyId }) {
       .then((res) => {
         if (cancelled) return;
         applyCompanyList(res?.data || []);
+        setCompaniesLoadError(null);
         setScopeReady(true);
       })
-      .catch(() => {
+      .catch((err) => {
         if (!cancelled) {
-          setCompanies([]);
+          setCompaniesLoadError(loadErrorMessage(err));
           setScopeReady(true);
         }
       });
@@ -152,6 +157,7 @@ export function CompanyScopeProvider({ children, initialCompanyId }) {
       companyId,
       setCompanyId,
       companies,
+      companiesLoadError,
       reloadCompanies,
       locked,
       companyScoped,
@@ -160,7 +166,7 @@ export function CompanyScopeProvider({ children, initialCompanyId }) {
       scopeReady,
       scopeCompanyName,
     }),
-    [companyId, setCompanyId, companies, reloadCompanies, locked, companyScoped, isStudioPatrimonio, scopeReady, scopeCompanyName]
+    [companyId, setCompanyId, companies, companiesLoadError, reloadCompanies, locked, companyScoped, isStudioPatrimonio, scopeReady, scopeCompanyName]
   );
 
   return (
