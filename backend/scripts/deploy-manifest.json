@@ -155,6 +155,7 @@
         "src/services/companyAccess.service.js",
         "src/services/auditLock.service.js",
         "src/services/auditNumberAllocation.service.js",
+        "src/services/auditProgress.service.js",
         "src/services/customChecklist.service.js",
         "src/services/commercialChecklistTemplate.service.js",
         "src/services/commercialChecklistAttachment.service.js",
@@ -416,6 +417,7 @@
       "name": "middleware-entry",
       "files": [
         "src/middleware/auth.middleware.js",
+        "src/middleware/rateLimitPolicy.js",
         "src/middleware/moduleLicense.middleware.js",
         "src/config/corsOrigins.js",
         "src/server.js"
