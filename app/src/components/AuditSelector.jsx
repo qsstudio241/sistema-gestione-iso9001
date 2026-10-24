@@ -4,7 +4,7 @@
  * Sistema Gestione ISO 9001 - QS Studio
  */
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useStorage } from "../contexts/StorageContext";
 import { useAuth } from "../contexts/AuthContext";
 import { useCompanyScope } from "../contexts/CompanyScopeContext";
@@ -73,6 +73,33 @@ function AuditSelector() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [isReauditMode, setIsReauditMode] = useState(false);
   const [showClosedAudits, setShowClosedAudits] = useState(false);
+  const mobileListRef = useRef(null);
+
+  const closeMobileAuditList = useCallback(() => {
+    const root = mobileListRef.current;
+    if (root?.open) root.open = false;
+  }, []);
+
+  useEffect(() => {
+    const onKeyDown = (event) => {
+      if (event.key !== "Escape") return;
+      const root = mobileListRef.current;
+      if (!root?.open) return;
+      root.open = false;
+    };
+    const onPointerDown = (event) => {
+      const root = mobileListRef.current;
+      if (!root?.open) return;
+      if (root.contains(event.target)) return;
+      root.open = false;
+    };
+    document.addEventListener("keydown", onKeyDown);
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("pointerdown", onPointerDown);
+    };
+  }, []);
 
   // Ordina audit per numero (più recente prima) - filtro audit validi
   const validAudits = audits.filter((audit) => audit && audit.metadata);
@@ -146,6 +173,11 @@ function AuditSelector() {
     if (auditId) {
       switchAudit(auditId);
     }
+  };
+
+  const handleMobileAuditPick = (auditId) => {
+    switchAudit(auditId);
+    closeMobileAuditList();
   };
 
   const handleShowClosedAuditsChange = (e) => {
@@ -247,21 +279,23 @@ function AuditSelector() {
                   </option>
                 ))}
               </select>
-              <details className="audit-option-details">
+              <details ref={mobileListRef} className="audit-option-details">
                 <summary className="audit-option-summary">{selectedOptionLabel}</summary>
                 <div className="audit-option-panel">
-                  {auditOptionRows.map((row) => (
-                    <button
-                      key={row.auditId}
-                      type="button"
-                      role="option"
-                      aria-selected={row.auditId === currentAuditId}
-                      className={`audit-option-item${row.auditId === currentAuditId ? " is-current" : ""}`}
-                      onClick={() => switchAudit(row.auditId)}
-                    >
-                      {row.label}
-                    </button>
-                  ))}
+                  {auditOptionRows.map((row) => {
+                    const isCurrent = row.auditId === currentAuditId;
+                    return (
+                      <button
+                        key={row.auditId}
+                        type="button"
+                        aria-current={isCurrent ? "true" : undefined}
+                        className={`audit-option-item${isCurrent ? " is-current" : ""}`}
+                        onClick={() => handleMobileAuditPick(row.auditId)}
+                      >
+                        {row.label}
+                      </button>
+                    );
+                  })}
                 </div>
               </details>
             </div>

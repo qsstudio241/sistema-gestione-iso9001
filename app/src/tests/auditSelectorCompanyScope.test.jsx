@@ -102,6 +102,7 @@ describe("AuditSelector — Ambito al posto del filtro Azienda", () => {
     storageState.audits = [MASON, ADMIN, ADMIN_CLOSED];
     storageState.currentAudit = null;
     storageState.currentAuditId = null;
+    storageState.switchAudit.mockReset();
     scopeState.companyId = "";
     scopeState.scopeCompanyName = "Tutto lo studio";
     scopeState.isStudioPatrimonio = false;
@@ -143,6 +144,44 @@ describe("AuditSelector — Ambito al posto del filtro Azienda", () => {
     scopeState.scopeCompanyName = "Mason Demo";
     render(<AuditSelector />);
     expect(screen.queryByLabelText(/Mostra audit completati/i)).toBeNull();
+  });
+
+  it("elenco mobile: alla scelta chiude il pannello e aggiorna il summary", async () => {
+    const user = userEvent.setup();
+    storageState.switchAudit.mockImplementation((id) => {
+      const picked = storageState.audits.find((audit) => audit.id === id);
+      storageState.currentAudit = picked;
+      storageState.currentAuditId = id;
+    });
+    const { rerender } = render(<AuditSelector />);
+    const details = document.querySelector("details.audit-option-details");
+    details.open = true;
+
+    const row = screen.getByRole("button", { name: /Mason Demo · .* · 2026-01 · In corso/ });
+    expect(row).not.toHaveAttribute("role");
+    await user.click(row);
+
+    expect(storageState.switchAudit).toHaveBeenCalledWith("a-mason");
+    expect(details.open).toBe(false);
+    rerender(<AuditSelector />);
+    expect(details.querySelector("summary").textContent).toMatch(/Mason Demo · .* · 2026-01 · In corso/);
+    expect(screen.getByRole("button", { name: /Mason Demo · .* · 2026-01 · In corso/ })).toHaveAttribute("aria-current", "true");
+    expect(screen.getByRole("button", { name: /Admin_test · .* · 2026-02 · In corso/ })).not.toHaveAttribute("aria-current");
+  });
+
+  it("elenco mobile: Esc e un tocco fuori chiudono il pannello", async () => {
+    const user = userEvent.setup();
+    render(<AuditSelector />);
+    const details = document.querySelector("details.audit-option-details");
+
+    details.open = true;
+    await user.keyboard("{Escape}");
+    expect(details.open).toBe(false);
+
+    details.open = true;
+    await user.click(screen.getByText("Audit"));
+    expect(details.open).toBe(false);
+    expect(storageState.switchAudit).not.toHaveBeenCalled();
   });
 
   it("Tutto lo studio: Nuovo è disabilitato (gate Ambito)", () => {
