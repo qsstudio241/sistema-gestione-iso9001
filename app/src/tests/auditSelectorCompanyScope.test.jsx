@@ -163,25 +163,42 @@ describe("AuditSelector — Ambito al posto del filtro Azienda", () => {
 
     expect(storageState.switchAudit).toHaveBeenCalledWith("a-mason");
     expect(details.open).toBe(false);
+    expect(details.querySelector("summary")).toHaveFocus();
     rerender(<AuditSelector />);
     expect(details.querySelector("summary").textContent).toMatch(/Mason Demo · .* · 2026-01 · In corso/);
     expect(screen.getByRole("button", { name: /Mason Demo · .* · 2026-01 · In corso/ })).toHaveAttribute("aria-current", "true");
     expect(screen.getByRole("button", { name: /Admin_test · .* · 2026-02 · In corso/ })).not.toHaveAttribute("aria-current");
   });
 
-  it("elenco mobile: Esc e un tocco fuori chiudono il pannello", async () => {
+  it("elenco mobile: Esc chiude e riporta il focus sul summary", async () => {
     const user = userEvent.setup();
     render(<AuditSelector />);
     const details = document.querySelector("details.audit-option-details");
-
+    const summary = details.querySelector("summary");
     details.open = true;
+    screen.getByRole("button", { name: /Mason Demo · .* · 2026-01 · In corso/ }).focus();
+
     await user.keyboard("{Escape}");
-    expect(details.open).toBe(false);
 
-    details.open = true;
-    await user.click(screen.getByText("Audit"));
     expect(details.open).toBe(false);
+    expect(summary).toHaveFocus();
     expect(storageState.switchAudit).not.toHaveBeenCalled();
+  });
+
+  it("elenco mobile: il tocco fuori chiude senza attivare il controllo sotto", async () => {
+    const user = userEvent.setup();
+    scopeState.companyId = "11";
+    scopeState.scopeCompanyName = "Mason Demo";
+    render(<AuditSelector />);
+    const details = document.querySelector("details.audit-option-details");
+    details.open = true;
+
+    await user.click(screen.getByRole("button", { name: /Nuovo/ }));
+
+    expect(details.open).toBe(false);
+    expect(screen.queryByLabelText("Azienda non modificabile")).toBeNull();
+    expect(storageState.switchAudit).not.toHaveBeenCalled();
+    expect(details.querySelector("summary")).toHaveFocus();
   });
 
   it("Tutto lo studio: Nuovo è disabilitato (gate Ambito)", () => {

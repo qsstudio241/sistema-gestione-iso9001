@@ -77,29 +77,48 @@ function AuditSelector() {
 
   const closeMobileAuditList = useCallback(() => {
     const root = mobileListRef.current;
-    if (root?.open) root.open = false;
+    if (root) root.open = false;
+    root?.querySelector("summary")?.focus();
   }, []);
 
   useEffect(() => {
+    let swallowClick = null;
+    const dropSwallow = () => {
+      if (!swallowClick) return;
+      document.removeEventListener("click", swallowClick, true);
+      swallowClick = null;
+    };
     const onKeyDown = (event) => {
       if (event.key !== "Escape") return;
       const root = mobileListRef.current;
       if (!root?.open) return;
-      root.open = false;
+      event.preventDefault();
+      event.stopPropagation();
+      closeMobileAuditList();
     };
     const onPointerDown = (event) => {
       const root = mobileListRef.current;
       if (!root?.open) return;
       if (root.contains(event.target)) return;
-      root.open = false;
+      event.preventDefault();
+      event.stopPropagation();
+      closeMobileAuditList();
+      dropSwallow();
+      swallowClick = (clickEvent) => {
+        clickEvent.preventDefault();
+        clickEvent.stopPropagation();
+        dropSwallow();
+      };
+      document.addEventListener("click", swallowClick, true);
     };
     document.addEventListener("keydown", onKeyDown);
-    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("pointerdown", onPointerDown, true);
     return () => {
       document.removeEventListener("keydown", onKeyDown);
-      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("pointerdown", onPointerDown, true);
+      dropSwallow();
     };
-  }, []);
+  }, [closeMobileAuditList]);
 
   // Ordina audit per numero (più recente prima) - filtro audit validi
   const validAudits = audits.filter((audit) => audit && audit.metadata);
