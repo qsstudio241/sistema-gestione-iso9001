@@ -4,7 +4,7 @@
  * Sistema Gestione ISO 9001 - QS Studio
  */
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useStorage } from "../contexts/StorageContext";
 import { useAuth } from "../contexts/AuthContext";
 import { useCompanyScope } from "../contexts/CompanyScopeContext";
@@ -14,10 +14,10 @@ import {
   resolveNumericCompanyScope,
 } from "../utils/auditCompanyScope";
 import {
-  formatAuditPeriodLabel,
   normalizeAuditDateEndForStorage,
   validateAuditDateRangeClient,
 } from "../utils/auditDatePeriod";
+import { formatAuditOptionLabel } from "../utils/auditOptionLabel";
 import apiService from "../services/apiService";
 import "./AuditSelector.css";
 
@@ -73,6 +73,20 @@ function AuditSelector() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [isReauditMode, setIsReauditMode] = useState(false);
   const [showClosedAudits, setShowClosedAudits] = useState(false);
+  const [mobileListOpen, setMobileListOpen] = useState(false);
+  const mobileSummaryRef = useRef(null);
+  const restoreMobileFocusRef = useRef(false);
+
+  const closeMobileAuditList = useCallback(() => {
+    restoreMobileFocusRef.current = true;
+    setMobileListOpen(false);
+  }, []);
+
+  useEffect(() => {
+    if (mobileListOpen || !restoreMobileFocusRef.current) return;
+    restoreMobileFocusRef.current = false;
+    mobileSummaryRef.current?.focus();
+  }, [mobileListOpen]);
 
   // Ordina audit per numero (più recente prima) - filtro audit validi
   const validAudits = audits.filter((audit) => audit && audit.metadata);
@@ -125,6 +139,20 @@ function AuditSelector() {
     [buildAuditsForSecondSelect, showClosedAudits]
   );
 
+  const auditOptionRows = useMemo(
+    () => auditsForSecondSelect.map((audit) => {
+      const auditId = audit.metadata?.id || audit.id;
+      const outsideFilter = currentOutsideFilter && auditId === currentAuditId;
+      const label = formatAuditOptionLabel(audit.metadata, { outsideFilter });
+      return { auditId, label };
+    }),
+    [auditsForSecondSelect, currentOutsideFilter, currentAuditId]
+  );
+
+  const selectedOptionLabel = currentAudit
+    ? formatAuditOptionLabel(currentAudit.metadata, { outsideFilter: currentOutsideFilter })
+    : "Seleziona un audit";
+
   // === HANDLERS ===
 
   const handleAuditChange = (e) => {
@@ -132,6 +160,11 @@ function AuditSelector() {
     if (auditId) {
       switchAudit(auditId);
     }
+  };
+
+  const handleMobileAuditPick = (auditId) => {
+    switchAudit(auditId);
+    closeMobileAuditList();
   };
 
   const handleShowClosedAuditsChange = (e) => {
@@ -224,27 +257,60 @@ function AuditSelector() {
                 value={currentAuditId || ""}
                 onChange={handleAuditChange}
                 className="audit-dropdown"
+                title={selectedOptionLabel}
               >
                 <option value="">-- Seleziona un audit --</option>
-                {auditsForSecondSelect.map((audit) => {
-                  const auditId = audit.metadata?.id || audit.id;
-                  const outsideFilter =
-                    currentOutsideFilter && auditId === currentAuditId;
-                  const periodLabel = formatAuditPeriodLabel(
-                    audit.metadata.auditDate,
-                    audit.metadata.auditDateEnd
-                  );
-                  return (
-                    <option key={auditId} value={auditId}>
-                      {outsideFilter ? "⚠ " : ""}
-                      {audit.metadata.auditNumber} - {audit.metadata.clientName}
-                      {periodLabel ? ` [${periodLabel}]` : ""}{" "}
-                      ({audit.metadata.status})
-                      {outsideFilter ? " - fuori filtro" : ""}
-                    </option>
-                  );
-                })}
+                {auditOptionRows.map((row) => (
+                  <option key={row.auditId} value={row.auditId} title={row.label}>
+                    {row.label}
+                  </option>
+                ))}
               </select>
+              <div
+                className="audit-option-details"
+                onKeyDown={(event) => {
+                  if (event.key !== "Escape" || !mobileListOpen) return;
+                  event.preventDefault();
+                  event.stopPropagation();
+                  closeMobileAuditList();
+                }}
+              >
+                <button
+                  type="button"
+                  ref={mobileSummaryRef}
+                  className="audit-option-summary"
+                  aria-expanded={mobileListOpen}
+                  onClick={() => setMobileListOpen((open) => !open)}
+                >
+                  {selectedOptionLabel}
+                </button>
+                {mobileListOpen && (
+                  <>
+                    <button
+                      type="button"
+                      className="audit-option-backdrop"
+                      aria-label="Chiudi elenco audit"
+                      onClick={closeMobileAuditList}
+                    />
+                    <div className="audit-option-panel">
+                      {auditOptionRows.map((row) => {
+                        const isCurrent = row.auditId === currentAuditId;
+                        return (
+                          <button
+                            key={row.auditId}
+                            type="button"
+                            aria-current={isCurrent ? "true" : undefined}
+                            className={`audit-option-item${isCurrent ? " is-current" : ""}`}
+                            onClick={() => handleMobileAuditPick(row.auditId)}
+                          >
+                            {row.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
             {hasAnyClosedAudit && (
               <div className="audit-filter-field audit-show-closed-wrap">

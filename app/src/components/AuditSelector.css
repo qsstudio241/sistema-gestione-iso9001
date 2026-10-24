@@ -120,6 +120,73 @@
   box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
 }
 
+/* Sul telefono la tendina nativa taglia la voce. Questa lista va a capo. */
+.audit-option-details {
+  display: none;
+}
+
+.audit-option-summary {
+  display: block;
+  width: 100%;
+  position: relative;
+  z-index: 2;
+  cursor: pointer;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  background: white;
+  color: inherit;
+  font: inherit;
+  font-size: 15px;
+  line-height: 1.35;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+.audit-option-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: default;
+}
+
+.audit-option-panel {
+  position: relative;
+  z-index: 2;
+  margin-top: 6px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  background: white;
+  max-height: 50vh;
+  overflow: auto;
+}
+
+.audit-option-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  border: 0;
+  border-bottom: 1px solid #eee;
+  background: white;
+  font-size: 15px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.audit-option-item:last-child {
+  border-bottom: 0;
+}
+
+.audit-option-item.is-current {
+  background: #eef4ff;
+}
+
 .save-indicator {
   font-size: 12px;
   color: #666;
@@ -786,6 +853,21 @@
 
   .audit-selector-controls {
     flex-direction: column;
+  }
+
+  .audit-filter-field-grow {
+    flex: 1 1 100%;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .audit-dropdown {
+    display: none;
+  }
+
+  .audit-option-details {
+    display: block;
+    width: 100%;
   }
 
   .audit-info-bar {

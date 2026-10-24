@@ -102,6 +102,7 @@ describe("AuditSelector — Ambito al posto del filtro Azienda", () => {
     storageState.audits = [MASON, ADMIN, ADMIN_CLOSED];
     storageState.currentAudit = null;
     storageState.currentAuditId = null;
+    storageState.switchAudit.mockReset();
     scopeState.companyId = "";
     scopeState.scopeCompanyName = "Tutto lo studio";
     scopeState.isStudioPatrimonio = false;
@@ -118,12 +119,12 @@ describe("AuditSelector — Ambito al posto del filtro Azienda", () => {
     const user = userEvent.setup();
     render(<AuditSelector />);
     const auditSelect = screen.getByLabelText(/^Audit$/i);
-    expect(within(auditSelect).getByRole("option", { name: /2026-01 - Mason Demo/ })).toBeInTheDocument();
-    expect(within(auditSelect).getByRole("option", { name: /2026-02 - Admin_test/ })).toBeInTheDocument();
+    expect(within(auditSelect).getByRole("option", { name: /Mason Demo · .* · 2026-01 · In corso/ })).toBeInTheDocument();
+    expect(within(auditSelect).getByRole("option", { name: /Admin_test · .* · 2026-02 · In corso/ })).toBeInTheDocument();
     expect(within(auditSelect).queryByRole("option", { name: /2025-09/ })).toBeNull();
 
     await user.click(screen.getByLabelText(/Mostra audit completati/i));
-    expect(within(auditSelect).getByRole("option", { name: /2025-09 - Admin_test/ })).toBeInTheDocument();
+    expect(within(auditSelect).getByRole("option", { name: /Admin_test · .* · 2025-09 · Completato/ })).toBeInTheDocument();
   });
 
   it("Ambito azienda: solo gli audit di quell'azienda", () => {
@@ -131,9 +132,11 @@ describe("AuditSelector — Ambito al posto del filtro Azienda", () => {
     scopeState.scopeCompanyName = "Admin_test";
     render(<AuditSelector />);
     const auditSelect = screen.getByLabelText(/^Audit$/i);
-    expect(within(auditSelect).getByRole("option", { name: /2026-02 - Admin_test/ })).toBeInTheDocument();
+    expect(within(auditSelect).getByRole("option", { name: /Admin_test · .* · 2026-02 · In corso/ })).toBeInTheDocument();
     expect(within(auditSelect).queryByRole("option", { name: /Mason Demo/ })).toBeNull();
     expect(screen.getByLabelText(/Mostra audit completati/i)).toBeInTheDocument();
+    const values = within(auditSelect).getAllByRole("option").map((opt) => opt.value);
+    expect(values).toEqual(["", "a-admin"]);
   });
 
   it("Ambito senza audit chiusi: la checkbox completati non compare", () => {
@@ -141,6 +144,67 @@ describe("AuditSelector — Ambito al posto del filtro Azienda", () => {
     scopeState.scopeCompanyName = "Mason Demo";
     render(<AuditSelector />);
     expect(screen.queryByLabelText(/Mostra audit completati/i)).toBeNull();
+  });
+
+  it("elenco mobile: alla scelta chiude il pannello e aggiorna il summary", async () => {
+    const user = userEvent.setup();
+    storageState.switchAudit.mockImplementation((id) => {
+      const picked = storageState.audits.find((audit) => audit.id === id);
+      storageState.currentAudit = picked;
+      storageState.currentAuditId = id;
+    });
+    const { rerender } = render(<AuditSelector />);
+    const summary = screen.getByRole("button", { name: "Seleziona un audit" });
+    await user.click(summary);
+    const panel = document.querySelector(".audit-option-panel");
+    const row = within(panel).getByRole("button", { name: /Mason Demo · .* · 2026-01 · In corso/ });
+    expect(row).not.toHaveAttribute("role");
+
+    await user.click(row);
+
+    expect(storageState.switchAudit).toHaveBeenCalledWith("a-mason");
+    expect(screen.queryByRole("button", { name: "Chiudi elenco audit" })).toBeNull();
+    expect(summary).toHaveAttribute("aria-expanded", "false");
+    expect(summary).toHaveFocus();
+    rerender(<AuditSelector />);
+    expect(summary.textContent).toMatch(/Mason Demo · .* · 2026-01 · In corso/);
+    await user.click(summary);
+    const reopened = document.querySelector(".audit-option-panel");
+    expect(within(reopened).getByRole("button", { name: /Mason Demo · .* · 2026-01 · In corso/ })).toHaveAttribute("aria-current", "true");
+    expect(within(reopened).getByRole("button", { name: /Admin_test · .* · 2026-02 · In corso/ })).not.toHaveAttribute("aria-current");
+  });
+
+  it("elenco mobile: Esc chiude e riporta il focus sul summary", async () => {
+    const user = userEvent.setup();
+    render(<AuditSelector />);
+    const summary = screen.getByRole("button", { name: "Seleziona un audit" });
+    await user.click(summary);
+    within(document.querySelector(".audit-option-panel")).getByRole("button", { name: /Mason Demo · .* · 2026-01 · In corso/ }).focus();
+
+    await user.keyboard("{Escape}");
+
+    expect(screen.queryByRole("button", { name: "Chiudi elenco audit" })).toBeNull();
+    expect(summary).toHaveFocus();
+    expect(storageState.switchAudit).not.toHaveBeenCalled();
+  });
+
+  it("elenco mobile: il velo chiude senza attivare Nuovo, e il tocco dopo funziona", async () => {
+    const user = userEvent.setup();
+    scopeState.companyId = "11";
+    scopeState.scopeCompanyName = "Mason Demo";
+    render(<AuditSelector />);
+    const summary = screen.getByRole("button", { name: "Seleziona un audit" });
+    await user.click(summary);
+
+    await user.click(screen.getByRole("button", { name: "Chiudi elenco audit" }));
+
+    expect(screen.queryByRole("button", { name: "Chiudi elenco audit" })).toBeNull();
+    expect(screen.queryByLabelText("Azienda non modificabile")).toBeNull();
+    expect(storageState.switchAudit).not.toHaveBeenCalled();
+    expect(summary).toHaveFocus();
+
+    await user.click(screen.getByRole("button", { name: /Nuovo/ }));
+    expect(screen.getByLabelText("Azienda non modificabile")).toBeInTheDocument();
   });
 
   it("Tutto lo studio: Nuovo è disabilitato (gate Ambito)", () => {

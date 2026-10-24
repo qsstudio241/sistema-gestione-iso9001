@@ -83,6 +83,13 @@ const STATUS_CONFIGS = {
   },
 };
 
+/** Etichetta italiana già usata dal badge. Stringa vuota se lo stato non è in mappa. */
+export function getStatusConfigLabel(type, status) {
+  const key = String(status ?? "").trim().toLowerCase();
+  if (!key) return "";
+  return STATUS_CONFIGS[type]?.[key]?.label || "";
+}
+
 export default function StatusBadge({
   status,
   type = "document",
