@@ -103,4 +103,60 @@ describe('POST question-assistant suggest_questions', () => {
     expect(unwrapChatContent({ content: 'ok' })).toBe('ok');
     expect(unwrapChatContent(null)).toBe('');
   });
+
+  it('senza standard (custom / assente) non cerca RAG né inventa ISO_9001 e non allerta admin', async () => {
+    const { checkNormSourceAvailability } = require('./aiChat.controller');
+    const { searchSimilar } = require('../services/normChunker.service');
+    const { query } = require('../config/database');
+    const res = mockRes();
+    await handleQuestionAssistant(
+      {
+        user: { id: 1, organization_id: 1001 },
+        body: {
+          mode: 'suggest_questions',
+          question: {
+            text: 'Avete il registro presenze?',
+            clauseRef: 'A.1',
+            standardCode: 'custom',
+          },
+        },
+      },
+      res
+    );
+
+    expect(res.json).toHaveBeenCalled();
+    expect(checkNormSourceAvailability).not.toHaveBeenCalled();
+    expect(searchSimilar).not.toHaveBeenCalled();
+    const sent = JSON.stringify(chat.mock.calls[0][0]);
+    expect(sent).toMatch(/non indicata/i);
+    expect(sent).not.toContain('custom');
+    expect(sent).not.toContain('ISO_9001_2015');
+
+    const sqlBlob = query.mock.calls
+      .map((c) => `${c[0]} ${JSON.stringify(c[1] || {})}`)
+      .join('\n');
+    expect(sqlBlob).not.toMatch(/ai_assistant_notifications/);
+    expect(sqlBlob).not.toMatch(/ai_usage_no_source/);
+    expect(sqlBlob).not.toMatch(/"stdCode":"custom"/);
+  });
+
+  it('senza campo standard procede con conoscenze generali', async () => {
+    const { checkNormSourceAvailability } = require('./aiChat.controller');
+    const res = mockRes();
+    await handleQuestionAssistant(
+      {
+        user: { id: 1, organization_id: 1001 },
+        body: {
+          mode: 'suggest_questions',
+          question: { text: 'Domanda libera', clauseRef: 'B.2' },
+        },
+      },
+      res
+    );
+    expect(res.json).toHaveBeenCalled();
+    expect(checkNormSourceAvailability).not.toHaveBeenCalled();
+    const sent = JSON.stringify(chat.mock.calls[0][0]);
+    expect(sent).toMatch(/non indicata/i);
+    expect(sent).not.toContain('ISO_9001_2015');
+  });
 });

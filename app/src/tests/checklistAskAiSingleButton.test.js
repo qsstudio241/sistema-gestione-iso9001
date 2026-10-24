@@ -27,5 +27,7 @@ describe("un solo Chiedi all'AI in checklist", () => {
     expect(src.match(/QuestionAiPanel/g)?.length).toBeGreaterThanOrEqual(2);
     expect(src).not.toMatch(/\/ai-assistant/);
     expect(src).not.toMatch(/AskAiButton/);
+    expect(src).toMatch(/pickStandardCodeForQuestionAi/);
+    expect(src).not.toMatch(/standardCode \|\| question\.standardCode \|\| checklistKey/);
   });
 });

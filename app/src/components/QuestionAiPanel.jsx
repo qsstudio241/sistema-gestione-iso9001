@@ -7,10 +7,12 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import apiService from "../services/apiService";
 import AiDisclaimer from "./AiDisclaimer";
 import {
+  abandonQuestionAiHistory,
   buildSuggestQuestionsPayload,
+  claimQuestionAiHistory,
   formatQuestionAiError,
-  historyStateHasQuestionAi,
-  pushQuestionAiHistory,
+  releaseQuestionAiHistory,
+  subscribeQuestionAiHistory,
 } from "../utils/questionAiContext";
 import "./AskAiButton.css";
 import "./QuestionAiPanel.css";
@@ -26,13 +28,13 @@ export default function QuestionAiPanel({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [response, setResponse] = useState(null);
-  const pushedRef = useRef(false);
-  const closingRef = useRef(false);
   const requestIdRef = useRef(0);
 
   const questionKey = String(
     question?.id ?? question?.questionId ?? question?.clauseRef ?? "q"
   );
+  const questionKeyRef = useRef(questionKey);
+  questionKeyRef.current = questionKey;
   const clauseRef = question?.clauseRef;
   const buttonLabel =
     label ||
@@ -46,12 +48,8 @@ export default function QuestionAiPanel({
   const closePanel = useCallback(() => {
     if (!expanded) return;
     collapse();
-    if (pushedRef.current && typeof window !== "undefined") {
-      closingRef.current = true;
-      pushedRef.current = false;
-      window.history.back();
-    }
-  }, [expanded, collapse]);
+    releaseQuestionAiHistory(questionKey);
+  }, [expanded, collapse, questionKey]);
 
   const fetchSuggestion = useCallback(async () => {
     const reqId = ++requestIdRef.current;
@@ -85,9 +83,7 @@ export default function QuestionAiPanel({
       closePanel();
       return;
     }
-    if (typeof window !== "undefined") {
-      pushedRef.current = pushQuestionAiHistory(questionKey);
-    }
+    claimQuestionAiHistory(questionKey);
     setExpanded(true);
     fetchSuggestion();
   }, [expanded, closePanel, questionKey, fetchSuggestion]);
@@ -106,24 +102,29 @@ export default function QuestionAiPanel({
 
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
-    const onPop = (event) => {
-      if (closingRef.current) {
-        closingRef.current = false;
+    return subscribeQuestionAiHistory((result) => {
+      const mine = questionKeyRef.current;
+      if (result.type === "claimed" && result.key && result.key !== mine) {
         collapse();
         return;
       }
-      if (!historyStateHasQuestionAi(event.state, questionKey)) {
-        pushedRef.current = false;
+      if (result.type === "user-back" || result.type === "self-close") {
         collapse();
       }
-    };
-    window.addEventListener("popstate", onPop);
-    return () => window.removeEventListener("popstate", onPop);
-  }, [questionKey, collapse]);
+      if (result.type === "still-open" && result.key !== mine) {
+        collapse();
+      }
+    });
+  }, [collapse]);
+
+  useEffect(() => {
+    if (expanded) claimQuestionAiHistory(questionKey);
+  }, [expanded, questionKey]);
 
   useEffect(() => {
     return () => {
       requestIdRef.current += 1;
+      abandonQuestionAiHistory(questionKeyRef.current);
     };
   }, []);
 

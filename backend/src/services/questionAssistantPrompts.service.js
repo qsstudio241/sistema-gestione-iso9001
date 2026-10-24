@@ -18,6 +18,17 @@ const QUESTION_ASSISTANT_MODES = [
 ];
 
 /**
+ * Norma assente (checklist custom, campo vuoto) — non è un codice RAG valido.
+ * @param {string|null|undefined} raw
+ * @returns {string}
+ */
+function normalizeAssistantStandardCode(raw) {
+  const code = String(raw || '').trim();
+  if (!code || code.toLowerCase() === 'custom') return '';
+  return code.slice(0, 80);
+}
+
+/**
  * Solo i campi ammessi verso il modello (niente P.IVA, azienda, allegati, id audit).
  * @param {object} question
  * @param {string} [notes]
@@ -27,7 +38,7 @@ function sanitizeQuestionContext(question = {}, notes = '') {
   return {
     clauseRef: String(question.clauseRef || '').trim().slice(0, 80),
     text: String(question.text || '').trim().slice(0, 2000),
-    standardCode: String(question.standardCode || '').trim().slice(0, 80),
+    standardCode: normalizeAssistantStandardCode(question.standardCode),
     standardLabel: String(question.standardLabel || '').trim().slice(0, 80),
     currentStatus: String(status || '').trim().slice(0, 20),
     notes: String(notes || question.notes || '').trim().slice(0, 2000),
@@ -296,6 +307,7 @@ function extractSuggestedStatus(aiResponse) {
 module.exports = {
   QUESTION_ASSISTANT_MODES,
   sanitizeQuestionContext,
+  normalizeAssistantStandardCode,
   formatStatusForPrompt,
   buildPromptForMode,
   extractSuggestedStatus,

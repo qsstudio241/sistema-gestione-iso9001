@@ -122,7 +122,7 @@ async function logAiUsageWithoutSource(organizationId, userId, standardCode) {
       `INSERT INTO ai_assistant_usage 
         (organization_id, user_id, feature, standard_code, has_source, logged_at)
        VALUES (@orgId, @userId, 'question_assistant', @stdCode, 0, GETDATE())`,
-      { orgId: organizationId, userId, stdCode: standardCode }
+      { orgId: organizationId, userId, stdCode: standardCode || null }
     );
   } catch (err) {
     logger.error('[logAiUsageWithoutSource] Errore log:', err);
@@ -133,6 +133,7 @@ async function logAiUsageWithoutSource(organizationId, userId, standardCode) {
  * Crea notifica admin se fonte mancante (throttling 1/giorno per org+standard)
  */
 async function maybeNotifyAdminNoSource(organizationId, standardCode) {
+  if (!standardCode) return;
   try {
     // Check se già notificato oggi
     const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
@@ -215,18 +216,20 @@ async function handleQuestionAssistant(req, res) {
   const organizationId = user.organization_id;
   const userId = user.id;
   const safeQuestion = sanitizeQuestionContext(question, question.notes);
-  const standardCode = safeQuestion.standardCode || 'ISO_9001_2015';
+  const standardCode = safeQuestion.standardCode || '';
   const notes = safeQuestion.notes;
 
   try {
-    // STEP 1: Check fonte normativa disponibile
-    logger.info(`[questionAssistant] Org ${organizationId}, mode=${mode}, standard=${standardCode}`);
-    const normSource = await checkNormSourceAvailability(standardCode, organizationId);
-    const hasOfficialSource = normSource && normSource.has_chunks;
+    // STEP 1: Check fonte normativa (solo se c'è una norma reale, non "custom")
+    logger.info(`[questionAssistant] Org ${organizationId}, mode=${mode}, standard=${standardCode || '(assente)'}`);
+    const normSource = standardCode
+      ? await checkNormSourceAvailability(standardCode, organizationId)
+      : null;
+    const hasOfficialSource = !!(normSource && normSource.has_chunks);
 
     // STEP 2: RAG retrieval (se fonte disponibile)
     let ragContext = '';
-    if (hasOfficialSource) {
+    if (hasOfficialSource && standardCode) {
       try {
         const queryText = `${safeQuestion.text} ${notes}`.trim();
         const chunks = await searchSimilar(queryText, organizationId, {
@@ -281,10 +284,12 @@ async function handleQuestionAssistant(req, res) {
     const chatResult = await chat(messages, { temperature: 0.3 });
     const aiResponse = unwrapChatContent(chatResult);
 
-    // STEP 6: Log usage + notifica (se fonte mancante)
+    // STEP 6: Log usage + notifica (solo se c'era una norma reale senza fonte)
     if (!hasOfficialSource) {
-      await logAiUsageWithoutSource(organizationId, userId, standardCode);
-      await maybeNotifyAdminNoSource(organizationId, standardCode);
+      await logAiUsageWithoutSource(organizationId, userId, standardCode || null);
+      if (standardCode) {
+        await maybeNotifyAdminNoSource(organizationId, standardCode);
+      }
     }
 
     // STEP 7: Response con disclaimer

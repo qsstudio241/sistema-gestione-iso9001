@@ -24,6 +24,7 @@ import AutoTextarea from "./AutoTextarea";
 import QuestionAiPanel from "./QuestionAiPanel";
 import { useAuth } from "../contexts/AuthContext";
 import { hasLicensedModule } from "../utils/licenseUtils";
+import { pickStandardCodeForQuestionAi } from "../utils/questionAiContext";
 import "./ChecklistModule.css";
 
 export const STATUS_BUTTONS = [
@@ -247,7 +248,11 @@ export function QuestionCard({
 
         <QuestionAiPanelWrapper
           question={question}
-          standardCode={standardCode || question.standardCode || checklistKey || null}
+          standardCode={pickStandardCodeForQuestionAi(
+            standardCode,
+            question,
+            checklistKey
+          )}
           standardLabel={standardLabel || question.standardLabel || null}
           aiLabel={aiLabel}
           readOnly={readOnly}
