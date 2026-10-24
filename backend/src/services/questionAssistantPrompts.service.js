@@ -1,19 +1,48 @@
 /**
  * questionAssistantPrompts.service.js — Prompt specializzati per AI Assistant quesiti checklist
- * 
- * 5 modalità operative:
- * - conformity_assessment: suggerisce esito C/NC/OSS/OM basato su evidenze
- * - evidence_gap: identifica documenti/prove mancanti
- * - norm_interpretation: spiega §clausola in linguaggio operativo
- * - draft_notes: genera bozza campo Note audit
- * - om_opportunity: suggerisce miglioramenti anche se conforme
+ *
+ * Modalità:
+ * - suggest_questions (Fase 1): come porre la domanda in campo (niente allegati, niente anagrafica)
+ * - conformity_assessment / evidence_gap / norm_interpretation / draft_notes / om_opportunity
  */
 
 const logger = require('../utils/logger');
 
+const QUESTION_ASSISTANT_MODES = [
+  'suggest_questions',
+  'conformity_assessment',
+  'evidence_gap',
+  'norm_interpretation',
+  'draft_notes',
+  'om_opportunity',
+];
+
+/**
+ * Solo i campi ammessi verso il modello (niente P.IVA, azienda, allegati, id audit).
+ * @param {object} question
+ * @param {string} [notes]
+ */
+function sanitizeQuestionContext(question = {}, notes = '') {
+  const status = question.currentStatus || question.status || '';
+  return {
+    clauseRef: String(question.clauseRef || '').trim().slice(0, 80),
+    text: String(question.text || '').trim().slice(0, 2000),
+    standardCode: String(question.standardCode || '').trim().slice(0, 80),
+    standardLabel: String(question.standardLabel || '').trim().slice(0, 80),
+    currentStatus: String(status || '').trim().slice(0, 20),
+    notes: String(notes || question.notes || '').trim().slice(0, 2000),
+  };
+}
+
+function formatStatusForPrompt(status) {
+  const s = String(status || '').trim();
+  if (!s) return 'non ancora risposto';
+  return s;
+}
+
 /**
  * Costruisce system prompt + user message per la modalità richiesta
- * @param {string} mode - Una delle 5 modalità
+ * @param {string} mode
  * @param {Object} context - { question, notes, attachments, ragContext, hasOfficialSource }
  * @returns {Array<Object>} [ { role, content }, ... ] per chat API
  */
@@ -26,9 +55,12 @@ function buildPromptForMode(mode, context) {
     hasOfficialSource = false,
   } = context;
 
-  const clauseRef = question.clauseRef || 'non specificato';
-  const questionText = question.text || '';
-  const attachmentList = attachments.map((a) => a.name || 'allegato').join(', ') || 'Nessuno';
+  const safe = sanitizeQuestionContext(question, notes);
+  const clauseRef = safe.clauseRef || 'non specificato';
+  const questionText = safe.text || '';
+  const attachmentList = mode === 'suggest_questions'
+    ? 'Nessuno (non analizzare file in questa fase)'
+    : (attachments.map((a) => a.name || 'allegato').join(', ') || 'Nessuno');
 
   // Disclaimer fonte
   const sourceDisclaimer = hasOfficialSource
@@ -40,6 +72,41 @@ function buildPromptForMode(mode, context) {
     : '\n\nContesto normativo ufficiale: Non disponibile';
 
   switch (mode) {
+    case 'suggest_questions': {
+      const norma = safe.standardLabel || safe.standardCode || 'non indicata';
+      return [
+        {
+          role: 'system',
+          content: `Sei un assistente per auditor ISO. Rispondi in italiano semplice e breve (massimo 180 parole).
+
+${sourceDisclaimer}
+${ragBlock}
+
+Compito: aiuta l'auditor a CAPIRE il punto e a PORRE le domande giuste in campo.
+NON certificare la conformità. NON proporre un esito C/NC/OSS/OM al posto dell'auditor.
+NON chiedere e NON usare dati anagrafici del cliente (nome azienda, P.IVA, indirizzo, persone).
+NON analizzare allegati.
+
+Formato:
+1. Due o tre frasi su cosa verifica questo punto (norma + clausola).
+2. Se c'è già un esito o delle note, una riga su cosa è già segnato.
+3. Elenco di 3-5 domande concrete da fare in campo per verificare la conformità.
+
+Niente burocratese. Niente elenchi lunghi.`,
+        },
+        {
+          role: 'user',
+          content: `**Norma:** ${norma}
+**Clausola:** §${clauseRef}
+**Testo della domanda:** ${questionText || '(testo non disponibile)'}
+**Stato risposta:** ${formatStatusForPrompt(safe.currentStatus)}
+**Note auditor:** ${safe.notes || 'Nessuna nota'}
+
+Suggerisci come porre la domanda per verificare la conformità.`,
+        },
+      ];
+    }
+
     case 'conformity_assessment':
       return [
         {
@@ -227,6 +294,9 @@ function extractSuggestedStatus(aiResponse) {
 }
 
 module.exports = {
+  QUESTION_ASSISTANT_MODES,
+  sanitizeQuestionContext,
+  formatStatusForPrompt,
   buildPromptForMode,
   extractSuggestedStatus,
 };

@@ -18,7 +18,12 @@ const { redactFileNameForLog } = require('../utils/ingestErrorMessage');
 const { query } = require('../config/database');
 const { chat } = require('../services/aiProviderAdapter');
 const { checkNormSourceAvailability } = require('./aiChat.controller');
-const { buildPromptForMode, extractSuggestedStatus } = require('../services/questionAssistantPrompts.service');
+const {
+  buildPromptForMode,
+  extractSuggestedStatus,
+  sanitizeQuestionContext,
+  QUESTION_ASSISTANT_MODES,
+} = require('../services/questionAssistantPrompts.service');
 const { extractDocumentText } = require('../services/documentTextExtractor.service');
 const { searchSimilar } = require('../services/normChunker.service');
 const { hasLicensedModule } = require('../services/moduleLicense.service');
@@ -200,18 +205,18 @@ async function handleQuestionAssistant(req, res) {
     });
   }
 
-  const validModes = ['conformity_assessment', 'evidence_gap', 'norm_interpretation', 'draft_notes', 'om_opportunity'];
-  if (!validModes.includes(mode)) {
+  if (!QUESTION_ASSISTANT_MODES.includes(mode)) {
     return res.status(400).json({
-      error: `Mode non valido. Valori ammessi: ${validModes.join(', ')}`,
+      error: `Mode non valido. Valori ammessi: ${QUESTION_ASSISTANT_MODES.join(', ')}`,
       code: 'INVALID_MODE',
     });
   }
 
   const organizationId = user.organization_id;
   const userId = user.id;
-  const standardCode = question.standardCode || 'ISO_9001_2015'; // Default se non specificato
-  const notes = question.notes || '';
+  const safeQuestion = sanitizeQuestionContext(question, question.notes);
+  const standardCode = safeQuestion.standardCode || 'ISO_9001_2015';
+  const notes = safeQuestion.notes;
 
   try {
     // STEP 1: Check fonte normativa disponibile
@@ -223,7 +228,7 @@ async function handleQuestionAssistant(req, res) {
     let ragContext = '';
     if (hasOfficialSource) {
       try {
-        const queryText = `${question.text} ${notes}`.trim();
+        const queryText = `${safeQuestion.text} ${notes}`.trim();
         const chunks = await searchSimilar(queryText, organizationId, {
           standardCodes: [standardCode],
           topK: 5,
@@ -240,30 +245,29 @@ async function handleQuestionAssistant(req, res) {
       }
     }
 
-    // STEP 3: Text extraction allegati (se non già presente extractedText)
+    // STEP 3: Allegati — Fase 1 (suggest_questions) non li legge. Altre mode: metadati, no OCR qui.
     const processedAttachments = [];
-    const attachmentsToProcess = (attachments || []).slice(0, MAX_ATTACHMENTS);
+    if (mode !== 'suggest_questions') {
+      const attachmentsToProcess = (attachments || []).slice(0, MAX_ATTACHMENTS);
 
-    for (const att of attachmentsToProcess) {
-      const processed = { ...att };
+      for (const att of attachmentsToProcess) {
+        const processed = { ...att };
 
-      if (!processed.extractedText && isTextExtractable(att)) {
-        try {
-          // Assume att.storagePath esista o costruisci path da att.id
-          // Per semplicità: se att.extractedText manca, skippiamo (frontend può precalcolare)
-          // In produzione: recuperare path da DB attachment e usare extractDocumentText
-          logger.info(`[questionAssistant] Allegato ${redactFileNameForLog(att.name)} — text extraction skippato (pre-calcolo frontend)`);
-        } catch (extractErr) {
-          logger.warn(`[questionAssistant] Errore estrazione ${redactFileNameForLog(att.name)}:`, extractErr.message);
+        if (!processed.extractedText && isTextExtractable(att)) {
+          try {
+            logger.info(`[questionAssistant] Allegato ${redactFileNameForLog(att.name)} — text extraction skippato (pre-calcolo frontend)`);
+          } catch (extractErr) {
+            logger.warn(`[questionAssistant] Errore estrazione ${redactFileNameForLog(att.name)}:`, extractErr.message);
+          }
         }
-      }
 
-      processedAttachments.push(processed);
+        processedAttachments.push(processed);
+      }
     }
 
-    // STEP 4: Costruzione prompt specializzato
+    // STEP 4: Costruzione prompt (solo campi sanitizzati; auditContext non entra nel modello)
     const promptContext = {
-      question,
+      question: safeQuestion,
       notes,
       attachments: processedAttachments,
       ragContext,
@@ -274,7 +278,8 @@ async function handleQuestionAssistant(req, res) {
 
     // STEP 5: Chiamata AI
     logger.info(`[questionAssistant] Chiamata AI con ${messages.length} messaggi`);
-    const aiResponse = await chat(messages, { temperature: 0.3 });
+    const chatResult = await chat(messages, { temperature: 0.3 });
+    const aiResponse = unwrapChatContent(chatResult);
 
     // STEP 6: Log usage + notifica (se fonte mancante)
     if (!hasOfficialSource) {
@@ -300,14 +305,26 @@ async function handleQuestionAssistant(req, res) {
     });
   } catch (err) {
     logger.error('[questionAssistant] Errore:', err);
+    if (err && (err.code === 'AI_NOT_CONFIGURED' || err.code === 'AI_QUOTA_EXHAUSTED')) {
+      return res.status(503).json({
+        error: 'Assistente non disponibile in questo momento. Riprova più tardi.',
+        code: err.code,
+      });
+    }
     res.status(500).json({
-      error: 'Errore durante elaborazione richiesta AI',
+      error: 'L\'assistente non è riuscito a rispondere. Riprova.',
       code: 'AI_PROCESSING_ERROR',
-      details: err.message,
     });
   }
 }
 
+function unwrapChatContent(result) {
+  if (typeof result === 'string') return result;
+  if (result && typeof result.content === 'string') return result.content;
+  return '';
+}
+
 module.exports = {
   handleQuestionAssistant,
+  unwrapChatContent,
 };
