@@ -15,6 +15,13 @@ import {
   pruneUnansweredDeselectedChecklist,
 } from "../utils/activeAuditChecklist";
 import { downloadAuditRecoveryCopy } from "../utils/auditRecoveryExport";
+import { checklistSaveSnapshot, subscribeChecklistSave } from "../utils/checklistQuestionSave";
+import {
+  clearConflictNotices,
+  countPendingForAudit,
+  readConflictNotices,
+} from "../utils/checklistPendingStore";
+import { applyServerWinnersToChecklist } from "../utils/checklistTextMerge";
 import "./AuditAccordionLayout.css";
 
 // Import sezioni
@@ -38,6 +45,58 @@ const MANUAL_COMPANY_VALUE = "__manual__";
 
 function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSaved }) {
   const { initializeChecklist, hydrateQuestionIds, fetchAndApplyServerResponses, syncStatus, serverDataStatus, setServerDataStatus, auditLock, updateCurrentAudit } = useStorage();
+  const auditUuid = currentAudit?.metadata?.id || currentAudit?.id || null;
+  const organizationId = apiService.getStoredUser?.()?.organization_id ?? null;
+  const [questionSnap, setQuestionSnap] = useState(() => checklistSaveSnapshot());
+  const [offline, setOffline] = useState(() => (typeof navigator !== "undefined" ? !navigator.onLine : false));
+  const [pendingCount, setPendingCount] = useState(0);
+  const [conflictItems, setConflictItems] = useState([]);
+
+  useEffect(() => {
+    const refresh = () => {
+      setOffline(typeof navigator !== "undefined" ? !navigator.onLine : false);
+      setPendingCount(countPendingForAudit(organizationId, auditUuid));
+      setConflictItems(readConflictNotices(auditUuid));
+    };
+    refresh();
+    return subscribeChecklistSave((snap) => {
+      setQuestionSnap(snap);
+      refresh();
+    });
+  }, [organizationId, auditUuid]);
+
+  useEffect(() => {
+    const refresh = () => {
+      setOffline(!navigator.onLine);
+      setPendingCount(countPendingForAudit(organizationId, auditUuid));
+      setConflictItems(readConflictNotices(auditUuid));
+    };
+    window.addEventListener("online", refresh);
+    window.addEventListener("offline", refresh);
+    window.addEventListener("sgq:question-conflicts", refresh);
+    return () => {
+      window.removeEventListener("online", refresh);
+      window.removeEventListener("offline", refresh);
+      window.removeEventListener("sgq:question-conflicts", refresh);
+    };
+  }, [organizationId, auditUuid]);
+
+  useEffect(() => {
+    const onConflict = (event) => {
+      if (event.detail?.source === "hydrate") return;
+      const conflicts = event.detail?.conflicts || [];
+      const eventAudit = String(event.detail?.auditUuid || "").toLowerCase();
+      if (!auditUuid || (eventAudit && eventAudit !== String(auditUuid).toLowerCase())) return;
+      if (!conflicts.length) return;
+      updateCurrentAudit((audit) => {
+        const copy = JSON.parse(JSON.stringify(audit));
+        applyServerWinnersToChecklist(copy.checklist, conflicts);
+        return copy;
+      }, { event: "refresh_draft" });
+    };
+    window.addEventListener("sgq:question-conflicts", onConflict);
+    return () => window.removeEventListener("sgq:question-conflicts", onConflict);
+  }, [auditUuid, updateCurrentAudit]);
   // Il banner "ready" sparisce dopo 3 secondi
   const [showReadyBanner, setShowReadyBanner] = useState(false);
   useEffect(() => {
@@ -253,8 +312,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
         );
         return applyPrunedChecklist(audit, pruned);
       };
-      pruneUpdater._systemCall = true;
-      updateCurrentAudit(pruneUpdater, { skipSync: true });
+      updateCurrentAudit(pruneUpdater, { event: "refresh_draft" });
     }
 
     // Per ogni standard supportato: se selezionato e checklist vuota → inizializza template
@@ -337,8 +395,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
         );
         return applyPrunedChecklist(audit, pruned);
       };
-      pruneUpdater._systemCall = true;
-      updateCurrentAudit(pruneUpdater, { skipSync: true });
+      updateCurrentAudit(pruneUpdater, { event: "refresh_draft" });
     }
   };
 
@@ -419,7 +476,15 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
             </button>
           )}
           <div className="audit-save-status">
-            {isSaving ? (
+            {offline ? (
+              <span className="save-indicator queued">
+                Offline · {Math.max(pendingCount, questionSnap.unsaved || 0)} in attesa
+              </span>
+            ) : pendingCount > 0 || questionSnap.phase === "pending" || questionSnap.phase === "retrying" ? (
+              <span className="save-indicator queued">
+                In attesa di invio ({Math.max(pendingCount, questionSnap.unsaved || 0)})
+              </span>
+            ) : isSaving || questionSnap.phase === "saving" ? (
               <span className="save-indicator saving">⏳ Salvataggio...</span>
             ) : syncStatus?.isSyncing ? (
               <span className="save-indicator syncing">📤 Sincronizzazione...</span>
@@ -427,7 +492,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
               <span className="save-indicator queued" title={`${syncStatus.queueSize} operazioni in attesa di essere inviate al server`}>
                 ⏰ In coda ({syncStatus.queueSize})
               </span>
-            ) : allSaved ? (
+            ) : allSaved || questionSnap.phase === "saved" ? (
               <span className="save-indicator server-saved">✓ Sul server</span>
             ) : (
               <span className="save-indicator pending">● In attesa</span>
@@ -452,6 +517,31 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
           </div>
         </div>
       </div>
+
+      {conflictItems.length > 0 && (
+        <div className="server-data-banner" role="status">
+          <strong>Versione più recente sul server.</strong>
+          <span> La tua risposta non l&apos;ha sostituita.</span>
+          <ul>
+            {conflictItems.slice(0, 5).map((item) => (
+              <li key={`${item.question_id}-${item.client?.client_ts || item.client?.conformity_status}`}>
+                Domanda {item.question_id}: la tua «{item.client?.conformity_status || "vuota"}» resta solo qui.
+                Sul server c&apos;è «{item.server?.conformity_status || "vuota"}», più recente.
+              </li>
+            ))}
+          </ul>
+          <button
+            type="button"
+            className="btn-back-to-list"
+            onClick={() => {
+              clearConflictNotices(auditUuid);
+              setConflictItems([]);
+            }}
+          >
+            Ho capito
+          </button>
+        </div>
+      )}
 
       {/* Banner read-only - visibile quando audit è in stato bloccato */}
       {isReadOnly && (

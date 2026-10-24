@@ -1,4 +1,34 @@
 export const CURRENT_AUDIT_SESSION_KEY = 'sgq:currentAuditId';
+export const RECENT_AUDITS_PREFIX = 'sgq:recentAuditIds:';
+const RECENT_AUDIT_LIMIT = 20;
+
+function recentAuditsKey(organizationId) {
+  if (organizationId == null || organizationId === '') return `${RECENT_AUDITS_PREFIX}none`;
+  return `${RECENT_AUDITS_PREFIX}${organizationId}`;
+}
+
+export function readRecentAuditIds(organizationId) {
+  try {
+    const raw = localStorage.getItem(recentAuditsKey(organizationId));
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed.map((id) => String(id)) : [];
+  } catch (_) {
+    return [];
+  }
+}
+
+/** Elenco durevole: sopravvive al ricaricamento, a differenza della sola scheda di sessione. */
+export function rememberRecentAuditId(id, organizationId) {
+  if (id == null || id === '') return;
+  const current = readRecentAuditIds(organizationId);
+  const next = [
+    String(id),
+    ...current.filter((item) => item.toLowerCase() !== String(id).toLowerCase()),
+  ].slice(0, RECENT_AUDIT_LIMIT);
+  try {
+    localStorage.setItem(recentAuditsKey(organizationId), JSON.stringify(next));
+  } catch (_) { /* private mode */ }
+}
 
 export function rememberCurrentAuditId(id) {
   if (id == null || id === '') return;

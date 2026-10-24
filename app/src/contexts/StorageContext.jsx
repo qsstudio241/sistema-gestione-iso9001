@@ -26,23 +26,32 @@ import apiService, { setAuditLockTokensForAudit, clearAllAuditLockTokens } from 
 import { hasAnyDraftForAudit } from "../utils/draftFieldRegistry";
 import {
   auditMatchesOrganization,
-  filterAuditsByOrganization,
   resolveAuditOrganizationId,
+  stampMissingOrganization,
 } from "../utils/auditLocalTenantFilter";
 import {
   applyServerResponsesPreservingLocalNotes,
   mergeCustomEvidenceResponses,
   resolveMergedChecklistForReconcile,
 } from "../utils/checklistTextMerge";
+import { readPending, readPendingQuestionIdSet } from "../utils/checklistPendingStore";
 import {
   resolveChecklistHydrateWithPendingQueue,
   shouldSkipServerHydrate,
 } from "../utils/pendingAuditQueue";
 import { loadErrorMessage } from "../utils/loadErrorMessage";
 import {
+  auditMetadataSyncSignature,
+  createMetadataSyncScheduler,
+} from "../utils/auditMetadataSync";
+import { decideAuditSync } from "../utils/decideAuditSync";
+import {
   forgetCurrentAuditId,
   pickRestoredAuditId,
+  readRecentAuditIds,
+  readRememberedAuditId,
   rememberCurrentAuditId,
+  rememberRecentAuditId,
   resolveAuditId,
 } from "../utils/currentAuditSession";
 
@@ -55,6 +64,30 @@ async function readSyncQueueItemsSafe() {
   } catch {
     return [];
   }
+}
+
+function decideOfflineCache(localAudits) {
+  const organizationId = resolveAuditOrganizationId(
+    null,
+    apiService.getStoredUser?.() || null,
+  );
+  const list = Array.isArray(localAudits) ? localAudits : [];
+  const pendingByAudit = {};
+  for (const audit of list) {
+    const uuid = audit?.metadata?.id || audit?.id;
+    if (!uuid) continue;
+    const questions = Object.values(readPending(organizationId, uuid).questions || {});
+    if (questions.length > 0) pendingByAudit[String(uuid).toLowerCase()] = questions;
+  }
+  return decideAuditSync({
+    event: "offline",
+    online: false,
+    localAudits: list,
+    organizationId,
+    recentIds: readRecentAuditIds(organizationId),
+    rememberedId: readRememberedAuditId(),
+    pendingByAudit,
+  });
 }
 
 function extraHydrateRefs(audit, numericAuditId) {
@@ -514,7 +547,12 @@ export function StorageProvider({ children, useMockData = false }) {
   const [auditsLoadError, setAuditsLoadError] = useState(null);
 
   useEffect(() => {
-    if (currentAuditId) rememberCurrentAuditId(currentAuditId);
+    if (!currentAuditId) return;
+    rememberCurrentAuditId(currentAuditId);
+    rememberRecentAuditId(
+      currentAuditId,
+      resolveAuditOrganizationId(null, apiService.getStoredUser?.() || null),
+    );
   }, [currentAuditId]);
 
   // Sync state
@@ -603,8 +641,29 @@ export function StorageProvider({ children, useMockData = false }) {
   // finché non trascorre 1 minuto.
   const fetchAndApplyLastRunRef = useRef({});
   const prevAuditIdForHydrateRef = useRef(null);
-  // T4: debounce timer per eventi field_updated (generalData, auditObjective, auditOutcome, notes)
-  const fieldUpdatedDebounceRef = useRef({});
+  const metadataSyncRef = useRef(null);
+  if (!metadataSyncRef.current) {
+    metadataSyncRef.current = createMetadataSyncScheduler({
+      enqueue: (payload) => {
+        syncService.enqueue("update_audit", payload).catch((err) => {
+          console.error("❌ [SYNC] Errore enqueue update:", err);
+        });
+        // Una volta sola, insieme alla scheda: non a ogni tasto.
+        if (import.meta.env.VITE_SYNC_MODE === "events" && payload?.audit_uuid) {
+          const richFields = [
+            ["generalData", payload.generalData],
+            ["auditObjective", payload.auditObjective],
+            ["auditOutcome", payload.auditOutcome],
+            ["notes", payload.notes],
+          ];
+          for (const [key, value] of richFields) {
+            if (value === undefined) continue;
+            syncService.enqueueFieldUpdatedEvent(payload.audit_uuid, key, value).catch(() => {});
+          }
+        }
+      },
+    });
+  }
   useEffect(() => {
     if (currentAuditId !== prevAuditIdForHydrateRef.current) {
       // Audit cambiato: cancella il debounce per il nuovo audit (e per quello precedente)
@@ -1027,9 +1086,27 @@ export function StorageProvider({ children, useMockData = false }) {
     return { ok: false };
   }, [currentAudit]);
 
-  // Auto-save multiplo con IndexedDB
+  // Auto-save multiplo con IndexedDB (solo sul dispositivo, non chiama il server)
   const { auditSaveStatus, listSaveStatus, isSaving, allSaved } =
     useAutoSaveMultiple(currentAudit, audits, fsProvider);
+
+  // Scheda audit in pausa: invia subito se si chiude o si cambia scheda.
+  useEffect(() => {
+    const flush = () => {
+      metadataSyncRef.current?.flushAll();
+    };
+    const onHide = () => {
+      if (document.visibilityState === "hidden") flush();
+    };
+    window.addEventListener("pagehide", flush);
+    document.addEventListener("visibilitychange", onHide);
+    window.addEventListener("beforeunload", flush);
+    return () => {
+      window.removeEventListener("pagehide", flush);
+      document.removeEventListener("visibilitychange", onHide);
+      window.removeEventListener("beforeunload", flush);
+    };
+  }, []);
 
   // === SYNC INIZIALE ALL'AVVIO + AUTO-SYNC POLLING ===
   useEffect(() => {
@@ -1498,6 +1575,11 @@ export function StorageProvider({ children, useMockData = false }) {
         const auditsToUploadRichData = []; // audit locali con dati ricchi mai inviati al server
         const canTrustServerList =
           serverFetchSucceeded && navigator.onLine && apiService.getToken();
+        const stampOrgId = resolveAuditOrganizationId(
+          null,
+          apiService.getStoredUser?.() || null,
+        );
+        const offlineDecision = canTrustServerList ? null : decideOfflineCache(localAudits);
         const mergedAudits = canTrustServerList
           ? serverAudits.map(serverAudit => {
               const sid = serverAudit.metadata?.id || serverAudit.id;
@@ -1584,14 +1666,9 @@ export function StorageProvider({ children, useMockData = false }) {
                 );
               }
 
-              return merged;
+              return stampMissingOrganization(merged, stampOrgId);
             })
-          : !navigator.onLine || !apiService.getToken()
-            ? filterAuditsByOrganization(
-                localAudits,
-                resolveAuditOrganizationId(null, apiService.getStoredUser?.() || null),
-              )
-            : [];
+          : (offlineDecision?.visibleAudits || []);
 
         // Includi audit solo locali (non ancora sul server) nella lista finale.
         // Gli audit locali NON inclusi nel merge (stale, senza isIntentionalDraft, o tombstoned)
@@ -1611,11 +1688,6 @@ export function StorageProvider({ children, useMockData = false }) {
             );
             await purgeStaleAuditsFromDevice(fsProvider, staleLocals);
           }
-        } else if (serverDownloadFailed && navigator.onLine && apiService.getToken()) {
-          finalAudits = filterAuditsByOrganization(
-            localAudits,
-            resolveAuditOrganizationId(null, apiService.getStoredUser?.() || null),
-          );
         }
 
         if (serverDownloadFailed) {
@@ -1696,7 +1768,7 @@ export function StorageProvider({ children, useMockData = false }) {
           }
         }
 
-        const restoredAuditId = pickRestoredAuditId(finalAudits);
+        const restoredAuditId = offlineDecision?.restoreId || pickRestoredAuditId(finalAudits);
         if (canTrustServerList) {
           await persistFinalAuditsToIndexedDB(fsProvider, finalAudits);
           setAudits(finalAudits);
@@ -1867,50 +1939,6 @@ export function StorageProvider({ children, useMockData = false }) {
   // === CRUD OPERATIONS ===
 
   /**
-   * Estrae risposte checklist da audit per sync
-   * @param {Object} audit - Audit con checklist compilata
-   * @returns {Array} Array di risposte nel formato backend
-   */
-  function extractChecklistResponses(audit) {
-    const responses = [];
-    const checklist = audit.checklist;
-
-    if (!checklist) return responses;
-
-    // Itera su ogni norma (ISO_9001, ISO_14001, ecc.)
-    Object.entries(checklist).forEach(([normKey, normData]) => {
-      // Itera su ogni clausola
-      Object.entries(normData).forEach(([clauseKey, clauseData]) => {
-        if (!clauseData.questions || !Array.isArray(clauseData.questions))
-          return;
-
-        // Itera su ogni domanda
-        clauseData.questions.forEach((question) => {
-          const hasStatus =
-            question.status && question.status !== "NOT_ANSWERED";
-          const hasNotes =
-            question.notes != null && String(question.notes).trim() !== "";
-          // Sync anche note senza esito (es. dettatura prima del click C/NC/OSS)
-          if (hasStatus || hasNotes) {
-            responses.push({
-              // question_id (intero) prioritario → lookup diretto sul server
-              // clause_ref come fallback per lookup via section_code
-              question_id: question.questionId || null,
-              clause_ref: question.clauseRef || question.id,
-              conformity_status: hasStatus ? question.status : null,
-              notes: hasNotes ? question.notes : null,
-              evidence: question.evidenceRef || null,
-              client_updated_at: new Date().toISOString(),
-            });
-          }
-        });
-      });
-    });
-
-    return responses;
-  }
-
-  /**
    * Calcola metriche checklist da struttura audit
    * @param {Object} checklist - Struttura checklist audit
    * @returns {Object} Metriche: {total, answered, conformities, nonConformities}
@@ -1948,18 +1976,16 @@ export function StorageProvider({ children, useMockData = false }) {
   /**
    * Aggiorna audit corrente.
    * @param {Function|Object} updater
-   * @param {{ skipSync?: boolean }} opts — skipSync=true inibisce l'enqueue save_responses/update_audit.
-   *   Usare quando si aggiorna la struttura locale (es. init template) senza voler sovrascrivere
-   *   dati già presenti sul server.
+   * @param {{ event?: string }} opts — event lo legge decideAuditSync.
+   * Le risposte delle domande non partono da qui: partono dalla coda a differenze.
+   * open_empty e refresh_draft aggiornano solo il locale.
    */
   const updateCurrentAudit = useCallback(
-    (updater, { skipSync = false } = {}) => {
+    (updater, opts = {}) => {
+      const eventName = opts.event || "scheda";
       setAudits((prevAudits) => {
-        // Determina PRIMA se è una chiamata di sistema (idratazione, reconcile, init checklist):
-        // queste devono bypassare il blocco lock per garantire server-wins anche per l'utente B.
-        const isSystemCall = typeof updater === "function" && updater._systemCall === true;
-
-        if (!isSystemCall && auditLockRef.current.mode === "foreign") {
+        const gate = decideAuditSync({ event: eventName, status: "draft" });
+        if (!gate.bypassLock && auditLockRef.current.mode === "foreign") {
           const now = Date.now();
           if (now - lockWriteWarnTsRef.current > 5000) {
             lockWriteWarnTsRef.current = now;
@@ -1980,17 +2006,19 @@ export function StorageProvider({ children, useMockData = false }) {
             let updated =
               typeof updater === "function" ? updater(audit) : updater;
 
-            // Transizione automatica draft → in_progress solo su edit esplicito utente.
-            // Le chiamate di sistema (initializeChecklist, hydrateQuestionIds,
-            // fetchAndApplyServerResponses) usano updater con proprietà _systemCall=true.
+            const decision = decideAuditSync({
+              event: eventName,
+              status: updated?.metadata?.status || "draft",
+              online: typeof navigator === "undefined" ? true : navigator.onLine,
+            });
             if (
-              !isSystemCall &&
-              updated?.metadata?.status === "draft" &&
-              typeof updater === "function"
+              updated?.metadata &&
+              decision.nextStatus &&
+              decision.nextStatus !== updated.metadata.status
             ) {
               updated = {
                 ...updated,
-                metadata: { ...updated.metadata, status: "in_progress" },
+                metadata: { ...updated.metadata, status: decision.nextStatus },
               };
             }
 
@@ -2024,93 +2052,54 @@ export function StorageProvider({ children, useMockData = false }) {
 
             const auditUuid = updated.id || updated.metadata?.id;
 
-            // Accoda save_responses se non è hydration/init e non è una chiamata di sistema.
-            // La guardia navigator.onLine è RIMOSSA: i dati vengono accodati anche offline e
-            // processati automaticamente al reconnect (ADR-008 / offline-first).
-            // Con VITE_SYNC_MODE=events gli eventi T3 (response_set) coprono status e note;
-            // save_responses resta attivo in parallelo (incluso note senza esito).
-            if (!skipSync && !isHydratingRef.current && !isSystemCall) {
-              const responses = extractChecklistResponses(updated);
-              if (responses.length > 0) {
-                syncService
-                  .enqueue("save_responses", {
-                    auditId: auditUuid,
-                    responses,
-                  })
-                  .then(() => {
-                    console.log(
-                      `📤 [SYNC] ${responses.length} risposte enqueued per sync (online: ${navigator.onLine})`,
-                    );
-                  })
-                  .catch((err) => {
-                    console.error("❌ [SYNC] Errore enqueue risposte:", err);
-                  });
+            // Domande: coda a differenze, non questa scheda.
+            // «In corso» è un invio a parte, solo alla prima risposta.
+            // La scheda parte solo se decideAuditSync lo chiede e un campo è cambiato.
+            if (!isHydratingRef.current && auditUuid && decision.sendStatusOnly) {
+              if (decision.patchPendingSchedaStatus) {
+                metadataSyncRef.current.patchPendingStatus(
+                  auditUuid,
+                  decision.patchPendingSchedaStatus,
+                );
               }
+              syncService.enqueue("update_audit_status", {
+                audit_uuid: auditUuid,
+                status: "in_progress",
+              }).catch((err) => {
+                console.error("❌ [SYNC] Errore enqueue stato:", err);
+              });
             }
-
-            // Enqueue update_audit anche offline: la guardia navigator.onLine è rimossa.
-            // L'item resta in coda finché non torna la connessione; il sync processa allora.
-            if (!skipSync && !isHydratingRef.current && !isSystemCall) {
+            if (!isHydratingRef.current && auditUuid && decision.sendScheda) {
               const storedServerTs = localStorage.getItem(`sgq_srv_ts_${auditUuid}`);
               const serverTsMs = storedServerTs ? new Date(storedServerTs).getTime() : 0;
-              const clientTsMs = Date.now();
-              // +1ms garantisce client >= server per evitare conflict non necessari
-              const syncUpdatedAt = new Date(Math.max(clientTsMs, serverTsMs + 1)).toISOString();
-
-              syncService
-                .enqueue("update_audit", {
-                  audit_uuid: auditUuid,
-                  audit_number: updated.metadata?.auditNumber,
-                  client_name: updated.metadata?.clientName,
-                  company_id: updated.metadata?.companyId ?? null,
-                  audit_party_type: updated.metadata?.auditPartyType ?? 'first_party',
-                  fornitore_name: updated.metadata?.fornitoreName ?? '',
-                  fornitore_supplier_id: updated.metadata?.fornitoreSupplierId ?? null,
-                  project_year: updated.metadata?.projectYear,
-                  audit_date: updated.metadata?.auditDate,
-                  audit_date_end: updated.metadata?.auditDateEnd ?? null,
-                  auditor_name: updated.metadata?.auditorName,
-                  audit_type: updated.metadata?.auditType,
-                  status: updated.metadata?.status,
-                  notes: updated.metadata?.notes,
-                  ...calculatedMetrics,
-                  selectedStandards: updated.metadata?.selectedStandards || [],
-                  custom_checklist_id:
-                    updated.metadata?.customChecklistId ??
-                    updated.custom_checklist_id ??
-                    null,
-                  updated_at: syncUpdatedAt,
-                  generalData: updated.metadata?.generalData ?? updated.generalData,
-                  auditObjective: updated.metadata?.auditObjective ?? updated.auditObjective,
-                  auditOutcome: updated.metadata?.auditOutcome ?? updated.auditOutcome,
-                })
-                .catch((err) => {
-                  console.error("❌ [SYNC] Errore enqueue update:", err);
-                });
-
-              // T4: eventi field_updated con debounce 500ms per campi testo ricchi.
-              // Ogni modifica a generalData / auditObjective / auditOutcome / notes genera un evento
-              // atomico su POST /audits/:uuid/events — garantisce server-wins anche su questi campi
-              // in scenario multi-device, esattamente come T3 per le risposte checklist.
-              if (import.meta.env.VITE_SYNC_MODE === 'events') {
-                const richFields = [
-                  { key: 'generalData',    value: updated.metadata?.generalData ?? updated.generalData },
-                  { key: 'auditObjective', value: updated.metadata?.auditObjective ?? updated.auditObjective },
-                  { key: 'auditOutcome',   value: updated.metadata?.auditOutcome ?? updated.auditOutcome },
-                  { key: 'notes',          value: updated.metadata?.notes ?? null },
-                ];
-                richFields.forEach(({ key, value }) => {
-                  if (value === undefined) return;
-                  const debounceKey = `${auditUuid}:${key}`;
-                  if (fieldUpdatedDebounceRef.current[debounceKey]) {
-                    clearTimeout(fieldUpdatedDebounceRef.current[debounceKey]);
-                  }
-                  fieldUpdatedDebounceRef.current[debounceKey] = setTimeout(() => {
-                    delete fieldUpdatedDebounceRef.current[debounceKey];
-                    syncService.enqueueFieldUpdatedEvent(auditUuid, key, value).catch(() => {});
-                  }, 500);
-                });
-              }
+              const syncUpdatedAt = new Date(Math.max(Date.now(), serverTsMs + 1)).toISOString();
+              const signature = auditMetadataSyncSignature(updated, calculatedMetrics);
+              metadataSyncRef.current.schedule(auditUuid, signature, {
+                audit_uuid: auditUuid,
+                audit_number: updated.metadata?.auditNumber,
+                client_name: updated.metadata?.clientName,
+                company_id: updated.metadata?.companyId ?? null,
+                audit_party_type: updated.metadata?.auditPartyType ?? 'first_party',
+                fornitore_name: updated.metadata?.fornitoreName ?? '',
+                fornitore_supplier_id: updated.metadata?.fornitoreSupplierId ?? null,
+                project_year: updated.metadata?.projectYear,
+                audit_date: updated.metadata?.auditDate,
+                audit_date_end: updated.metadata?.auditDateEnd ?? null,
+                auditor_name: updated.metadata?.auditorName,
+                audit_type: updated.metadata?.auditType,
+                status: updated.metadata?.status,
+                notes: updated.metadata?.notes,
+                ...calculatedMetrics,
+                selectedStandards: updated.metadata?.selectedStandards || [],
+                custom_checklist_id:
+                  updated.metadata?.customChecklistId ??
+                  updated.custom_checklist_id ??
+                  null,
+                updated_at: syncUpdatedAt,
+                generalData: updated.metadata?.generalData ?? updated.generalData,
+                auditObjective: updated.metadata?.auditObjective ?? updated.auditObjective,
+                auditOutcome: updated.metadata?.auditOutcome ?? updated.auditOutcome,
+              });
 
               if (auditLockRef.current.mode !== "owner" && auditLockRef.current.mode !== "none") {
                 // Lock "foreign": write bloccato da altro utente — log visibile una volta ogni 5s.
@@ -2495,12 +2484,8 @@ export function StorageProvider({ children, useMockData = false }) {
         totalQuestions += section.questions.length;
       });
 
-      // Aggiorna audit con checklist copiata.
-      // skipSync=true SEMPRE: initializeChecklist crea solo la struttura locale (template vuoto).
-      // Le risposte reali arrivano da fetchAndApplyServerResponses (chiamata subito dopo in
-      // AuditAccordionLayout) oppure dalle modifiche esplicite dell'utente.
-      // Non accodare MAI save_responses con NOT_ANSWERED — sovrascriverebbero i dati sul server.
-      updateCurrentAudit((audit) => {
+      // Apertura vuota: solo struttura locale. Nessun invio, lo stato resta bozza.
+      const initUpdater = (audit) => {
         const updatedAudit = { ...audit };
 
         if (!updatedAudit.checklist) {
@@ -2512,7 +2497,8 @@ export function StorageProvider({ children, useMockData = false }) {
         updatedAudit.metrics.totalQuestions = totalQuestions;
 
         return updatedAudit;
-      }, { skipSync: true });
+      };
+      updateCurrentAudit(initUpdater, { event: "open_empty" });
 
       console.log(
         `✅ Checklist ${standard} inizializzata da template (${totalQuestions} domande)`,
@@ -2558,7 +2544,7 @@ export function StorageProvider({ children, useMockData = false }) {
         Object.keys(bySection).forEach((k) =>
           bySection[k].sort((a, b) => (a.order || 0) - (b.order || 0))
         );
-        updateCurrentAudit((audit) => {
+        const hydrateUpdater = (audit) => {
           const checklist = audit.checklist?.[standardKey];
           if (!checklist) return audit;
           const updated = JSON.parse(JSON.stringify(audit));
@@ -2597,7 +2583,8 @@ export function StorageProvider({ children, useMockData = false }) {
             });
           }
           return updated;
-        });
+        };
+        updateCurrentAudit(hydrateUpdater, { event: "open_empty" });
         console.log(`\u2705 [HYDRATE] questionIds idratati per ${standardKey} (${questions.length} domande)`);
       } catch (e) {
         console.warn(`[HYDRATE] questionIds per ${standardKey}:`, e.message);
@@ -2615,8 +2602,8 @@ export function StorageProvider({ children, useMockData = false }) {
     async (numericAuditId) => {
       if (!numericAuditId) return;
       if (!navigator.onLine) {
-        console.log("📴 [HYDRATE] Offline — risposte non scaricate dal server");
-        setServerDataStatus('error');
+        console.log("📴 [HYDRATE] Offline — restano le risposte già in pagina");
+        setServerDataStatus('idle');
         return;
       }
 
@@ -2714,8 +2701,7 @@ export function StorageProvider({ children, useMockData = false }) {
                 customResponses: mergedResponses,
               };
             };
-            customUpdater._systemCall = true;
-            updateCurrentAudit(customUpdater, { skipSync: true });
+            updateCurrentAudit(customUpdater, { event: "open_empty" });
 
             console.log(
               `✅ [HYDRATE] Custom checklist "${clTemplate?.name}": ` +
@@ -2743,6 +2729,7 @@ export function StorageProvider({ children, useMockData = false }) {
             responseMap[r.question_id] = {
               status: r.conformity_status || "NOT_ANSWERED",
               notes: r.notes || "",
+              updated_at: r.updated_at || null,
             };
           }
         });
@@ -2760,17 +2747,19 @@ export function StorageProvider({ children, useMockData = false }) {
           const checklist = updatedAudit.checklist;
           if (!checklist) return audit;
 
+          const orgId = apiService.getStoredUser?.()?.organization_id ?? null;
+          const pendingIds = readPendingQuestionIdSet(orgId, hydrateUuid);
           const applied = applyServerResponsesPreservingLocalNotes(
             checklist,
             responseMap,
             hydrateUuid,
+            { pendingQuestionIds: pendingIds },
           );
 
           console.log(`✅ [HYDRATE] Applicate ${applied}/${rows.length} risposte (note locali preservate se in draft)`);
           return updatedAudit;
         };
-        isoHydrateUpdater._systemCall = true;
-        updateCurrentAudit(isoHydrateUpdater, { skipSync: true });
+        updateCurrentAudit(isoHydrateUpdater, { event: "open_empty" });
         setServerDataStatus('ready');
       } catch (err) {
         console.warn("⚠️ [HYDRATE] Errore caricamento risposte server:", err.message);

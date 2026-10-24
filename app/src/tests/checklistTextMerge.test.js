@@ -3,6 +3,8 @@ import {
   shouldKeepLocalText,
   pickMergedNotes,
   applyServerResponsesPreservingLocalNotes,
+  checklistQuestionBindSignature,
+  countPendingMatches,
   mergeChecklistStructuresLocalRichWins,
   localChecklistIsRicher,
   resolveMergedChecklistForReconcile,
@@ -47,6 +49,61 @@ describe('checklistTextMerge', () => {
     expect(checklist.ISO_9001['4.1'].questions[0].notes).toBe('testo in digitazione');
     expect(checklist.ISO_9001['4.1'].questions[0].status).toBe('C');
     clearDraft(auditUuid, 'q:42');
+  });
+
+  it('non segnala conflitto se la cache locale differisce e la domanda non è in attesa', () => {
+    const replaced = [];
+    const checklist = {
+      ISO_9001: {
+        '4.1': {
+          questions: [{ questionId: 1, clauseRef: '4.1', status: 'C', notes: 'cache' }],
+        },
+      },
+    };
+    applyServerResponsesPreservingLocalNotes(
+      checklist,
+      { 1: { status: 'NC', notes: 'server', updated_at: '2026-10-23T10:00:00.000Z' } },
+      'u1',
+      { pendingQuestionIds: new Set(), replaced },
+    );
+    expect(replaced).toEqual([]);
+    expect(checklist.ISO_9001['4.1'].questions[0].status).toBe('NC');
+    expect(checklist.ISO_9001['4.1'].questions[0].notes).toBe('server');
+  });
+
+  it('non sovrascrive una risposta ancora in attesa, anche se la chiave è la clausola', () => {
+    const checklist = {
+      ISO_9001: {
+        '4.1': {
+          questions: [{ questionId: 42, clauseRef: '4.1', status: 'C', notes: 'sul telefono' }],
+        },
+      },
+    };
+    applyServerResponsesPreservingLocalNotes(
+      checklist,
+      { 42: { status: 'NC', notes: 'server' } },
+      'u1',
+      { pendingQuestionIds: new Set(['clause:4.1']) },
+    );
+    expect(checklist.ISO_9001['4.1'].questions[0].status).toBe('C');
+    expect(checklist.ISO_9001['4.1'].questions[0].notes).toBe('sul telefono');
+  });
+
+  it('la bozza si applica solo quando la domanda è già in checklist, e la firma cambia con gli id', () => {
+    const pending = [{ questionId: 42, clauseRef: '4.1', status: 'C', notes: 'bozza' }];
+    const empty = {};
+    expect(countPendingMatches(empty, pending)).toBe(0);
+    expect(checklistQuestionBindSignature(empty)).toBe('0:0');
+    const withoutId = {
+      ISO_9001: { '4.1': { questions: [{ clauseRef: '4.1', status: 'NOT_ANSWERED', notes: '' }] } },
+    };
+    expect(checklistQuestionBindSignature(withoutId)).toBe('1:0');
+    expect(countPendingMatches(withoutId, pending)).toBe(1);
+    const withId = {
+      ISO_9001: { '4.1': { questions: [{ questionId: 42, clauseRef: '4.1', status: 'NOT_ANSWERED', notes: '' }] } },
+    };
+    expect(checklistQuestionBindSignature(withId)).toBe('1:1');
+    expect(checklistQuestionBindSignature(withId)).not.toBe(checklistQuestionBindSignature(withoutId));
   });
 
   it('resolveMergedChecklistForReconcile unisce quando locale più ricco', () => {

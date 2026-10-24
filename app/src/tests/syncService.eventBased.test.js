@@ -128,7 +128,12 @@ describe('SyncService — T3 event-based', () => {
 
             const { event } = enqueueSpy.mock.calls[0][1];
             const parsed = JSON.parse(event.new_value);
-            expect(parsed).toEqual({ conformity_status: 'NC', notes: 'evidenza NC' });
+            expect(parsed).toEqual({
+                conformity_status: 'NC',
+                notes: 'evidenza NC',
+                device_id: null,
+                base_updated_at: null,
+            });
         });
 
         it('con status null e note vuote → event_type response_cleared, new_value null', async () => {
@@ -149,6 +154,8 @@ describe('SyncService — T3 event-based', () => {
             expect(JSON.parse(event.new_value)).toEqual({
                 conformity_status: null,
                 notes: 'Nota dettata',
+                device_id: null,
+                base_updated_at: null,
             });
         });
 

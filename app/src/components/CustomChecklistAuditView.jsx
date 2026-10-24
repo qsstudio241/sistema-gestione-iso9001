@@ -13,6 +13,7 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import apiService from "../services/apiService";
 import { syncService } from "../services/syncService";
 import { useStorage } from "../contexts/StorageContext";
+import { eventForAnswer } from "../utils/decideAuditSync";
 import { useAttachmentManager } from "../hooks/useAttachmentManager";
 import { QuestionCard, STATUS_BUTTONS } from "./QuestionCard";
 import AskAiButton from "./AskAiButton";
@@ -93,8 +94,7 @@ function CustomChecklistAuditView({ audit, onUpdate, readOnly = false }) {
       // i conteggi custom. Senza questa propagazione, sezione 11 mostra sempre 0.
       if (clData) {
         const propagate = (prev) => ({ ...prev, customChecklist: clData });
-        propagate._systemCall = true;
-        updateCurrentAudit(propagate, { skipSync: true });
+        updateCurrentAudit(propagate, { event: "refresh_draft" });
       }
 
       const localResponses = auditCustomResponsesRef.current ?? {};
@@ -219,7 +219,7 @@ function CustomChecklistAuditView({ audit, onUpdate, readOnly = false }) {
             [itemId]: nonEmpty.length > 0 ? nonEmpty : blocks,
           },
           metadata: { ...prevAudit.metadata, lastModified: new Date().toISOString() },
-        }));
+        }), { event: eventForAnswer(audit?.metadata?.status) });
 
         if (auditId && nonEmpty.length > 0) {
           const payload = { custom_item_id: itemId, evidence_blocks: nonEmpty };
@@ -239,7 +239,7 @@ function CustomChecklistAuditView({ audit, onUpdate, readOnly = false }) {
         setSaving(false);
       }
     },
-    [auditId, updateCurrentAudit]
+    [auditId, audit?.metadata?.status, updateCurrentAudit]
   );
 
   const handleStatusChange = useCallback(
@@ -252,7 +252,7 @@ function CustomChecklistAuditView({ audit, onUpdate, readOnly = false }) {
       updateCurrentAudit((prev) => ({
         ...prev,
         customStatuses: { ...(prev.customStatuses || {}), [itemId]: newStatus },
-      }));
+      }), { event: eventForAnswer(audit?.metadata?.status) });
 
       // GAP-B3: percorso event-based T3 per risposte custom.
       // Attivo solo con VITE_SYNC_MODE=events; il percorso legacy (save_custom_checklist_responses)

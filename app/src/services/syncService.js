@@ -11,6 +11,8 @@
 import { getDatabase } from './IndexedDBProvider';
 import apiService from './apiService';
 import { toNumericChecklistQuestionId } from '../utils/attachmentQuestionId';
+import { confirmedPayloads, noteQuestionSaveResult } from '../utils/checklistPendingStore';
+import { decideAuditSync } from '../utils/decideAuditSync';
 
 const SYNC_QUEUE_STORE = 'syncQueue';
 const STORE_SYNC_METADATA = 'sync_metadata';  // Store per tracking sync status
@@ -25,7 +27,7 @@ const ATTACHMENTS_BLOB_STORE = 'attachments_offline'; // Store blob per upload o
  *       | 'upload_attachment' | 'delete_attachment'
  *       | 'save_responses' | 'save_custom_checklist_responses'
  *       | 'upload_custom_attachment_and_patch_custom_response'
- *       | 'send_audit_event',
+ *       | 'send_audit_event' | 'save_question_diff',
  *   payload: any,
  *   timestamp: number,
  *   retryCount: number,
@@ -136,6 +138,7 @@ export class SyncService {
             'save_responses': 'auditId',
             'save_custom_checklist_responses': 'auditId',
             'update_audit': 'audit_uuid',
+            'update_audit_status': 'audit_uuid',
             // CND-9: coalescenza bozze officina (ultima versione vince)
             'update_ndt_report': 'id',
             'create_ndt_report': 'uuid',
@@ -234,6 +237,101 @@ export class SyncService {
             // Non bloccante: se la dedup fallisce, l'item viene aggiunto normalmente
             console.warn('[SYNC] _deduplicateQueueItem fallito (non bloccante):', e?.message);
         }
+    }
+
+    /**
+     * Bozza domande: un solo item per audit, aggiornato sul posto logico
+     * (nuovo id, così un invio già partito non cancella la versione successiva).
+     * Non chiama processQueue: l'invio lo fa il debounce, o il reconnect.
+     */
+    async upsertQuestionDiff(question) {
+        const auditUuid = question?.auditUuid;
+        const questionKey = question?.questionKey
+            || (question?.questionId != null && question.questionId !== '' ? String(question.questionId) : null);
+        if (!auditUuid || !questionKey) return;
+        const db = await this.init();
+        const normalized = String(auditUuid).toLowerCase();
+        await new Promise((resolve, reject) => {
+            const tx = db.transaction([SYNC_QUEUE_STORE], 'readwrite');
+            const store = tx.objectStore(SYNC_QUEUE_STORE);
+            const req = store.getAll();
+            req.onerror = () => reject(req.error);
+            req.onsuccess = () => {
+                let questions = {};
+                for (const item of req.result) {
+                    if (item.type !== 'save_question_diff' || item.isStalled) continue;
+                    if (String(item.payload?.auditUuid || '').toLowerCase() !== normalized) continue;
+                    questions = { ...questions, ...(item.payload?.questions || {}) };
+                    store.delete(item.id);
+                }
+                questions[String(questionKey)] = {
+                    questionId: question.questionId ?? null,
+                    clauseRef: question.clauseRef ?? null,
+                    questionKey: String(questionKey),
+                    status: question.status ?? null,
+                    notes: question.notes ?? null,
+                    baseUpdatedAt: question.baseUpdatedAt ?? null,
+                    deviceId: question.deviceId ?? null,
+                    organizationId: question.organizationId ?? null,
+                    auditUuid: normalized,
+                    idempotencyKey: question.idempotencyKey,
+                    clientTs: question.clientTs,
+                };
+                store.add({
+                    id: crypto.randomUUID(),
+                    type: 'save_question_diff',
+                    payload: {
+                        auditUuid: normalized,
+                        organizationId: question.organizationId ?? null,
+                        questions,
+                    },
+                    timestamp: Date.now(),
+                    retryCount: 0,
+                    lastError: null,
+                });
+            };
+            tx.oncomplete = () => resolve();
+            tx.onerror = () => reject(tx.error);
+        });
+    }
+
+    async clearQuestionDiffMatches(entries) {
+        const list = Array.isArray(entries) ? entries : [];
+        if (list.length === 0) return;
+        const db = await this.init();
+        await new Promise((resolve, reject) => {
+            const tx = db.transaction([SYNC_QUEUE_STORE], 'readwrite');
+            const store = tx.objectStore(SYNC_QUEUE_STORE);
+            const req = store.getAll();
+            req.onerror = () => reject(req.error);
+            req.onsuccess = () => {
+                for (const item of req.result) {
+                    if (item.type !== 'save_question_diff' || item.isStalled) continue;
+                    const auditUuid = String(item.payload?.auditUuid || '').toLowerCase();
+                    const questions = { ...(item.payload?.questions || {}) };
+                    let changed = false;
+                    for (const entry of list) {
+                        if (String(entry?.auditUuid || '').toLowerCase() !== auditUuid) continue;
+                        const id = entry?.questionKey
+                            || (entry?.questionId != null ? String(entry.questionId) : null);
+                        if (!id) continue;
+                        const stored = questions[id];
+                        if (!stored) continue;
+                        if (entry.idempotencyKey && stored.idempotencyKey !== entry.idempotencyKey) continue;
+                        delete questions[id];
+                        changed = true;
+                    }
+                    if (!changed) continue;
+                    if (Object.keys(questions).length === 0) store.delete(item.id);
+                    else {
+                        item.payload = { ...item.payload, questions };
+                        store.put(item);
+                    }
+                }
+            };
+            tx.oncomplete = () => resolve();
+            tx.onerror = () => reject(tx.error);
+        });
     }
 
     /**
@@ -428,10 +526,12 @@ export class SyncService {
                         'save_responses',
                         'save_custom_checklist_responses',
                         'update_audit',
+                        'update_audit_status',
                         'upload_attachment',
                         'delete_attachment',
                         'upload_custom_attachment_and_patch_custom_response',
                         'send_audit_event',
+                        'save_question_diff',
                     ]);
                     if (
                         st === 404 &&
@@ -535,6 +635,9 @@ export class SyncService {
             case 'update_audit':
                 return await this.syncUpdateAudit(payload);
 
+            case 'update_audit_status':
+                return await this.syncUpdateAuditStatus(payload);
+
             case 'delete_audit':
                 return await this.syncDeleteAudit(payload);
 
@@ -558,6 +661,9 @@ export class SyncService {
 
             case 'send_audit_event':
                 return await this.syncSendAuditEvent(payload);
+
+            case 'save_question_diff':
+                return await this.syncQuestionDiff(payload);
 
             // ── CND: Verbali VT/MT/PT/UT ────────────────────────────────────
             case 'create_ndt_report':
@@ -588,6 +694,27 @@ export class SyncService {
     async syncUpdateAudit(auditData) {
         // Usa upsert invece di update separato
         return await this.syncUpsertAudit(auditData);
+    }
+
+    /**
+     * Solo lo stato. Non passa dal mapper della scheda:
+     * un payload parziale lì sovrascriverebbe conclusioni e date.
+     */
+    async syncUpdateAuditStatus(payload) {
+        const auditUuid = payload?.audit_uuid;
+        if (!auditUuid || !payload?.status) {
+            throw new Error('update_audit_status richiede audit_uuid e status');
+        }
+        const result = await apiService.upsertAudit({
+            audit_uuid: auditUuid,
+            status: payload.status,
+            status_only: true,
+        });
+        const responseData = result?.data || result;
+        if (responseData?.updated_at) {
+            localStorage.setItem(`sgq_srv_ts_${auditUuid}`, responseData.updated_at);
+        }
+        return result;
     }
 
     /**
@@ -809,13 +936,13 @@ export class SyncService {
      * @param {string|null} conformityStatus - 'C'|'NC'|'OSS'|'OM'|'NA'|'NV'|null
      * @param {string|null} notes
      */
-    buildResponseEvent(auditUuid, questionId, conformityStatus, notes = null) {
+    buildResponseEvent(auditUuid, questionId, conformityStatus, notes = null, extras = {}) {
         const hasStatus =
             conformityStatus != null &&
             conformityStatus !== '' &&
             conformityStatus !== 'NOT_ANSWERED';
         const hasNotes = notes != null && String(notes).trim() !== '';
-        const idempotencyKey = this.generateResponseEventKey(auditUuid, questionId);
+        const idempotencyKey = extras.idempotencyKey || this.generateResponseEventKey(auditUuid, questionId);
         return {
             event_type: hasStatus || hasNotes ? 'response_set' : 'response_cleared',
             field_path: `responses.${questionId}`,
@@ -823,9 +950,11 @@ export class SyncService {
                 ? JSON.stringify({
                     conformity_status: hasStatus ? conformityStatus : null,
                     notes: hasNotes ? notes : null,
+                    device_id: extras.deviceId || null,
+                    base_updated_at: extras.baseUpdatedAt || null,
                 })
                 : null,
-            client_ts: new Date().toISOString(),
+            client_ts: extras.clientTs || new Date().toISOString(),
             client_ts_offset_ms: 0,
             idempotency_key: idempotencyKey,
             device_type: /Mobi|Android/i.test(navigator.userAgent) ? 'mobile' : 'desktop',
@@ -841,23 +970,8 @@ export class SyncService {
      * Invio immediato di una sola domanda (già in debounce).
      * Non accoda un evento per ogni tasto.
      */
-    async postQuestionSave(job, { keepalive = false } = {}) {
-        const auditUuid = job?.auditUuid;
-        const questionId = job?.questionId;
-        if (!auditUuid || questionId == null) return;
-        if (import.meta.env.VITE_SYNC_MODE === 'events') {
-            const event = this.buildResponseEvent(auditUuid, questionId, job.status, job.notes ?? null);
-            await apiService.post(`/audits/${auditUuid}/events`, { events: [event] }, {
-                keepalive,
-                lockAuditUuid: String(auditUuid),
-            });
-            return;
-        }
-        await apiService.bulkSaveResponses(auditUuid, [{
-            question_id: questionId,
-            conformity_status: job.status ?? null,
-            notes: job.notes ?? null,
-        }], { keepalive });
+    async postQuestionSave(job, opts) {
+        return this.postQuestionSaves([job], opts);
     }
 
     /**
@@ -865,9 +979,11 @@ export class SyncService {
      * Più richieste keepalive vengono scartate dal browser.
      */
     async postQuestionSaves(jobs, { keepalive = false } = {}) {
-        const list = (Array.isArray(jobs) ? jobs : []).filter(
-            (job) => job && job.auditUuid && job.questionId != null,
-        );
+        const list = (Array.isArray(jobs) ? jobs : []).filter((job) => {
+            if (!job?.auditUuid) return false;
+            if (toNumericChecklistQuestionId(job.questionId) != null) return true;
+            return Boolean(job.clauseRef && String(job.clauseRef).trim());
+        });
         if (list.length === 0) return;
         const groups = new Map();
         for (const job of list) {
@@ -880,27 +996,69 @@ export class SyncService {
             const chunkSize = 20;
             for (let i = 0; i < group.length; i += chunkSize) {
                 const chunk = group.slice(i, i + chunkSize);
-                if (import.meta.env.VITE_SYNC_MODE === 'events') {
-                    const events = chunk.map((job) => this.buildResponseEvent(
+                const withId = [];
+                const byClause = [];
+                for (const job of chunk) {
+                    const numericId = toNumericChecklistQuestionId(job.questionId);
+                    if (numericId != null) withId.push({ ...job, questionId: numericId });
+                    else if (job.clauseRef) byClause.push(job);
+                }
+                if (withId.length && import.meta.env.VITE_SYNC_MODE === 'events') {
+                    const events = withId.map((job) => this.buildResponseEvent(
                         auditUuid,
                         job.questionId,
                         job.status,
                         job.notes ?? null,
+                        job,
                     ));
                     tasks.push(apiService.post(`/audits/${auditUuid}/events`, { events }, {
                         keepalive,
                         lockAuditUuid: auditUuid,
                     }));
-                } else {
-                    tasks.push(apiService.bulkSaveResponses(auditUuid, chunk.map((job) => ({
+                } else if (withId.length) {
+                    tasks.push(apiService.bulkSaveResponses(auditUuid, withId.map((job) => ({
                         question_id: job.questionId,
                         conformity_status: job.status ?? null,
                         notes: job.notes ?? null,
+                        client_updated_at: job.clientTs || null,
+                        device_id: job.deviceId || null,
+                    })), { keepalive }));
+                }
+                if (byClause.length) {
+                    tasks.push(apiService.bulkSaveResponses(auditUuid, byClause.map((job) => ({
+                        clause_ref: String(job.clauseRef).trim(),
+                        conformity_status: job.status ?? null,
+                        notes: job.notes ?? null,
+                        client_updated_at: job.clientTs || null,
+                        device_id: job.deviceId || null,
                     })), { keepalive }));
                 }
             }
         }
-        await Promise.all(tasks);
+        const results = await Promise.all(tasks);
+        return { results };
+    }
+
+    async syncQuestionDiff(payload) {
+        const jobs = Object.values(payload?.questions || {}).map((question) => ({
+            ...question,
+            auditUuid: payload.auditUuid,
+            organizationId: question.organizationId ?? payload.organizationId ?? null,
+        }));
+        const result = await this.postQuestionSaves(jobs);
+        const confirmed = confirmedPayloads(jobs, result);
+        const conflicts = [];
+        for (const row of result?.results || []) {
+            if (Array.isArray(row?.conflicts)) conflicts.push(...row.conflicts);
+            if (Array.isArray(row?.results?.conflicts)) conflicts.push(...row.results.conflicts);
+        }
+        noteQuestionSaveResult(confirmed, conflicts);
+        if (conflicts.length && typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('sgq:question-conflicts', {
+                detail: { auditUuid: payload.auditUuid, conflicts },
+            }));
+        }
+        return result;
     }
 
     /**
@@ -1499,9 +1657,13 @@ export class SyncService {
         // Prima di processare, resuscita item stalled per errore di rete:
         // questi non devono rimanere bloccati in eterno solo perché la rete
         // mobile era instabile al momento del tentativo.
+        const decision = decideAuditSync({ event: 'offline', online: true });
         setTimeout(async () => {
             await this.unstallNetworkErrorItems();
-            this.processQueue();
+            // Nessuna scheda nuova: partono solo gli item già in coda.
+            if (decision.sendQuestions && !decision.sendScheda) {
+                this.processQueue();
+            }
         }, 2000);
 
         // Riavvia auto-sync se era stato fermato

@@ -16,6 +16,14 @@ function isChecklistWrite(req) {
         || /\/audits\/sync\/?$/.test(path);
 }
 
+/** Assistente AI: budget proprio, non condiviso con letture né con i salvataggi. */
+function isAiAssistRequest(req) {
+    const method = String(req?.method || '').toUpperCase();
+    if (method === 'GET' || method === 'HEAD' || method === 'OPTIONS') return false;
+    const path = requestPath(req);
+    return /\/ai\/(suggest|feedback|question-assistant|chat)\/?$/.test(path);
+}
+
 function userOrIpKey(req) {
     try {
         const auth = req.headers?.authorization || '';
@@ -42,13 +50,15 @@ function rateLimitHandler(req, res, _next, options) {
     const seconds = retryAfterSeconds(req, options.windowMs);
     res.setHeader('Retry-After', String(seconds));
     const body = options.message && typeof options.message === 'object'
-        ? options.message
+        ? { ...options.message }
         : { error: 'Troppe richieste. Riprova tra qualche minuto.', code: 'RATE_LIMIT_API' };
+    body.retryAfterMs = seconds * 1000;
     res.status(options.statusCode || 429).json(body);
 }
 
 module.exports = {
     isChecklistWrite,
+    isAiAssistRequest,
     userOrIpKey,
     retryAfterSeconds,
     rateLimitHandler,

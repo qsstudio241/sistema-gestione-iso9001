@@ -45,42 +45,26 @@ function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false, 
   });
 
   useEffect(() => {
-    if (currentAudit?.checklist || currentAudit?.customStatuses) {
-      const standardMetrics = calculateFindingsMetrics(currentAudit.checklist);
-      // Se l'audit usa una custom checklist con pulsanti esito, somma quei conteggi
-      const customMetrics = currentAudit?.customChecklist?.has_outcome_buttons
-        ? calculateCustomFindingsMetrics(currentAudit.customStatuses)
-        : { totalNC: 0, totalOSS: 0, totalOM: 0 };
-      const calculatedMetrics = {
-        totalNC: standardMetrics.totalNC + customMetrics.totalNC,
-        totalOSS: standardMetrics.totalOSS + customMetrics.totalOSS,
-        totalOM: standardMetrics.totalOM + customMetrics.totalOM,
-      };
-      setMetrics({
-        totalNC: calculatedMetrics.totalNC,
-        totalOSS: calculatedMetrics.totalOSS,
-        totalOM: calculatedMetrics.totalOM,
-      });
-
-      // Auto-aggiorna auditOutcome con metriche calcolate
-      if (
-        calculatedMetrics.totalNC !== auditOutcome?.emergingFindings?.totalNC ||
-        calculatedMetrics.totalOSS !==
-          auditOutcome?.emergingFindings?.totalOSS ||
-        calculatedMetrics.totalOM !== auditOutcome?.emergingFindings?.totalOM
-      ) {
-        onUpdate({
-          ...auditOutcome,
-          emergingFindings: {
-            ...auditOutcome?.emergingFindings,
-            totalNC: calculatedMetrics.totalNC,
-            totalOSS: calculatedMetrics.totalOSS,
-            totalOM: calculatedMetrics.totalOM,
-          },
-        });
-      }
-    }
-  }, [currentAudit?.checklist, currentAudit?.customStatuses, currentAudit?.customChecklist, auditOutcome, onUpdate]);
+    if (!(currentAudit?.checklist || currentAudit?.customStatuses)) return;
+    const standardMetrics = calculateFindingsMetrics(currentAudit.checklist);
+    const customMetrics = currentAudit?.customChecklist?.has_outcome_buttons
+      ? calculateCustomFindingsMetrics(currentAudit.customStatuses)
+      : { totalNC: 0, totalOSS: 0, totalOM: 0 };
+    const calculatedMetrics = {
+      totalNC: standardMetrics.totalNC + customMetrics.totalNC,
+      totalOSS: standardMetrics.totalOSS + customMetrics.totalOSS,
+      totalOM: standardMetrics.totalOM + customMetrics.totalOM,
+    };
+    // Solo schermo. Non riscrivere l'audit: i conteggi si ricalcolano dalle risposte
+    // e una scrittura qui rimandava al server tutta la scheda a ogni domanda.
+    setMetrics((prev) => (
+      prev.totalNC === calculatedMetrics.totalNC
+      && prev.totalOSS === calculatedMetrics.totalOSS
+      && prev.totalOM === calculatedMetrics.totalOM
+        ? prev
+        : calculatedMetrics
+    ));
+  }, [currentAudit?.checklist, currentAudit?.customStatuses, currentAudit?.customChecklist]);
 
   const handleConclusionsChange = (e) => {
     const value = e.target.value;

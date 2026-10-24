@@ -27,8 +27,9 @@ export function pickMergedNotes(localNotes, serverNotes, options = {}) {
  * @param {Record<number, {status, notes}>} responseMap - da getAuditResponses
  * @param {string|null} auditUuid - per draft guard
  */
-export function applyServerResponsesPreservingLocalNotes(checklist, responseMap, auditUuid = null) {
+export function applyServerResponsesPreservingLocalNotes(checklist, responseMap, auditUuid = null, options = {}) {
   if (!checklist || !responseMap) return 0;
+  const pendingIds = options?.pendingQuestionIds instanceof Set ? options.pendingQuestionIds : null;
   let applied = 0;
 
   Object.values(checklist).forEach((normData) => {
@@ -36,6 +37,8 @@ export function applyServerResponsesPreservingLocalNotes(checklist, responseMap,
     Object.values(normData).forEach((clauseData) => {
       if (!clauseData?.questions) return;
       clauseData.questions = clauseData.questions.map((q) => {
+        const clauseKey = q.clauseRef ? `clause:${q.clauseRef}` : null;
+        if (pendingIds?.has(String(q.questionId)) || (clauseKey && pendingIds?.has(clauseKey))) return q;
         if (!q.questionId || !responseMap[q.questionId]) return q;
         applied++;
         const serverData = responseMap[q.questionId];
@@ -47,12 +50,102 @@ export function applyServerResponsesPreservingLocalNotes(checklist, responseMap,
           ...q,
           status: serverData.status,
           notes,
+          serverUpdatedAt: serverData.updated_at || q.serverUpdatedAt || null,
         };
       });
     });
   });
 
   return applied;
+}
+
+export function checklistQuestionBindSignature(checklist) {
+  let total = 0;
+  let withId = 0;
+  if (!checklist) return '0:0';
+  Object.values(checklist).forEach((normData) => {
+    if (!normData || typeof normData !== 'object') return;
+    Object.values(normData).forEach((clauseData) => {
+      clauseData?.questions?.forEach((q) => {
+        total += 1;
+        if (q?.questionId != null && q.questionId !== '') withId += 1;
+      });
+    });
+  });
+  return `${total}:${withId}`;
+}
+
+export function countPendingMatches(checklist, pendingQuestions) {
+  if (!checklist || !Array.isArray(pendingQuestions) || pendingQuestions.length === 0) return 0;
+  const byId = new Map();
+  const byClause = new Map();
+  pendingQuestions.forEach((item) => {
+    if (item?.questionId != null && item.questionId !== '') byId.set(String(item.questionId), item);
+    if (item?.clauseRef) byClause.set(String(item.clauseRef), item);
+  });
+  let matches = 0;
+  Object.values(checklist).forEach((normData) => {
+    if (!normData || typeof normData !== 'object') return;
+    Object.values(normData).forEach((clauseData) => {
+      clauseData?.questions?.forEach((q) => {
+        const pending = (q.questionId != null && byId.get(String(q.questionId)))
+          || (q.clauseRef && byClause.get(String(q.clauseRef)));
+        if (pending) matches += 1;
+      });
+    });
+  });
+  return matches;
+}
+
+export function applyPendingAnswersToChecklist(checklist, pendingQuestions) {
+  if (!checklist || !Array.isArray(pendingQuestions) || pendingQuestions.length === 0) return checklist;
+  const byId = new Map();
+  const byClause = new Map();
+  pendingQuestions.forEach((item) => {
+    if (item?.questionId != null && item.questionId !== '') byId.set(String(item.questionId), item);
+    if (item?.clauseRef) byClause.set(String(item.clauseRef), item);
+  });
+  Object.values(checklist).forEach((normData) => {
+    if (!normData || typeof normData !== 'object') return;
+    Object.values(normData).forEach((clauseData) => {
+      if (!clauseData?.questions) return;
+      clauseData.questions = clauseData.questions.map((q) => {
+        const pending = (q.questionId != null && byId.get(String(q.questionId)))
+          || (q.clauseRef && byClause.get(String(q.clauseRef)));
+        if (!pending) return q;
+        const status = pending.status || 'NOT_ANSWERED';
+        return {
+          ...q,
+          status,
+          notes: pending.notes ?? q.notes ?? '',
+        };
+      });
+    });
+  });
+  return checklist;
+}
+
+export function applyServerWinnersToChecklist(checklist, conflicts) {
+  if (!checklist || !Array.isArray(conflicts) || conflicts.length === 0) return checklist;
+  const byId = new Map(conflicts.map((item) => [String(item.question_id), item]));
+  Object.values(checklist).forEach((normData) => {
+    if (!normData || typeof normData !== 'object') return;
+    Object.values(normData).forEach((clauseData) => {
+      if (!clauseData?.questions) return;
+      clauseData.questions = clauseData.questions.map((q) => {
+        const winner = byId.get(String(q.questionId));
+        if (!winner?.server) return q;
+        const status = winner.server.conformity_status || 'NOT_ANSWERED';
+        return {
+          ...q,
+          status,
+          notes: winner.server.notes ?? '',
+          serverUpdatedAt: winner.server.updated_at || q.serverUpdatedAt || null,
+        };
+      });
+    });
+  });
+  return checklist;
 }
 
 function countChecklistProgress(checklist) {

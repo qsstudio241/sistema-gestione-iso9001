@@ -56,7 +56,8 @@ function createChecklistSaveScheduler({
     let phase = 'idle';
     if (error > 0) phase = 'error';
     else if (retrying > 0) phase = 'retrying';
-    else if (saving > 0 || pending > 0) phase = 'saving';
+    else if (saving > 0) phase = 'saving';
+    else if (pending > 0) phase = 'pending';
     else if (saved > 0) phase = 'saved';
     return {
       phase,

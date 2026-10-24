@@ -4,20 +4,28 @@
  * Sistema Gestione ISO 9001 - QS Studio
  */
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { useStorage } from "../contexts/StorageContext";
 import { useAttachmentManager } from "../hooks/useAttachmentManager";
 import { CHECKLIST_STATUS } from "../data/auditDataModel";
 import { calculateNormCompletion } from "../utils/auditUtils";
 import { getStandardByKey } from "../data/standardsRegistry";
 import apiService from "../services/apiService";
-import { syncService } from "../services/syncService";
+import { toNumericChecklistQuestionId } from "../utils/attachmentQuestionId";
 import { QuestionCard as UniversalQuestionCard } from "./QuestionCard";
 import { saveChecklistFocus, buildChecklistAskAiFocus } from "../utils/aiAssistantContext";
+import { eventForAnswer } from "../utils/decideAuditSync";
 import {
+  resumeChecklistPendingSends,
   scheduleChecklistQuestionSave,
   subscribeChecklistSave,
 } from "../utils/checklistQuestionSave";
+import { readPending } from "../utils/checklistPendingStore";
+import {
+  applyPendingAnswersToChecklist,
+  checklistQuestionBindSignature,
+  countPendingMatches,
+} from "../utils/checklistTextMerge";
 import AskAiButton from "./AskAiButton";
 import "./ChecklistModule.css";
 
@@ -26,6 +34,22 @@ import "./ChecklistModule.css";
  * "ISO_9001_2015" → "ISO_9001", "ISO_14001_2015" → "ISO_14001", ecc.
  * Il dato viene salvato sempre con la chiave breve (es. "ISO_9001").
  */
+function queueQuestionSave(auditUuid, questionRow, { status, notes, clauseRef }) {
+  const numericQId = toNumericChecklistQuestionId(questionRow?.questionId);
+  const ref = String(clauseRef || questionRow?.clauseRef || "").trim();
+  if (!auditUuid || (numericQId == null && !ref)) return false;
+  scheduleChecklistQuestionSave({
+    auditUuid,
+    questionId: numericQId ?? null,
+    clauseRef: ref || null,
+    status,
+    notes,
+    organizationId: apiService.getStoredUser?.()?.organization_id ?? null,
+    baseUpdatedAt: questionRow?.serverUpdatedAt || null,
+  });
+  return true;
+}
+
 function normalizeChecklistKey(normCode) {
   const mapping = {
     ISO_9001_2015:  "ISO_9001",
@@ -67,6 +91,28 @@ function ChecklistModule({ defaultNorm = "ISO_9001", readOnly = false, forceExpa
   const [questionSavePhase, setQuestionSavePhase] = useState("idle");
 
   useEffect(() => subscribeChecklistSave((snap) => setQuestionSavePhase(snap.phase)), []);
+  const pendingAppliedRef = useRef("");
+  const checklistBind = useMemo(
+    () => checklistQuestionBindSignature(currentAudit?.checklist),
+    [currentAudit?.checklist],
+  );
+  useEffect(() => {
+    resumeChecklistPendingSends();
+    const auditUuid = currentAudit?.metadata?.id || currentAudit?.id;
+    if (!auditUuid) return;
+    const key = String(auditUuid).toLowerCase();
+    if (pendingAppliedRef.current === key) return;
+    const organizationId = apiService.getStoredUser?.()?.organization_id ?? null;
+    const pending = Object.values(readPending(organizationId, auditUuid).questions || {});
+    if (pending.length === 0) return;
+    if (countPendingMatches(currentAudit?.checklist, pending) === 0) return;
+    pendingAppliedRef.current = key;
+    updateCurrentAudit((audit) => {
+      const copy = JSON.parse(JSON.stringify(audit));
+      applyPendingAnswersToChecklist(copy.checklist, pending);
+      return copy;
+    }, { event: "refresh_draft" });
+  }, [currentAudit?.metadata?.id, currentAudit?.id, currentAudit?.checklist, checklistBind, updateCurrentAudit]);
 
   // Hook gestione allegati
   const attachments = useAttachmentManager(currentAudit, updateCurrentAudit);
@@ -337,38 +383,21 @@ function ChecklistModule({ defaultNorm = "ISO_9001", readOnly = false, forceExpa
       const auditUuidForEvent = currentAudit?.metadata?.id || currentAudit?.id;
       const questionRow = currentAudit?.checklist?.[checklistKey]?.[clauseId]
         ?.questions?.find((q) => q.id === questionId);
-      const numericQId = questionRow?.questionId ?? null;
-      if (auditUuidForEvent && numericQId != null) {
-        const currentNotes = questionRow?.notes ?? null;
-        const currentStatus = questionRow?.status ?? null;
-        let newStatus =
-          field === "status"
-            ? (value === "NOT_ANSWERED" || value == null ? null : value)
-            : (currentStatus === "NOT_ANSWERED" ? null : currentStatus);
-        let newNotes = field === "notes" ? value : currentNotes;
-        if (typeof newNotes === "string" && newNotes.length > 5000) {
-          newNotes = newNotes.substring(0, 5000);
-        }
-        scheduleChecklistQuestionSave({
-          auditUuid: auditUuidForEvent,
-          questionId: numericQId,
-          status: newStatus,
-          notes: newNotes,
-        });
-        deferredQuestionSave = true;
-      } else if (import.meta.env.VITE_SYNC_MODE === "events") {
-        const auditUuidLegacy = currentAudit?.metadata?.id || currentAudit?.id;
-        if (auditUuidLegacy) {
-          const questionRowLegacy = currentAudit?.checklist?.[checklistKey]?.[clauseId]
-            ?.questions?.find((q) => q.id === questionId);
-          syncService.enqueueResponseEvent(
-            auditUuidLegacy,
-            questionRowLegacy?.questionId,
-            field === "status" ? value : questionRowLegacy?.status,
-            field === "notes" ? value : questionRowLegacy?.notes,
-          ).catch(() => {});
-        }
+      const currentNotes = questionRow?.notes ?? null;
+      const currentStatus = questionRow?.status ?? null;
+      let newStatus =
+        field === "status"
+          ? (value === "NOT_ANSWERED" || value == null ? null : value)
+          : (currentStatus === "NOT_ANSWERED" ? null : currentStatus);
+      let newNotes = field === "notes" ? value : currentNotes;
+      if (typeof newNotes === "string" && newNotes.length > 5000) {
+        newNotes = newNotes.substring(0, 5000);
       }
+      deferredQuestionSave = queueQuestionSave(auditUuidForEvent, questionRow, {
+        status: newStatus,
+        notes: newNotes,
+        clauseRef: questionRow?.clauseRef || clauseForFocus?.clauseRef || clauseId,
+      });
     }
 
     // Percorso legacy: deselect diretto al server (bypassa sync queue per evitare dedup-override).
@@ -482,10 +511,25 @@ function ChecklistModule({ defaultNorm = "ISO_9001", readOnly = false, forceExpa
       }
 
       return updatedAudit;
-    }, { skipSync: deferredQuestionSave });
+    }, {
+      event: deferredQuestionSave
+        ? eventForAnswer(currentAudit?.metadata?.status)
+        : "scheda",
+    });
   };
 
   const handleSatisfiedByChange = (clauseId, questionId, satData) => {
+    const auditUuidForEvent = currentAudit?.metadata?.id || currentAudit?.id;
+    const questionRow = currentAudit?.checklist?.[checklistKey]?.[clauseId]
+      ?.questions?.find((q) => q.id === questionId);
+    const becomesConform = satData?.standard && (!questionRow?.status || questionRow.status === "NOT_ANSWERED");
+    if (becomesConform) {
+      queueQuestionSave(auditUuidForEvent, questionRow, {
+        status: "C",
+        notes: questionRow?.notes ?? null,
+        clauseRef: questionRow?.clauseRef || clauseId,
+      });
+    }
     updateCurrentAudit((audit) => {
       const updatedAudit = { ...audit };
       const clause = updatedAudit.checklist?.[checklistKey]?.[clauseId];
@@ -503,6 +547,10 @@ function ChecklistModule({ defaultNorm = "ISO_9001", readOnly = false, forceExpa
 
       updatedAudit.metadata.lastModified = new Date().toISOString();
       return updatedAudit;
+    }, {
+      event: becomesConform
+        ? eventForAnswer(currentAudit?.metadata?.status)
+        : "refresh_draft",
     });
   };
 
@@ -517,6 +565,9 @@ function ChecklistModule({ defaultNorm = "ISO_9001", readOnly = false, forceExpa
             <span className="stat-badge">
               {stats.answered}/{stats.total} domande
             </span>
+            {questionSavePhase === "pending" && (
+              <span className="stat-badge saving">In attesa di invio</span>
+            )}
             {questionSavePhase === "saving" && (
               <span className="stat-badge saving">Salvataggio…</span>
             )}

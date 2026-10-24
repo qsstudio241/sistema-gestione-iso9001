@@ -9,6 +9,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import apiService from '../services/apiService';
 import { syncService } from '../services/syncService';
+import { countAllPending } from '../utils/checklistPendingStore';
 import './ConnectionStatus.css';
 
 // Timeout health check: più lungo da mobile (connessioni spesso lente/instabili)
@@ -113,7 +114,7 @@ function ConnectionStatus() {
         const refresh = async () => {
             try {
                 const n = await syncService.getQueueSize();
-                if (!cancelled) setPendingCount(n);
+                if (!cancelled) setPendingCount(Math.max(n, countAllPending()));
             } catch {
                 if (!cancelled) setPendingCount(0);
             }

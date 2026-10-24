@@ -1,5 +1,6 @@
 const {
     isChecklistWrite,
+    isAiAssistRequest,
     retryAfterSeconds,
     rateLimitHandler,
 } = require('./rateLimitPolicy');
@@ -26,6 +27,29 @@ describe('isChecklistWrite', () => {
             method: 'POST',
             path: '/api/v1/audits/sync',
         })).toBe(true);
+    });
+
+    it('l\'assistente AI non è una scrittura checklist', () => {
+        expect(isChecklistWrite({
+            method: 'POST',
+            path: '/api/v1/ai/suggest',
+        })).toBe(false);
+    });
+});
+
+describe('isAiAssistRequest', () => {
+    it('conclusioni, feedback, domanda e chat hanno il tetto AI', () => {
+        expect(isAiAssistRequest({ method: 'POST', path: '/api/v1/ai/suggest' })).toBe(true);
+        expect(isAiAssistRequest({ method: 'POST', baseUrl: '/api/v1', path: '/ai/feedback' })).toBe(true);
+        expect(isAiAssistRequest({ method: 'POST', path: '/api/v1/ai/question-assistant' })).toBe(true);
+        expect(isAiAssistRequest({ method: 'POST', path: '/api/v1/ai/chat' })).toBe(true);
+    });
+
+    it('letture, salvataggi checklist e altre API non consumano il tetto AI', () => {
+        expect(isAiAssistRequest({ method: 'GET', path: '/api/v1/ai/suggest' })).toBe(false);
+        expect(isAiAssistRequest({ method: 'POST', path: '/api/v1/audits/sync' })).toBe(false);
+        expect(isAiAssistRequest({ method: 'POST', path: '/api/v1/audits/35234/responses/bulk' })).toBe(false);
+        expect(isAiAssistRequest({ method: 'GET', path: '/api/v1/audits' })).toBe(false);
     });
 });
 

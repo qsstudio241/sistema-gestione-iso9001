@@ -1,0 +1,81 @@
+/**
+ * Conflitto per singola domanda (ADR-008: ultima modifica, niente rifiuto dell'evento).
+ * La proiezione sulla riga corrente non sovrascrive una versione già sul server
+ * se l'orario della modifica in arrivo è precedente e il testo è diverso.
+ * Stesso contenuto = ritento, non è un conflitto.
+ * Stessa decisione lato client: decideAuditSync, evento other_device.
+ */
+
+function normStatus(value) {
+    if (value == null || value === '' || value === 'NOT_ANSWERED') return null;
+    return String(value);
+}
+
+function normNotes(value) {
+    if (value == null) return '';
+    return String(value);
+}
+
+function toMs(value) {
+    if (value == null || value === '') return null;
+    const t = new Date(value).getTime();
+    return Number.isFinite(t) ? t : null;
+}
+
+/** Un orario client più di due minuti avanti non diventa la versione della riga. */
+const FUTURE_SKEW_MS = 2 * 60 * 1000;
+
+function versionDateForWrite(clientTs, now = new Date()) {
+    const ms = toMs(clientTs);
+    if (ms == null) return null;
+    if (ms > now.getTime() + FUTURE_SKEW_MS) return null;
+    return new Date(ms);
+}
+
+function decideResponseProjection({
+    incomingClientTs,
+    incomingStatus,
+    incomingNotes,
+    incomingDeviceId = null,
+    existing = null,
+} = {}) {
+    if (!existing) {
+        return { apply: true, conflict: null };
+    }
+
+    const same = normStatus(incomingStatus) === normStatus(existing.conformity_status)
+        && normNotes(incomingNotes) === normNotes(existing.notes);
+    if (same) {
+        // Il chiamante non deve riscrivere la riga: un MERGE identico
+        // sposterebbe updated_at e farebbe sembrare vecchia la modifica successiva.
+        return { apply: true, conflict: null, idempotent: true };
+    }
+
+    const incomingMs = toMs(incomingClientTs);
+    const serverMs = toMs(existing.updated_at);
+    if (incomingMs == null || serverMs == null || incomingMs >= serverMs) {
+        return { apply: true, conflict: null };
+    }
+
+    return {
+        apply: false,
+        conflict: {
+            question_id: existing.question_id ?? null,
+            reason: 'server_newer',
+            server: {
+                conformity_status: existing.conformity_status ?? null,
+                notes: existing.notes ?? null,
+                updated_at: existing.updated_at,
+                device_id: existing.device_id ?? null,
+            },
+            client: {
+                conformity_status: normStatus(incomingStatus),
+                notes: normNotes(incomingNotes),
+                client_ts: incomingClientTs,
+                device_id: incomingDeviceId ?? null,
+            },
+        },
+    };
+}
+
+module.exports = { decideResponseProjection, versionDateForWrite };

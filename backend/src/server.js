@@ -35,6 +35,7 @@ const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 const {
     isChecklistWrite,
+    isAiAssistRequest,
     userOrIpKey,
     rateLimitHandler,
 } = require('./middleware/rateLimitPolicy');
@@ -205,8 +206,21 @@ const apiLimiter = rateLimit({
     message:  { error: 'Troppe richieste. Riprova tra qualche minuto.', code: 'RATE_LIMIT_API' },
     standardHeaders: true,
     legacyHeaders:   false,
-    // Le scritture checklist hanno un tetto proprio: non consumano questo.
-    skip: (req) => rateLimitDisabled || isChecklistWrite(req),
+    // Checklist e Assistente AI hanno un tetto proprio: non consumano questo.
+    skip: (req) => rateLimitDisabled || isChecklistWrite(req) || isAiAssistRequest(req),
+    keyGenerator: userOrIpKey,
+    handler: rateLimitHandler,
+});
+
+// Assistente AI (conclusioni, chat, domanda). Un audit che salva tanto
+// non deve far rispondere «Troppe richieste» all'assistente.
+const aiAssistLimiter = rateLimit({
+    windowMs: parseInt(process.env.RATE_LIMIT_AI_WINDOW_MS) || 15 * 60 * 1000,
+    max:      parseInt(process.env.RATE_LIMIT_AI_MAX)       || 60,
+    message:  { error: 'Troppe richieste all\'assistente. Riprova tra qualche minuto.', code: 'RATE_LIMIT_AI' },
+    standardHeaders: true,
+    legacyHeaders:   false,
+    skip: (req) => rateLimitDisabled || !isAiAssistRequest(req),
     keyGenerator: userOrIpKey,
     handler: rateLimitHandler,
 });
@@ -288,6 +302,7 @@ app.use(API_BASE, smokeRoutes);
 app.use(`${API_BASE}/auth`, authLimiter);   // Stretto su login/register
 app.use(API_BASE, apiLimiter);              // Letture e altre API
 app.use(API_BASE, checklistWriteLimiter);   // Scritture checklist, tetto separato
+app.use(API_BASE, aiAssistLimiter);         // Assistente AI, tetto separato
 
 // Endpoint autenticati
 app.use(API_BASE, authRoutes);
