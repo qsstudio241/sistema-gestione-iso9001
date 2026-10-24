@@ -16,10 +16,7 @@ import { useStorage } from "../contexts/StorageContext";
 import { eventForAnswer } from "../utils/decideAuditSync";
 import { useAttachmentManager } from "../hooks/useAttachmentManager";
 import { QuestionCard, STATUS_BUTTONS } from "./QuestionCard";
-import AskAiButton from "./AskAiButton";
 import {
-  saveChecklistFocus,
-  buildChecklistAskAiFocus,
   inferLegalChecklistStandardKey,
   inferStandardKeyFromAudit,
 } from "../utils/aiAssistantContext";
@@ -389,13 +386,17 @@ function CustomChecklistAuditView({ audit, onUpdate, readOnly = false }) {
 
           {(sec.items || []).map((item) => {
             // Adatta item custom → forma question attesa da QuestionCard
+            const inferredStd =
+              inferLegalChecklistStandardKey(checklist) ||
+              inferStandardKeyFromAudit(audit);
             const question = {
               id: item.id,
               text: `${item.code} - ${item.title}`,
               status: statuses[item.id] || null,
-              // notes: primo blocco testo (campo principale item custom)
               notes: responses[item.id]?.[0]?.text || "",
-              questionId: null, // custom items non hanno questionId numerico ISO
+              questionId: null,
+              clauseRef: item.code,
+              standardCode: inferredStd || undefined,
             };
 
             return (
@@ -404,6 +405,8 @@ function CustomChecklistAuditView({ audit, onUpdate, readOnly = false }) {
                 question={question}
                 displayRef=""
                 checklistKey="custom"
+                standardCode={inferredStd || null}
+                aiLabel={item.code ? `Chiedi all'AI \u2014 ${item.code}` : "Chiedi all'AI"}
                 showStatusButtons={!!checklist?.has_outcome_buttons}
                 {...(item.response_type === "legal_check"
                   ? { statusOptions: LEGAL_STATUS_OPTIONS }
@@ -412,12 +415,10 @@ function CustomChecklistAuditView({ audit, onUpdate, readOnly = false }) {
                 onStatusChange={(code) => handleStatusChange(item.id, code)}
                 onNotesChange={(text) => {
                   updateBlock(item.id, 0, "text", text);
-                  // Salva con debounce 800ms: evita una chiamata API per ogni tasto
                   const debKey = `notes_${item.id}`;
                   if (notesDebounceRef.current[debKey]) clearTimeout(notesDebounceRef.current[debKey]);
                   notesDebounceRef.current[debKey] = setTimeout(() => {
                     delete notesDebounceRef.current[debKey];
-                    // Leggi il valore corrente dal ref (non dallo state che potrebbe essere stale nel closure)
                     const currentBlocks = (responsesRef.current[item.id] || []);
                     const updatedBlocks = currentBlocks.length > 0
                       ? currentBlocks.map((b, i) => i === 0 ? { ...b, text } : b)
@@ -429,32 +430,7 @@ function CustomChecklistAuditView({ audit, onUpdate, readOnly = false }) {
                 auditId={auditId}
                 auditUuid={auditUuid}
                 customItemId={item.id}
-              >
-                {!readOnly && (
-                  <AskAiButton
-                    label={`Chiedi all'AI \u2014 ${item.code}`}
-                    onBeforeNavigate={() =>
-                      saveChecklistFocus(
-                        auditUuid,
-                        buildChecklistAskAiFocus({
-                          audit,
-                          standardKey:
-                            inferLegalChecklistStandardKey(checklist) ||
-                            inferStandardKeyFromAudit(audit),
-                          clauseRef: item.code,
-                          questionId: String(item.id),
-                          questionText: item.title || null,
-                          customItemId: item.id,
-                          legalFocus:
-                            item.response_type === "legal_check" ||
-                            !!inferLegalChecklistStandardKey(checklist),
-                          referenceText: sec.reference_text || null,
-                        })
-                      )
-                    }
-                  />
-                )}
-              </QuestionCard>
+              />
             );
           })}
 
