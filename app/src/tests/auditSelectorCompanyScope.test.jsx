@@ -154,51 +154,57 @@ describe("AuditSelector — Ambito al posto del filtro Azienda", () => {
       storageState.currentAuditId = id;
     });
     const { rerender } = render(<AuditSelector />);
-    const details = document.querySelector("details.audit-option-details");
-    details.open = true;
-
-    const row = screen.getByRole("button", { name: /Mason Demo · .* · 2026-01 · In corso/ });
+    const summary = screen.getByRole("button", { name: "Seleziona un audit" });
+    await user.click(summary);
+    const panel = document.querySelector(".audit-option-panel");
+    const row = within(panel).getByRole("button", { name: /Mason Demo · .* · 2026-01 · In corso/ });
     expect(row).not.toHaveAttribute("role");
+
     await user.click(row);
 
     expect(storageState.switchAudit).toHaveBeenCalledWith("a-mason");
-    expect(details.open).toBe(false);
-    expect(details.querySelector("summary")).toHaveFocus();
+    expect(screen.queryByRole("button", { name: "Chiudi elenco audit" })).toBeNull();
+    expect(summary).toHaveAttribute("aria-expanded", "false");
+    expect(summary).toHaveFocus();
     rerender(<AuditSelector />);
-    expect(details.querySelector("summary").textContent).toMatch(/Mason Demo · .* · 2026-01 · In corso/);
-    expect(screen.getByRole("button", { name: /Mason Demo · .* · 2026-01 · In corso/ })).toHaveAttribute("aria-current", "true");
-    expect(screen.getByRole("button", { name: /Admin_test · .* · 2026-02 · In corso/ })).not.toHaveAttribute("aria-current");
+    expect(summary.textContent).toMatch(/Mason Demo · .* · 2026-01 · In corso/);
+    await user.click(summary);
+    const reopened = document.querySelector(".audit-option-panel");
+    expect(within(reopened).getByRole("button", { name: /Mason Demo · .* · 2026-01 · In corso/ })).toHaveAttribute("aria-current", "true");
+    expect(within(reopened).getByRole("button", { name: /Admin_test · .* · 2026-02 · In corso/ })).not.toHaveAttribute("aria-current");
   });
 
   it("elenco mobile: Esc chiude e riporta il focus sul summary", async () => {
     const user = userEvent.setup();
     render(<AuditSelector />);
-    const details = document.querySelector("details.audit-option-details");
-    const summary = details.querySelector("summary");
-    details.open = true;
-    screen.getByRole("button", { name: /Mason Demo · .* · 2026-01 · In corso/ }).focus();
+    const summary = screen.getByRole("button", { name: "Seleziona un audit" });
+    await user.click(summary);
+    within(document.querySelector(".audit-option-panel")).getByRole("button", { name: /Mason Demo · .* · 2026-01 · In corso/ }).focus();
 
     await user.keyboard("{Escape}");
 
-    expect(details.open).toBe(false);
+    expect(screen.queryByRole("button", { name: "Chiudi elenco audit" })).toBeNull();
     expect(summary).toHaveFocus();
     expect(storageState.switchAudit).not.toHaveBeenCalled();
   });
 
-  it("elenco mobile: il tocco fuori chiude senza attivare il controllo sotto", async () => {
+  it("elenco mobile: il velo chiude senza attivare Nuovo, e il tocco dopo funziona", async () => {
     const user = userEvent.setup();
     scopeState.companyId = "11";
     scopeState.scopeCompanyName = "Mason Demo";
     render(<AuditSelector />);
-    const details = document.querySelector("details.audit-option-details");
-    details.open = true;
+    const summary = screen.getByRole("button", { name: "Seleziona un audit" });
+    await user.click(summary);
 
-    await user.click(screen.getByRole("button", { name: /Nuovo/ }));
+    await user.click(screen.getByRole("button", { name: "Chiudi elenco audit" }));
 
-    expect(details.open).toBe(false);
+    expect(screen.queryByRole("button", { name: "Chiudi elenco audit" })).toBeNull();
     expect(screen.queryByLabelText("Azienda non modificabile")).toBeNull();
     expect(storageState.switchAudit).not.toHaveBeenCalled();
-    expect(details.querySelector("summary")).toHaveFocus();
+    expect(summary).toHaveFocus();
+
+    await user.click(screen.getByRole("button", { name: /Nuovo/ }));
+    expect(screen.getByLabelText("Azienda non modificabile")).toBeInTheDocument();
   });
 
   it("Tutto lo studio: Nuovo è disabilitato (gate Ambito)", () => {

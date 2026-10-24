@@ -73,52 +73,20 @@ function AuditSelector() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [isReauditMode, setIsReauditMode] = useState(false);
   const [showClosedAudits, setShowClosedAudits] = useState(false);
-  const mobileListRef = useRef(null);
+  const [mobileListOpen, setMobileListOpen] = useState(false);
+  const mobileSummaryRef = useRef(null);
+  const restoreMobileFocusRef = useRef(false);
 
   const closeMobileAuditList = useCallback(() => {
-    const root = mobileListRef.current;
-    if (root) root.open = false;
-    root?.querySelector("summary")?.focus();
+    restoreMobileFocusRef.current = true;
+    setMobileListOpen(false);
   }, []);
 
   useEffect(() => {
-    let swallowClick = null;
-    const dropSwallow = () => {
-      if (!swallowClick) return;
-      document.removeEventListener("click", swallowClick, true);
-      swallowClick = null;
-    };
-    const onKeyDown = (event) => {
-      if (event.key !== "Escape") return;
-      const root = mobileListRef.current;
-      if (!root?.open) return;
-      event.preventDefault();
-      event.stopPropagation();
-      closeMobileAuditList();
-    };
-    const onPointerDown = (event) => {
-      const root = mobileListRef.current;
-      if (!root?.open) return;
-      if (root.contains(event.target)) return;
-      event.preventDefault();
-      event.stopPropagation();
-      closeMobileAuditList();
-      dropSwallow();
-      swallowClick = (clickEvent) => {
-        clickEvent.preventDefault();
-        clickEvent.stopPropagation();
-        dropSwallow();
-      };
-      document.addEventListener("click", swallowClick, true);
-    };
-    document.addEventListener("keydown", onKeyDown);
-    document.addEventListener("pointerdown", onPointerDown, true);
-    return () => {
-      document.removeEventListener("keydown", onKeyDown);
-      document.removeEventListener("pointerdown", onPointerDown, true);
-      dropSwallow();
-    };
-  }, [closeMobileAuditList]);
+    if (mobileListOpen || !restoreMobileFocusRef.current) return;
+    restoreMobileFocusRef.current = false;
+    mobileSummaryRef.current?.focus();
+  }, [mobileListOpen]);
 
   // Ordina audit per numero (più recente prima) - filtro audit validi
   const validAudits = audits.filter((audit) => audit && audit.metadata);
@@ -298,25 +266,51 @@ function AuditSelector() {
                   </option>
                 ))}
               </select>
-              <details ref={mobileListRef} className="audit-option-details">
-                <summary className="audit-option-summary">{selectedOptionLabel}</summary>
-                <div className="audit-option-panel">
-                  {auditOptionRows.map((row) => {
-                    const isCurrent = row.auditId === currentAuditId;
-                    return (
-                      <button
-                        key={row.auditId}
-                        type="button"
-                        aria-current={isCurrent ? "true" : undefined}
-                        className={`audit-option-item${isCurrent ? " is-current" : ""}`}
-                        onClick={() => handleMobileAuditPick(row.auditId)}
-                      >
-                        {row.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </details>
+              <div
+                className="audit-option-details"
+                onKeyDown={(event) => {
+                  if (event.key !== "Escape" || !mobileListOpen) return;
+                  event.preventDefault();
+                  event.stopPropagation();
+                  closeMobileAuditList();
+                }}
+              >
+                <button
+                  type="button"
+                  ref={mobileSummaryRef}
+                  className="audit-option-summary"
+                  aria-expanded={mobileListOpen}
+                  onClick={() => setMobileListOpen((open) => !open)}
+                >
+                  {selectedOptionLabel}
+                </button>
+                {mobileListOpen && (
+                  <>
+                    <button
+                      type="button"
+                      className="audit-option-backdrop"
+                      aria-label="Chiudi elenco audit"
+                      onClick={closeMobileAuditList}
+                    />
+                    <div className="audit-option-panel">
+                      {auditOptionRows.map((row) => {
+                        const isCurrent = row.auditId === currentAuditId;
+                        return (
+                          <button
+                            key={row.auditId}
+                            type="button"
+                            aria-current={isCurrent ? "true" : undefined}
+                            className={`audit-option-item${isCurrent ? " is-current" : ""}`}
+                            onClick={() => handleMobileAuditPick(row.auditId)}
+                          >
+                            {row.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
             {hasAnyClosedAudit && (
               <div className="audit-filter-field audit-show-closed-wrap">

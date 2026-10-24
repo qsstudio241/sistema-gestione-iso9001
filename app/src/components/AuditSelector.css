@@ -126,22 +126,37 @@
 }
 
 .audit-option-summary {
-  list-style: none;
+  display: block;
+  width: 100%;
+  position: relative;
+  z-index: 2;
   cursor: pointer;
   padding: 10px 12px;
   border: 1px solid #ddd;
   border-radius: 5px;
   background: white;
+  color: inherit;
+  font: inherit;
   font-size: 15px;
   line-height: 1.35;
+  text-align: left;
   overflow-wrap: anywhere;
 }
 
-.audit-option-summary::-webkit-details-marker {
-  display: none;
+.audit-option-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: default;
 }
 
 .audit-option-panel {
+  position: relative;
+  z-index: 2;
   margin-top: 6px;
   border: 1px solid #ddd;
   border-radius: 5px;
