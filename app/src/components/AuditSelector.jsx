@@ -14,10 +14,10 @@ import {
   resolveNumericCompanyScope,
 } from "../utils/auditCompanyScope";
 import {
-  formatAuditPeriodLabel,
   normalizeAuditDateEndForStorage,
   validateAuditDateRangeClient,
 } from "../utils/auditDatePeriod";
+import { formatAuditOptionLabel } from "../utils/auditOptionLabel";
 import apiService from "../services/apiService";
 import "./AuditSelector.css";
 
@@ -224,23 +224,25 @@ function AuditSelector() {
                 value={currentAuditId || ""}
                 onChange={handleAuditChange}
                 className="audit-dropdown"
+                title={
+                  currentAudit
+                    ? formatAuditOptionLabel(currentAudit.metadata, {
+                        outsideFilter: currentOutsideFilter,
+                      })
+                    : "Seleziona un audit"
+                }
               >
                 <option value="">-- Seleziona un audit --</option>
                 {auditsForSecondSelect.map((audit) => {
                   const auditId = audit.metadata?.id || audit.id;
                   const outsideFilter =
                     currentOutsideFilter && auditId === currentAuditId;
-                  const periodLabel = formatAuditPeriodLabel(
-                    audit.metadata.auditDate,
-                    audit.metadata.auditDateEnd
-                  );
+                  const optionLabel = formatAuditOptionLabel(audit.metadata, {
+                    outsideFilter,
+                  });
                   return (
-                    <option key={auditId} value={auditId}>
-                      {outsideFilter ? "⚠ " : ""}
-                      {audit.metadata.auditNumber} - {audit.metadata.clientName}
-                      {periodLabel ? ` [${periodLabel}]` : ""}{" "}
-                      ({audit.metadata.status})
-                      {outsideFilter ? " - fuori filtro" : ""}
+                    <option key={auditId} value={auditId} title={optionLabel}>
+                      {optionLabel}
                     </option>
                   );
                 })}

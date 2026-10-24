@@ -118,12 +118,12 @@ describe("AuditSelector — Ambito al posto del filtro Azienda", () => {
     const user = userEvent.setup();
     render(<AuditSelector />);
     const auditSelect = screen.getByLabelText(/^Audit$/i);
-    expect(within(auditSelect).getByRole("option", { name: /2026-01 - Mason Demo/ })).toBeInTheDocument();
-    expect(within(auditSelect).getByRole("option", { name: /2026-02 - Admin_test/ })).toBeInTheDocument();
+    expect(within(auditSelect).getByRole("option", { name: /Mason Demo · .* · 2026-01 · In corso/ })).toBeInTheDocument();
+    expect(within(auditSelect).getByRole("option", { name: /Admin_test · .* · 2026-02 · In corso/ })).toBeInTheDocument();
     expect(within(auditSelect).queryByRole("option", { name: /2025-09/ })).toBeNull();
 
     await user.click(screen.getByLabelText(/Mostra audit completati/i));
-    expect(within(auditSelect).getByRole("option", { name: /2025-09 - Admin_test/ })).toBeInTheDocument();
+    expect(within(auditSelect).getByRole("option", { name: /Admin_test · .* · 2025-09 · Completato/ })).toBeInTheDocument();
   });
 
   it("Ambito azienda: solo gli audit di quell'azienda", () => {
@@ -131,9 +131,11 @@ describe("AuditSelector — Ambito al posto del filtro Azienda", () => {
     scopeState.scopeCompanyName = "Admin_test";
     render(<AuditSelector />);
     const auditSelect = screen.getByLabelText(/^Audit$/i);
-    expect(within(auditSelect).getByRole("option", { name: /2026-02 - Admin_test/ })).toBeInTheDocument();
+    expect(within(auditSelect).getByRole("option", { name: /Admin_test · .* · 2026-02 · In corso/ })).toBeInTheDocument();
     expect(within(auditSelect).queryByRole("option", { name: /Mason Demo/ })).toBeNull();
     expect(screen.getByLabelText(/Mostra audit completati/i)).toBeInTheDocument();
+    const values = within(auditSelect).getAllByRole("option").map((opt) => opt.value);
+    expect(values).toEqual(["", "a-admin"]);
   });
 
   it("Ambito senza audit chiusi: la checkbox completati non compare", () => {
