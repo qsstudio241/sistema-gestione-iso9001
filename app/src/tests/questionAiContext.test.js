@@ -124,4 +124,24 @@ describe("questionAi history — una sola voce", () => {
     await Promise.resolve();
     expect(window.history.state[AI_PANEL_HISTORY_KEY]).toBe("q2");
   });
+
+  it("release + claim prima del popstate non chiude il nuovo pannello", () => {
+    const deferred = [];
+    const nativeBack = window.history.back.bind(window.history);
+    window.history.back = () => {
+      deferred.push(nativeBack);
+    };
+    try {
+      claimQuestionAiHistory("q1");
+      expect(window.history.state[AI_PANEL_HISTORY_KEY]).toBe("q1");
+      const started = releaseQuestionAiHistory("q1");
+      expect(started).toBe(true);
+      claimQuestionAiHistory("q1");
+      expect(deferred).toHaveLength(1);
+      deferred.shift()();
+      expect(window.history.state[AI_PANEL_HISTORY_KEY]).toBe("q1");
+    } finally {
+      window.history.back = nativeBack;
+    }
+  });
 });

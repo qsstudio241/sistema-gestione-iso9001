@@ -104,7 +104,11 @@ export default function QuestionAiPanel({
     if (typeof window === "undefined") return undefined;
     return subscribeQuestionAiHistory((result) => {
       const mine = questionKeyRef.current;
-      if (result.type === "claimed" && result.key && result.key !== mine) {
+      if (
+        (result.type === "claimed" || result.type === "reopened") &&
+        result.key &&
+        result.key !== mine
+      ) {
         collapse();
         return;
       }

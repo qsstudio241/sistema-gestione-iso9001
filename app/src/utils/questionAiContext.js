@@ -115,15 +115,18 @@ export function formatQuestionAiError(err) {
 }
 
 /**
- * Cronologia del pannello: una sola voce, condivisa tra le istanze.
- * Indietro chiude; unmount / cambio domanda / navigazione non lasciano residui.
+ * Cronologia del pannello: una sola voce, un solo meccanismo (stato + seq).
+ * Chiudi chiama history.back() e aspetta popstate — non legge history.state subito.
+ * Se si riapre mentre il back è in volo, la claim viene accodata e il pop non chiude il nuovo pannello.
  */
 const historyListeners = new Set();
 const historySession = {
+  seq: 0,
   key: null,
   href: null,
   pushed: false,
-  popping: false,
+  pendingCloseSeq: 0,
+  queuedKey: null,
   orphaned: false,
 };
 let historyPopListener = null;
@@ -142,19 +145,7 @@ function notifyQuestionAiHistory(result, event) {
   });
 }
 
-export function historyStateHasQuestionAi(state, questionKey) {
-  if (!questionKey) return !!readHistoryMarker(state);
-  return readHistoryMarker(state) === questionKey;
-}
-
-/**
- * Apre o riusa l'unica voce. Se un altro pannello era aperto, ne prende il posto.
- * @returns {boolean} true se è stata creata una voce nuova
- */
-export function claimQuestionAiHistory(questionKey) {
-  if (typeof window === "undefined" || !window.history || !questionKey) return false;
-  ensureQuestionAiHistoryListener();
-  historySession.orphaned = false;
+function applyHistoryClaim(questionKey) {
   const href = window.location.href;
   const prev = window.history.state;
   const existing = readHistoryMarker(prev);
@@ -162,7 +153,6 @@ export function claimQuestionAiHistory(questionKey) {
     ...(prev && typeof prev === "object" ? prev : {}),
     [AI_PANEL_HISTORY_KEY]: questionKey,
   };
-
   if (existing) {
     if (existing !== questionKey) {
       window.history.replaceState(nextState, "", href);
@@ -170,16 +160,42 @@ export function claimQuestionAiHistory(questionKey) {
     historySession.key = questionKey;
     historySession.href = href;
     historySession.pushed = true;
-    notifyQuestionAiHistory({ type: "claimed", key: questionKey });
     return false;
   }
-
   window.history.pushState(nextState, "", href);
   historySession.key = questionKey;
   historySession.href = href;
   historySession.pushed = true;
-  notifyQuestionAiHistory({ type: "claimed", key: questionKey });
   return true;
+}
+
+export function historyStateHasQuestionAi(state, questionKey) {
+  if (!questionKey) return !!readHistoryMarker(state);
+  return readHistoryMarker(state) === questionKey;
+}
+
+/**
+ * Apre o riusa l'unica voce. Se un back() è in volo, accoda e non tocca la history.
+ * @returns {boolean} true se è stata creata una voce nuova
+ */
+export function claimQuestionAiHistory(questionKey) {
+  if (typeof window === "undefined" || !window.history || !questionKey) return false;
+  ensureQuestionAiHistoryListener();
+  historySession.orphaned = false;
+  historySession.seq += 1;
+
+  if (historySession.pendingCloseSeq) {
+    historySession.queuedKey = questionKey;
+    historySession.key = questionKey;
+    historySession.pushed = true;
+    notifyQuestionAiHistory({ type: "claimed", key: questionKey });
+    return false;
+  }
+
+  historySession.queuedKey = null;
+  const created = applyHistoryClaim(questionKey);
+  notifyQuestionAiHistory({ type: "claimed", key: questionKey });
+  return created;
 }
 
 /** Compat: alias di claim (una sola voce). */
@@ -188,43 +204,38 @@ export function pushQuestionAiHistory(questionKey) {
 }
 
 /**
- * Toglie la voce se siamo ancora sull'URL del pannello.
- * @returns {boolean} true se ha chiamato history.back()
+ * Toglie la voce: solo history.back() + popstate (niente replaceState sincrono dopo back).
+ * @returns {boolean} true se ha chiamato history.back() o c'era già un back in volo
  */
 export function releaseQuestionAiHistory(questionKey) {
   if (typeof window === "undefined" || !window.history) return false;
-  if (!historySession.pushed) return false;
+
+  if (historySession.pendingCloseSeq) {
+    if (questionKey && historySession.queuedKey === questionKey) {
+      historySession.queuedKey = null;
+      historySession.pushed = false;
+      historySession.key = null;
+    }
+    return true;
+  }
+
+  if (!historySession.pushed && !readHistoryMarker(window.history.state)) return false;
   if (questionKey && historySession.key && historySession.key !== questionKey) return false;
 
   const marker = readHistoryMarker(window.history.state);
   const sameUrl = !historySession.href || window.location.href === historySession.href;
 
-  if (marker && sameUrl && (!questionKey || marker === questionKey)) {
-    historySession.popping = true;
+  if (marker && sameUrl && (!questionKey || marker === questionKey || marker === historySession.key)) {
+    historySession.pendingCloseSeq = historySession.seq;
+    historySession.queuedKey = null;
     historySession.pushed = false;
     historySession.key = null;
-    historySession.href = null;
     window.history.back();
-    // jsdom / stack vuoto: back() può non togliere il marker — pulizia in-place.
-    const still = readHistoryMarker(window.history.state);
-    if (still && (!questionKey || still === questionKey)) {
-      const prevState = window.history.state;
-      const cleaned = { ...(prevState && typeof prevState === "object" ? prevState : {}) };
-      delete cleaned[AI_PANEL_HISTORY_KEY];
-      window.history.replaceState(cleaned, "", window.location.href);
-      historySession.popping = false;
-      notifyQuestionAiHistory({ type: "self-close" });
-    }
     return true;
   }
 
   if (marker && !sameUrl) {
     historySession.orphaned = true;
-  } else if (marker) {
-    const prev = window.history.state;
-    const next = { ...(prev && typeof prev === "object" ? prev : {}) };
-    delete next[AI_PANEL_HISTORY_KEY];
-    window.history.replaceState(next, "", window.location.href);
   }
 
   historySession.pushed = false;
@@ -240,18 +251,32 @@ export function abandonQuestionAiHistory(questionKey) {
   if (typeof window === "undefined") return;
   const key = questionKey;
   queueMicrotask(() => {
+    if (historySession.queuedKey && historySession.queuedKey !== key) return;
     if (historySession.key && key && historySession.key !== key) return;
-    if (!historySession.pushed) return;
+    if (!historySession.pushed && !historySession.pendingCloseSeq) return;
     releaseQuestionAiHistory(key);
   });
 }
 
 export function consumeQuestionAiPop(event) {
-  if (historySession.popping) {
-    historySession.popping = false;
+  const marker = readHistoryMarker(event?.state);
+  const closeSeq = historySession.pendingCloseSeq;
+  historySession.pendingCloseSeq = 0;
+
+  if (historySession.queuedKey) {
+    const key = historySession.queuedKey;
+    historySession.queuedKey = null;
+    applyHistoryClaim(key);
+    return { type: "reopened", key };
+  }
+
+  if (closeSeq) {
+    historySession.pushed = false;
+    historySession.key = null;
+    historySession.href = null;
     return { type: "self-close" };
   }
-  const marker = readHistoryMarker(event?.state);
+
   if (historySession.orphaned && marker) {
     historySession.orphaned = false;
     historySession.pushed = false;
@@ -260,6 +285,7 @@ export function consumeQuestionAiPop(event) {
     window.history.back();
     return { type: "orphan-consume" };
   }
+
   if (!marker) {
     const wasOpen = historySession.pushed;
     historySession.pushed = false;
@@ -288,10 +314,12 @@ export function ensureQuestionAiHistoryListener() {
 
 /** Solo test: azzera sessione e listener. */
 export function resetQuestionAiHistoryForTests() {
+  historySession.seq = 0;
   historySession.key = null;
   historySession.href = null;
   historySession.pushed = false;
-  historySession.popping = false;
+  historySession.pendingCloseSeq = 0;
+  historySession.queuedKey = null;
   historySession.orphaned = false;
   historyListeners.clear();
   if (historyPopListener && typeof window !== "undefined") {

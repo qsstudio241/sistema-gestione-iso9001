@@ -149,6 +149,31 @@ describe("QuestionAiPanel Fase 1", () => {
       expect(window.history.state?.[AI_PANEL_HISTORY_KEY]).toBeFalsy();
     });
   });
+
+  it("Chiudi e riapri prima del popstate lascia il nuovo pannello aperto", async () => {
+    const user = userEvent.setup();
+    const deferred = [];
+    const nativeBack = window.history.back.bind(window.history);
+    window.history.back = () => {
+      deferred.push(nativeBack);
+    };
+    try {
+      render(<QuestionAiPanel question={question} hasLicense />);
+      await user.click(screen.getByRole("button", { name: /Chiedi all'AI/i }));
+      expect(await screen.findByText(/Come porre questa domanda/i)).toBeInTheDocument();
+      await user.click(screen.getByRole("button", { name: "Chiudi" }));
+      await user.click(screen.getByRole("button", { name: /Chiedi all'AI/i }));
+      expect(screen.getByText(/Come porre questa domanda/i)).toBeInTheDocument();
+      expect(deferred.length).toBeGreaterThan(0);
+      while (deferred.length) deferred.shift()();
+      await waitFor(() => {
+        expect(screen.getByText(/Come porre questa domanda/i)).toBeInTheDocument();
+      });
+      expect(window.history.state[AI_PANEL_HISTORY_KEY]).toBe("q-7");
+    } finally {
+      window.history.back = nativeBack;
+    }
+  });
 });
 
 afterEach(() => {
