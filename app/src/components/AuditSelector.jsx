@@ -125,6 +125,20 @@ function AuditSelector() {
     [buildAuditsForSecondSelect, showClosedAudits]
   );
 
+  const auditOptionRows = useMemo(
+    () => auditsForSecondSelect.map((audit) => {
+      const auditId = audit.metadata?.id || audit.id;
+      const outsideFilter = currentOutsideFilter && auditId === currentAuditId;
+      const label = formatAuditOptionLabel(audit.metadata, { outsideFilter });
+      return { auditId, label };
+    }),
+    [auditsForSecondSelect, currentOutsideFilter, currentAuditId]
+  );
+
+  const selectedOptionLabel = currentAudit
+    ? formatAuditOptionLabel(currentAudit.metadata, { outsideFilter: currentOutsideFilter })
+    : "Seleziona un audit";
+
   // === HANDLERS ===
 
   const handleAuditChange = (e) => {
@@ -224,29 +238,32 @@ function AuditSelector() {
                 value={currentAuditId || ""}
                 onChange={handleAuditChange}
                 className="audit-dropdown"
-                title={
-                  currentAudit
-                    ? formatAuditOptionLabel(currentAudit.metadata, {
-                        outsideFilter: currentOutsideFilter,
-                      })
-                    : "Seleziona un audit"
-                }
+                title={selectedOptionLabel}
               >
                 <option value="">-- Seleziona un audit --</option>
-                {auditsForSecondSelect.map((audit) => {
-                  const auditId = audit.metadata?.id || audit.id;
-                  const outsideFilter =
-                    currentOutsideFilter && auditId === currentAuditId;
-                  const optionLabel = formatAuditOptionLabel(audit.metadata, {
-                    outsideFilter,
-                  });
-                  return (
-                    <option key={auditId} value={auditId} title={optionLabel}>
-                      {optionLabel}
-                    </option>
-                  );
-                })}
+                {auditOptionRows.map((row) => (
+                  <option key={row.auditId} value={row.auditId} title={row.label}>
+                    {row.label}
+                  </option>
+                ))}
               </select>
+              <details className="audit-option-details">
+                <summary className="audit-option-summary">{selectedOptionLabel}</summary>
+                <div className="audit-option-panel">
+                  {auditOptionRows.map((row) => (
+                    <button
+                      key={row.auditId}
+                      type="button"
+                      role="option"
+                      aria-selected={row.auditId === currentAuditId}
+                      className={`audit-option-item${row.auditId === currentAuditId ? " is-current" : ""}`}
+                      onClick={() => switchAudit(row.auditId)}
+                    >
+                      {row.label}
+                    </button>
+                  ))}
+                </div>
+              </details>
             </div>
             {hasAnyClosedAudit && (
               <div className="audit-filter-field audit-show-closed-wrap">
