@@ -1,236 +1,204 @@
 /**
- * QuestionAiPanel — Pannello AI inline espandibile per singolo quesito checklist
- * 
- * 5 modalità operative:
- * - conformity_assessment: valuta esito C/NC/OSS/OM
- * - evidence_gap: identifica documenti mancanti
- * - norm_interpretation: spiega §clausola
- * - draft_notes: genera bozza Note audit
- * - om_opportunity: suggerisce miglioramenti
- * 
- * Props:
- * - question: { id, text, clauseRef, standardCode, status, notes }
- * - attachments: Array<{ id, name, type, extractedText? }>
- * - auditContext: { auditId, companyId, companyName }
- * - onNotesChange: (newNotes) => void
- * - onStatusChange: (newStatus) => void
- * - hasLicense: bool (licenza ai_chat attiva)
+ * QuestionAiPanel — Fase 1: un pulsante sulla domanda, risposta immediata, Chiudi/Esc/Indietro.
+ * Non naviga via. Non scrive Note/esito. Non invia allegati né anagrafica cliente.
  */
 
-import React, { useState } from 'react';
-import apiService from '../services/apiService';
-import './QuestionAiPanel.css';
-
-const MODE_OPTIONS = [
-  { mode: 'conformity_assessment', icon: '\u2696\uFE0F', label: 'Valuta' },
-  { mode: 'evidence_gap', icon: '\uD83D\uDCCB', label: 'Gap' },
-  { mode: 'norm_interpretation', icon: '\uD83D\uDCD6', label: 'Spiega' },
-  { mode: 'draft_notes', icon: '\u270D\uFE0F', label: 'Bozza' },
-  { mode: 'om_opportunity', icon: '\uD83D\uDCA1', label: 'Opportunità' },
-];
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import apiService from "../services/apiService";
+import AiDisclaimer from "./AiDisclaimer";
+import {
+  buildSuggestQuestionsPayload,
+  formatQuestionAiError,
+  historyStateHasQuestionAi,
+  pushQuestionAiHistory,
+} from "../utils/questionAiContext";
+import "./AskAiButton.css";
+import "./QuestionAiPanel.css";
 
 export default function QuestionAiPanel({
   question,
-  attachments = [],
-  auditContext = {},
-  onNotesChange,
-  onStatusChange,
+  standardCode,
+  standardLabel,
   hasLicense = false,
+  label,
 }) {
   const [expanded, setExpanded] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [response, setResponse] = useState(null);
+  const pushedRef = useRef(false);
+  const closingRef = useRef(false);
+  const requestIdRef = useRef(0);
 
-  if (!hasLicense) {
-    return null; // Nasconde completamente se licenza non attiva
-  }
+  const questionKey = String(
+    question?.id ?? question?.questionId ?? question?.clauseRef ?? "q"
+  );
+  const clauseRef = question?.clauseRef;
+  const buttonLabel =
+    label ||
+    (clauseRef ? `Chiedi all'AI \u2014 \u00A7${clauseRef}` : "Chiedi all'AI");
 
-  const handleModeClick = async (mode) => {
+  const collapse = useCallback(() => {
+    setExpanded(false);
+    setLoading(false);
+  }, []);
+
+  const closePanel = useCallback(() => {
+    if (!expanded) return;
+    collapse();
+    if (pushedRef.current && typeof window !== "undefined") {
+      closingRef.current = true;
+      pushedRef.current = false;
+      window.history.back();
+    }
+  }, [expanded, collapse]);
+
+  const fetchSuggestion = useCallback(async () => {
+    const reqId = ++requestIdRef.current;
     setLoading(true);
     setError(null);
     setResponse(null);
-
     try {
-      const res = await apiService.post(
-        '/ai/question-assistant',
-        {
-          mode,
-          question: {
-            id: question.id,
-            clauseRef: question.clauseRef || '',
-            standardCode: question.standardCode || 'ISO_9001_2015',
-            text: question.text,
-            currentStatus: question.status,
-            notes: question.notes || '',
-          },
-          attachments,
-          auditContext,
-        }
-      );
-
-      if (res && res.success) {
+      const payload = buildSuggestQuestionsPayload(question, {
+        standardCode,
+        standardLabel,
+      });
+      const res = await apiService.post("/ai/question-assistant", payload, {
+        timeout: 90000,
+      });
+      if (reqId !== requestIdRef.current) return;
+      if (res && res.success && res.data) {
         setResponse(res.data);
       } else {
-        setError('Risposta AI non valida');
+        setError("L'assistente non è riuscito a rispondere. Riprova.");
       }
     } catch (err) {
-      const msg = err.message || 'Errore chiamata AI';
-      setError(msg);
+      if (reqId !== requestIdRef.current) return;
+      setError(formatQuestionAiError(err));
     } finally {
-      setLoading(false);
+      if (reqId === requestIdRef.current) setLoading(false);
     }
-  };
+  }, [question, standardCode, standardLabel]);
 
-  const handleApplyNotes = () => {
-    if (response && response.answer && onNotesChange) {
-      // Estrai testo utile (rimuovi header **Esito suggerito:** se presente)
-      let notesText = response.answer;
-      const lines = notesText.split('\n').filter((l) => l.trim());
-      
-      // Se prima riga è "Esito suggerito:", skippa e prendi solo Motivazione/Gap
-      if (lines[0] && lines[0].startsWith('**Esito suggerito:**')) {
-        notesText = lines.slice(1).join('\n').trim();
+  const openPanel = useCallback(() => {
+    if (expanded) {
+      closePanel();
+      return;
+    }
+    if (typeof window !== "undefined") {
+      pushedRef.current = pushQuestionAiHistory(questionKey);
+    }
+    setExpanded(true);
+    fetchSuggestion();
+  }, [expanded, closePanel, questionKey, fetchSuggestion]);
+
+  useEffect(() => {
+    if (!expanded) return undefined;
+    const onKey = (e) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        closePanel();
       }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [expanded, closePanel]);
 
-      onNotesChange(notesText);
-    }
-  };
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    const onPop = (event) => {
+      if (closingRef.current) {
+        closingRef.current = false;
+        collapse();
+        return;
+      }
+      if (!historyStateHasQuestionAi(event.state, questionKey)) {
+        pushedRef.current = false;
+        collapse();
+      }
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, [questionKey, collapse]);
 
-  const handleApplyStatus = () => {
-    if (response && response.suggestedStatus && onStatusChange) {
-      onStatusChange(response.suggestedStatus);
-    }
-  };
+  useEffect(() => {
+    return () => {
+      requestIdRef.current += 1;
+    };
+  }, []);
 
-  const goToLibrary = () => {
-    const stdCode = question.standardCode || 'ISO_9001_2015';
-    window.location.href = `/library?standard=${stdCode}`;
-  };
+  if (!hasLicense) {
+    return null;
+  }
 
   return (
     <div className="question-ai-panel">
       <button
         type="button"
-        className="ai-trigger-btn"
-        onClick={() => setExpanded(!expanded)}
-        title="Assistente AI per questo quesito"
+        className="ask-ai-btn"
+        onClick={openPanel}
+        title={buttonLabel}
+        aria-expanded={expanded}
+        aria-controls={`question-ai-panel-${questionKey}`}
       >
-        {String.fromCodePoint(0x1F916)} Chiedi all'AI — §{question.clauseRef || 'X.Y'}
+        <span className="ask-ai-btn__icon" aria-hidden="true">
+          {"\uD83E\uDD16"}
+        </span>
+        <span className="ask-ai-btn__label">{buttonLabel}</span>
       </button>
 
       {expanded && (
-        <div className="ai-panel-content">
-          {/* Banner fonte */}
-          {response && (
-            <div
-              className={`ai-source-banner ${
-                response.hasOfficialSource ? 'official' : 'generic'
-              }`}
+        <div
+          id={`question-ai-panel-${questionKey}`}
+          className="ai-panel-content"
+          role="region"
+          aria-label="Suggerimento AI sulla domanda"
+        >
+          <div className="ai-panel-toolbar">
+            <p className="ai-panel-title">Come porre questa domanda</p>
+            <button
+              type="button"
+              className="btn-secondary ai-panel-close"
+              onClick={closePanel}
             >
-              <span>{response.hasOfficialSource ? '\u2705' : '\u26A0\uFE0F'}</span>
-              <span>{response.sourceDisclaimer}</span>
-              {!response.hasOfficialSource && (
-                <button
-                  type="button"
-                  className="btn-link"
-                  onClick={goToLibrary}
-                >
-                  Carica norma {String.fromCodePoint(0x2192)}
-                </button>
-              )}
-            </div>
-          )}
-
-          {/* Chip azioni rapide */}
-          <div className="ai-mode-chips">
-            {MODE_OPTIONS.map(({ mode, icon, label }) => (
-              <button
-                key={mode}
-                type="button"
-                className="ai-mode-chip"
-                onClick={() => handleModeClick(mode)}
-                disabled={loading}
-                title={label}
-              >
-                {icon} {label}
-              </button>
-            ))}
+              Chiudi
+            </button>
           </div>
 
-          {/* Risposta AI */}
           {loading && (
             <div className="ai-response loading">
-              <div className="spinner-sm"></div>
-              <span>Elaborazione...</span>
+              <div className="spinner-sm" />
+              <span>L&apos;assistente sta preparando i suggerimenti...</span>
             </div>
           )}
 
-          {error && (
-            <div className="ai-response error">
-              <strong>Errore:</strong> {error}
+          {error && !loading && (
+            <div className="ai-response error" role="alert">
+              {error}
             </div>
           )}
 
           {response && !loading && (
-            <>
-              <div className="ai-response success">
-                {/* Risposta AI formattata */}
+            <div className="ai-response success">
+              {response.sourceDisclaimer && (
                 <div
-                  className="ai-answer"
-                  dangerouslySetInnerHTML={{
-                    __html: formatAiAnswer(response.answer),
-                  }}
-                />
-
-                {/* Citazioni (solo se fonte ufficiale) */}
-                {response.citations && response.citations.length > 0 && (
-                  <div className="ai-citations">
-                    <strong>Citazioni:</strong>
-                    <ul>
-                      {response.citations.map((cite, idx) => (
-                        <li key={idx}>
-                          <code>{cite.text}</code> — {cite.source}
-                          {cite.page && ` (pag. ${cite.page})`}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-
-              {/* Azioni */}
-              <div className="ai-actions">
-                <button
-                  type="button"
-                  className="btn-secondary"
-                  onClick={handleApplyNotes}
-                  disabled={!onNotesChange}
+                  className={`ai-source-banner ${
+                    response.hasOfficialSource ? "official" : "generic"
+                  }`}
                 >
-                  Applica a Note
-                </button>
-
-                {response.suggestedStatus && (
-                  <button
-                    type="button"
-                    className="btn-secondary"
-                    onClick={handleApplyStatus}
-                    disabled={!onStatusChange}
-                  >
-                    Cambia esito: {response.suggestedStatus}
-                  </button>
-                )}
-
-                <button
-                  type="button"
-                  className="btn-link"
-                  onClick={() => setResponse(null)}
-                >
-                  Nuova domanda
-                </button>
-              </div>
-            </>
+                  <span>{response.sourceDisclaimer}</span>
+                </div>
+              )}
+              <div
+                className="ai-answer"
+                dangerouslySetInnerHTML={{
+                  __html: formatAiAnswer(response.answer),
+                }}
+              />
+            </div>
           )}
+
+          <AiDisclaimer style={{ marginTop: "0.75rem" }} />
         </div>
       )}
     </div>
@@ -238,28 +206,24 @@ export default function QuestionAiPanel({
 }
 
 /**
- * Formatta risposta AI per HTML (bold, liste)
  * @param {string} text
- * @returns {string} HTML
+ * @returns {string}
  */
-function formatAiAnswer(text) {
-  if (!text) return '';
+export function formatAiAnswer(text) {
+  if (!text) return "";
 
-  let html = text
-    // Bold **testo**
-    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-    // Liste numerate
-    .replace(/^\d+\.\s+(.+)$/gm, '<li>$1</li>')
-    // Paragrafi
-    .replace(/\n\n/g, '</p><p>')
-    // Newline singole
-    .replace(/\n/g, '<br>');
+  let html = String(text)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/^\d+\.\s+(.+)$/gm, "<li>$1</li>")
+    .replace(/\n\n/g, "</p><p>")
+    .replace(/\n/g, "<br>");
 
-  // Wrap liste in <ol>
   html = html.replace(/(<li>.*<\/li>)+/gs, (match) => `<ol>${match}</ol>`);
 
-  // Wrap paragrafi
-  if (!html.startsWith('<')) {
+  if (!html.startsWith("<")) {
     html = `<p>${html}</p>`;
   }
 

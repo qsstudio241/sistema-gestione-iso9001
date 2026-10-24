@@ -41,14 +41,13 @@ export const STATUS_BUTTONS = [
  */
 function QuestionAiPanelWrapper({
   question,
-  attachments,
-  auditContext,
-  onNotesChange,
-  onStatusChange,
+  standardCode,
+  standardLabel,
+  aiLabel,
   readOnly,
 }) {
   let user = null;
-  
+
   try {
     const auth = useAuth();
     user = auth.user;
@@ -56,20 +55,19 @@ function QuestionAiPanelWrapper({
     // AuthProvider non disponibile (es. test senza wrapper) — silenzioso
     return null;
   }
-  
+
   if (readOnly || !user) {
     return null;
   }
 
-  const hasLicense = hasLicensedModule(user, 'ai_chat');
+  const hasLicense = hasLicensedModule(user, "ai_chat");
 
   return (
     <QuestionAiPanel
       question={question}
-      attachments={attachments}
-      auditContext={auditContext}
-      onNotesChange={onNotesChange}
-      onStatusChange={onStatusChange}
+      standardCode={standardCode}
+      standardLabel={standardLabel}
+      label={aiLabel}
       hasLicense={hasLicense}
     />
   );
@@ -93,6 +91,9 @@ export function QuestionCard({
   onSatisfiedByChange = null,
   statusOptions = STATUS_BUTTONS,
   children,
+  standardCode = null,
+  standardLabel = null,
+  aiLabel = null,
 }) {
   const [attachmentRefreshKey, setAttachmentRefreshKey] = useState(0);
   const [satExpanded, setSatExpanded] = useState(false);
@@ -244,13 +245,11 @@ export function QuestionCard({
           />
         )}
 
-        {/* AI Assistant Panel */}
         <QuestionAiPanelWrapper
           question={question}
-          attachments={attachmentManager?.files || []}
-          auditContext={{ auditId, companyId: null }}
-          onNotesChange={onNotesChange}
-          onStatusChange={onStatusChange}
+          standardCode={standardCode || question.standardCode || checklistKey || null}
+          standardLabel={standardLabel || question.standardLabel || null}
+          aiLabel={aiLabel}
           readOnly={readOnly}
         />
       </div>

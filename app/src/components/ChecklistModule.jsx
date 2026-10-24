@@ -26,7 +26,6 @@ import {
   checklistQuestionBindSignature,
   countPendingMatches,
 } from "../utils/checklistTextMerge";
-import AskAiButton from "./AskAiButton";
 import "./ChecklistModule.css";
 
 /**
@@ -767,13 +766,18 @@ function QuestionCard({ clauseId, question, checklistKey, onUpdate, attachmentMa
     : null;
 
   const clauseRef = question.clauseRef || clauseId;
-  const aiLabel = clauseRef ? `Chiedi all'AI \u2014 \u00A7${clauseRef}` : "Chiedi all'AI";
+  const questionForAi = {
+    ...question,
+    clauseRef,
+    checklistKey,
+  };
 
   return (
     <UniversalQuestionCard
-      question={question}
+      question={questionForAi}
       displayRef={displayRef}
       checklistKey={checklistKey}
+      standardCode={checklistKey}
       showStatusButtons
       showSatButton={showSatButton}
       satisfiedBy={satisfiedBy}
@@ -784,26 +788,7 @@ function QuestionCard({ clauseId, question, checklistKey, onUpdate, attachmentMa
       auditId={auditId}
       auditUuid={auditUuid}
       readOnly={readOnly}
-    >
-      {!readOnly && (
-        <AskAiButton
-          label={aiLabel}
-          onBeforeNavigate={() =>
-            saveChecklistFocus(
-              auditUuid,
-              buildChecklistAskAiFocus({
-                audit,
-                standardKey: checklistKey,
-                clauseRef,
-                questionId: String(question.id),
-                questionText: question.text || question.title || null,
-                numericQuestionId: question.questionId ?? null,
-              })
-            )
-          }
-        />
-      )}
-    </UniversalQuestionCard>
+    />
   );
 }
 
